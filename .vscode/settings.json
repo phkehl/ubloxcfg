@@ -1,0 +1,60 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "ubloxcfg.h": "c",
+        "ubloxcfg.json": "jsonc",
+        "typeinfo": "c",
+        "type_traits": "c"
+    },
+    "editor.detectIndentation":     false,
+    "editor.tabSize":               4,
+    "editor.insertSpaces":          true,
+    "files.exclude": {
+        ".vstags": true,
+        ".gitignore": true,
+        ".vscode-cache": true,
+        "**/*~": true
+    },
+    "search.exclude": {
+        "output": true,
+    },
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/refs/**": true,
+        "**/.git/logs/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/.git/worktrees/**": true,
+        "**/output/**": true,
+        "**/.vscode-cache": true
+    },
+    //"C_Cpp.intelliSenseCachePath":           "${workspaceFolder}/.vscode-cache",
+    "C_Cpp.default.includePath":           [ "${workspaceFolder}/**" ],
+    "C_Cpp.default.defines":               [ ],
+    "C_Cpp.default.intelliSenseMode":        "gcc-x86", // or "gcc-x64"?
+    "C_Cpp.default.compilerPath":            "/usr/bin/gcc",
+    "C_Cpp.default.cStandard":               "c99",
+    //"C_Cpp.default.cppStandard":             "c++17",
+    "C_Cpp.default.browse.path":           [ "${workspaceFolder}/**" ],
+    //"C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode-cache/browse.db",
+    "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
+
+    "task.autoDetect": "off",
+    "typescript.tsc.autoDetect": "off",
+    "grunt.autoDetect": "off",
+    "gulp.autoDetect": "off",
+    "jake.autoDetect": "off",
+    "npm.autoDetect": "off",
+    "cSpell.words": [
+        "Blabla",
+        "Kehl",
+        "NOGDI",
+        "NUMOF",
+        "Nmea",
+        "Rtcm",
+        "UBLOXCFG",
+        "blox",
+        "oinkzwurgl",
+        "stringification"
+    ]
+
+}
