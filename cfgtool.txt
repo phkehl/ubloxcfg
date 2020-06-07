@@ -26,7 +26,7 @@ Where:
                        RAM, BBR, Flash, Default
     -r <reset>     Reset mode to use to reset the receiver:
                        hot, warm, cold, default, factory, stop, start, gnss
-    -u             Use unknown configuation items
+    -u             Use unknown (undocumented) configuation items
     -x             Output extra information (comments, hex dumps)
     -a             Activate configuration after storing.
 
@@ -41,6 +41,7 @@ Where:
     uc2cfg         Convert u-center config file to sane config file
     cfginfo        Print information about known configuration items etc.
     rxtest         Connects to receiver and prints received message frames
+    rxraw          Prints any data received on port
     parse          Parse file and outputs message frames
     reset          Reset receiver
 
@@ -72,12 +73,12 @@ Serial ports:
         <baudrate>   Baudrate (optional)
 
         Note that 'ser://' is the default and can be omitted. If no <baudrate>
-        is specified, it will be automatically detected. That is, '-p <device>'
-        will work in most cases.
+        is specified, it is be automatically detected. That is, '-p <device>'
+        works in most cases.
 
         It is recommended to use /dev/serial/by-path/... device names for USB
-        (CDC ACM) connections as the names will remain after a hardware reset
-        and USB re-enumeration. See the 'reset' command.
+        (CDC ACM) connections as the names remain after a hardware reset and
+        USB re-enumeration. See the 'reset' command.
 
     Raw TCP/IP ports: tcp://<addr>:<port>, where:
 
@@ -144,8 +145,8 @@ Command 'cfg2rx':
             Type U and X values can be converted from decimal, hexadecimal or
             octal strings. Type I and E values can be converted from decimal or
             hexadecimal strings. For known type E and X items converting
-            constant names will be attempted first. Type E constants are single
-            words, such as 'AUTO'. Type X constants are one or more words or
+            constant names is attempted first. Type E constants are single
+            words such as 'AUTO'. Type X constants are one or more words or
             hexadecimal strings separated by a '|', e.g. 'FIRST|0x02'.
 
          <messagename>> <uart1> <uart2> <spi> <i2c> <usb>
@@ -196,17 +197,17 @@ Command 'cfg2rx':
     Notes:
 
         When storing configuration to the RAM layer (that is, the 'current
-        configuration') changes will become effective immediately. This is
-        often not desired. The 'correct' way to configure the receiver is
-        changing the configuration in the BBR and Flash layers and then
-        resetting the receiver in order to activate the changed configuration.
+        configuration') changes become effective immediately. This is often
+        not desired. The 'correct' way to configure the receiver is changing
+        the configuration in the BBR and Flash layers and then resetting the
+        receiver in order to activate the changed configuration.
 
-        This command will likely fail when changing the baudrate of the
-        port used for the connection in the RAM layer. This is because the
-        receiver sends the success/failure result at the new baudrate. The
-        command will therefore not be able to determine the result and will
-        fail. The correct way of doing this is outlined in the note above. A
-        (ugly) work-around is running the command twice.
+        This command likely fails when changing the baudrate of the port used
+        for the connection in the RAM layer. This is because the receiver sends
+        the success/failure result at the new baudrate. The command is therefore
+        not be able to determine the result and fails. The correct way of doing
+        this is outlined in the note above. A ugly and unreliable work-around is
+        running the command twice.
 
 Command 'rx2cfg':
 
@@ -214,13 +215,13 @@ Command 'rx2cfg':
 
     This reads the configuration of a layer in the receiver and saves the data
     as a configuration file (see the 'cfg2rx' command for a specification of
-    the format). Depending on the layer this will produce all configuration
+    the format). Depending on the layer this produces all configuration
     (layers 'RAM' and 'Default') or only those that is available in the layer
     (layers 'BBR' and 'Flash'), which may be none at all.
 
     The '-u' flag adds all unknown (to this tool) configuration items as well.
 
-    Entries in the generated configuration file will be commented out if their
+    Entries in the generated configuration file are commented out if their
     values are the default values.
 
 Command 'rx2list':
@@ -279,6 +280,13 @@ Command 'rxtest':
         cfgtool rxtest -p /dev/ttyUSB0
         timeout 20 cfgtool rxtest -p /dev/ttyACM0
 
+Command 'rxraw':
+
+    Usage: cfgtool rxraw -p <port> [-o <outfile>] [-y] [-x]
+
+    Like 'rxtest' but not doing any auto-bauding or receiver detection.
+    That is, this command dumps whatever data is received on the port.
+
 Command 'parse':
 
     Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x]
@@ -308,9 +316,9 @@ Command 'reset':
 
     Notes:
 
-        All hardware resets will cause a USB disconnect and the host will
-        re-enumerate the device. For local serial <port>s (ser://<device>)
-        this will be taken into account and should be handled by this command.
+        All hardware resets cause a USB disconnect, which triggers the the host
+        to re-enumerate the device. For local serial <port>s (ser://<device>)
+        this is taken into account and should be handled by this command.
 
         The hot, warm, and cold resets use the same command as the corresponding
         buttons in u-center.

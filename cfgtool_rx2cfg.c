@@ -38,13 +38,13 @@ const char *rx2cfgHelp(void)
 "\n"
 "    This reads the configuration of a layer in the receiver and saves the data\n"
 "    as a configuration file (see the 'cfg2rx' command for a specification of\n"
-"    the format). Depending on the layer this will produce all configuration\n"
+"    the format). Depending on the layer this produces all configuration\n"
 "    (layers 'RAM' and 'Default') or only those that is available in the layer\n"
 "    (layers 'BBR' and 'Flash'), which may be none at all.\n"
 "\n"
 "    The '-u' flag adds all unknown (to this tool) configuration items as well.\n"
 "\n"
-"    Entries in the generated configuration file will be commented out if their\n"
+"    Entries in the generated configuration file are commented out if their\n"
 "    values are the default values.\n"
 "\n";
 }
@@ -69,17 +69,22 @@ typedef enum LAYER_e
     LAYER_NONE, LAYER_RAM, LAYER_BBR, LAYER_FLASH, LAYER_DEFAULT
 } LAYER_t;
 
-#define MAX_NUM_KV 2000
+#define MAX_ITEMS 3000
+
+typedef struct CFG_DB_REC_s
+{
+    UBLOXCFG_KEYVAL_t      kv;
+    const UBLOXCFG_ITEM_t *item;
+    bool                   flag;
+} CFG_DB_REC_t;
 
 typedef struct CFG_DB_s
 {
-    LAYER_t                layer;
-    UBLOXCFG_KEYVAL_t      kv[MAX_NUM_KV];
-    int                    nKv;
-    int                    nKvKnown;
-    int                    nKvUnknown;
-    const UBLOXCFG_ITEM_t *items[MAX_NUM_KV];
-    bool                   flag[MAX_NUM_KV];
+    LAYER_t      layer;
+    CFG_DB_REC_t recs[MAX_ITEMS];
+    int          nKv;
+    int          nKvKnown;
+    int          nKvUnknown;
 } CFG_DB_t;
 
 static const char * const kLayerNames[] =
@@ -288,11 +293,11 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     // All the remaining items
     for (int ix = 0; ix < dbLayer->nKv; ix++)
     {
-        const UBLOXCFG_KEYVAL_t *kvLayer = &dbLayer->kv[ix];
-        const UBLOXCFG_ITEM_t *item = dbLayer->items[ix]; // NULL if item is unknown
+        const UBLOXCFG_KEYVAL_t *kvLayer = &dbLayer->recs[ix].kv;
+        const UBLOXCFG_ITEM_t *item = dbLayer->recs[ix].item; // NULL if item is unknown
         
         // Skip those used above, and unknown items unless we want to output them
-        if ( dbLayer->flag[ix] || ((item == NULL) && !useUnknownItems) )
+        if ( dbLayer->recs[ix].flag || ((item == NULL) && !useUnknownItems) )
         {
             continue;
         }
@@ -402,8 +407,8 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
         kLayerNames[layer], useUnknownItems ? dbLayer->nKv : dbLayer->nKvKnown, dbLayer->nKv);
     for (int ix = 0; ix < dbLayer->nKv; ix++)
     {
-        const UBLOXCFG_KEYVAL_t *kv = &dbLayer->kv[ix];
-        const UBLOXCFG_ITEM_t *item = dbLayer->items[ix]; // NULL if item is unknown
+        const UBLOXCFG_KEYVAL_t *kv = &dbLayer->recs[ix].kv;
+        const UBLOXCFG_ITEM_t *item = dbLayer->recs[ix].item; // NULL if item is unknown
         
         // Skip unknown items unless we want to output them
         if ( (item == NULL) && !useUnknownItems )
@@ -465,10 +470,13 @@ static LAYER_t _getLayer(const char *layer)
 
 // -------------------------------------------------------------------------------------------------
 
+static int _dbSortFunc(const void *a, const void *b);
+
 static CFG_DB_t *_getCfgDb(RX_t *rx, LAYER_t layer)
 {
     CFG_DB_t *db = malloc(sizeof(CFG_DB_t));
-    if (db == NULL)
+    UBLOXCFG_KEYVAL_t *kv = malloc(sizeof(UBLOXCFG_KEYVAL_t) * NUMOF(db->recs));
+    if ( (db == NULL) || (kv == NULL) )
     {
         WARNING("_getCfgDb() malloc fail");
         return NULL;
@@ -479,22 +487,22 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, LAYER_t layer)
     // Poll all configuration items
     PRINT("Polling receiver configuration for layer %s", kLayerNames[layer]);
     uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
-    db->nKv = _ubxCfgValget(rx, layer, (const uint8_t *)keys, sizeof(keys), db->kv, MAX_NUM_KV);
+    db->nKv = _ubxCfgValget(rx, layer, (const uint8_t *)keys, sizeof(keys), kv, NUMOF(db->recs));
 
     if (db->nKv < 0)
     {
         free(db);
+        free(kv);
         return NULL;
     }
 
     // Check items, stringify and mark known ones
     for (int ix = 0; ix < db->nKv; ix++)
     {
-        const UBLOXCFG_KEYVAL_t *kv = &db->kv[ix];
-        const UBLOXCFG_ITEM_t   *item = ubloxcfg_getItemById(kv->id);
-        if (item != NULL)
+        db->recs[ix].kv   = kv[ix];
+        db->recs[ix].item = ubloxcfg_getItemById(kv[ix].id);
+        if (db->recs[ix].item != NULL)
         {
-            db->items[ix] = item;
             db->nKvKnown++;
         }
         else
@@ -503,10 +511,42 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, LAYER_t layer)
         }
     }
 
+    // Sort
+    qsort(db->recs, db->nKv, sizeof(*db->recs), _dbSortFunc);
+
     PRINT("Layer %s: %d items (%d known, %d unknown)", kLayerNames[layer],
         db->nKv, db->nKvKnown, db->nKvUnknown);
 
+    free(kv);
     return db;
+}
+
+static int _dbSortFunc(const void *a, const void *b)
+{
+    const CFG_DB_REC_t *rA = (const CFG_DB_REC_t *)a;
+    const CFG_DB_REC_t *rB = (const CFG_DB_REC_t *)b;
+    // Both items documented -> use documentation ordering
+    if ( (rA->item != NULL) && (rB->item != NULL) )
+    {
+        return rA->item->order - rB->item->order;
+    }
+    // Keep documented before undocumented
+    else if ( (rA->item != NULL) && (rB->item == NULL) )
+    {
+        return -1;
+    }
+    // Keep documented before undocumented
+    else if ( (rA->item == NULL) && (rB->item != NULL) )
+    {
+        return 1;
+    }
+    // Sort undocumented by id
+    else
+    {
+        const uint32_t iA = UBLOXCFG_ID2GROUP(rA->kv.id) | UBLOXCFG_ID2IDGRP(rA->kv.id);
+        const uint32_t iB = UBLOXCFG_ID2GROUP(rB->kv.id) | UBLOXCFG_ID2IDGRP(rB->kv.id);
+        return iA > iB ? 1 : -1;
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -516,9 +556,9 @@ static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t
     const UBLOXCFG_KEYVAL_t *res = NULL;
     for (int ix = 0; ix < db->nKv; ix++)
     {
-        if (db->kv[ix].id == id)
+        if (db->recs[ix].kv.id == id)
         {
-            res = &db->kv[ix];
+            res = &db->recs[ix].kv;
             break;
         }
     }
@@ -529,9 +569,9 @@ static void _dbFlag(CFG_DB_t *db, const uint32_t id)
 {
     for (int ix = 0; ix < db->nKv; ix++)
     {
-        if (db->kv[ix].id == id)
+        if (db->recs[ix].kv.id == id)
         {
-            db->flag[ix] = true;
+            db->recs[ix].flag = true;
             break;
         }
     }
@@ -679,7 +719,7 @@ static int _ubxCfgValget(RX_t *rx, const LAYER_t layer, const uint8_t *keys, con
         }
 
         // Enough space left in list?
-        if ( (totNumKv + UBX_CFG_VALGET_V1_MAX_KV) > MAX_NUM_KV )
+        if ( (totNumKv + UBX_CFG_VALGET_V1_MAX_KV) > maxKv )
         {
             WARNING("Too many config items (position=%u, layer=%s)!", position, kLayerNames[layer]);
             res = false;

@@ -253,7 +253,8 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
         case PARSER_MSGTYPE_RTCM3:
             msg->name = rtcm3MessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "RTCM3-?";
-            msg->info = NULL;
+            msg->info = rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                parser->info : NULL;
             break;
         default:
             msg->name = "?";

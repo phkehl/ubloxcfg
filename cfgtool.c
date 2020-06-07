@@ -87,6 +87,7 @@ static int cfg2c(void)   { return cfg2cRun(  gState.cfgLayer, gState.extraInfo);
 static int uc2cfg(void)  { return uc2cfgRun(); }
 static int cfginfo(void) { return cfginfoRun(); }
 static int rxtest(void)  { return rxtestRun( gState.rxPort, gState.extraInfo); }
+static int rxraw(void)   { return rxrawRun(  gState.rxPort, gState.extraInfo); }
 static int parse(void)   { return parseRun(  gState.extraInfo); }
 static int reset(void)   { return resetRun(  gState.rxPort, gState.resetType); }
 
@@ -117,6 +118,9 @@ const CMD_t kCmds[] =
       .need_i = false, .need_o = true,  .need_p = false, .need_l = false, .need_r = false },
 
     { .name = "rxtest",  .info = "Connects to receiver and prints received message frames",    .help = rxtestHelp,  .run = rxtest,
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false },
+
+    { .name = "rxraw",   .info = "Prints any data received on port",                           .help = rxrawHelp,   .run = rxraw,
       .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false },
 
     { .name = "parse",   .info = "Parse file and outputs message frames",                      .help = parseHelp,   .run = parse,
@@ -158,7 +162,7 @@ const char * const kHelpStr =
     "                       RAM, BBR, Flash, Default\n"
     "    -r <reset>     Reset mode to use to reset the receiver:\n"
     "                       hot, warm, cold, default, factory, stop, start, gnss\n"
-    "    -u             Use unknown configuation items\n"
+    "    -u             Use unknown (undocumented) configuation items\n"
     "    -x             Output extra information (comments, hex dumps)\n"
     "    -a             Activate configuration after storing.\n"
     "\n"
@@ -202,13 +206,13 @@ const char * const kPortHelp =
     "        <baudrate>   Baudrate (optional)\n"
     "\n"
     "        Note that 'ser://' is the default and can be omitted. If no <baudrate>\n"
-    "        is specified, it will be automatically detected. That is, '-p <device>'\n"
-    "        will work in most cases.\n"
+    "        is specified, it is be automatically detected. That is, '-p <device>'\n"
+    "        works in most cases.\n"
     "\n"
 #ifndef _WIN    
     "        It is recommended to use /dev/serial/by-path/... device names for USB\n"
-    "        (CDC ACM) connections as the names will remain after a hardware reset\n"
-    "        and USB re-enumeration. See the 'reset' command.\n"
+    "        (CDC ACM) connections as the names remain after a hardware reset and\n"
+    "        USB re-enumeration. See the 'reset' command.\n"
     "\n"
 #endif
     "    Raw TCP/IP ports: tcp://<addr>:<port>, where:\n"

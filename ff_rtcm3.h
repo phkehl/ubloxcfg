@@ -26,7 +26,12 @@
 #define RTCM3_HEAD_SIZE 3
 #define RTCM3_FRAME_SIZE (RTCM3_HEAD_SIZE + 3)
 
+#define RTCM3_TYPE(msg) ( ((msg)[RTCM3_HEAD_SIZE + 0] << 4) | (((msg)[RTCM3_HEAD_SIZE + 1] >> 4) & 0x0f) )
+#define RTCM3_4072_SUBTYPE(msg) ( ((msg)[RTCM3_HEAD_SIZE + 1] & 0x0f) | ((msg)[RTCM3_HEAD_SIZE + 2]) )
+
 bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
+
+bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 
 /* ********************************************************************************************** */
 #endif // __FF_RTCM3_H__

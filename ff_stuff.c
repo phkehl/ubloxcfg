@@ -50,5 +50,15 @@ void SLEEP(uint32_t dur)
 #endif
 }
 
+uint32_t timeOfDay(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    uint32_t t = ts.tv_sec % 86400;
+    t *= 1000;
+    t += ts.tv_nsec / 1000000;
+    return t;
+}
+
 /* ********************************************************************************************** */
 // eof

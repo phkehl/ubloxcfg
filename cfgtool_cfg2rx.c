@@ -69,8 +69,8 @@ const char *cfg2rxHelp(void)
 "            Type U and X values can be converted from decimal, hexadecimal or\n"
 "            octal strings. Type I and E values can be converted from decimal or\n"
 "            hexadecimal strings. For known type E and X items converting\n"
-"            constant names will be attempted first. Type E constants are single\n"
-"            words, such as 'AUTO'. Type X constants are one or more words or\n"
+"            constant names is attempted first. Type E constants are single\n"
+"            words such as 'AUTO'. Type X constants are one or more words or\n"
 "            hexadecimal strings separated by a '|', e.g. 'FIRST|0x02'.\n"
 "\n"
 "         <messagename>> <uart1> <uart2> <spi> <i2c> <usb>\n"
@@ -125,17 +125,17 @@ const char *cfg2rxHelp(void)
 "    Notes:\n"
 "\n"
 "        When storing configuration to the RAM layer (that is, the 'current\n"
-"        configuration') changes will become effective immediately. This is\n"
-"        often not desired. The 'correct' way to configure the receiver is\n"
-"        changing the configuration in the BBR and Flash layers and then\n"
-"        resetting the receiver in order to activate the changed configuration.\n"
+"        configuration') changes become effective immediately. This is often\n"
+"        not desired. The 'correct' way to configure the receiver is changing\n"
+"        the configuration in the BBR and Flash layers and then resetting the\n"
+"        receiver in order to activate the changed configuration.\n"
 "\n"
-"        This command will likely fail when changing the baudrate of the\n"
-"        port used for the connection in the RAM layer. This is because the\n"
-"        receiver sends the success/failure result at the new baudrate. The\n"
-"        command will therefore not be able to determine the result and will\n"
-"        fail. The correct way of doing this is outlined in the note above. A\n"
-"        (ugly) work-around is running the command twice.\n"
+"        This command likely fails when changing the baudrate of the port used\n"
+"        for the connection in the RAM layer. This is because the receiver sends\n"
+"        the success/failure result at the new baudrate. The command is therefore\n"
+"        not be able to determine the result and fails. The correct way of doing\n"
+"        this is outlined in the note above. A ugly and unreliable work-around is\n"
+"        running the command twice.\n"
 "\n";
 }
 
@@ -207,7 +207,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         }
     }
 
-    if (applyConfig)
+    if (res && applyConfig)
     {
         PRINT("Applying configuration");
         if (!rxReset(rx, RX_RESET_HOT))

@@ -59,6 +59,20 @@ typedef enum UBLOXCFG_SIZE_e
 */
 #define UBLOXCFG_ID2SIZE(id) (UBLOXCFG_SIZE_t)(((id) >> 28) & 0x0f)
 
+//! Get item group ID from item ID \hideinitializer
+/*!
+    \param[in] id  The item ID
+    \returns The item group ID
+*/
+#define UBLOXCFG_ID2GROUP(id) ((id) & 0x0fff0000)
+
+//! Get item ID within group from item ID \hideinitializer
+/*!
+    \param[in] id  The item ID
+    \returns The item ID within the group
+*/
+#define UBLOXCFG_ID2IDGRP(id) ((id) & 0x0000ffff)
+
 //! Configuration item storage type (s.a. #UBLOXCFG_VALUE_t)
 typedef enum UBLOXCFG_TYPE_e
 {
@@ -108,6 +122,7 @@ typedef struct UBLOXCFG_ITEM_s
     const UBLOXCFG_CONST_t *consts;    //!< Constants (or NULL if none)
     int                     nConsts;   //!< Number of constants (or 0 if none)
     double                  scalefact; //!< Scale factor as number
+    int                     order;     //!< Ordering
 } UBLOXCFG_ITEM_t;
 
 //! Configuration items for output message rate configuration

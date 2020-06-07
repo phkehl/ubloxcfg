@@ -705,8 +705,8 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     portClose(&rx->port);
 
     // ..and wait a bit for the reset to complete (and the USB device to disappear)
-    RX_DEBUG("Waiting...");
-    SLEEP(1003);
+    RX_DEBUG("Waiting for reset to complete...");
+    SLEEP(1009);
 
     // Wait for device to show up (mainly for USB re-enumeration)
     if (rx->port.type == PORT_TYPE_SER)
@@ -728,7 +728,19 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     }
 
     // The device should now be available again
-    if (!portOpen(&rx->port))
+    int retries = 2;
+    bool portOk = false;
+    while (retries > 0)
+    {
+        if (portOpen(&rx->port))
+        {
+            portOk = true;
+            break;
+        }
+        SLEEP(1009);
+        retries--;
+    }
+    if (!portOk)
     {
         return false;
     }

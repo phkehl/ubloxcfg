@@ -25,6 +25,8 @@
 uint32_t TIME(void);
 void SLEEP(uint32_t dur);
 
+uint32_t timeOfDay(void);
+
 #define NUMOF(x) (int)(sizeof(x)/sizeof(*(x)))
 #define STRINGIFY(x) _STRINGIFY(x)
 #define _STRINGIFY(x) #x

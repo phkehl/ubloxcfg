@@ -217,6 +217,49 @@
     _P_(UBX_TIM_CLSID, UBX_TIM_VRFY_MSGID,        "UBX-TIM-VRFY") \
     _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS")
 
+
+#define UBX_GNSSID_NONE     0xff
+#define UBX_GNSSID_GPS      0
+#define UBX_GNSSID_SBAS     1
+#define UBX_GNSSID_GAL      2
+#define UBX_GNSSID_BDS      3
+#define UBX_GNSSID_QZSS     5
+#define UBX_GNSSID_GLO      6
+
+#define UBX_SIGID_NONE      0xff
+#define UBX_SIGID_GPS_L1CA  0
+#define UBX_SIGID_GPS_L2CL  3
+#define UBX_SIGID_GPS_L2CM  4
+#define UBX_SIGID_SBAS_L1CA 0
+#define UBX_SIGID_GAL_E1C   0
+#define UBX_SIGID_GAL_E1B   1
+#define UBX_SIGID_GAL_E5BI  5
+#define UBX_SIGID_GAL_E5BQ  6
+#define UBX_SIGID_BDS_B1ID1 0
+#define UBX_SIGID_BDS_B1ID2 1
+#define UBX_SIGID_BDS_B2ID1 2
+#define UBX_SIGID_BDS_B2ID2 3
+#define UBX_SIGID_QZSS_L1CA 0
+#define UBX_SIGID_QZSS_L1S  1
+#define UBX_SIGID_QZSS_L2CM 4
+#define UBX_SIGID_QZSS_L2CL 5
+#define UBX_SIGID_GLO_L1OF  0
+#define UBX_SIGID_GLO_L2OF  2
+
+#define UBX_NUM_GPS        32
+#define UBX_NUM_SBAS       39
+#define UBX_NUM_GAL        36
+#define UBX_NUM_BDS        37
+#define UBX_NUM_QZSS       10
+#define UBX_NUM_GLO        32
+
+#define UBX_FIRST_GPS       1
+#define UBX_FIRST_SBAS    120
+#define UBX_FIRST_GAL       1
+#define UBX_FIRST_BDS       1
+#define UBX_FIRST_QZSS      1
+#define UBX_FIRST_GLO       1
+
 /* ********************************************************************************************** */
 
 //! UBX-CFG-VALSET (version 1, input) message payload header
@@ -360,7 +403,6 @@ typedef struct UBX_CFG_CFG_V0_GROUP1_s
 
 #define UBX_CFG_CFG_V0_MAX_SIZE         (sizeof(UBX_CFG_CFG_V0_GROUP0_t) + sizeof(UBX_CFG_CFG_V0_GROUP1_t) + UBX_FRAME_SIZE)
 
-
 /* ********************************************************************************************** */
 
 //! UBX-MON-VER (version 0, output) message payload header
@@ -378,19 +420,159 @@ typedef struct UBX_MON_VER_V0_GROUP1_s
 
 /* ********************************************************************************************** */
 
-// UBX-ACK-ACK (version 0, output) payload
+//! UBX-ACK-ACK (version 0, output) payload
 typedef struct UBX_ACK_ACK_V0_GROUP0_s
 {
     uint8_t clsId;                                   //!< Class ID of ack'ed message
     uint8_t msgId;                                   //!< Message ID of ack'ed message
 }  UBX_ACK_ACK_V0_GROUP0_t;
 
-// UBX-ACK-NCK (version 0, output) payload
+//! UBX-ACK-NCK (version 0, output) payload
 typedef struct UBX_ACK_NAK_V0_GROUP0_s
 {
     uint8_t clsId;                                   //!< Class ID of not-ack'ed message
     uint8_t msgId;                                   //!< Message ID of not-ack'ed message
 }  UBX_ACK_NAK_V0_GROUP0_t;
+
+/* ********************************************************************************************** */
+
+//! UBX-NAV-PVT (version 1, output) payload
+typedef struct UBX_NAV_PVT_V1_GROUP0_s
+{
+    uint32_t iTOW;
+    uint16_t year;
+    uint8_t  month;
+    uint8_t  day;
+    uint8_t  hour;
+    uint8_t  min;
+    uint8_t  sec;
+    uint8_t  valid;
+    uint32_t tAcc;
+    int32_t  nano;
+    uint8_t  fixType;
+    uint8_t  flags;
+    uint8_t  flags2;
+    uint8_t  numSV;
+    int32_t  lon;
+    int32_t  lat;
+    int32_t  height;
+    int32_t  hMSL;
+    uint32_t hAcc;
+    uint32_t vAcc;
+    int32_t  velN;
+    int32_t  velE;
+    int32_t  velD;
+    int32_t  gSpeed;
+    int32_t  headMot;
+    uint32_t sAcc;
+    uint32_t headAcc;
+    uint16_t pDOP;
+    uint8_t  flags3;
+    uint8_t  reserved[5];
+    int32_t  headVeh;
+    int16_t  magDec;
+    uint16_t magAcc;
+} UBX_NAV_PVT_V1_GROUP0_t;
+
+#define UBX_NAV_PVT_V1_VALID_VALIDDATE       0x01
+#define UBX_NAV_PVT_V1_VALID_VALIDTIME       0x02
+#define UBX_NAV_PVT_V1_VALID_VALIDUTC        0x03
+#define UBX_NAV_PVT_V1_FLAGS_GNSSFIXOK       0x01
+#define UBX_NAV_PVT_V1_FLAGS_DIFFSOLN        0x02
+#define UBX_NAV_PVT_V1_FLAGS_CARRSOLN_GET(f) ( ((int8_t)(f) >> 5) & 0x03 )
+#define UBX_NAV_PVT_V1_FLAGS_CARRSOLN_NO     0
+#define UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FLOAT  1
+#define UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FIXED  2
+#define UBX_NAV_PVT_V1_FLAGS2_CONFDATE       0x40
+#define UBX_NAV_PVT_V1_FLAGS2_CONFTIME       0x80
+#define UBX_NAV_PVT_V1_FLAGS2_CONFUTC        0x20
+#define UBX_NAV_PVT_V1_FLAGS3_INVALIDLLH     0x01
+#define UBX_NAV_PVT_V1_FIXTYPE_NOFIX         0
+#define UBX_NAV_PVT_V1_FIXTYPE_DRONLY        1
+#define UBX_NAV_PVT_V1_FIXTYPE_D             2
+#define UBX_NAV_PVT_V1_FIXTYPE_3D            3
+#define UBX_NAV_PVT_V1_FIXTYPE_3D_DR         4
+#define UBX_NAV_PVT_V1_FIXTYPE_TIME          5
+#define UBX_NAV_PVT_V1_PDOP_SCALE            0.01
+#define UBX_NAV_PVT_V1_LAT_SCALE             1e-7
+#define UBX_NAV_PVT_V1_LON_SCALE             1e-7
+#define UBX_NAV_PVT_V1_HEIGHT_SCALE          1e-3
+#define UBX_NAV_PVT_V1_HACC_SCALE            1e-3
+#define UBX_NAV_PVT_V1_VACC_SCALE            1e-3
+
+#define UBX_NAV_PVT_V1_SIZE             (sizeof(UBX_NAV_PVT_V1_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ********************************************************************************************** */
+
+//! UBX-NAV-SIG (version 0, output) payload head
+typedef struct UBX_NAV_SIG_V0_GROUP0_s
+{
+    uint32_t iTOW;
+    uint8_t  version;
+    uint8_t  numSigs;
+    uint8_t  reserved[2];
+} UBX_NAV_SIG_V0_GROUP0_t;
+
+//! UBX-NAV-SIG (version 0, output) payload repeated group
+typedef struct UBX_NAV_SIG_V0_GROUP1_s
+{
+    uint8_t  gnssId;
+    uint8_t  svId;
+    uint8_t  sigId;
+    uint8_t  freqId;
+    int16_t  prRes;
+    uint8_t  cno;
+    uint8_t  qualityInd;
+    uint8_t  corrSource;
+    uint8_t  ionoModel;
+    uint16_t sigFlags;
+    uint8_t  reserved[4];
+} UBX_NAV_SIG_V0_GROUP1_t;
+
+#define UBX_NAV_SIG_V0_VERSION               0x00
+
+#define UBX_NAV_PVT_V1_MIN_SIZE             (sizeof(UBX_NAV_SIG_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ********************************************************************************************** */
+
+//! UBX-RXM-RAWX (version 1, output) payload head
+typedef struct UBX_RXM_RAWX_V1_GROUP0_s
+{
+    double   rcvTow;
+    uint16_t week;
+    int8_t   leapS;
+    uint8_t  numMeas;
+    uint8_t  recStat;
+    uint8_t  version;
+    uint8_t  reserved[2];
+} UBX_RXM_RAWX_V1_GROUP0_t;
+
+//! UBX-RXM-RAWX (version 1, output) payload repeated group
+typedef struct UBX_RXM_RAWX_V1_GROUP1_s
+{
+    double   prMeas;
+    double   cpMeas;
+    float    doMeas;
+    uint8_t  gnssId;
+    uint8_t  svId;
+    uint8_t  sigId;
+    uint8_t  freqId;
+    int16_t  locktime;
+    uint8_t  cno;
+    uint8_t  prStd;
+    uint8_t  cpStd;
+    uint8_t  doStd;
+    uint8_t  trkStat;
+    uint8_t  reserved[1];
+} UBX_RXM_RAWX_V1_GROUP1_t;
+
+#define UBX_RXM_RAWX_V1_VERSION  0x01
+#define UBX_RXM_RAWX_V1_VERSION_GET(msg)  ((msg)[UBX_HEAD_SIZE + 13])
+
+#define UBX_RXM_RAWX_MIN_SIZE             (sizeof(UBX_RXM_RAWX_V1_GROUP0_t) + UBX_FRAME_SIZE)
+
+
+// FIXME: complete this..
 
 /* ********************************************************************************************** */
 
@@ -422,6 +604,10 @@ int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payl
 bool ubxMessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
 
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
+
+const char *ubxGnssStr(const uint8_t gnssId);
+const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId);
+const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId);
 
 /* ********************************************************************************************** */
 #endif // __FF_UBX_H__

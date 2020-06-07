@@ -26,5 +26,9 @@ const char *rxtestHelp(void);
 
 int rxtestRun(const char *portArg, const bool extraInfo);
 
+const char *rxrawHelp(void);
+
+int rxrawRun(const char *portArg, const bool extraInfo);
+
 /* ********************************************************************************************** */
 #endif // __CFGTOOL_RXTEST_H__

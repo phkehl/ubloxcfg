@@ -53,6 +53,20 @@ const char *rxtestHelp(void)
 "\n";
 }
 
+const char *rxrawHelp(void)
+{
+    return
+// -----------------------------------------------------------------------------
+"Command 'rxraw':\n"
+"\n"
+"    Usage: cfgtool rxraw -p <port> [-o <outfile>] [-y] [-x]\n"
+"\n"
+"    Like 'rxtest' but not doing any auto-bauding or receiver detection.\n"
+"    That is, this command dumps whatever data is received on the port.\n"
+"\n";
+}
+
+
 /* ********************************************************************************************** */
 
 bool gAbort;
@@ -66,6 +80,8 @@ static void _sigHandler(int signal)
     }
 }
 
+static int _rxtest(RX_t *rx, const bool extraInfo);
+
 int rxtestRun(const char *portArg, const bool extraInfo)
 {
     RX_t *rx = rxOpen(portArg, NULL);
@@ -74,6 +90,25 @@ int rxtestRun(const char *portArg, const bool extraInfo)
         return EXIT_RXFAIL;
     }
 
+    return _rxtest(rx, extraInfo);
+}
+
+int rxrawRun(const char *portArg, const bool extraInfo)
+{
+    RX_ARGS_t args = RX_ARGS_DEFAULT();
+    args.autobaud = false;
+    args.detect   = false;
+    RX_t *rx = rxOpen(portArg, &args);
+    if (rx == NULL)
+    {
+        return EXIT_RXFAIL;
+    }
+
+    return _rxtest(rx, extraInfo);
+}
+
+static int _rxtest(RX_t *rx, const bool extraInfo)
+{
     uint32_t nNmea = 0, sNmea = 0;
     uint32_t nUbx  = 0, sUbx  = 0;
     uint32_t nRtcm = 0, sRtcm = 0;
@@ -92,6 +127,8 @@ int rxtestRun(const char *portArg, const bool extraInfo)
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL)
         {
+            const uint32_t latency = timeOfDay() % 1000; // relative to wallclock...
+            (void)latency;
             nMsgs++;
             sMsgs += msg->size;
             const char *prot = "?";
@@ -118,8 +155,8 @@ int rxtestRun(const char *portArg, const bool extraInfo)
                     sGarb += msg->size;
                     break;
             }
-            addOutputStr("message %4u, size %4d, %-8s %-20s %s\n",
-                msg->seq, msg->size, prot, msg->name, msg->info != NULL ? msg->info : "n/a");
+            addOutputStr("message %4u, dt %4u, size %4d, %-8s %-20s %s\n",
+                msg->seq, latency, msg->size, prot, msg->name, msg->info != NULL ? msg->info : "n/a");
             if (extraInfo)
             {
                 addOutputHexdump(msg->data, msg->size);
@@ -132,7 +169,7 @@ int rxtestRun(const char *portArg, const bool extraInfo)
         // No data, yield
         else
         {
-            SLEEP(100);
+            SLEEP(5);
         }
     }
 

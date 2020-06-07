@@ -81,7 +81,7 @@ int parseRun(const bool extraInfo)
         }
         else if (num == 0) // wait
         {
-            SLEEP(100);
+            SLEEP(5);
             continue;
         }
         parserAdd(&parser, buf, num);

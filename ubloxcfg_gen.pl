@@ -314,7 +314,7 @@ sub genCodeC
         $cItem .= "{\n";
         $cItem .= sprintf("    .id = $item->{id}, .name = %-50s .type = %-17s .size = %s\n",
             "\"$item->{name}\",", "UBLOXCFG_TYPE_$item->{type},", "$sizeNames{$item->{size}},");
-        $cItem .= sprintf("    .title =\"%s\",\n", $item->{title});
+        $cItem .= sprintf("    .order = %4d, .title =\"%s\",\n", $itemIx + 1, $item->{title});
         my $unitStr = '';
         if ($item->{unit})
         {
