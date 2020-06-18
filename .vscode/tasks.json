@@ -37,6 +37,11 @@
             "command": "make", "args": [ "output/cfgtool" ]
         },
         {
+            "label": "make gui",
+            "group": "build",
+            "command": "make", "args": [ "output/gui" ]
+        },
+        {
             "label": "make clean",
             "group": "build",
             "command": "make", "args": [ "clean" ]

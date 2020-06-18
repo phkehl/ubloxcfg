@@ -15,11 +15,15 @@
 // If not, see <https://www.gnu.org/licenses/>.
 //
 
+#ifndef __FF_PORT_H__
+#define __FF_PORT_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __FF_PORT_H__
-#define __FF_PORT_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
@@ -61,6 +65,7 @@ typedef struct PORT_s
     int         tnState;
     uint8_t     tnInband[12];
     int         nTnInband;
+    char        tmp[PORT_SPEC_MAX_LEN + 32];
 
 } PORT_t;
 
@@ -74,4 +79,7 @@ bool portSetBaudrate(PORT_t *port, const int baudrate);
 int portGetBaudrate(PORT_t *port);
 
 /* ********************************************************************************************** */
+#ifdef __cplusplus
+}
+#endif
 #endif // __FF_PORT_H__

@@ -32,7 +32,6 @@
 
 #define RX_XTRA_TRACE_ENABLE 0 // Set to 1 to enable more trace output
 
-
 #if RX_XTRA_TRACE_ENABLE
 #  define RX_XTRA_TRACE(fmt, args...) TRACE("%s: " fmt, rx->name, ## args)
 #else

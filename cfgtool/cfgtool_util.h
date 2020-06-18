@@ -23,8 +23,8 @@
 #include "ff_debug.h"
 #include "ff_stuff.h"
 
-#ifndef __CFGTOOL_H__
-#define __CFGTOOL_H__
+#ifndef __CFGTOOL_UTIL_H__
+#define __CFGTOOL_UTIL_H__
 
 /* ********************************************************************************************** */
 
@@ -33,24 +33,25 @@
 #define EXIT_RXNODATA      3
 #define EXIT_OTHERFAIL    99
 
-typedef struct LINE_s
+typedef struct IO_LINE_s
 {
     char       *line;
     int         lineNr;
     int         lineLen;
     const char *file;
 
-} LINE_t;
+} IO_LINE_t;
 
-LINE_t *getNextInputLine(void);
-int readInput(uint8_t *data, const int size);
-
-void addOutputStr(const char *fmt, ...);
-void addOutputBin(const uint8_t *data, const int size);
-void addOutputHex(const uint8_t *data, const int size, const int wordsPerLine);
-void addOutputHexdump(const uint8_t *data, const int size);
-void addOutputC(const uint8_t *data, const int size, const int wordsPerLine, const char *indent);
-bool writeOutput(const bool append);
+void ioSetOutput(const char *name, FILE *file, const bool overwrite);
+void ioSetInput(const char *name, FILE *file);
+IO_LINE_t *ioGetNextInputLine(void);
+int  ioReadInput(uint8_t *data, const int size);
+void ioOutputStr(const char *fmt, ...);
+void ioAddOutputBin(const uint8_t *data, const int size);
+void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine);
+void ioAddOutputHexdump(const uint8_t *data, const int size);
+void ioAddOutputC(const uint8_t *data, const int size, const int wordsPerLine, const char *indent);
+bool ioWriteOutput(const bool append);
 
 /* ********************************************************************************************** */
-#endif // __CFGTOOL_H__
+#endif // __CFGTOOL_UTIL_H__

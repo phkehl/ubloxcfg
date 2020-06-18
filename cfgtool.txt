@@ -42,7 +42,7 @@ Where:
     cfginfo        Print information about known configuration items etc.
     rxtest         Connects to receiver and prints received message frames
     rxraw          Prints any data received on port
-    parse          Parse file and outputs message frames
+    parse          Parse file and output message frames
     reset          Reset receiver
 
 License:
@@ -58,7 +58,7 @@ License:
     more details.
 
     You should have received a copy of the GNU General Public License along with
-    this program. If not, see <https://www.gnu.org/licenses/>.
+    this program. If not, see https://www.gnu.org/licenses/.
 
 Third-party code:
 
@@ -240,7 +240,8 @@ Commands 'cfg2ubx', 'cfg2hex' and 'cfg2c':
 
     The cfg2ubx, cfg2hex and cfg2c modes convert a configuration file into one
     or more UBX-CFG-VALSET messages, output as binary UBX messages, u-center
-    compatible hex dumps, or c code. Optional extra comments can be enabled.
+    compatible hex dumps, or c code. Optional extra comments can be enabled
+    using the -x flag.
     See the 'rx2cfg' command for the specification of the configuration file.
 
 Command 'uc2cfg':
@@ -261,8 +262,8 @@ Command 'cfginfo':
 
     Usage: cfgtool cfginfo [-o <outfile>] [-y]
 
-    This generates a list with information on all known configuration items and
-    messages.
+    This generates a list with information on all configuration items and
+    messages known to this tool.
 
 Command 'rxtest':
 

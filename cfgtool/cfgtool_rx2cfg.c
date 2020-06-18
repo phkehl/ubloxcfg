@@ -19,7 +19,7 @@
 
 #include "ubloxcfg.h"
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_rx.h"
 #include "ff_ubx.h"
@@ -167,7 +167,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     PRINT("Generating configuration file for layer %s", kLayerNames[layer]);
     char verStr[100] = "unknown receiver";
     rxGetVerStr(rx, verStr, sizeof(verStr));
-    addOutputStr("# %s, layer %s\n", verStr, kLayerNames[layer]);
+    ioOutputStr("# %s, layer %s\n", verStr, kLayerNames[layer]);
 
     // Ports
     const PORT_CFG_t portCfgs[] =
@@ -208,7 +208,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
             if (dbLayer == dbDefault)
             {
                 const char *cfgStrNone = "       -  -                    -";
-                addOutputStr("#%-7s %-50s # default: %-50s\n", portCfgs[ix].name, cfgStrNone, cfgStrDefault);
+                ioOutputStr("#%-7s %-50s # default: %-50s\n", portCfgs[ix].name, cfgStrNone, cfgStrDefault);
             }
             continue;
         }
@@ -217,9 +217,9 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         const bool cfgStrsAreSame = haveCfgStrLayer && haveCfgStrDefault && (strcmp(cfgStrDefault, cfgStrLayer) == 0);
         char portName[200];
         snprintf(portName, sizeof(portName), "%s%s", cfgStrsAreSame ? "#" : "", portCfgs[ix].name);
-        addOutputStr("%-8s %-50s # default: %s", portName, cfgStrLayer, cfgStrDefault);
+        ioOutputStr("%-8s %-50s # default: %s", portName, cfgStrLayer, cfgStrDefault);
 
-        addOutputStr("\n");
+        ioOutputStr("\n");
 
         // Flag all involved items
         _dbFlag(dbLayer, portCfgs[ix].idBaudrate);
@@ -254,7 +254,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
             if (dbLayer == dbDefault)
             {
                 const char *cfgStrNone = "  -   -   -   -   -";
-                addOutputStr("#%-24s %-33s # default: %s\n", rateCfgs[ix]->msgName, cfgStrNone, cfgStrDefault);
+                ioOutputStr("#%-24s %-33s # default: %s\n", rateCfgs[ix]->msgName, cfgStrNone, cfgStrDefault);
             }
             continue;
         }
@@ -263,9 +263,9 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         const bool cfgStrsAreSame = haveCfgStrLayer && haveCfgStrDefault && (strcmp(cfgStrDefault, cfgStrLayer) == 0);
         char portName[200];
         snprintf(portName, sizeof(portName), "%s%s", cfgStrsAreSame ? "#" : "", rateCfgs[ix]->msgName);
-        addOutputStr("%-25s %-33s # default: %s", portName, cfgStrLayer, cfgStrDefault);
+        ioOutputStr("%-25s %-33s # default: %s", portName, cfgStrLayer, cfgStrDefault);
 
-        addOutputStr("\n");
+        ioOutputStr("\n");
 
         // Flag all involved items
         if (rateCfgs[ix]->itemUart1 != NULL)
@@ -328,9 +328,9 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         {
             snprintf(itemName, sizeof(itemName), "%s0x%08x", cfgStrsAreSame ? "#" : "", kvLayer->id);
         }
-        addOutputStr("%-35s %-23s # default: %s", itemName, cfgStrLayer, cfgStrDefault);
+        ioOutputStr("%-35s %-23s # default: %s", itemName, cfgStrLayer, cfgStrDefault);
 
-        addOutputStr("\n");
+        ioOutputStr("\n");
     }
 
     // Clean up
@@ -344,7 +344,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     // Write output, done
     if (generateOutput)
     {
-        return writeOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
+        return ioWriteOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
     }
     else
     {
@@ -403,7 +403,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     PRINT("Generating list of key-value pairs for layer %s", kLayerNames[layer]);
     char verStr[100] = "unknown receiver";
     rxGetVerStr(rx, verStr, sizeof(verStr));
-    addOutputStr("# %s, layer %s (%d/%d items)\n", verStr,
+    ioOutputStr("# %s, layer %s (%d/%d items)\n", verStr,
         kLayerNames[layer], useUnknownItems ? dbLayer->nKv : dbLayer->nKvKnown, dbLayer->nKv);
     for (int ix = 0; ix < dbLayer->nKv; ix++)
     {
@@ -433,7 +433,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     // Write output, done
     if (generateOutput)
     {
-        return writeOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
+        return ioWriteOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
     }
     else
     {
@@ -911,13 +911,13 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     const char *sizeDesc = NULL;
     if (item != NULL)
     {
-        addOutputStr("%-40s", item->name);
+        ioOutputStr("%-40s", item->name);
         type = item->type;
     }
     // Put ID instead of name for unknown items and map to X type based on size
     else
     {
-        addOutputStr("0x%08x                              ", kv->id);
+        ioOutputStr("0x%08x                              ", kv->id);
         switch (valSize)
         {
             case UBLOXCFG_SIZE_BIT:
@@ -978,7 +978,7 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     // Value for unknown items
     if (item == NULL)
     {
-        addOutputStr("%-30s", valStr);
+        ioOutputStr("%-30s", valStr);
     }
     // Value for known items
     else
@@ -986,22 +986,22 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
         // If we have constant names, prefer these
         if (valConstStr != NULL)
         {
-            addOutputStr("%-30s", valConstStr);
+            ioOutputStr("%-30s", valConstStr);
         }
         // Otherwise the stringified value
         else
         {
-            addOutputStr("%-30s", valStr);
+            ioOutputStr("%-30s", valStr);
         }
     }
 
     // More info in comments...
-    addOutputStr(" # ");
+    ioOutputStr(" # ");
 
     // ...for unknown items
     if (item == NULL)
     {
-        addOutputStr("unknown item, size %d (%s)", valSize, sizeDesc);
+        ioOutputStr("unknown item, size %d (%s)", valSize, sizeDesc);
     }
     // ...for known items
     else
@@ -1009,7 +1009,7 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
         // Value string in case we put the constant names above
         if (valConstStr != NULL)
         {
-            addOutputStr("= %s, ", valStr);
+            ioOutputStr("= %s, ", valStr);
         }
         // X8 is sometimes used to store text...
         else if (type == UBLOXCFG_TYPE_X8)
@@ -1031,12 +1031,12 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
             if (strLen > 0)
             {
                 str[strLen] = '\0';
-                addOutputStr("= \"%s\", ", str);
+                ioOutputStr("= \"%s\", ", str);
             }
         } 
 
         // Add ID and type
-        addOutputStr("0x%08x, %s", kv->id, ubloxcfg_typeStr(type));
+        ioOutputStr("0x%08x, %s", kv->id, ubloxcfg_typeStr(type));
     }
 
     // Add default value if available and different
@@ -1047,12 +1047,12 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
         if (ubloxcfg_stringifyValue(defaultValStr, sizeof(defaultValStr), type, item, &defaultKv->val))
         {
 
-            addOutputStr(", default: %s", defaultValStr);
+            ioOutputStr(", default: %s", defaultValStr);
         }
     }
 
 
-    addOutputStr("\n");
+    ioOutputStr("\n");
 }
 
 /* ********************************************************************************************** */

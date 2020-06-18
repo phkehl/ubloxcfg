@@ -1,4 +1,4 @@
-// flipflip's NMEA protocol stuff
+// flipflip's Allencheibs
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
@@ -14,19 +14,44 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef __FF_STUFF_H__
+#define __FF_STUFF_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __FF_NMEA_H__
-#define __FF_NMEA_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
-#define NMEA_PREAMBLE  '$'
+uint32_t TIME(void);
+void SLEEP(uint32_t dur);
 
-bool nmeaMessageName(char *name, const int size, const char *msg);
+uint32_t timeOfDay(void);
 
-bool nmeaMessageInfo(char *info, const int size, const char *msg);
+#define NUMOF(x) (int)(sizeof(x)/sizeof(*(x)))
+#define STRINGIFY(x) _STRINGIFY(x)
+#define _STRINGIFY(x) #x
+
+#ifdef _WIN32
+#  define IF_WIN(x) x
+#  define NOT_WIN(x) /* nothing */
+#else
+#  define IF_WIN(x) /* nothing */
+#  define NOT_WIN(x) x
+#endif
+
+#if (defined(DEBUG) || defined(_DEBUG) || defined(DBG)) && !defined(NDEBUG)
+#  define FF_DEBUG 1
+#else
+#  define FF_DEBUG 0
+#endif
+
 
 /* ********************************************************************************************** */
-#endif // __FF_NMEA_H__
+#ifdef __cplusplus
+}
+#endif
+#endif // __FF_STUFF_H__

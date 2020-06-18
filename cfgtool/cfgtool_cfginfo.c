@@ -20,7 +20,7 @@
 
 #include "ubloxcfg.h"
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "cfgtool_cfginfo.h"
 
@@ -34,8 +34,8 @@ const char *cfginfoHelp(void)
 "\n"
 "    Usage: cfgtool cfginfo [-o <outfile>] [-y]\n"
 "\n"
-"    This generates a list with information on all known configuration items and\n"
-"    messages.\n"
+"    This generates a list with information on all configuration items and\n"
+"    messages known to this tool.\n"
 "\n";
 }
 
@@ -45,12 +45,12 @@ int cfginfoRun(void)
 {
     int numItems = 0;
     const UBLOXCFG_ITEM_t **items = ubloxcfg_getAllItems(&numItems);
-    addOutputStr("#     Item/constant                          Type  Scale            Unit         Description\n");
-    addOutputStr("#---------------------------------------------------------------------------------------------------------------------\n");
+    ioOutputStr("#     Item/constant                          Type  Scale            Unit         Description\n");
+    ioOutputStr("#---------------------------------------------------------------------------------------------------------------------\n");
     for (int ix = 0; ix < numItems; ix++)
     {
         const UBLOXCFG_ITEM_t *it = items[ix];
-        addOutputStr("item %-40s %-2s  %-15s  %-10s # %s\n",
+        ioOutputStr("item %-40s %-2s  %-15s  %-10s # %s\n",
             it->name,
             ubloxcfg_typeStr(it->type),
             it->scale != NULL ? it->scale : "-",
@@ -59,22 +59,22 @@ int cfginfoRun(void)
         for (int ix2 = 0; ix2 < it->nConsts; ix2++)
         {
             const UBLOXCFG_CONST_t *co = &it->consts[ix2];
-            addOutputStr("const    %-20s  %-18s                             #    %s\n",
+            ioOutputStr("const    %-20s  %-18s                             #    %s\n",
                 co->name,
                 co->value,
                 co->title);
         }
     }
 
-    addOutputStr("\n");
-    addOutputStr("#       Message                         UART1                                UART2                                SPI                                  I2C                                  USB\n");
-    addOutputStr("#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+    ioOutputStr("\n");
+    ioOutputStr("#       Message                         UART1                                UART2                                SPI                                  I2C                                  USB\n");
+    ioOutputStr("#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
     int numRates = 0;
     const UBLOXCFG_MSGRATE_t **rates = ubloxcfg_getAllMsgRateCfgs(&numRates);
     for (int ix = 0; ix < numRates; ix++)
     {
         const UBLOXCFG_MSGRATE_t *ra = rates[ix];
-        addOutputStr("message %-30s  %-35s  %-35s  %-35s  %-35s  %-35s\n",
+        ioOutputStr("message %-30s  %-35s  %-35s  %-35s  %-35s  %-35s\n",
             ra->msgName,
             ra->itemUart1 != NULL ? ra->itemUart1->name : "-",
             ra->itemUart2 != NULL ? ra->itemUart2->name : "-",
@@ -83,7 +83,7 @@ int cfginfoRun(void)
             ra->itemUsb   != NULL ? ra->itemUsb->name   : "-");
     }
 
-    return writeOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
+    return ioWriteOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 
 /* ********************************************************************************************** */

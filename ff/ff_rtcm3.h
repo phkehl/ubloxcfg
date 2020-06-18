@@ -1,4 +1,4 @@
-// flipflip's Allencheibs
+// flipflip's RTCM3 protocol stuff
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
@@ -14,30 +14,31 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef __FF_RTCM3_H__
+#define __FF_RTCM3_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __FF_STUFF_H__
-#define __FF_STUFF_H__
-
-/* ********************************************************************************************** */
-
-uint32_t TIME(void);
-void SLEEP(uint32_t dur);
-
-uint32_t timeOfDay(void);
-
-#define NUMOF(x) (int)(sizeof(x)/sizeof(*(x)))
-#define STRINGIFY(x) _STRINGIFY(x)
-#define _STRINGIFY(x) #x
-
-#ifdef _WIN32
-#  define IF_WIN(x) x
-#  define NOT_WIN(x) /* nothing */
-#else
-#  define IF_WIN(x) /* nothing */
-#  define NOT_WIN(x) x
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /* ********************************************************************************************** */
-#endif // __FF_STUFF_H__
+
+#define RTCM3_PREAMBLE 0xd3
+#define RTCM3_HEAD_SIZE 3
+#define RTCM3_FRAME_SIZE (RTCM3_HEAD_SIZE + 3)
+
+#define RTCM3_TYPE(msg) ( ((msg)[RTCM3_HEAD_SIZE + 0] << 4) | (((msg)[RTCM3_HEAD_SIZE + 1] >> 4) & 0x0f) )
+#define RTCM3_4072_SUBTYPE(msg) ( ((msg)[RTCM3_HEAD_SIZE + 1] & 0x0f) | ((msg)[RTCM3_HEAD_SIZE + 2]) )
+
+bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
+
+bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
+
+/* ********************************************************************************************** */
+#ifdef __cplusplus
+}
+#endif
+#endif // __FF_RTCM3_H__

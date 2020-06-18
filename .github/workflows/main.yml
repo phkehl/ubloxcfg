@@ -28,8 +28,8 @@ jobs:
         sudo apt-get -y update
         sudo apt-get -y install gcc gcc-multilib perl libpath-tiny-perl libdata-float-perl mingw-w64 doxygen
     # Runs a single command using the runners shell
-    - name: make gh-ci
-      run: make gh-ci
+    - name: make ci
+      run: make ci
 #    # Make tar of output
 #    - name: tar output
 #      run: tar -czv --owner=0 --group=0 -f output.tar.gz output
@@ -37,6 +37,6 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ubloxcfg-build
-        path: output/
+        path: output/*.zip
 
 # eof

@@ -21,7 +21,7 @@
 
 #include "ubloxcfg.h"
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_rx.h"
 #include "ff_ubx.h"
@@ -237,7 +237,7 @@ typedef struct CFG_DB_s
     int                    maxKv;
 } CFG_DB_t;
 
-static bool _cfgDbAdd(CFG_DB_t *db, LINE_t *line);
+static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line);
 
 UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
 {
@@ -254,7 +254,7 @@ UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
     bool res = true;
     while (res)
     {
-        LINE_t *line = getNextInputLine();
+        IO_LINE_t *line = ioGetNextInputLine();
         if (line == NULL)
         {
             break;
@@ -311,10 +311,10 @@ static const char * const kCfgTokSep = " \t";
 // separator for parts inside fields
 static const char * const kCfgPartSep = ",";
 
-static bool _cfgDbAddKeyVal(CFG_DB_t *db, LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value);
-static bool _cfgDbApplyProtfilt(CFG_DB_t *db, LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg);
+static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value);
+static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg);
 
-static bool _cfgDbAdd(CFG_DB_t *db, LINE_t *line)
+static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
 {
     TRACE_INFILE("%s", line->line);
     // Named key-value pair
@@ -649,7 +649,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, LINE_t *line)
 
 // -------------------------------------------------------------------------------------------------
 
-static bool _cfgDbAddKeyVal(CFG_DB_t *db, LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value)
+static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value)
 {
     if (db->nKv >= db->maxKv)
     {
@@ -691,7 +691,7 @@ static bool _cfgDbAddKeyVal(CFG_DB_t *db, LINE_t *line, const uint32_t id, const
 
 // -------------------------------------------------------------------------------------------------
 
-static bool _cfgDbApplyProtfilt(CFG_DB_t *db, LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg)
+static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg)
 {
     char *pCfgFilt = strtok(protfilt, kCfgPartSep);
     while (pCfgFilt != NULL)

@@ -30,6 +30,15 @@
             "args": [ "-v", "-i", "test_cfg2ubx.txt", "cfg2ubx" ],
             "cwd": "${workspaceFolder}"
         },
+        {
+            "name": "debug gui",
+            "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+            "stopAtEntry": false,
+            "preLaunchTask" : "make gui",
+            "program": "${workspaceFolder}/output/gui",
+            "args": [ ],
+            "cwd": "${workspaceFolder}"
+        }
     ],
     "inputs": [
     ]

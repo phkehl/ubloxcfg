@@ -18,7 +18,7 @@
 #include <stddef.h>
 #include <signal.h>
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_rx.h"
 #include "ff_ubx.h"

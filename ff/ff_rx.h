@@ -14,13 +14,17 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef __FF_RX_H__
+#define __FF_RX_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
 #include "ff_parser.h"
 
-#ifndef __FF_RX_H__
-#define __FF_RX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
@@ -74,13 +78,16 @@ typedef enum RX_RESET_e
     RX_RESET_COLD,          // Coldstart (like u-center)
     RX_RESET_DEFAULT,       // Revert config to default, keep nav data
     RX_RESET_FACTORY,       // Revert config to default and coldstart
-    RX_RESET_GNSS_STOP,     // Stop GNSS
-    RX_RESET_GNSS_START,    // Start GNSS
-    RX_RESET_GNSS_RESTART   // Restart GNSS
+    RX_RESET_GNSS_STOP,     // Stop GNSS (stop navigation)
+    RX_RESET_GNSS_START,    // Start GNSS (start navigation)
+    RX_RESET_GNSS_RESTART   // Restart GNSS (restart navigation)
 } RX_RESET_t;
 
 bool rxReset(RX_t *rx, const RX_RESET_t reset);
 
 
 /* ********************************************************************************************** */
+#ifdef __cplusplus
+}
+#endif
 #endif // __FF_RX_H__

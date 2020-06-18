@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 #include "ff_ubx.h"
 
 #include "cfgtool_cfg2rx.h"
@@ -39,7 +39,8 @@ const char *cfg2ubxHelp(void)
 "\n"
 "    The cfg2ubx, cfg2hex and cfg2c modes convert a configuration file into one\n"
 "    or more UBX-CFG-VALSET messages, output as binary UBX messages, u-center\n"
-"    compatible hex dumps, or c code. Optional extra comments can be enabled.\n"
+"    compatible hex dumps, or c code. Optional extra comments can be enabled\n"
+"    using the -x flag.\n"
 "    See the 'rx2cfg' command for the specification of the configuration file.\n"
 "\n";
 }
@@ -114,15 +115,15 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
         switch (fmt)
         {
             case FMT_HEX:
-                addOutputStr("# cfg2hex");
+                ioOutputStr("# cfg2hex");
                 break;
             case FMT_C:
-                addOutputStr("// cfg2c");
+                ioOutputStr("// cfg2c");
                 break;
             default:
                 break;
         }
-        addOutputStr(" (%d items in %s)\n", nKv, &layersStr[1]);
+        ioOutputStr(" (%d items in %s)\n", nKv, &layersStr[1]);
     }
 
     int kvOffs = 0;
@@ -135,7 +136,7 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
         {
             const char *comment1 = fmt == FMT_HEX ? "# - " : "// ";
             const char *comment2 = fmt == FMT_HEX ? "#   " : "// ";
-            addOutputStr("%sUBX-CFG-VALSET %d/%d (%d items, %d bytes, %s, %s)\n",
+            ioOutputStr("%sUBX-CFG-VALSET %d/%d (%d items, %d bytes, %s, %s)\n",
                 comment1, msgIx + 1, nMsgs, msgs[msgIx].nKv, msgs[msgIx].size, msgs[msgIx].info, &layersStr[1]);
             if (extraInfo)
             {
@@ -144,47 +145,47 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
                     char str[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
                     if (ubloxcfg_stringifyKeyVal(str, sizeof(str), &kv[kvOffs + n - 1]))
                     {
-                        addOutputStr("%s%2d. %s\n", comment2, n, str);
+                        ioOutputStr("%s%2d. %s\n", comment2, n, str);
                     }
                 }
             }
         }
         if (fmt == FMT_C)
         {
-            addOutputStr("const uint8_t ubxCfgValset%d[%d] =\n{\n", msgIx, msgs[msgIx].size);
+            ioOutputStr("const uint8_t ubxCfgValset%d[%d] =\n{\n", msgIx, msgs[msgIx].size);
         }
         switch (fmt)
         {
             case FMT_HEX:
-                addOutputHex(msgs[msgIx].msg, msgs[msgIx].size, 4);
+                ioAddOutputHex(msgs[msgIx].msg, msgs[msgIx].size, 4);
                 break;
             case FMT_C:
-                addOutputC(msgs[msgIx].msg, msgs[msgIx].size, 4, "    ");
+                ioAddOutputC(msgs[msgIx].msg, msgs[msgIx].size, 4, "    ");
                 break;
             case FMT_UBX:
-                addOutputBin(msgs[msgIx].msg, msgs[msgIx].size);
+                ioAddOutputBin(msgs[msgIx].msg, msgs[msgIx].size);
                 break;
             default:
                 break;                
         }
         if (fmt == FMT_C)
         {
-            addOutputStr("};\n");
+            ioOutputStr("};\n");
         }
     }
     if (fmt == FMT_C)
     {
-        addOutputStr("const struct { const int size; const uint8_t *data; } ubxCfgValsetMsgs[%d] =\n{\n", nMsgs);
+        ioOutputStr("const struct { const int size; const uint8_t *data; } ubxCfgValsetMsgs[%d] =\n{\n", nMsgs);
         for (int ix = 0; ix < nMsgs; ix++)
         {
-            addOutputStr("    { .size = sizeof(ubxCfgValset%d), .data = ubxCfgValset%d }%s\n", 
+            ioOutputStr("    { .size = sizeof(ubxCfgValset%d), .data = ubxCfgValset%d }%s\n", 
                 ix, ix, (ix + 1) < nMsgs ? "," : "");
         }
-        addOutputStr("};\n", nMsgs);
+        ioOutputStr("};\n", nMsgs);
     }
 
     free(kv);
-    return writeOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
+    return ioWriteOutput(false) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 
 /* ********************************************************************************************** */

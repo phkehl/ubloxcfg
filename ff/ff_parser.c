@@ -185,6 +185,7 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg)
 
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
 {
+    uint32_t now = TIME();
     // Copy garbage to msg buf and move data in parser buf
     //     buf: GGGGGGGGGGGGG???????????????........ (p->offs > 0, p->size >= 0)
     //          ---p->offs--><-- p->size -->
@@ -204,6 +205,7 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
     msg->size = size;
     msg->data = parser->tmp;
     msg->seq  = parser->msg;
+    msg->ts   = now;
     msg->name = "GARBAGE";
     msg->info = NULL;
 
@@ -212,6 +214,8 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
 
 static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType)
 {
+    uint32_t now = TIME();
+
     // Copy message to tmp, move remaining data to beginning of buf
     //     buf: MMMMMMMMMMMMMMM????????............. (p->offs = 0)
     //          <-- msgSize -->
@@ -234,6 +238,7 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     msg->size = msgSize;
     msg->data = parser->tmp;
     msg->seq  = parser->msg;
+    msg->ts   = now;
     parser->name[0] = '\0';
     parser->info[0] = '\0';
     switch (msgType)

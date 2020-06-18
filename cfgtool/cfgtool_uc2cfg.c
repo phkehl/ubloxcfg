@@ -21,7 +21,7 @@
 
 #include "ubloxcfg.h"
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_rx.h"
 #include "ff_ubx.h"
@@ -84,7 +84,7 @@ int uc2cfgRun(void)
     int errors = 0;
     while (true)
     {
-        LINE_t *line = getNextInputLine();
+        IO_LINE_t *line = ioGetNextInputLine();
         if (line == NULL)
         {
             break;
@@ -163,12 +163,12 @@ int uc2cfgRun(void)
     }
     else
     {
-        addOutputStr("# uc2cfg\n");
+        ioOutputStr("# uc2cfg\n");
         for (int ix = 0; ix < nKvStrs; ix++)
         {
-            addOutputStr("%-30s %s\n", kvStrs[ix].key, kvStrs[ix].val);
+            ioOutputStr("%-30s %s\n", kvStrs[ix].key, kvStrs[ix].val);
         }
-        res = writeOutput(false);
+        res = ioWriteOutput(false);
 
     }
 

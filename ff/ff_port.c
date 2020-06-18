@@ -58,40 +58,39 @@
 
 static const char *portSpecStr(PORT_t *port)
 {
-    static char str[PORT_SPEC_MAX_LEN + 32];
-    str[0] = '\0';
+    port->tmp[0] = '\0';
     switch (port->type)
     {
         case PORT_TYPE_SER:
-            snprintf(str, sizeof(str), "ser://%s@%d", port->file, port->baudrate);
+            snprintf(port->tmp, sizeof(port->tmp), "ser://%s@%d", port->file, port->baudrate);
             break;
         case PORT_TYPE_TCP:
-            snprintf(str, sizeof(str), "tcp://%s:%u", port->file, port->port);
+            snprintf(port->tmp, sizeof(port->tmp), "tcp://%s:%u", port->file, port->port);
             break;
         case PORT_TYPE_TELNET:
-            snprintf(str, sizeof(str), "telnet://%s:%u@%d", port->file, port->port, port->baudrate);
+            snprintf(port->tmp, sizeof(port->tmp), "telnet://%s:%u@%d", port->file, port->port, port->baudrate);
             break;
     }
-    return str;
+    return port->tmp;
 }
 
-const char *_portErrStr(int err)
+const char *_portErrStr(PORT_t *port, int err)
 {
 #ifdef _WIN32
     if (err == 0)
     {
         err = GetLastError();
     }
-    static char str[200];
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, str, sizeof(str), NULL);
-    const int len = strlen(str);
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, 0, port->tmp, sizeof(port->tmp), NULL);
+    const int len = strlen(port->tmp);
     if (len > 2)
     {
-        str[len-2] = '\0';
+        port->tmp[len-2] = '\0';
     }
-    snprintf(&str[len - 2], sizeof(str) - len, " (%d)", err);
-    return str;
+    snprintf(&port->tmp[len - 2], sizeof(port->tmp) - len, " (%d)", err);
+    return port->tmp;
 #else
+    (void)port;
     return err == 0 ? strerror(errno) : strerror(err);
 #endif
 }
@@ -454,7 +453,7 @@ static bool _portOpenSer(PORT_t *port)
     HANDLE handle = CreateFileA(file, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
     if (handle == INVALID_HANDLE_VALUE)
     {
-        PORT_WARNING("Failed opening device: %s", _portErrStr(0));
+        PORT_WARNING("Failed opening device: %s", _portErrStr(port, 0));
         return false;
     }
 
@@ -466,13 +465,13 @@ static bool _portOpenSer(PORT_t *port)
     settings.DCBlength = sizeof(settings);
     if (BuildCommDCBA(settingsStr, &settings) == 0)
     {
-        PORT_WARNING("Failed parsing settings: %s", _portErrStr(0));
+        PORT_WARNING("Failed parsing settings: %s", _portErrStr(port, 0));
         CloseHandle(handle);
         return false;
     }
     if (SetCommState(handle, &settings) == 0)
     {
-        PORT_WARNING("Failed applying settings: %s", _portErrStr(0));
+        PORT_WARNING("Failed applying settings: %s", _portErrStr(port, 0));
         CloseHandle(handle);
         return false;
     }
@@ -482,7 +481,7 @@ static bool _portOpenSer(PORT_t *port)
     timeouts.ReadIntervalTimeout = MAXDWORD;
     if (SetCommTimeouts(handle, &timeouts) == 0)
     {
-        PORT_WARNING("Failed applying timeouts: %s", _portErrStr(0));
+        PORT_WARNING("Failed applying timeouts: %s", _portErrStr(port, 0));
         CloseHandle(handle);
         return false;
     }
@@ -494,13 +493,13 @@ static bool _portOpenSer(PORT_t *port)
     int fileno = open(port->file, O_RDWR | O_NOCTTY | O_NDELAY);
     if (fileno < 0)
     {
-        PORT_WARNING("Failed opening device: %s", _portErrStr(0));
+        PORT_WARNING("Failed opening device: %s", _portErrStr(port, 0));
         return false;
     }
 
     if (flock(fileno, LOCK_EX | LOCK_NB) != 0)
     {
-        PORT_WARNING("Failed locking device: %s", _portErrStr(0));
+        PORT_WARNING("Failed locking device: %s", _portErrStr(port, 0));
         close(fileno);
         return false;
     }
@@ -514,7 +513,7 @@ static bool _portOpenSer(PORT_t *port)
 
     if (tcsetattr(fileno, TCSANOW, &settings) != 0)
     {
-        PORT_WARNING("Failed configuring device: %s", _portErrStr(0));
+        PORT_WARNING("Failed configuring device: %s", _portErrStr(port, 0));
         close(fileno);
         flock(fileno, LOCK_UN);
         return false;
@@ -565,7 +564,7 @@ static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
     PORT_XTRA_TRACE("write %d -> %d %u", size, res, num);
     if ( (res == 0) || ((int)num != size) )
     {
-        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(0));
+        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
 
@@ -576,7 +575,7 @@ static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
     // FIXME: handle EAGAIN?
     if ( (res < 0) || (res != size) )
     {
-        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(0));
+        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
 
@@ -597,7 +596,7 @@ static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead
     PORT_XTRA_TRACE("read %d -> %d %u", size, res, num);
     if (res == 0)
     {
-        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(0));
+        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
     *nRead = (int)num;
@@ -613,7 +612,7 @@ static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead
     }
     if (res < 0)
     {
-        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(0));
+        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         *nRead = 0;
         return false;
     }
@@ -642,13 +641,13 @@ static bool _portSetBaudrateSer(PORT_t *port, const int baudrate)
     settings.DCBlength = sizeof(settings);
     if (GetCommState((HANDLE)port->handle, &settings) == 0)
     {
-        PORT_WARNING("Failed getting port (baudrate) settings: %s", _portErrStr(0));
+        PORT_WARNING("Failed getting port (baudrate) settings: %s", _portErrStr(port, 0));
         return false;
     }
     settings.BaudRate = _portBaudrateValue(baudrate);
     if (SetCommState((HANDLE)port->handle, &settings) == 0)
     {
-        PORT_WARNING("Failed applying (baudrate) settings: %s", _portErrStr(0));
+        PORT_WARNING("Failed applying (baudrate) settings: %s", _portErrStr(port, 0));
         return false;
     }
 
@@ -657,7 +656,7 @@ static bool _portSetBaudrateSer(PORT_t *port, const int baudrate)
     struct termios settings;
     if (tcgetattr(port->fd, &settings) != 0)
     {
-        PORT_WARNING("tcgetattr fail: %s", _portErrStr(0));
+        PORT_WARNING("tcgetattr fail: %s", _portErrStr(port, 0));
         return false;
     }
 
@@ -666,7 +665,7 @@ static bool _portSetBaudrateSer(PORT_t *port, const int baudrate)
 
     if (tcsetattr(port->fd, TCSANOW, &settings) != 0)
     {
-        PORT_WARNING("tcsetattr fail: %s", _portErrStr(0));
+        PORT_WARNING("tcsetattr fail: %s", _portErrStr(port, 0));
         return false;
     }
     port->baudrate = baudrate;
@@ -711,7 +710,7 @@ bool _winsockInit(PORT_t *port)
     const int res = WSAStartup(versionWanted, &wsaData);
     if (res != 0)
     {
-        PORT_WARNING("Failed initialising winsock: %s", _portErrStr(res));
+        PORT_WARNING("Failed initialising winsock: %s", _portErrStr(port, res));
         return false;
     }
     const int wsockVerMajor = LOBYTE(wsaData.wVersion);
@@ -764,7 +763,7 @@ static bool _portOpenTcp(PORT_t *port)
         if (res != 0)
         {
 #ifdef _WIN32
-            PORT_WARNING("Failed connecting: %s", _portErrStr(0));
+            PORT_WARNING("Failed connecting: %s", _portErrStr(port, 0));
             _winsockDeinit(port);
 #else
             PORT_WARNING("Failed getting address: %s", gai_strerror(res));
@@ -786,7 +785,7 @@ static bool _portOpenTcp(PORT_t *port)
         int res = connect(fd, rp->ai_addr, rp->ai_addrlen);
         if (res == SOCKET_ERROR)
         {
-            PORT_WARNING("Failed connecting: %s", _portErrStr(0));
+            PORT_WARNING("Failed connecting: %s", _portErrStr(port, 0));
 #ifdef _WIN32
             closesocket(fd);
             _winsockDeinit(port);
@@ -819,7 +818,7 @@ static bool _portOpenTcp(PORT_t *port)
     unsigned long mode = 1;
     if (ioctlsocket(fd, FIONBIO, &mode) != 0)
     {
-        PORT_WARNING("Failed setting non-blocking operation: %s", _portErrStr(0));
+        PORT_WARNING("Failed setting non-blocking operation: %s", _portErrStr(port, 0));
         closesocket(fd);
         _winsockDeinit(port);
     }
@@ -827,14 +826,14 @@ static bool _portOpenTcp(PORT_t *port)
     const int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
     {
-        PORT_WARNING("Failed getting flags: %s", _portErrStr(0));
+        PORT_WARNING("Failed getting flags: %s", _portErrStr(port, 0));
         close(fd);
         return false;
     }
     int res = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     if (res < 0)
     {
-        PORT_WARNING("Failed setting flags: %s", _portErrStr(0));
+        PORT_WARNING("Failed setting flags: %s", _portErrStr(port, 0));
         close(fd);
         return false;
     }
@@ -850,7 +849,7 @@ static bool _portOpenTcp(PORT_t *port)
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable)) != 0)
     {
 #endif
-        PORT_WARNING("Failed setting TCP options: %s", _portErrStr(0));
+        PORT_WARNING("Failed setting TCP options: %s", _portErrStr(port, 0));
         close(fd);
         return false;
     }
@@ -910,7 +909,7 @@ static bool _portWriteTcp(PORT_t *port, const uint8_t *data, const int size)
         // FIXME: handle EAGAIN?
         if ( (res < 0) || (res != sendSize) )
         {
-            PORT_WARNING("tcp send fail (%d, %d): %s", sendSize, res, _portErrStr(0));
+            PORT_WARNING("tcp send fail (%d, %d): %s", sendSize, res, _portErrStr(port, 0));
             return false;
         }
         offs += sendSize;
@@ -936,7 +935,7 @@ static bool _portReadTcp(PORT_t *port, uint8_t *data, const int size, int *nRead
     }
     if (res < 0)
     {
-        PORT_WARNING("tcp recv fail (%d, %d): %s", size, res, _portErrStr(0));
+        PORT_WARNING("tcp recv fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         *nRead = 0;
         return false;
     }
@@ -1023,9 +1022,8 @@ static int _portGetBaudrateTcp(PORT_t *port)
 #define TELNET_CPCO_PURGE_DATA            12
 #define TELNET_CPCO_SERVER_TO_CLIENT_OFFS 100
 
-static const char *_telnetCommandStr(const uint8_t command)
+static const char *_telnetCommandStr(PORT_t *port, const uint8_t command)
 {
-    static char str[4];
     switch (command)
     {
         case TELNET_IAC:          return "IAC";
@@ -1036,14 +1034,13 @@ static const char *_telnetCommandStr(const uint8_t command)
         case TELNET_COMMAND_SB:   return "SB";
         case TELNET_COMMAND_SE:   return "SE";
         default:
-            snprintf(str, sizeof(str), "%d", command);
-            return str;
+            snprintf(port->tmp, sizeof(port->tmp), "%d", command);
+            return port->tmp;
     }
 }
 
-static const char *_telnetOptionStr(const uint8_t option)
+static const char *_telnetOptionStr(PORT_t *port, const uint8_t option)
 {
-    static char str[4];
     switch (option)
     {
         case TELNET_OPTION_TRANSMIT_BINARY:   return "TRANSMIT_BINARY";
@@ -1052,16 +1049,15 @@ static const char *_telnetOptionStr(const uint8_t option)
         case TELNET_OPTION_STATUS:            return "STATUS";
         case TELNET_OPTION_COM_PORT_OPTION:   return "COM_PORT_OPTION";
         default:
-            snprintf(str, sizeof(str), "%d", option);
-            return str;
+            snprintf(port->tmp, sizeof(port->tmp), "%d", option);
+            return port->tmp;
     }
 }
 
-static const char *_telnetCpcoStr(const uint8_t cpco)
+static const char *_telnetCpcoStr(PORT_t *port, const uint8_t cpco)
 {
     const uint8_t _cpco = cpco >= TELNET_CPCO_SERVER_TO_CLIENT_OFFS ?
         cpco - TELNET_CPCO_SERVER_TO_CLIENT_OFFS : cpco;
-    static char str[4];
     switch (_cpco)
     {
         case TELNET_CPCO_SIGNATURE:           return "SIGNATURE";
@@ -1078,8 +1074,8 @@ static const char *_telnetCpcoStr(const uint8_t cpco)
         case TELNET_CPCO_SET_MODEMSTATE_MASK: return "SET_MODEMSTATE_MASK";
         case TELNET_CPCO_PURGE_DATA:          return "PURGE_DATA";
         default:
-            snprintf(str, sizeof(str), "%d", cpco);
-            return str;
+            snprintf(port->tmp, sizeof(port->tmp), "%d", cpco);
+            return port->tmp;
     }
 }
 
@@ -1149,14 +1145,14 @@ void _telnetProcessInband(PORT_t *port, uint8_t *buf, int nIn, int *nOut, TELNET
                         state = TELNET_STATE_SUBOPTION; // expection suboptions
                         break;
                     default:
-                        PORT_TRACE("inband command %s", _telnetCommandStr(*pIn));
+                        PORT_TRACE("inband command %s", _telnetCommandStr(port, *pIn));
                         state = TELNET_STATE_NORMAL; 
                         break;
                 }
                 break;
             case TELNET_STATE_COMMAND:
                 inband[nInband++] = *pIn;
-                PORT_XTRA_TRACE("they say: %-4s %s", _telnetCommandStr(inband[0]), _telnetOptionStr(inband[1]));
+                PORT_XTRA_TRACE("they say: %-4s %s", _telnetCommandStr(port, inband[0]), _telnetOptionStr(port, inband[1]));
                 for (int ix = 0; ix < nOptions; ix++)
                 {
                     if (inband[1] == options[ix].option)
@@ -1241,10 +1237,10 @@ void _telnetProcessInband(PORT_t *port, uint8_t *buf, int nIn, int *nOut, TELNET
                         if (nInband > 2)
                         {
                             nInband -= 2;
-                            PORT_XTRA_TRACE("they say: %-4s %s (+%d)", _telnetCommandStr(inband[0]), _telnetOptionStr(inband[1]), nInband - 2);
+                            PORT_XTRA_TRACE("they say: %-4s %s (+%d)", _telnetCommandStr(port, inband[0]), _telnetOptionStr(port, inband[1]), nInband - 2);
                             if (inband[1] == TELNET_OPTION_COM_PORT_OPTION)
                             {
-                                PORT_TRACE("inband CPCO %s %d (0x%02x)", _telnetCpcoStr(inband[2]), inband[3], inband[3]);
+                                PORT_TRACE("inband CPCO %s %d (0x%02x)", _telnetCpcoStr(port, inband[2]), inband[3], inband[3]);
                             }
                         }
                         // else: inband[] overflow, discard
@@ -1292,7 +1288,7 @@ static bool _portOpenTelnet(PORT_t *port)
         buf[(ix * 3) + 0] = TELNET_IAC;
         buf[(ix * 3) + 1] = telnetOptions[ix].command;
         buf[(ix * 3) + 2] = telnetOptions[ix].option;
-        PORT_XTRA_TRACE("we offer: %-4s %s", _telnetCommandStr(telnetOptions[ix].command), _telnetOptionStr(telnetOptions[ix].option));
+        PORT_XTRA_TRACE("we offer: %-4s %s", _telnetCommandStr(port, telnetOptions[ix].command), _telnetOptionStr(port, telnetOptions[ix].option));
     }
     if (!_portWriteTcp(port, buf, 3 * NUMOF(telnetOptions)))
     {
@@ -1331,8 +1327,8 @@ static bool _portOpenTelnet(PORT_t *port)
         happy = true;
         for (int ix = 0; ix < NUMOF(telnetOptions); ix++)
         {
-            PORT_XTRA_TRACE("%d %-4s %-20s %s", ix, _telnetCommandStr(telnetOptions[ix].command),
-                _telnetOptionStr(telnetOptions[ix].option), telnetOptions[ix].agree ? ":-)" : ":-(");
+            PORT_XTRA_TRACE("%d %-4s %-20s %s", ix, _telnetCommandStr(port, telnetOptions[ix].command),
+                _telnetOptionStr(port, telnetOptions[ix].option), telnetOptions[ix].agree ? ":-)" : ":-(");
             if (!telnetOptions[ix].agree)
             {
                 happy = false;
@@ -1354,8 +1350,8 @@ static bool _portOpenTelnet(PORT_t *port)
         {
             if (!telnetOptions[ix].agree)
             {
-                PORT_DEBUG("Not agreeing on: %s %s", _telnetCommandStr(telnetOptions[ix].command),
-                _telnetOptionStr(telnetOptions[ix].option));
+                PORT_DEBUG("Not agreeing on: %s %s", _telnetCommandStr(port, telnetOptions[ix].command),
+                _telnetOptionStr(port, telnetOptions[ix].option));
             }
         }
         _portCloseTcp(port);

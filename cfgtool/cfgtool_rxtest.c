@@ -18,10 +18,11 @@
 #include <stddef.h>
 #include <signal.h>
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_rx.h"
 #include "ff_ubx.h"
+#include "ff_epoch.h"
 
 #include "cfgtool_rxtest.h"
 
@@ -120,6 +121,12 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
     signal(SIGTERM, _sigHandler);
     NOT_WIN( signal(SIGHUP, _sigHandler) );
 
+    const uint32_t tOffs = TIME() - timeOfDay(); // Offset between wall clock and parser time reference
+
+    EPOCH_t coll;
+    EPOCH_t epoch;
+    epochInit(&coll);
+
     PRINT("Dumping received data...");
     while (!gAbort)
     {
@@ -127,10 +134,13 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL)
         {
-            const uint32_t latency = timeOfDay() % 1000; // relative to wallclock...
-            (void)latency;
+            const uint32_t latency = (msg->ts - tOffs) % 1000; // Relative to wall clock top of second
             nMsgs++;
             sMsgs += msg->size;
+            if (epochCollect(&coll, msg, &epoch))
+            {
+                ioOutputStr("epoch %4u, %s\n", epoch.seq, epoch.str);
+            }
             const char *prot = "?";
             switch (msg->type)
             {
@@ -155,13 +165,13 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
                     sGarb += msg->size;
                     break;
             }
-            addOutputStr("message %4u, dt %4u, size %4d, %-8s %-20s %s\n",
+            ioOutputStr("message %4u, dt %4u, size %4d, %-8s %-20s %s\n",
                 msg->seq, latency, msg->size, prot, msg->name, msg->info != NULL ? msg->info : "n/a");
             if (extraInfo)
             {
-                addOutputHexdump(msg->data, msg->size);
+                ioAddOutputHexdump(msg->data, msg->size);
             }
-            if (!writeOutput(nMsgs == 1 ? false : true))
+            if (!ioWriteOutput(nMsgs == 1 ? false : true))
             {
                 break;
             }
@@ -173,12 +183,12 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
         }
     }
 
-    addOutputStr("stats UBX      count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats NMEA     count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
-    bool res = writeOutput(true);
+    ioOutputStr("stats UBX      count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NMEA     count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    bool res = ioWriteOutput(true);
 
     rxClose(rx);
 

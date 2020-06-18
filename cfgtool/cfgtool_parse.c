@@ -18,7 +18,7 @@
 #include <stddef.h>
 #include <signal.h>
 
-#include "cfgtool.h"
+#include "cfgtool_util.h"
 
 #include "ff_ubx.h"
 #include "ff_parser.h"
@@ -74,7 +74,7 @@ int parseRun(const bool extraInfo)
     while (!gAbort)
     {
         uint8_t buf[250];
-        const int num = readInput(buf, sizeof(buf));
+        const int num = ioReadInput(buf, sizeof(buf));
         if (num < 0) // eof
         {
             break;
@@ -92,7 +92,7 @@ int parseRun(const bool extraInfo)
             nMsgs++;
             sMsgs += msg.size;
             const char *prot = "?";
-            addOutputStr("message %4u, size %4d, ", msg.seq, msg.size);
+            ioOutputStr("message %4u, size %4d, ", msg.seq, msg.size);
             switch (msg.type)
             {
                 case PARSER_MSGTYPE_UBX:
@@ -116,26 +116,26 @@ int parseRun(const bool extraInfo)
                     sGarb += msg.size;
                     break;
             }
-            addOutputStr("message %4u, size %4d, %-8s %-20s %s\n",
+            ioOutputStr("message %4u, size %4d, %-8s %-20s %s\n",
                 msg.seq, msg.size, prot, msg.name, msg.info != NULL ? msg.info : "n/a");
             if (extraInfo)
             {
-                addOutputHexdump(msg.data, msg.size);
+                ioAddOutputHexdump(msg.data, msg.size);
             }
-            if (!writeOutput(nMsgs == 1 ? false : true))
+            if (!ioWriteOutput(nMsgs == 1 ? false : true))
             {
                 break;
             }
         }
     }
 
-    addOutputStr("stats UBX      count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats NMEA     count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
-    addOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    ioOutputStr("stats UBX      count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NMEA     count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
 
-    return writeOutput(true) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
+    return ioWriteOutput(true) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 
 /* ********************************************************************************************** */

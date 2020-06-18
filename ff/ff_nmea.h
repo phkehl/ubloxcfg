@@ -1,4 +1,4 @@
-// flipflip's UBX protocol stuff
+// flipflip's NMEA protocol stuff
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
@@ -14,16 +14,26 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include <string.h>
-//#include <stddef.h>
-//#include <stdio.h>
+#ifndef __FF_NMEA_H__
+#define __FF_NMEA_H__
 
-#include "ff_stuff.h"
-#include "ff_thing.h"
+#include <stdint.h>
+#include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
+#define NMEA_PREAMBLE  '$'
 
+bool nmeaMessageName(char *name, const int size, const char *msg);
+
+bool nmeaMessageInfo(char *info, const int size, const char *msg);
 
 /* ********************************************************************************************** */
-// eof
+#ifdef __cplusplus
+}
+#endif
+#endif // __FF_NMEA_H__

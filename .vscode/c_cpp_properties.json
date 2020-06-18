@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [ "${workspaceFolder}/**", "${workspaceFolder}/3rdparty/**", "/usr/include/SDL2" ],
+            "browse": {"path": ["${workspaceFolder}/**", "${workspaceFolder}/3rdparty/**", "/usr/include/SDL2" ]},
+            "forcedInclude": [],
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "defines": [ ]
+        },
+        {
+            "name": "Windoof64 cross-compile",
+            "includePath": [ "${workspaceFolder}/**", "${workspaceFolder}/3rdparty/**", "/usr/include/SDL2" ],
+            "browse": {"path": ["${workspaceFolder}/**", "${workspaceFolder}/3rdparty/**", "/usr/include/SDL2" ]},
+            "forcedInclude": [],
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/x86_64-w64-mingw32-gcc",
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "defines": [ ]
+        }
+    ],
+    "version": 4
+}

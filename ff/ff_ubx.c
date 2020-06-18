@@ -337,7 +337,7 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
 
 /* ********************************************************************************************** */
 
-static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int msgSize, const int iTowOffs);
 static int _strUbxNavPvt(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
@@ -372,23 +372,25 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                 case UBX_NAV_CLOCK_MSGID:
                 case UBX_NAV_DOP_MSGID:
                 case UBX_NAV_POSECEF_MSGID:
-                case UBX_NAV_HPPOSECEF_MSGID:
                 case UBX_NAV_POSLLH_MSGID:
-                case UBX_NAV_HPPOSLLH_MSGID:
-                case UBX_NAV_RELPOSNED_MSGID:
                 case UBX_NAV_VELECEF_MSGID:
                 case UBX_NAV_VELNED_MSGID:
-                case UBX_NAV_SVIN_MSGID:
                 case UBX_NAV_EOE_MSGID:
                 case UBX_NAV_GEOFENCE_MSGID:
-                case UBX_NAV_ODO_MSGID:
                 case UBX_NAV_TIMEUTC_MSGID:
                 case UBX_NAV_TIMELS_MSGID:
                 case UBX_NAV_TIMEGPS_MSGID:
                 case UBX_NAV_TIMEGLO_MSGID:
                 case UBX_NAV_TIMEBDS_MSGID:
                 case UBX_NAV_TIMEGAL_MSGID:
-                    len = _strUbxNav(info, size, msg, msgSize);
+                    len = _strUbxNav(info, size, msg, msgSize, 0);
+                    break;
+                case UBX_NAV_SVIN_MSGID:
+                case UBX_NAV_ODO_MSGID:
+                case UBX_NAV_HPPOSLLH_MSGID:
+                case UBX_NAV_HPPOSECEF_MSGID:
+                case UBX_NAV_RELPOSNED_MSGID:
+                    len = _strUbxNav(info, size, msg, msgSize, 4);
                     break;
                 default:
                     break;
@@ -422,14 +424,14 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
 
 #define F(field, flag) ( ((field) & (flag)) == (flag) )
 
-static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int msgSize)
+static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int msgSize, const int iTowOffs)
 {
-    if (msgSize < (UBX_FRAME_SIZE + (int)sizeof(uint32_t)))
+    if (msgSize < (UBX_FRAME_SIZE + iTowOffs + (int)sizeof(uint32_t)))
     {
         return 0;
     }
     uint32_t iTOW;
-    memcpy(&iTOW, &msg[UBX_HEAD_SIZE], sizeof(iTOW));
+    memcpy(&iTOW, &msg[UBX_HEAD_SIZE + iTowOffs], sizeof(iTOW));
     const int n = snprintf(info, size, "%010.3f", (double)iTOW * 1e-3);
     return n;
 }
@@ -449,7 +451,7 @@ static int _strUbxNavPvt(char *info, const int size, const uint8_t *msg, const i
         sec -= 1;
         msec = 1000 + msec;
     }
-    int carrSoln = UBX_NAV_PVT_V1_FLAGS_CARRSOLN_GET(pvt.flags);
+    const int carrSoln = UBX_NAV_PVT_V1_FLAGS_CARRSOLN_GET(pvt.flags);
     const char * const fixTypes[] = { "nofix", "dr", "2D", "3D", "3D+DR", "time" };
     const int n = snprintf(info, size,
         "%010.3f"

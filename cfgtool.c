@@ -26,6 +26,7 @@
 #include "ff_debug.h"
 #include "ff_stuff.h"
 
+#include "cfgtool_util.h"
 #include "cfgtool_cfg2ubx.h"
 #include "cfgtool_rx2cfg.h"
 #include "cfgtool_cfg2rx.h"
@@ -34,11 +35,9 @@
 #include "cfgtool_cfginfo.h"
 #include "cfgtool_parse.h"
 #include "cfgtool_reset.h"
-#include "cfgtool.h"
+#include "config.h"
 
 /* ********************************************************************************************** */
-
-#define VERSION "vX.X"
 
 typedef struct CMD_s
 {
@@ -55,13 +54,12 @@ typedef struct CMD_s
 
 } CMD_t;
 
-typedef struct STATE_s
+typedef struct ARGS_s
 {
     const CMD_t *cmd;
 
     const char  *inName;
     FILE        *inFile;
-    int          inLineNr;
 
     const char  *outName;
     FILE        *outFile;
@@ -74,22 +72,22 @@ typedef struct STATE_s
     bool         extraInfo;
     bool         applyConfig;
 
-} STATE_t;
+} ARGS_t;
 
-static STATE_t gState;
+static ARGS_t gArgs;
 
-static int rx2cfg(void)  { return rx2cfgRun( gState.rxPort, gState.cfgLayer, gState.useUnknown); }
-static int rx2list(void) { return rx2listRun(gState.rxPort, gState.cfgLayer, gState.useUnknown); }
-static int cfg2rx(void)  { return cfg2rxRun( gState.rxPort, gState.cfgLayer, gState.resetType, gState.applyConfig); }
-static int cfg2ubx(void) { return cfg2ubxRun(gState.cfgLayer, gState.extraInfo); }
-static int cfg2hex(void) { return cfg2hexRun(gState.cfgLayer, gState.extraInfo); }
-static int cfg2c(void)   { return cfg2cRun(  gState.cfgLayer, gState.extraInfo); }
+static int rx2cfg(void)  { return rx2cfgRun( gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown); }
+static int rx2list(void) { return rx2listRun(gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown); }
+static int cfg2rx(void)  { return cfg2rxRun( gArgs.rxPort, gArgs.cfgLayer, gArgs.resetType, gArgs.applyConfig); }
+static int cfg2ubx(void) { return cfg2ubxRun(gArgs.cfgLayer, gArgs.extraInfo); }
+static int cfg2hex(void) { return cfg2hexRun(gArgs.cfgLayer, gArgs.extraInfo); }
+static int cfg2c(void)   { return cfg2cRun(  gArgs.cfgLayer, gArgs.extraInfo); }
 static int uc2cfg(void)  { return uc2cfgRun(); }
 static int cfginfo(void) { return cfginfoRun(); }
-static int rxtest(void)  { return rxtestRun( gState.rxPort, gState.extraInfo); }
-static int rxraw(void)   { return rxrawRun(  gState.rxPort, gState.extraInfo); }
-static int parse(void)   { return parseRun(  gState.extraInfo); }
-static int reset(void)   { return resetRun(  gState.rxPort, gState.resetType); }
+static int rxtest(void)  { return rxtestRun( gArgs.rxPort, gArgs.extraInfo); }
+static int rxraw(void)   { return rxrawRun(  gArgs.rxPort, gArgs.extraInfo); }
+static int parse(void)   { return parseRun(  gArgs.extraInfo); }
+static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
 
 const CMD_t kCmds[] =
 {
@@ -123,7 +121,7 @@ const CMD_t kCmds[] =
     { .name = "rxraw",   .info = "Prints any data received on port",                           .help = rxrawHelp,   .run = rxraw,
       .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false },
 
-    { .name = "parse",   .info = "Parse file and outputs message frames",                      .help = parseHelp,   .run = parse,
+    { .name = "parse",   .info = "Parse file and output message frames",                       .help = parseHelp,   .run = parse,
       .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false },
 
     { .name = "reset",   .info = "Reset receiver",                                             .help = resetHelp,   .run = reset,
@@ -132,7 +130,7 @@ const CMD_t kCmds[] =
 
 const char * const kHelpStr = 
     // -----------------------------------------------------------------------------
-    "cfgtool "VERSION" -- u-blox 9 configuration interface tool\n"
+    "cfgtool "CONFIG_VERSION" -- u-blox 9 configuration interface tool\n"
     "\n"
     "Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
     "https://oinkzwurgl.org/hacking/ubloxcfg/\n"
@@ -185,7 +183,7 @@ const char * const kLicenseHelp =
     "    more details.\n"
     "\n"
     "    You should have received a copy of the GNU General Public License along with\n"
-    "    this program. If not, see <https://www.gnu.org/licenses/>.\n"
+    "    this program. If not, see https://www.gnu.org/licenses/.\n"
     "\n"
     "Third-party code:\n"
     "\n"
@@ -259,7 +257,7 @@ const char * const kGreeting =
     "Happy hacking! :-)\n"
     "\n";
 
-#define _ARG_STR(_flag_, _var_) \
+#define _ARGS_STR(_flag_, _var_) \
         else if (strcmp(_flag_, argv[argIx]) == 0) \
         { \
             if ((argIx + 1) < argc) \
@@ -273,10 +271,10 @@ const char * const kGreeting =
             } \
         }
 
-#define _ARG_BOOL(_flag_, _var_, _state_) \
+#define _ARGS_BOOL(_flag_, _var_, _ARGS_) \
         else if (strcmp(_flag_, argv[argIx]) == 0) \
         { \
-            _var_ = _state_; \
+            _var_ = _ARGS_; \
         }
 
 void printHelp(const bool full)
@@ -306,12 +304,17 @@ void printHelp(const bool full)
 
 int main(int argc, char **argv)
 {
-    memset(&gState, 0, sizeof(gState));
+    memset(&gArgs, 0, sizeof(gArgs));
 
-    FILE       *logFile      = stderr;
-    int         logVerbosity = 0;
-    bool        logColour    = isatty(fileno(logFile));
-    debugSetup(logFile, logVerbosity, logColour, NULL);
+    DEBUG_CFG_t debugCfg =
+    {
+        .level  = DEBUG_LEVEL_PRINT,
+        .colour = isatty(fileno(stderr)) == 1,
+        .mark   = NULL,
+        .func   = NULL,
+        .arg    = NULL,
+    };
+    debugSetup(&debugCfg);
 
     for (int argIx = 1; argIx < argc; argIx++)
     {
@@ -328,22 +331,22 @@ int main(int argc, char **argv)
         }
         else if (strcmp("-v", argv[argIx]) == 0)
         {
-            logVerbosity++;
+            debugCfg.level++;
         }
         else if (strcmp("-q", argv[argIx]) == 0)
         {
-            logVerbosity--;
+            debugCfg.level--;
         }
-        _ARG_STR("-i", gState.inName)
-        _ARG_STR("-o", gState.outName)
-        _ARG_STR("-p", gState.rxPort)
-        _ARG_STR("-l", gState.cfgLayer)
-        _ARG_STR("-r", gState.resetType)
-        _ARG_BOOL("-u", gState.useUnknown, true)
-        _ARG_BOOL("-x", gState.extraInfo, true)
-        _ARG_BOOL("-a", gState.applyConfig, true)
-        _ARG_BOOL("-y", gState.outOverwrite, true)
-        else if (gState.cmd != NULL)
+        _ARGS_STR("-i", gArgs.inName)
+        _ARGS_STR("-o", gArgs.outName)
+        _ARGS_STR("-p", gArgs.rxPort)
+        _ARGS_STR("-l", gArgs.cfgLayer)
+        _ARGS_STR("-r", gArgs.resetType)
+        _ARGS_BOOL("-u", gArgs.useUnknown, true)
+        _ARGS_BOOL("-x", gArgs.extraInfo, true)
+        _ARGS_BOOL("-a", gArgs.applyConfig, true)
+        _ARGS_BOOL("-y", gArgs.outOverwrite, true)
+        else if (gArgs.cmd != NULL)
         {
             argOk = false;
         }
@@ -353,11 +356,11 @@ int main(int argc, char **argv)
             {
                 if (strcmp(kCmds[ix].name, argv[argIx]) == 0)
                 {
-                    gState.cmd = &kCmds[ix];
+                    gArgs.cmd = &kCmds[ix];
                     break;
                 }
             }
-            if (gState.cmd == NULL)
+            if (gArgs.cmd == NULL)
             {
                 argOk = false;
             }
@@ -366,30 +369,34 @@ int main(int argc, char **argv)
         if (!argOk)
         {
             WARNING("Illegal argument '%s'!", argv[argIx]);
-            gState.cmd = NULL;
+            gArgs.cmd = NULL;
             break;
         }
     }
 
-    debugSetup(logFile, logVerbosity, logColour, gState.cmd != NULL ? gState.cmd->name : NULL);
+    if (gArgs.cmd != NULL)
+    {
+        debugCfg.mark = gArgs.cmd->name;
+        debugSetup(&debugCfg);
+    }
 
     bool res = true;
-    if (gState.cmd == NULL)
+    if (gArgs.cmd == NULL)
     {
         WARNING("Try '%s -h'.", argv[0]);
         res = false;;
     }
 
     // Open input file
-    if (res && gState.cmd->need_i)
+    if (res && gArgs.cmd->need_i)
     {
-        if ( (gState.inName == NULL) || ((gState.inName[0] == '-') && (gState.inName[1] == '\0')) )
+        if ( (gArgs.inName == NULL) || ((gArgs.inName[0] == '-') && (gArgs.inName[1] == '\0')) )
         {
-            gState.inName = "-";
-            gState.inFile = stdin;
+            gArgs.inName = "-";
+            gArgs.inFile = stdin;
             DEBUG("input from stdin");
 #ifndef _WIN32
-            int fd = fileno(gState.inFile);
+            int fd = fileno(gArgs.inFile);
             const int flags = fcntl(fd, F_GETFL, 0);
             int res = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
             if ( ((flags < 0)) || (res < 0) )
@@ -401,91 +408,93 @@ int main(int argc, char **argv)
             // FIXME: for windows?
 #endif
         }
-        else if (gState.inName[0] == '\0')
+        else if (gArgs.inName[0] == '\0')
         {
             WARNING("Need '-i <infile>' argument!");
             res = false;
         }
         else
         {
-            DEBUG("Opening input: %s", gState.inName);
-            gState.inFile = fopen(gState.inName, "r");
-            if (gState.inFile == NULL)
+            DEBUG("Opening input: %s", gArgs.inName);
+            gArgs.inFile = fopen(gArgs.inName, "r");
+            if (gArgs.inFile == NULL)
             {
                 WARNING("Failed opening '%s' for reading: %s!\n",
-                    gState.inName, strerror(errno));
+                    gArgs.inName, strerror(errno));
                 res = false;
             }
         }
     }
-    else if ( (gState.cmd != NULL) && !gState.cmd->need_i && (gState.inName != NULL) )
+    else if ( (gArgs.cmd != NULL) && !gArgs.cmd->need_i && (gArgs.inName != NULL) )
     {
-        WARNING("Illegal argument '-i %s'!", gState.inName);
+        WARNING("Illegal argument '-i %s'!", gArgs.inName);
         res = false;
     }
+    ioSetInput(gArgs.inName, gArgs.inFile);
 
     // Open output file
-    if (res && gState.cmd->need_o)
+    if (res && gArgs.cmd->need_o)
     {
-        if ( (gState.outName == NULL) || ((gState.outName[0] == '-') && (gState.outName[1] == '\0')) )
+        if ( (gArgs.outName == NULL) || ((gArgs.outName[0] == '-') && (gArgs.outName[1] == '\0')) )
         {
-            gState.outName = "-";
-            gState.outFile = stdout;
+            gArgs.outName = "-";
+            gArgs.outFile = stdout;
             DEBUG("output to stdout");
         }
-        else if (gState.outName[0] == '\0')
+        else if (gArgs.outName[0] == '\0')
         {
             WARNING("Need '-o <infile>' argument!");
             res = false;
         }
         else
         {
-            // Don't open now, writeOutput() will do that
+            // Don't open now, ioWriteOutput() will do that
         }
     }
+    ioSetOutput(gArgs.outName, gArgs.outFile, gArgs.outOverwrite);
 
     // Require -p arg?
-    if ( (gState.cmd != NULL) && gState.cmd->need_p )
+    if ( (gArgs.cmd != NULL) && gArgs.cmd->need_p )
     {
-        if ( (gState.rxPort == NULL) || (gState.rxPort[0] == '\0') )
+        if ( (gArgs.rxPort == NULL) || (gArgs.rxPort[0] == '\0') )
         {
             WARNING("Need '-p <port>' argument!");
             res = false;
         }
     }
-    else if ( (gState.cmd != NULL) && !gState.cmd->need_p && (gState.rxPort != NULL) )
+    else if ( (gArgs.cmd != NULL) && !gArgs.cmd->need_p && (gArgs.rxPort != NULL) )
     {
-        WARNING("Illegal argument '-p %s'!", gState.rxPort);
+        WARNING("Illegal argument '-p %s'!", gArgs.rxPort);
         res = false;
     }
 
     // Require -l arg?
-    if ((gState.cmd != NULL) && gState.cmd->need_l)
+    if ((gArgs.cmd != NULL) && gArgs.cmd->need_l)
     {
-        if ( (gState.cfgLayer == NULL) || (gState.cfgLayer[0] == '\0') )
+        if ( (gArgs.cfgLayer == NULL) || (gArgs.cfgLayer[0] == '\0') )
         {
             WARNING("Need '-l <layer(s)>' argument!");
             res = false;
         }
     }
-    else if ( (gState.cmd != NULL) && !gState.cmd->need_l && (gState.cfgLayer != NULL) )
+    else if ( (gArgs.cmd != NULL) && !gArgs.cmd->need_l && (gArgs.cfgLayer != NULL) )
     {
-        WARNING("Illegal argument '-l %s'!", gState.cfgLayer);
+        WARNING("Illegal argument '-l %s'!", gArgs.cfgLayer);
         res = false;
     }
 
     // Require -r arg?
-    if ((gState.cmd != NULL) && gState.cmd->need_r)
+    if ((gArgs.cmd != NULL) && gArgs.cmd->need_r)
     {
-        if ( (gState.resetType == NULL) || (gState.resetType[0] == '\0') )
+        if ( (gArgs.resetType == NULL) || (gArgs.resetType[0] == '\0') )
         {
             WARNING("Need '-r <mode>' argument!");
             res = false;
         }
     }
-    else if ( (gState.cmd != NULL) && !(gState.cmd->need_r || gState.cmd->may_r) && (gState.resetType != NULL) )
+    else if ( (gArgs.cmd != NULL) && !(gArgs.cmd->need_r || gArgs.cmd->may_r) && (gArgs.resetType != NULL) )
     {
-        WARNING("Illegal argument '-r %s'!", gState.resetType);
+        WARNING("Illegal argument '-r %s'!", gArgs.resetType);
         res = false;
     }
 
@@ -497,255 +506,10 @@ int main(int argc, char **argv)
 
     // Execute
     DEBUG("args: inName=%s outName=%s rxPort=%s cfgLayer=%s useUnknown=%d",
-        gState.inName, gState.outName, gState.rxPort, gState.cfgLayer, gState.useUnknown);
-    const int exitCode = gState.cmd->run();
+        gArgs.inName, gArgs.outName, gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown);
+    const int exitCode = gArgs.cmd->run();
 
     return exitCode;
-}
-
-/* ********************************************************************************************** */
-
-#define INPUT_MAX_LINE_LEN 2000
-
-LINE_t *getNextInputLine(void)
-{
-    static char line[INPUT_MAX_LINE_LEN];
-    static LINE_t resLine;
-    resLine.line = NULL;
-    resLine.lineLen = 0;
-    bool res = false;
-    // get next useful line from input
-    while (fgets(line, sizeof(line), gState.inFile) != NULL)
-    {
-        gState.inLineNr++;
-        char *pLine = line;
-
-        // remove comments
-        char *comment = strchr(pLine, '#');
-        if (comment != NULL)
-        {
-            *comment = '\0';
-        }
-
-        // remove leading space
-        while (isspace(*pLine) != 0)
-        {
-            pLine++;
-        }
-
-        // all whitespace?
-        if (*pLine == '\0')
-        {
-            continue;
-        }
-
-        // remove trailing whitespace
-        int inLineLen = strlen(pLine);
-        char *pEnd = pLine + inLineLen - 1;
-        while( (pEnd > pLine) && (isspace(*pEnd) != 0) )
-        {
-            pEnd--;
-            inLineLen--;
-        }
-        pEnd[1] = '\0';
-
-        resLine.line    = pLine;
-        resLine.lineLen = inLineLen;
-        resLine.lineNr  = gState.inLineNr;
-        resLine.file    = gState.inName;
-        res = true;
-        break;
-    }
-
-    return res ? &resLine : NULL;
-}
-
-int readInput(uint8_t *data, const int size)
-{
-    int res = 0;
-    if ( (data != NULL) && (size > 0) )
-    {
-        if (feof(gState.inFile) != 0) // FIXME: why does this flag on /dev/tty... devices?
-        {
-            res = -1;
-        }
-        else
-        {
-             // TODO: only read as much as is currently available
-            res = fread(data, 1, size, gState.inFile);
-        }
-    }
-    return res;
-}
-
-
-static char gOutputBuf[1024 * 1024] = { 0 };
-static int gOutputBufSize = 0;
-
-void addOutputStr(const char *fmt, ...)
-{
-    const int totSize = sizeof(gOutputBuf);
-    if (gOutputBufSize >= totSize)
-    {
-        return;
-    }
-
-    const int remSize = totSize - gOutputBufSize;
-
-    va_list args;
-    va_start(args, fmt);
-    const int writeSize = vsnprintf(&gOutputBuf[gOutputBufSize], remSize, fmt, args);
-    va_end(args);
-
-    if (writeSize > remSize)
-    {
-        gOutputBufSize = totSize;
-    }
-    else
-    {
-        gOutputBufSize += writeSize;
-    }
-}
-
-void addOutputBin(const uint8_t *data, const int size)
-{
-    const int totSize = sizeof(gOutputBuf);
-    if (gOutputBufSize >= totSize)
-    {
-        return;
-    }
-
-    const int remSize = totSize - gOutputBufSize;
-    if (remSize < size)
-    {
-        return;
-    }
-
-    memcpy(&gOutputBuf[gOutputBufSize], data, size);
-    gOutputBufSize += size;
-}
-
-void addOutputHex(const uint8_t *data, const int size, const int wordsPerLine)
-{
-    const int bytesPerLine = wordsPerLine * 4;
-    for (int ix = 0; ix < size; ix++)
-    {
-        const int pos = ix % bytesPerLine;
-        if (pos > 0)
-        {
-            addOutputStr((pos % 4) == 0 ? "  " : " ");
-        }
-        addOutputStr("%02"PRIx8, data[ix]);
-        if ( (pos == (bytesPerLine - 1)) || (ix == (size - 1)) )
-        {
-            addOutputStr("\n");
-        }
-    }
-}
-
-void addOutputC(const uint8_t *data, const int size, const int wordsPerLine, const char *indent)
-{
-    const int bytesPerLine = wordsPerLine * 4;
-    for (int ix = 0; ix < size; ix++)
-    {
-        const int pos = ix % bytesPerLine;
-        if (pos == 0)
-        {
-            addOutputStr("%s", indent);
-        }
-        if (pos > 0)
-        {
-            addOutputStr((pos % 4) == 0 ? "  " : " ");
-        }
-        addOutputStr("0x%02"PRIx8"%s", data[ix], (ix + 1) == size ? "" : ",");
-        if ( (pos == (bytesPerLine - 1)) || (ix == (size - 1)) )
-        {
-            addOutputStr("\n");
-        }
-    }
-}
-
-void addOutputHexdump(const uint8_t *data, const int size)
-{
-    const char i2hex[] = "0123456789abcdef";
-    const uint8_t *pData = data;
-    for (int ix = 0; ix < size; )
-    {
-        char str[70];
-        memset(str, ' ', sizeof(str));
-        str[50] = '|';
-        str[67] = '|';
-        str[68] = '\0';
-        for (int ix2 = 0; (ix2 < 16) && ((ix + ix2) < size); ix2++)
-        {
-            //           1         2         3         4         5         6
-            // 012345678901234567890123456789012345678901234567890123456789012345678
-            // xx xx xx xx xx xx xx xx  xx xx xx xx xx xx xx xx  |................|\0
-            // 0  1  2  3  4  5  6  7   8  9  10 11 12 13 14 15
-            const uint8_t c = pData[ix + ix2];
-            int pos1 = 3 * ix2;
-            int pos2 = 51 + ix2;
-            if (ix2 > 7)
-            {
-                   pos1++;
-            }
-            str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
-            str[pos1 + 1] = i2hex[  c       & 0xf ];
-
-            str[pos2] = isprint((int)c) ? c : '.';
-        }
-        addOutputStr("0x%04"PRIx8" %05d  %s\n", ix, ix, str);
-        ix += 16;
-    }
-}
-
-bool writeOutput(const bool append)
-{
-    const int totSize = sizeof(gOutputBuf);
-    if (gOutputBufSize >= totSize)
-    {
-        WARNING("Too much output data, not writing to '%s'!", gState.outName);
-        return false;
-    }
-
-    const char *failStr = NULL;
-    bool res = true;
-    if (gState.outFile != stdout)
-    {
-        if (!append && !gState.outOverwrite && (access(gState.outName, F_OK) == 0))
-        {
-            failStr = "File already exists";
-            res = false;
-        }
-
-        if (res)
-        {
-            gState.outFile = fopen(gState.outName, append ? "a" : "w");
-            if (gState.outFile == NULL)
-            {
-                failStr = strerror(errno);
-                res = false;
-            }
-        }
-    }
-
-    if (res)
-    {
-        if (!append)
-        {
-            PRINT("Writing output to '%s'.", gState.outName);
-        }
-        DEBUG("Writing output to '%s' (%d bytes).", gState.outName, gOutputBufSize);
-        res = (int)fwrite(gOutputBuf, 1, gOutputBufSize, gState.outFile) == gOutputBufSize;
-    }
-
-    gOutputBufSize = 0;
-
-    if (!res)
-    {
-        WARNING("Failed writing '%s': %s", gState.outName, failStr == NULL ? "Unknown error" : failStr);
-    }
-    return res;
 }
 
 /* ********************************************************************************************** */

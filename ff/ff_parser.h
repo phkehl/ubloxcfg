@@ -20,11 +20,15 @@
 // spurious data, incorrect messages, etc.) are output as GARBAGE type messages. GARBAGE messages
 // are not guaranteed to be combined and can be split arbitrarily (into several GARBAGE messages).
 
+#ifndef __FF_PARSER_H__
+#define __FF_PARSER_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __FF_PARSER_H__
-#define __FF_PARSER_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
@@ -65,6 +69,7 @@ typedef struct PARSER_MSG_s
     const uint8_t   *data;
     int              size;
     uint32_t         seq;
+    uint32_t         ts;
     const char      *name;
     const char      *info; // may be NULL
 } PARSER_MSG_t;
@@ -76,4 +81,7 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg);
 const char *parserMsgtypeName(const PARSER_MSGTYPE_t type);
 
 /* ********************************************************************************************** */
+#ifdef __cplusplus
+}
+#endif
 #endif // __FF_PARSER_H__

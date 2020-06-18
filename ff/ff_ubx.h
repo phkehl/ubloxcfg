@@ -14,11 +14,15 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#ifndef __FF_UBX_H__
+#define __FF_UBX_H__
+
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __FF_UBX_H__
-#define __FF_UBX_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* ********************************************************************************************** */
 
@@ -489,7 +493,7 @@ typedef struct UBX_NAV_PVT_V1_GROUP0_s
 #define UBX_NAV_PVT_V1_FLAGS3_INVALIDLLH     0x01
 #define UBX_NAV_PVT_V1_FIXTYPE_NOFIX         0
 #define UBX_NAV_PVT_V1_FIXTYPE_DRONLY        1
-#define UBX_NAV_PVT_V1_FIXTYPE_D             2
+#define UBX_NAV_PVT_V1_FIXTYPE_2D            2
 #define UBX_NAV_PVT_V1_FIXTYPE_3D            3
 #define UBX_NAV_PVT_V1_FIXTYPE_3D_DR         4
 #define UBX_NAV_PVT_V1_FIXTYPE_TIME          5
@@ -499,6 +503,7 @@ typedef struct UBX_NAV_PVT_V1_GROUP0_s
 #define UBX_NAV_PVT_V1_HEIGHT_SCALE          1e-3
 #define UBX_NAV_PVT_V1_HACC_SCALE            1e-3
 #define UBX_NAV_PVT_V1_VACC_SCALE            1e-3
+#define UBX_NAV_PVT_V1_TACC_SCALE            1e-9
 
 #define UBX_NAV_PVT_V1_SIZE             (sizeof(UBX_NAV_PVT_V1_GROUP0_t) + UBX_FRAME_SIZE)
 
@@ -610,4 +615,7 @@ const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId);
 const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId);
 
 /* ********************************************************************************************** */
+#ifdef __cplusplus
+}
+#endif
 #endif // __FF_UBX_H__
