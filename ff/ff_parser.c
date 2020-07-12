@@ -206,6 +206,7 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
     msg->data = parser->tmp;
     msg->seq  = parser->msg;
     msg->ts   = now;
+    msg->src  = PARSER_MSGSRC_UNKN;
     msg->name = "GARBAGE";
     msg->info = NULL;
 
@@ -239,6 +240,7 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     msg->data = parser->tmp;
     msg->seq  = parser->msg;
     msg->ts   = now;
+    msg->src  = PARSER_MSGSRC_UNKN;
     parser->name[0] = '\0';
     parser->info[0] = '\0';
     switch (msgType)

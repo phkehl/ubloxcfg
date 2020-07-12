@@ -58,6 +58,10 @@
 
 static const char *portSpecStr(PORT_t *port)
 {
+    if (port == NULL)
+    {
+        return "?";
+    }
     port->tmp[0] = '\0';
     switch (port->type)
     {
@@ -286,9 +290,9 @@ void portClose(PORT_t *port)
                 _portCloseTelnet(port);
                 break;
         }
+        PORT_DEBUG("closed (rx=%u, tx=%u)", port->numRx, port->numTx);
+        port->portOk = false;
     }
-    PORT_DEBUG("closed (rx=%u, tx=%u)", port->numRx, port->numTx);
-    port->portOk = false;
 }
 
 // -------------------------------------------------------------------------------------------------

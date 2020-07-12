@@ -56,6 +56,9 @@ typedef struct RX_s
     bool         verbose;
     bool         autobaud;
     bool         detect;
+    void       (*msgcb)(PARSER_MSG_t *, void *arg);
+    void        *cbarg;
+    bool         abort;
 } RX_t;
 
 static bool _rxOpenDetect(RX_t *rx);
@@ -90,6 +93,8 @@ RX_t *rxOpen(const char *port, const RX_ARGS_t *args)
         {
             snprintf(rx->name, sizeof(rx->name), "rx%d", instCnt);
         }
+        rx->msgcb = rxArgs->msgcb;
+        rx->cbarg = rxArgs->cbarg;
         instCnt++;
     }
     RX_PRINT("Connecting to receiver at port %s", port);
@@ -124,6 +129,15 @@ RX_t *rxOpen(const char *port, const RX_ARGS_t *args)
 
 static bool _rxOpenDetect(RX_t *rx)
 {
+    // Quick first try, which may just work..
+    char verStr[100];
+    if (rxGetVerStr(rx, verStr, sizeof(verStr)))
+    {
+        RX_PRINT("Receiver detected: %s", verStr);
+        return true;
+    }
+
+    // Try different baudrates
     if (rx->autobaud)
     {
         if (!rxAutobaud(rx))
@@ -137,9 +151,9 @@ static bool _rxOpenDetect(RX_t *rx)
         }
     }
 
+    // And check again
     if (rx->detect)
     {
-        char verStr[100];
         if (!rxGetVerStr(rx, verStr, sizeof(verStr)))
         {
             RX_WARNING("Could not detect receiver!");
@@ -160,6 +174,33 @@ static bool _rxOpenDetect(RX_t *rx)
 
 // -------------------------------------------------------------------------------------------------
 
+static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *buf, const int size)
+{
+    if (rx->msgcb != NULL)
+    {
+        PARSER_t p;
+        parserInit(&p);
+        parserAdd(&p, buf, size);
+        PARSER_MSG_t msg;
+        if (parserProcess(&p, &msg))
+        {
+            msg.src = src;
+            rx->msgcb(&msg, rx->cbarg);
+        }
+        //else // should not happen, parserProcess() should always return at least GARBAGE
+    }
+}
+
+static void _rxCallbackMsg(RX_t *rx, PARSER_MSG_t *msg)
+{
+    if (rx->msgcb != NULL)
+    {
+        rx->msgcb(msg, rx->cbarg);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
 void rxClose(RX_t *rx)
 {
     if (rx != NULL)
@@ -170,10 +211,19 @@ void rxClose(RX_t *rx)
 
 // -------------------------------------------------------------------------------------------------
 
+void rxAbort(RX_t *rx)
+{
+    RX_WARNING("Abort!");
+    rx->abort = true;
+}
+
+// -------------------------------------------------------------------------------------------------
+
 bool rxSend(RX_t *rx, const uint8_t *data, const int size)
 {
     if (rx != NULL)
     {
+        _rxCallbackData(rx, PARSER_MSGSRC_TO_RX, data, size);
         return portWrite(&rx->port, data, size);
     }
     return false;
@@ -218,6 +268,7 @@ PARSER_MSG_t *rxGetNextMessage(RX_t *rx)
         if (parserProcess(&rx->parser, &rx->msg))
         {
             msg = &rx->msg;
+            msg->src = PARSER_MSGSRC_FROM_RX;
         }
     }
     return msg;
@@ -232,6 +283,10 @@ PARSER_MSG_t *rxGetNextMessageTimeout(RX_t *rx, const uint32_t timeout)
         const uint32_t t1 = t0 + timeout;
         while (TIME() < t1)
         {
+            if (rx->abort)
+            {
+                break;
+            }
             msg = rxGetNextMessage(rx);
             if (msg != NULL)
             {
@@ -242,8 +297,6 @@ PARSER_MSG_t *rxGetNextMessageTimeout(RX_t *rx, const uint32_t timeout)
     }
     return msg;
 }
-
-
 
 /* ********************************************************************************************** */
 
@@ -272,7 +325,7 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
         RX_DEBUG("poll %s, size %d, timeout=%d, attempt %d/%d.", pollName, pollSize, timeout, attempt, retries);
 
         // Send request
-        if (!portWrite(&rx->port, rx->pollBuf, pollSize))
+        if (!rxSend(rx, rx->pollBuf, pollSize))
         {
             return NULL;
         }
@@ -282,6 +335,10 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
         const uint32_t t1 = t0 + timeout;
         while ( (res == NULL) && (TIME() < t1) )
         {
+            if (rx->abort)
+            {
+                break;
+            }
             PARSER_MSG_t *msg = rxGetNextMessage(rx);
             if (msg == NULL)
             {
@@ -296,6 +353,10 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
                 RX_DEBUG("poll answer %s, size=%d, dt=%u", msg->name, msg->size, TIME() - t0);
                 res = msg;
                 break;
+            }
+            else
+            {
+                _rxCallbackMsg(rx, msg);
             }
         }
 
@@ -323,7 +384,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
     const uint8_t clsId = UBX_CLSID(msg);
     const uint8_t msgId = UBX_MSGID(msg);
 
-    if (!portWrite(&rx->port, msg, size))
+    if (!rxSend(rx, msg, size))
     {
         return NULL;
     }
@@ -334,12 +395,17 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
     bool resp = false;
     while ( !resp && (TIME() < t1) )
     {
+        if (rx->abort)
+        {
+            break;
+        }
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg == NULL)
         {
             SLEEP(10);
             continue;
         }
+        _rxCallbackMsg(rx, msg);
         if ( (msg->type == PARSER_MSGTYPE_UBX) && (UBX_CLSID(msg->data) == UBX_ACK_CLSID) )
         {
             const uint8_t respMsgId = UBX_MSGID(msg->data);
@@ -376,76 +442,6 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
 
 // -------------------------------------------------------------------------------------------------
 
-static bool ubxMonVerToVerStr(const PARSER_MSG_t *msg, char *str, const int size)
-{
-    if ( (msg == NULL) || (str == NULL) || (size < 2) ||
-         (UBX_CLSID(msg->data) != UBX_MON_CLSID) ||
-         (UBX_MSGID(msg->data) != UBX_MON_VER_MSGID) ||
-         (msg->size < (int)(UBX_FRAME_SIZE + sizeof(UBX_MON_VER_V0_GROUP0_t))) )
-    {
-        return false;
-    }
-
-    // swVersion: EXT CORE 1.00 (61ce84)
-    // hwVersion: 00190000
-    // extension: ROM BASE 0xDD3FE36C
-    // extension: FWVER=HPG 1.00
-    // extension: PROTVER=27.00
-    // extension: MOD=ZED-F9P
-    // extension: GPS;GLO;GAL;BDS
-    // extension: QZSS
-
-    UBX_MON_VER_V0_GROUP0_t gr0;
-    int offs = UBX_HEAD_SIZE;
-    memcpy(&gr0, &msg->data[offs], sizeof(gr0));
-    gr0.swVersion[sizeof(gr0.swVersion) - 1] = '\0';
-
-    char verStr[sizeof(gr0.swVersion)];
-    verStr[0] = '\0';
-    char modStr[sizeof(gr0.swVersion)];
-    modStr[0] = '\0';
-
-    offs += sizeof(gr0);
-    UBX_MON_VER_V0_GROUP1_t gr1;
-    while (offs <= (msg->size - 2 - (int)sizeof(gr1)))
-    {
-        memcpy(&gr1, &msg->data[offs], sizeof(gr1));
-        if ( (verStr[0] == '\0') && (strncmp("FWVER=", gr1.extension, 6) == 0) )
-        {
-            gr1.extension[sizeof(gr1.extension) - 1] = '\0';
-            strcat(verStr, &gr1.extension[6]);
-        }
-        else if ( (modStr[0] == '\0') && (strncmp("MOD=", gr1.extension, 4) == 0) )
-        {
-            gr1.extension[sizeof(gr1.extension) - 1] = '\0';
-            strcat(modStr, &gr1.extension[4]);
-        }
-        offs += sizeof(gr1);
-        if ( (verStr[0] != '\0') && (modStr[0] != '\0') )
-        {
-            break;
-        }
-    }
-    if (verStr[0] == '\0')
-    {
-        strcat(verStr, gr0.swVersion);
-    }
-
-    int res = 0;
-    if (modStr[0] != '\0')
-    {
-        res = snprintf(str, size, "%s (%s)", verStr, modStr);
-    }
-    else
-    {
-        res = snprintf(str, size, "%s", verStr);
-    }
-    return (res > 0) && (res < size);
-    return false;
-}
-
-// -------------------------------------------------------------------------------------------------
-
 bool rxGetVerStr(RX_t *rx, char *str, const int size)
 {
     if ( (rx == NULL) || (str == NULL) )
@@ -457,7 +453,8 @@ bool rxGetVerStr(RX_t *rx, char *str, const int size)
     PARSER_MSG_t *ubxMonVer = rxPollUbx(rx, &pollParam);
     if (ubxMonVer != NULL)
     {
-        return ubxMonVerToVerStr(ubxMonVer, str, size);
+        _rxCallbackMsg(rx, ubxMonVer);
+        return ubxMonVerToVerStr(str, size, ubxMonVer->data, ubxMonVer->size);
     }
     return false;
 }
@@ -516,6 +513,7 @@ bool rxAutobaud(RX_t *rx)
             ubxMonVer = rxPollUbx(rx, &pollParam);
             if (ubxMonVer != NULL)
             {
+                _rxCallbackMsg(rx, ubxMonVer);
                 baudrate = baudrates[ix];
                 break;
             }
@@ -541,6 +539,7 @@ bool rxAutobaud(RX_t *rx)
             ubxMonVer = rxPollUbx(rx, &pollParam);
             if (ubxMonVer != NULL)
             {
+                _rxCallbackMsg(rx, ubxMonVer);
                 baudrate = baudrates[ix];
                 break;
             }
@@ -550,7 +549,7 @@ bool rxAutobaud(RX_t *rx)
     if (baudrate != 0)
     {
         char verStr[100];
-        if (!ubxMonVerToVerStr(ubxMonVer, verStr, sizeof(verStr)))
+        if (!ubxMonVerToVerStr(verStr, sizeof(verStr), ubxMonVer->data, ubxMonVer->size))
         {
             verStr[0] = '?';
             verStr[1] = '\0';
@@ -576,6 +575,12 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     }
     switch (reset)
     {
+        case RX_RESET_SOFT:
+            RX_PRINT("Software resetting receiver");
+            break;
+        case RX_RESET_HARD:
+            RX_PRINT("Hardware resetting receiver");
+            break;
         case RX_RESET_HOT:
             RX_PRINT("Hotstarting receiver");
             break;
@@ -652,19 +657,31 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     // Reset
     UBX_CFG_RST_V0_GROUP0_t payload;
     payload.reserved = UBX_CFG_RST_V0_RESERVED;
+    bool reenumerate = true;
     switch (reset)
     {
+        case RX_RESET_SOFT:
+            payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_NONE;
+            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_SW;
+            break;
+        case RX_RESET_HARD:
+            payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_NONE;
+            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_HW_CONTROLLED;
+            break;
         case RX_RESET_HOT:
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_HOTSTART;
-            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_HW_FORCED;
+            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_GNSS;
+            reenumerate = false;
             break;
         case RX_RESET_WARM:
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_WARMSTART;
-            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_HW_FORCED;
+            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_GNSS;
+            reenumerate = false;
             break;
         case RX_RESET_COLD:
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_COLDSTART;
-            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_HW_FORCED;
+            payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_GNSS;
+            reenumerate = false;
             break;
         case RX_RESET_DEFAULT:
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_NONE;
@@ -695,53 +712,66 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
         msgSize, payload.navBbrMask, payload.resetMode);
 
     // Send the reset command...
-    if (!portWrite(&rx->port, msg, msgSize))
+    if (!rxSend(rx, msg, msgSize))
     {
         RX_WARNING("Failed sending reset command!");
         return false;
     }
-    // ...and disconnect immediately (free device) as the reset may cause a USB re-enumeration
-    portClose(&rx->port);
 
-    // ..and wait a bit for the reset to complete (and the USB device to disappear)
-    RX_DEBUG("Waiting for reset to complete...");
-    SLEEP(1009);
-
-    // Wait for device to show up (mainly for USB re-enumeration)
-    if (rx->port.type == PORT_TYPE_SER)
+    if (reenumerate)
     {
-        const uint32_t timeout = 5000;
-        const uint32_t t0 = TIME();
-        const uint32_t t1 = t0 + timeout;
-        RX_DEBUG("Wait for %s, timeout %u", rx->port.file, timeout);
-        while (TIME() < t1)
+        // ...and disconnect immediately (free device) as the reset may cause a USB re-enumeration
+        portClose(&rx->port);
+
+        // ..and wait a bit for the reset to complete (and the USB device to disappear)
+        RX_DEBUG("Waiting for reset to complete...");
+        SLEEP(1009);
+
+        // Wait for device to show up (mainly for USB re-enumeration)
+        if (rx->port.type == PORT_TYPE_SER)
         {
-            if (access(rx->port.file, F_OK) == 0)
+            const uint32_t timeout = 5000;
+            const uint32_t t0 = TIME();
+            const uint32_t t1 = t0 + timeout;
+            RX_DEBUG("Wait for %s, timeout %u", rx->port.file, timeout);
+            while (TIME() < t1)
             {
-                RX_DEBUG("%s available (dt=%u).", rx->port.file, TIME() - t0);
+                if (rx->abort)
+                {
+                    break;
+                }
+                if (access(rx->port.file, F_OK) == 0)
+                {
+                    RX_DEBUG("%s available (dt=%u).", rx->port.file, TIME() - t0);
+                    break;
+                }
+                SLEEP(101);
+            }
+            // portOpen() will complain in a useful way in case the device isn't present
+        }
+        if (rx->abort)
+        {
+            return false;
+        }
+
+        // The device should now be available again
+        int retries = 2;
+        bool portOk = false;
+        while (retries > 0)
+        {
+            if (portOpen(&rx->port))
+            {
+                portOk = true;
                 break;
             }
-            SLEEP(101);
+            SLEEP(1009);
+            retries--;
         }
-        // portOpen() will complain in a useful way in case the device isn't present
-    }
-
-    // The device should now be available again
-    int retries = 2;
-    bool portOk = false;
-    while (retries > 0)
-    {
-        if (portOpen(&rx->port))
+        if (!portOk)
         {
-            portOk = true;
-            break;
+            return false;
         }
-        SLEEP(1009);
-        retries--;
-    }
-    if (!portOk)
-    {
-        return false;
+
     }
 
     // Let's see if we can still talk to the receiver
@@ -752,6 +782,171 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     }
 
     return true;
+}
+
+/* ********************************************************************************************** */
+
+int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv)
+{
+    if ( (rx == NULL) || (keys == NULL) || (numKeys < 1) || (kv == NULL) || (maxKv < 1) )
+    {
+        return -1;
+    }
+
+    const char *layerName = ubloxcfg_layerName(layer);
+    RX_DEBUG("Polling receiver configuration for layer %s", layerName);
+
+    uint8_t pollLayer;
+    switch (layer)
+    {
+        case UBLOXCFG_LAYER_RAM:
+            pollLayer = UBX_CFG_VALGET_V0_LAYER_RAM;
+            break;
+        case UBLOXCFG_LAYER_BBR:
+            pollLayer = UBX_CFG_VALGET_V0_LAYER_BBR;
+            break;
+        case UBLOXCFG_LAYER_FLASH:
+            pollLayer = UBX_CFG_VALGET_V0_LAYER_FLASH;
+            break;
+        case UBLOXCFG_LAYER_DEFAULT:
+            pollLayer = UBX_CFG_VALGET_V0_LAYER_DEFAULT;
+            break;
+    }
+
+    uint32_t t0 = TIME();
+    bool done = false;
+    bool res = true;
+    int totNumKv = 0;
+    uint16_t position = 0;
+    while (!done)
+    {
+        if (rx->abort)
+        {
+            break;
+        }
+
+        // UBX-CFG-VALGET poll request payload
+        UBX_CFG_VALGET_V0_GROUP0_t pollHead =
+        {
+            .version  = UBX_CFG_VALGET_V0_VERSION,
+            .layer    = pollLayer,
+            .position = position
+        };
+        uint8_t pollPayload[UBX_CFG_VALGET_V0_MAX_SIZE];
+        memcpy(&pollPayload[0], &pollHead, sizeof(pollHead));
+        const int keysSize = numKeys * sizeof(uint32_t);
+        memcpy(&pollPayload[sizeof(pollHead)], keys, keysSize);
+
+        // Poll UBX-CFG-VALGET
+        RX_POLL_UBX_t pollParam =
+        {
+            .clsId = UBX_CFG_CLSID, .msgId = UBX_CFG_VALGET_MSGID,
+            .payload = pollPayload, .payloadSize = (sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + keysSize),
+            .retries = 1, .timeout = 2000,
+        };
+        PARSER_MSG_t *msg = rxPollUbx(rx, &pollParam);
+        if (msg == NULL)
+        {
+            RX_WARNING("No response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, layerName);
+            res = false;
+            break;
+        }
+
+        _rxCallbackMsg(rx, msg);
+
+        // No key-val pairs in data
+        if (msg->size < (int)(UBX_FRAME_SIZE + sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + 4 + 1))
+        {
+            // No data in this layer
+            if ( (position == 0) && ((layer == UBLOXCFG_LAYER_BBR) || (layer == UBLOXCFG_LAYER_FLASH)) )
+            {
+                break;
+            }
+            // No more data for this poll
+            else if (position > 0)
+            {
+                break;
+            }
+            // Unexpectedly no data for layer that must have data
+            else
+            {
+                RX_WARNING("Bad response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, layerName);
+                res = false;
+                break;
+            }
+
+            res = false;
+            break;
+        }
+
+        // Check result
+        UBX_CFG_VALGET_V1_GROUP0_t respHead;
+        memcpy(&respHead, &msg->data[UBX_HEAD_SIZE], sizeof(respHead));
+        if ( (respHead.version != UBX_CFG_VALGET_V1_VERSION) || (respHead.position != position) ||
+            (respHead.layer != pollLayer) )
+        {
+            RX_WARNING("Unexpected response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, layerName);
+            DEBUG_HEXDUMP(msg->data, msg->size, "version: %u %u, position: %u %u, layer: %u %u",
+                respHead.version, UBX_CFG_VALGET_V1_VERSION,
+                respHead.position, position, respHead.layer, layer);
+            res = false;
+            break;
+        }
+
+        // Add received data to list
+        int numKv = 0;
+        const int cfgDataSize = msg->size - UBX_FRAME_SIZE - sizeof(UBX_CFG_VALGET_V1_GROUP0_t);
+        if (cfgDataSize > 0)
+        {
+            if (!ubloxcfg_parseData(&msg->data[UBX_HEAD_SIZE + sizeof(UBX_CFG_VALGET_V1_GROUP0_t)],
+                cfgDataSize, &kv[totNumKv], UBX_CFG_VALGET_V1_MAX_KV, &numKv))
+            {
+                RX_WARNING("Bad config data in UBX-CFG-VALGET response (position=%u, layer=%s)!", position, layerName);
+                DEBUG_HEXDUMP(msg->data, msg->size, NULL);
+                res = false;
+                break;
+            }
+            totNumKv += numKv;
+        }
+
+        // Are we done?
+        if (numKv < UBX_CFG_VALGET_V1_MAX_KV)
+        {
+            done = true;
+        }
+        else
+        {
+            position += UBX_CFG_VALGET_V1_MAX_KV;
+        }
+
+        // Debug
+        RX_DEBUG("Received %d items from (position=%u, layer=%s, done=%s)",
+            numKv, position, layerName, done ? "yes" : "no");
+        if (isTRACE())
+        {
+            for (int ix = totNumKv - numKv; ix < totNumKv; ix++)
+            {
+                char str[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
+                if (ubloxcfg_stringifyKeyVal(str, sizeof(str), &kv[ix]))
+                {
+                    RX_TRACE("kv[%d]: %s", ix, str);
+                }
+            }
+        }
+
+        // Enough space left in list?
+        if ( (totNumKv + UBX_CFG_VALGET_V1_MAX_KV) > maxKv )
+        {
+            RX_WARNING("Too many config items (position=%u, layer=%s)!", position, layerName);
+            res = false;
+            break;
+        }
+
+    }
+    // while 64 left, not complete, ...
+    RX_DEBUG("Total %d items for layer %s (poll duration %ums), res=%d", totNumKv, layerName, TIME() - t0, res);
+
+    return res ? totNumKv : -1;
 }
 
 /* ********************************************************************************************** */

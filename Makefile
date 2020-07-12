@@ -33,27 +33,41 @@ DOXYGEN        := doxygen
 SED            := sed
 STRIP          := strip
 ZIP            := zip
+UNZIP          := unzip
 
 # Toolchain
 CC             := gcc
-CCWIN64        := x86_64-w64-mingw32-gcc
+CCWIN64        := x86_64-w64-mingw32-gcc-posix
+CXXWIN64       := x86_64-w64-mingw32-g++-posix
 CCWIN32        := i686-w64-mingw32-gcc
 CXX            := g++
-
-# Compilation flags
-INCFLAGS       := -I. -Iff -Icfgtool -Iubloxcfg -Igui -I3rdparty/stuff -Ibuild
-CFLAGS         := -g -std=gnu99   -Wall -Wextra -Wformat -Werror -Wpointer-arith -Wundef
-CXXFLAGS       := -g -std=gnu++11 -Wall -Wextra -Wformat -Werror -Wpointer-arith -Wundef
-
-# Build flags
-TOOLLDFLAGS    :=
-TOOLLDFLAGSWIN := -lpthread -lws2_32 -static
-GUILDFLAGS     := -lGL -ldl -lpthread $(shell sdl2-config --libs)
-TESTCFLAGS     := -std=c99 -pedantic -Wno-pedantic-ms-format
+SCANBUILD      := scan-build
 
 # Output and build directories
 OUTDIR         := output
 BUILDDIR       := build
+OBJDIR         := $(BUILDDIR)/obj
+OBJDIRWIN      := $(BUILDDIR)/obj_win
+
+# SDL binaries to build cfggui.exe
+SDL2WIN        := tmp/SDL2-2.0.12/x86_64-w64-mingw32
+#$(shell $(SDL2WIN)/bin/sdl2-config --prefix=$(SDL2WIN) --cflags)
+#$(shell $(SDL2WIN)/bin/sdl2-config --prefix=$(SDL2WIN) --libs)
+#$(shell $(SDL2WIN)/bin/sdl2-config --prefix=$(SDL2WIN) --static-libs)
+
+# Compilation flags
+INCFLAGS       := -I. -Iff -Icfgtool -Iubloxcfg -Icfggui -I3rdparty/stuff -I3rdparty/imgui -I3rdparty/fonts -Ibuild $(shell sdl2-config --cflags)
+INCFLAGSWIN    := -I. -Iff -Icfgtool -Iubloxcfg -Icfggui -I3rdparty/stuff -I3rdparty/imgui -I3rdparty/fonts -Ibuild -I$(SDL2WIN)/include/SDL2
+CFLAGS         := -g -std=gnu99   -Wall -Wextra -Wformat -Werror -Wpointer-arith -Wundef
+CXXFLAGS       := -ggdb3 -std=gnu++11 -Wall -Wextra -Wformat -Werror -Wpointer-arith -Wundef
+
+# Build flags
+TOOLLDFLAGS    :=
+TOOLLDFLAGSWIN := -lws2_32 -static
+GUILDFLAGS     := -lGL -ldl -lpthread $(shell sdl2-config --libs)
+#GUILDFLAGSWIN  := -lws2_32 -lgdi32 -lopengl32 -limm32 -L$(SDL2WIN)/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
+GUILDFLAGSWIN  := -lws2_32 -lopengl32 -limm32 -L$(SDL2WIN)/lib -lmingw32 -lSDL2main -lSDL2 -mwindows -Wl,--no-undefined -Wl,--dynamicbase -Wl,--nxcompat -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid -static-libgcc -static
+TESTCFLAGS     := -std=c99 -pedantic -Wno-pedantic-ms-format
 
 # Source code
 LIBHFILES      := $(sort $(wildcard ubloxcfg/*.h))
@@ -62,7 +76,10 @@ TOOLHFILES     := $(sort $(wildcard cfgtool/*.h) $(BUILDDIR)/config.h)
 TOOLCFILES     := $(sort $(wildcard cfgtool/*.c))
 FFHFILES       := $(sort $(wildcard ff/*.h) 3rdparty/stuff/crc24q.h)
 FFCFILES       := $(sort $(wildcard ff/*.c) 3rdparty/stuff/crc24q.c)
-ALLSRCFILES    := $(LIBCFILES) $(TOOLCFILES) $(FFCFILES)
+GUICPPFILES    := $(sort $(wildcard cfggui/*.cpp) $(wildcard ff/*.cpp) $(wildcard 3rdparty/imgui/*.cpp))
+GUIHFILES      := $(sort $(wildcard cfggui/*.h) $(wildcard 3rdparty/imgui/*.h) $(BUILDDIR)/config.h)
+GUICFILES      := $(sort 3rdparty/imgui/GL/gl3w.c)
+ALLSRCFILES    := $(LIBCFILES) $(TOOLCFILES) $(FFCFILES) $(GUICPPFILES) $(GUICFILES) 
 
 # Programs
 PROGSRCFILES   := $(sort $(wildcard *.c) $(wildcard *.cpp))
@@ -80,8 +97,10 @@ RM += -v
 CP += -v
 MKDIR += -v
 ZIP += -v
+UNZIP += -v
 else
 ZIP += -q
+UNZIP += -q
 V = @
 V1 = > /dev/null
 V2 = 2> /dev/null
@@ -120,9 +139,6 @@ def:
 
 ####################################################################################################
 
-OBJDIR         := $(BUILDDIR)/obj
-OBJDIRWIN      := $(BUILDDIR)/obj_win
-
 # Canned recipes for compilation
 OBJFILES       :=
 OBJFILESWIN    :=
@@ -144,17 +160,26 @@ $(OBJDIR)/$(subst /,__,$(patsubst %.cpp,%_cpp.o,$(1))): $(1) Makefile | $(OBJDIR
 endef
 
 define makeCompileRuleCWin
-#$ (info makeCompileRuleCWin: $(OBJDIR)/$(subst /,__,$(patsubst %.c,%_c.o,$(1))) ($(1)))
+#$ (info makeCompileRuleCWin: $(OBJDIRWIN)/$(subst /,__,$(patsubst %.c,%_c.o,$(1))) ($(1)))
 OBJFILESWIN += $(OBJDIRWIN)/$(subst /,__,$(patsubst %.c,%_c.o,$(1)))
 $(OBJDIRWIN)/$(subst /,__,$(patsubst %.c,%_c.o,$(1))): $(1) Makefile | $(OBJDIRWIN)
 	@echo "$(HLC)$(CCWIN64)$(HLO) $(HLG)$$<$(HLO) $(HLM)($$@)$(HLO)"
-	$(V)$(CCWIN64) -c -o $$@ $$(CFLAGS) $(INCFLAGS) $$< -MD -MF $$(@:%.o=%.d) -MT $$@
+	$(V)$(CCWIN64) -c -o $$@ $$(CFLAGS) $(INCFLAGSWIN) $$< -MD -MF $$(@:%.o=%.d) -MT $$@
+endef
+
+define makeCompileRuleCppWin
+#$ (info makeCompileRuleCppWin: $(OBJDIRWIN)/$(subst /,__,$(patsubst %.cpp,%_cpp.o,$(1))) ($(1)))
+OBJFILESWIN += $(OBJDIRWIN)/$(subst /,__,$(patsubst %.cpp,%_cpp.o,$(1)))
+$(OBJDIRWIN)/$(subst /,__,$(patsubst %.cpp,%_cpp.o,$(1))): $(1) Makefile | $(OBJDIRWIN)
+	@echo "$(HLC)$(CXXWIN64)$(HLO) $(HLG)$$<$(HLO) $(HLM)($$@)$(HLO)"
+	$(V)$(CXXWIN64) -c -o $$@ $$(CXXFLAGS) $(INCFLAGSWIN) $$< -MD -MF $$(@:%.o=%.d) -MT $$@
 endef
 
 # Create compile rules and populate $(OBJFILES) list
 $(foreach src, $(filter %.c,$(ALLSRCFILES)), $(eval $(call makeCompileRuleC,$(src))))
 $(foreach src, $(filter %.cpp,$(ALLSRCFILES)), $(eval $(call makeCompileRuleCpp,$(src))))
 $(foreach src, $(filter %.c,$(ALLSRCFILES)), $(eval $(call makeCompileRuleCWin,$(src))))
+$(foreach src, $(filter %.cpp,$(ALLSRCFILES)), $(eval $(call makeCompileRuleCppWin,$(src))))
 
 # Load dependency files
 ifneq ($(MAKECMDGOALS),clean)
@@ -184,6 +209,8 @@ help:
 	@echo "    all               All of the above"
 	@echo "    clean             Clean all output"
 	@echo "    release           Make release of cfgtool ($(VERSION))"
+#	@echo "    cfggui            Build experimental (!) GUI"
+	@echo "    scan-build        Run clang static analyzer"
 	@echo
 
 # Shortcuts
@@ -226,6 +253,15 @@ cfgtool: $(OUTDIR)/cfgtool
 .PHONY: cfgtool.exe
 cfgtool.exe: $(OUTDIR)/cfgtool.exe
 
+.PHONY: cfggui
+cfggui: $(OUTDIR)/cfggui
+
+.PHONY: cfggui.exe
+cfggui.exe: $(OUTDIR)/cfggui.exe
+
+.PHONY: scan-build
+scan-build: $(OUTDIR)/scan-build/.done
+
 ####################################################################################################
 
 $(OUTDIR):
@@ -256,11 +292,13 @@ ifneq ($(BUILDDIR),)
 	$(V)$(RM) -rf $(BUILDDIR)
 endif
 
-$(BUILDDIR)/config.h: config.h.in config.h.pl $(filter-out $(BUILDDIR)/config.h, $(ALLSRCFILES) $(PROGSRCFILES)) Makefile | $(BUILDDIR)
+$(BUILDDIR)/config.h: config.h.in config.h.pl Makefile | $(BUILDDIR)
 	@echo "$(HLC)generate$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
 	$(V)$(PERL) config.h.pl < config.h.in > $@.tmp
 	$(V)$(CP) $@.tmp $@
 	$(V)$(RM) $@.tmp
+
+$(ALLSRCFILES): $(BUILDDIR)/config.h
 
 ####################################################################################################
 # Config library
@@ -323,6 +361,28 @@ $(OUTDIR)/cfgtool.exe: cfgtool.c $(TOOLOBJSWIN) $(TOOLHFILES) Makefile | $(OUTDI
 	$(V)$(CCWIN64) $(CFLAGS) $(INCFLAGS) -o $@ $< $(TOOLOBJSWIN) $(TOOLLDFLAGSWIN) -MD -MF $(OBJDIRWIN)/$(notdir $@).d
 
 ####################################################################################################
+# GUI
+
+GUIOBJS := $(filter-out $(OBJDIR)/cfgtool%, $(OBJFILES))
+
+$(OUTDIR)/cfggui: cfggui.cpp $(GUIOBJS) $(GUIHFILES) Makefile | $(OUTDIR)
+	@echo "$(HLC)$(CXX)$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(CXX) $(CXXFLAGS) $(INCFLAGS) $(GUIINCFLAGS) -o $@ $< $(GUIOBJS) $(GUILDFLAGS) -MD -MF $(OBJDIR)/$(notdir $@).d
+
+#---------------------------------------------------------------------------------------------------
+# Cross-compile for Windows
+
+GUIOBJSWIN := $(filter-out $(OBJDIRWIN)/cfgtool%, $(OBJFILESWIN))
+
+$(OUTDIR)/cfggui.exe: cfggui.cpp $(GUIOBJSWIN) $(GUIHFILES) Makefile | $(OUTDIR)
+	@echo "$(HLC)$(CXXWIN64)$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(CXXWIN64) $(CXXFLAGS) $(INCFLAGSWIN) $(GUIINCFLAGS) -o $@ $< $(GUIOBJSWIN) $(GUILDFLAGSWIN) -MD -MF $(OBJDIRWIN)/$(notdir $@).d
+#	$(V)$(CP) /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll $(OUTDIR)
+#	$(V)$(CP) /usr/lib/gcc/x86_64-w64-mingw32/9.3-posix/libgcc_s_seh-1.dll $(OUTDIR)
+#	$(V)$(CP) /usr/lib/gcc/x86_64-w64-mingw32/9.3-posix/libstdc++-6.dll $(OUTDIR)
+#	$(V)$(CP) $(SDL2WIN)/bin/SDL2.dll $(OUTDIR)
+
+####################################################################################################
 # Release
 
 LICENSES_IN := $(wildcard *COPYING*) $(wildcard 3rdparty/stuff/*COPYING*)
@@ -362,6 +422,16 @@ $(RELEASEZIP): $(RELEASEFILES)
 	@echo "$(HLC)zip$(HLO) $(HLGG)$@$(HLO) $(HLM)($(notdir $^))$(HLO)"
 	$(V)$(RM) -f $@
 	$(V)( cd $(OUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) )
+
+####################################################################################################
+# Static analyzers
+
+scanbuildtargets := cfgtool test cfggui
+
+$(OUTDIR)/scan-build/.done: $(ALLSRCFILES) Makefile | $(OUTDIR)
+	@echo "$(HLC)scan-build$(HLO) $(HLG)$(OUTDIR)/scan-build$(HLO) $(HLM)($(scanbuildtargets))$(HLO)"
+	$(V)$(SCANBUILD) -o $(OUTDIR)/scan-build -plist-html --exclude 3rdparty $(MAKE) --no-print-directory $(scanbuildtargets)
+	$(V)$(TOUCH) $@
 
 ####################################################################################################
 # eof

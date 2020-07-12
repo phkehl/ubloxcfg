@@ -104,8 +104,8 @@ typedef struct UBLOXCFG_CONST_s
     union
     {
         int32_t          E;   //!< E type value as number
-        int64_t          X;   //!< X type value as number
-    } val; //!< Value
+        uint64_t         X;   //!< X type value as number
+    } val;                    //!< Value
 } UBLOXCFG_CONST_t;
 
 //! Configuration item
@@ -176,6 +176,18 @@ const UBLOXCFG_MSGRATE_t *ubloxcfg_getMsgRateCfg(const char *msgName);
 */
 const UBLOXCFG_MSGRATE_t **ubloxcfg_getAllMsgRateCfgs(int *num);
 
+//! Configuration layers
+typedef enum UBLOXCFG_LAYER_e
+{
+    UBLOXCFG_LAYER_RAM,      //!< RAM layer (a.k.a. current configuration)
+    UBLOXCFG_LAYER_BBR,      //!< BBR layer
+    UBLOXCFG_LAYER_FLASH,    //!< Flash layer
+    UBLOXCFG_LAYER_DEFAULT   //!< Default layer
+} UBLOXCFG_LAYER_t;
+
+//! Get name for layer
+const char *ubloxcfg_layerName(const UBLOXCFG_LAYER_t layer);
+
 ///@}
 
 /* ********************************************************************************************** */
@@ -194,7 +206,7 @@ typedef union UBLOXCFG_VALUE_u
     uint64_t  U8; //!< #UBLOXCFG_TYPE_U8 type value
     int8_t    I1; //!< #UBLOXCFG_TYPE_I1 type value
     int16_t   I2; //!< #UBLOXCFG_TYPE_I2 type value
-    uint32_t  I4; //!< #UBLOXCFG_TYPE_I4 type value
+    int32_t   I4; //!< #UBLOXCFG_TYPE_I4 type value
     int64_t   I8; //!< #UBLOXCFG_TYPE_I8 type value
     uint8_t   X1; //!< #UBLOXCFG_TYPE_X1 type value
     uint16_t  X2; //!< #UBLOXCFG_TYPE_X2 type value

@@ -25,7 +25,8 @@ Where:
     -l <layer(s)>  Configuration layer(s) to use:
                        RAM, BBR, Flash, Default
     -r <reset>     Reset mode to use to reset the receiver:
-                       hot, warm, cold, default, factory, stop, start, gnss
+                       soft, hard, hot, warm, cold, default, factory,
+                       stop, start, gnss
     -u             Use unknown (undocumented) configuation items
     -x             Output extra information (comments, hex dumps)
     -a             Activate configuration after storing.
@@ -125,8 +126,9 @@ Command 'cfg2rx':
     Optionally the receiver can be reset to default configuration before storing
     the configuration. See the 'reset' command for details.
 
-    The -a switch hotstarts the receiver after storing the configuration in
-    order to activate the changed configuration. See the notes below.
+    The -a switch soft resets the receiver after storing the configuration in
+    order to activate the changed configuration. See the notes below and the
+    'reset' command description.
 
     A configuration file consists of one or more lines of configuration
     parameters. Leading and trailing whitespace, empty lines as well as comments
@@ -161,7 +163,7 @@ Command 'cfg2rx':
             'I2C' or 'USB'), its baudrate (for UARTs only, use '-' otherwise)
             and the input and output protocol filters must be specified. The
             protocol filters are space-separated words for the different
-            protocols ('UBX', 'NMEA', 'RTCM3X') or '-' to not configure the
+            protocols ('UBX', 'NMEA', 'RTCM3') or '-' to not configure the
             filter. Prepending a '!' to the protocol disables it.
             This is a shortcut to using some of the various <key> <value> pairs
             that configure the communication ports (e.g. CFG-UART1-..., etc.).
@@ -177,9 +179,9 @@ Command 'cfg2rx':
         CFG-NAVSPG-INFIL_CNOTHRS   0x23    # Require C/N0 >= 35
         # Configure UART1 baudrate, don't change in/out filters
         UART1 115200   -        -
-        # Disable NMEA and RTCM3X output on USB and SPI
-        USB            -        !NMEA,!RTCM3X
-        SPI            -        !NMEA,!RTCM3X
+        # Disable NMEA and RTCM3 output on USB and SPI
+        USB            -        !NMEA,!RTCM3
+        SPI            -        !NMEA,!RTCM3
         # Enable some UBX messages on UART1 and USB
         UBX-NAV-PVT        1 - - - 1
         UBX-NAV-SIG        1 - - - 1
@@ -306,9 +308,11 @@ Command 'reset':
 
         <reset>   Navigation   Configuration   Reset
         ------------------------------------------------------------
-        hot       -            -               Hardware
-        warm      Ephemerides  -               Hardware
-        cold      All          -               Hardware
+        soft      -            - (update)      Software (controlled)
+        hard      -            - (update)      Hardware (controlled)
+        hot       -            -               Software (GNSS only)
+        warm      Ephemerides  -               Software (GNSS only)
+        cold      All          -               Software (GNSS only)
         default   -            All             Hardware (controlled)
         factory   All          All             Hardware (controlled)
         stop      -            -               -
@@ -323,6 +327,13 @@ Command 'reset':
 
         The hot, warm, and cold resets use the same command as the corresponding
         buttons in u-center.
+
+        The soft and hard resets both trigger a full restart, which includes re-
+        freshing the RAM configuration layer.
+
+        Note that for hardware resets the navigation and configuration data is
+        only preserved with battery backup respectively configuration in the
+        Flash layer.
 
         The stop, start and gnss resets do not actually reset anything but
         instead stop, start and restart the GNSS operation.

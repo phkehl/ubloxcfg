@@ -159,7 +159,8 @@ const char * const kHelpStr =
     "    -l <layer(s)>  Configuration layer(s) to use:\n"
     "                       RAM, BBR, Flash, Default\n"
     "    -r <reset>     Reset mode to use to reset the receiver:\n"
-    "                       hot, warm, cold, default, factory, stop, start, gnss\n"
+    "                       soft, hard, hot, warm, cold, default, factory,\n"
+    "                       stop, start, gnss\n"
     "    -u             Use unknown (undocumented) configuation items\n"
     "    -x             Output extra information (comments, hex dumps)\n"
     "    -a             Activate configuration after storing.\n"
@@ -398,8 +399,8 @@ int main(int argc, char **argv)
 #ifndef _WIN32
             int fd = fileno(gArgs.inFile);
             const int flags = fcntl(fd, F_GETFL, 0);
-            int res = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-            if ( ((flags < 0)) || (res < 0) )
+            int r = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+            if ( ((flags < 0)) || (r < 0) )
             {
                 WARNING("Failed setting stdin to non-blocking: %s", strerror(errno));
                 res = false;

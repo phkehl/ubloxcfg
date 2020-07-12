@@ -622,6 +622,15 @@ int main(int argc, char **argv)
         }
     }
 
+    // Configuration layers
+    {
+        TEST("layer name RAM",     strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_RAM),     "RAM")     == 0);
+        TEST("layer name BBR",     strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_BBR),     "BBR")     == 0);
+        TEST("layer name Flash",   strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_FLASH),   "Flash")   == 0);
+        TEST("layer name Default", strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_DEFAULT), "Default") == 0);
+        TEST("bad layer name", strcmp(ubloxcfg_layerName((UBLOXCFG_LAYER_t)99), "?") == 0);
+    }
+
     // Examples from ubloxcfg.h
     {
         const UBLOXCFG_KEYVAL_t keyVal[] =

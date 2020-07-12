@@ -40,9 +40,11 @@ const char *resetHelp(void)
 "\n"
 "        <reset>   Navigation   Configuration   Reset\n"
 "        ------------------------------------------------------------\n"
-"        hot       -            -               Hardware\n"
-"        warm      Ephemerides  -               Hardware\n"
-"        cold      All          -               Hardware\n"
+"        soft      -            - (update)      Software (controlled)\n"
+"        hard      -            - (update)      Hardware (controlled)\n"
+"        hot       -            -               Software (GNSS only)\n"
+"        warm      Ephemerides  -               Software (GNSS only)\n"
+"        cold      All          -               Software (GNSS only)\n"
 "        default   -            All             Hardware (controlled)\n"
 "        factory   All          All             Hardware (controlled)\n"
 "        stop      -            -               -\n"
@@ -58,6 +60,13 @@ const char *resetHelp(void)
 "        The hot, warm, and cold resets use the same command as the corresponding\n"
 "        buttons in u-center.\n"
 "\n"
+"        The soft and hard resets both trigger a full restart, which includes re-\n"
+"        freshing the RAM configuration layer.\n"
+"\n"
+"        Note that for hardware resets the navigation and configuration data is\n"
+"        only preserved with battery backup respectively configuration in the\n"
+"        Flash layer.\n"
+"\n"
 "        The stop, start and gnss resets do not actually reset anything but\n"
 "        instead stop, start and restart the GNSS operation.\n"
 "\n";
@@ -67,7 +76,15 @@ const char *resetHelp(void)
 
 bool resetTypeFromStr(const char *resetType, RX_RESET_t *reset)
 {
-    if (strcasecmp("hot", resetType) == 0)
+    if (strcasecmp("soft", resetType) == 0)
+    {
+        *reset = RX_RESET_SOFT;
+    }
+    else if (strcasecmp("hard", resetType) == 0)
+    {
+        *reset = RX_RESET_HARD;
+    }
+    else if (strcasecmp("hot", resetType) == 0)
     {
         *reset = RX_RESET_HOT;
     }

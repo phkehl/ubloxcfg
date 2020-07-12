@@ -98,44 +98,53 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         case 1012:
             len = snprintf(info, size, "Extended L1/L2 GLONASS RTK observables");
             break;
+        case 1030:
+            len = snprintf(info, size, "GPS network RTK residual message");
+            break;
+        case 1031:
+            len = snprintf(info, size, "GLONASS network RTK residual message");
+            break;
+        case 1032:
+            len = snprintf(info, size, "Physical reference station position message");
+            break;
         case 1033:
             len = snprintf(info, size, "Receiver and Antenna Description");
             break;
         case 1074:
-            len = snprintf(info, size, "GPS MSM4");
+            len = snprintf(info, size, "GPS MSM4 (full C, full L, S)");
             break;
         case 1075:
-            len = snprintf(info, size, "GPS MSM5");
+            len = snprintf(info, size, "GPS MSM5 (full C, full L, S, D)");
             break;
         case 1077:
-            len = snprintf(info, size, "GPS MSM7");
+            len = snprintf(info, size, "GPS MSM7 (ext full C, ext full L, S, D)");
             break;
         case 1084:
-            len = snprintf(info, size, "GLONASS MSM4");
+            len = snprintf(info, size, "GLONASS MSM4 (full C, full L, S)");
             break;
         case 1085:
-            len = snprintf(info, size, "GLONASS MSM5");
+            len = snprintf(info, size, "GLONASS MSM5 (full C, full L, S, D)");
             break;
         case 1087:
-            len = snprintf(info, size, "GLONASS MSM7");
+            len = snprintf(info, size, "GLONASS MSM7 (ext full C, ext full L, S, D)");
             break;
         case 1094:
-            len = snprintf(info, size, "Galileo MSM4");
+            len = snprintf(info, size, "Galileo MSM4 (full C, full L, S)");
             break;
         case 1095:
-            len = snprintf(info, size, "Galileo MSM5");
+            len = snprintf(info, size, "Galileo MSM5 (full C, full L, S, D)");
             break;
         case 1097:
-            len = snprintf(info, size, "Galileo MSM7");
+            len = snprintf(info, size, "Galileo MSM7 (ext full C, ext full L, S, D)");
             break;
         case 1124:
-            len = snprintf(info, size, "BeiDou MSM4");
+            len = snprintf(info, size, "BeiDou MSM4 (full C, full L, S)");
             break;
         case 1125:
-            len = snprintf(info, size, "BeiDou MSM5");
+            len = snprintf(info, size, "BeiDou MSM5 (full C, full L, S, D)");
             break;
         case 1127:
-            len = snprintf(info, size, "BeiDou MSM7");
+            len = snprintf(info, size, "BeiDou MSM7 (ext full C, ext full L, S, D)");
             break;
         case 1230:
             len = snprintf(info, size, "GLONASS code-phase biases");

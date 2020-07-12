@@ -319,10 +319,10 @@ typedef struct UBX_CFG_VALGET_V1_GROUP0_s
 } UBX_CFG_VALGET_V1_GROUP0_t;
 
 #define UBX_CFG_VALGET_V1_VERSION              0x01  //!< UBX-CFG-VALGET.version value
-#define UBX_CFG_VALGET_V1_LAYER_RAM            0x00  //!< UBX-CFG-VALGET.layers value: layer RAM
-#define UBX_CFG_VALGET_V1_LAYER_BBR            0x01  //!< UBX-CFG-VALGET.layers value: layer BBR
-#define UBX_CFG_VALGET_V1_LAYER_FLASH          0x02  //!< UBX-CFG-VALGET.layers value: layer Flash
-#define UBX_CFG_VALGET_V1_LAYER_DEFAULT        0x07  //!< UBX-CFG-VALGET.layers value: layer Default
+#define UBX_CFG_VALGET_V1_LAYER_RAM            0     //!< UBX-CFG-VALGET.layers value: layer RAM
+#define UBX_CFG_VALGET_V1_LAYER_BBR            1     //!< UBX-CFG-VALGET.layers value: layer BBR
+#define UBX_CFG_VALGET_V1_LAYER_FLASH          2     //!< UBX-CFG-VALGET.layers value: layer Flash
+#define UBX_CFG_VALGET_V1_LAYER_DEFAULT        7     //!< UBX-CFG-VALGET.layers value: layer Default
 #define UBX_CFG_VALGET_V1_MAX_KV               64    //!< UBX-CFG-VALGET.cfgData maximum number of key-value pairs
 #define UBX_CFG_VALGET_V1_CFGDATA_MAX (UBX_CFG_VALGET_V1_MAX_KV * (4 + 8)) //!< UBX-CFG-VALGET.cfgData maximum size
 
@@ -608,11 +608,15 @@ int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payl
 */
 bool ubxMessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
 
+bool ubxMessageNameIds(char *name, const int size, const uint8_t clsId, const uint8_t msgId);
+
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 
 const char *ubxGnssStr(const uint8_t gnssId);
 const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId);
 const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId);
+
+bool ubxMonVerToVerStr(char *str, const int size, const uint8_t *msg, const int msgSize);
 
 /* ********************************************************************************************** */
 #ifdef __cplusplus

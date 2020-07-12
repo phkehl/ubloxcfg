@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "ubloxcfg.h"
 #include "ff_parser.h"
 
 #ifdef __cplusplus
@@ -36,9 +37,11 @@ typedef struct RX_ARGS_s
     bool     detect;      // default: true
     bool     verbose;     // default: true
     char    *name;        // default: automatic
+    void   (*msgcb)(PARSER_MSG_t *, void *arg); // default: NULL
+    void    *cbarg;       // default: NULL
 } RX_ARGS_t;
 
-#define RX_ARGS_DEFAULT() { .autobaud = true, .detect = true, .verbose = true, .name = NULL }
+#define RX_ARGS_DEFAULT() { .autobaud = true, .detect = true, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
 
 RX_t *rxOpen(const char *port, const RX_ARGS_t *args);
 void rxClose(RX_t *rx);
@@ -51,6 +54,8 @@ bool rxSend(RX_t *rx, const uint8_t *data, const int size);
 bool rxAutobaud(RX_t *rx);
 int rxGetBaudrate(RX_t *rx);
 bool rxSetBaudrate(RX_t *rx, const int baudrate);
+
+void rxAbort(RX_t *rx);
 
 /* ********************************************************************************************** */
 
@@ -73,6 +78,8 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
 
 typedef enum RX_RESET_e
 {
+    RX_RESET_SOFT,          // Controlled software reset
+    RX_RESET_HARD,          // Controlled hardware reset
     RX_RESET_HOT,           // Hotstart (like u-center)
     RX_RESET_WARM,          // Warmstart (like u-center)
     RX_RESET_COLD,          // Coldstart (like u-center)
@@ -85,6 +92,7 @@ typedef enum RX_RESET_e
 
 bool rxReset(RX_t *rx, const RX_RESET_t reset);
 
+int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv);
 
 /* ********************************************************************************************** */
 #ifdef __cplusplus

@@ -80,28 +80,18 @@ typedef struct CFG_DB_REC_s
 
 typedef struct CFG_DB_s
 {
-    LAYER_t      layer;
-    CFG_DB_REC_t recs[MAX_ITEMS];
-    int          nKv;
-    int          nKvKnown;
-    int          nKvUnknown;
+    UBLOXCFG_LAYER_t layer;
+    CFG_DB_REC_t     recs[MAX_ITEMS];
+    int              nKv;
+    int              nKvKnown;
+    int              nKvUnknown;
 } CFG_DB_t;
 
-static const char * const kLayerNames[] =
-{
-    [LAYER_NONE]      = "none",
-    [LAYER_RAM]       = "RAM",
-    [LAYER_BBR]       = "BBR",
-    [LAYER_FLASH]     = "Flash",
-    [LAYER_DEFAULT]   = "Default"
-};
-
 // Forward declarations
-static LAYER_t _getLayer(const char *layer);
-static CFG_DB_t *_getCfgDb(RX_t *rx, const LAYER_t layer);
+static bool _getLayer(const char *name, UBLOXCFG_LAYER_t *layer);
+static CFG_DB_t *_getCfgDb(RX_t *rx, const UBLOXCFG_LAYER_t layer);
 static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t id);
 static void _dbFlag(CFG_DB_t *db, const uint32_t id);
-static int _ubxCfgValget(RX_t *rx, const LAYER_t layer, const uint8_t *keys, const int keysSize, UBLOXCFG_KEYVAL_t *kv, const int maxKv);
 
 /* ********************************************************************************************** */
 
@@ -124,8 +114,8 @@ static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item
 int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownItems)
 {
     // Check parameters
-    const LAYER_t layer = _getLayer(layerArg);
-    if (layer == LAYER_NONE)
+    UBLOXCFG_LAYER_t layer;
+    if (!_getLayer(layerArg, &layer))
     {
         return EXIT_BADARGS;
     }
@@ -144,18 +134,20 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         return EXIT_RXNODATA;
     }
 
+    const char *layerName = ubloxcfg_layerName(layer);
+
     // Will we generate any useful output?
     const bool generateOutput = (useUnknownItems && (dbLayer->nKv > 0)) || (dbLayer->nKvKnown > 0);
     if (!generateOutput)
     {
-        WARNING("No configuration available in layer %s!", kLayerNames[layer]);
+        WARNING("No configuration available in layer %s!", layerName);
         free(dbLayer);
         rxClose(rx);
         return EXIT_RXNODATA;
     }
 
     // Maybe get default configuration, too
-    CFG_DB_t *dbDefault = layer == LAYER_DEFAULT ? dbLayer : _getCfgDb(rx, LAYER_DEFAULT);
+    CFG_DB_t *dbDefault = layer == UBLOXCFG_LAYER_DEFAULT ? dbLayer : _getCfgDb(rx, UBLOXCFG_LAYER_DEFAULT);
     if (dbDefault == NULL)
     {
         free(dbLayer);
@@ -164,10 +156,10 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     }
 
     // Generate config file
-    PRINT("Generating configuration file for layer %s", kLayerNames[layer]);
+    PRINT("Generating configuration file for layer %s", layerName);
     char verStr[100] = "unknown receiver";
     rxGetVerStr(rx, verStr, sizeof(verStr));
-    ioOutputStr("# %s, layer %s\n", verStr, kLayerNames[layer]);
+    ioOutputStr("# %s, layer %s\n", verStr, layerName);
 
     // Ports
     const PORT_CFG_t portCfgs[] =
@@ -359,11 +351,12 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
 int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownItems)
 {
     // Check parameters
-    const LAYER_t layer = _getLayer(layerArg);
-    if (layer == LAYER_NONE)
+    UBLOXCFG_LAYER_t layer;
+    if (!_getLayer(layerArg, &layer))
     {
         return EXIT_BADARGS;
     }
+    const char *layerName = ubloxcfg_layerName(layer);
 
     // Connect and detect receiver
     RX_t *rx = rxOpen(portArg, NULL);
@@ -384,14 +377,14 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     const bool generateOutput = (useUnknownItems && (dbLayer->nKv > 0)) || (dbLayer->nKvKnown > 0);
     if (!generateOutput)
     {
-        WARNING("No configuration available in layer %s!", kLayerNames[layer]);
+        WARNING("No configuration available in layer %s!", layerName);
         free(dbLayer);
         rxClose(rx);
         return EXIT_RXNODATA;
     }
 
     // Maybe get default configuration, too
-    CFG_DB_t *dbDefault = layer == LAYER_DEFAULT ? dbLayer : _getCfgDb(rx, LAYER_DEFAULT);
+    CFG_DB_t *dbDefault = layer == UBLOXCFG_LAYER_DEFAULT ? dbLayer : _getCfgDb(rx, UBLOXCFG_LAYER_DEFAULT);
     if (dbDefault == NULL)
     {
         free(dbLayer);
@@ -400,11 +393,11 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     }
 
     // Generate list of key-value pairs
-    PRINT("Generating list of key-value pairs for layer %s", kLayerNames[layer]);
+    PRINT("Generating list of key-value pairs for layer %s", layerName);
     char verStr[100] = "unknown receiver";
     rxGetVerStr(rx, verStr, sizeof(verStr));
     ioOutputStr("# %s, layer %s (%d/%d items)\n", verStr,
-        kLayerNames[layer], useUnknownItems ? dbLayer->nKv : dbLayer->nKvKnown, dbLayer->nKv);
+        layerName, useUnknownItems ? dbLayer->nKv : dbLayer->nKvKnown, dbLayer->nKv);
     for (int ix = 0; ix < dbLayer->nKv; ix++)
     {
         const UBLOXCFG_KEYVAL_t *kv = &dbLayer->recs[ix].kv;
@@ -443,51 +436,60 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
 
 /* ********************************************************************************************** */
 
-static LAYER_t _getLayer(const char *layer)
+static bool _getLayer(const char *name, UBLOXCFG_LAYER_t *layer)
 {
-    if (strcasecmp(layer, kLayerNames[LAYER_RAM]) == 0)
+    if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_RAM)) == 0)
     {
-        return LAYER_RAM;
+        *layer = UBLOXCFG_LAYER_RAM;
+        return true;
     }
-    if (strcasecmp(layer, kLayerNames[LAYER_BBR]) == 0)
+    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_BBR)) == 0)
     {
-        return LAYER_BBR;
+        *layer = UBLOXCFG_LAYER_BBR;
+        return true;
     }
-    if (strcasecmp(layer, kLayerNames[LAYER_FLASH]) == 0)
+    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_FLASH)) == 0)
     {
-        return LAYER_FLASH;
+        *layer = UBLOXCFG_LAYER_FLASH;
+        return true;
     }
-    if (strcasecmp(layer, kLayerNames[LAYER_DEFAULT]) == 0)
+    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_DEFAULT)) == 0)
     {
-        return LAYER_DEFAULT;
+        *layer = UBLOXCFG_LAYER_DEFAULT;
+        return true;
     }
     else
     {
-        WARNING("Illegal configuration layer '%s'!", layer);
+        WARNING("Illegal configuration layer '%s'!", name);
     }
-    return LAYER_NONE;
+    return false;
 }
 
 // -------------------------------------------------------------------------------------------------
 
 static int _dbSortFunc(const void *a, const void *b);
 
-static CFG_DB_t *_getCfgDb(RX_t *rx, LAYER_t layer)
+static CFG_DB_t *_getCfgDb(RX_t *rx, UBLOXCFG_LAYER_t layer)
 {
     CFG_DB_t *db = malloc(sizeof(CFG_DB_t));
     UBLOXCFG_KEYVAL_t *kv = malloc(sizeof(UBLOXCFG_KEYVAL_t) * NUMOF(db->recs));
     if ( (db == NULL) || (kv == NULL) )
     {
         WARNING("_getCfgDb() malloc fail");
+        free(db);
+        free(kv);
         return NULL;
     }
     memset(db, 0, sizeof(*db));
     db->layer = layer;
+    const char *layerName = ubloxcfg_layerName(layer);
 
     // Poll all configuration items
-    PRINT("Polling receiver configuration for layer %s", kLayerNames[layer]);
+    PRINT("Polling receiver configuration for layer %s", layerName);
+    
+    
     uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
-    db->nKv = _ubxCfgValget(rx, layer, (const uint8_t *)keys, sizeof(keys), kv, NUMOF(db->recs));
+    db->nKv = rxGetConfig(rx, layer, keys, NUMOF(keys), kv, NUMOF(db->recs));
 
     if (db->nKv < 0)
     {
@@ -514,7 +516,7 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, LAYER_t layer)
     // Sort
     qsort(db->recs, db->nKv, sizeof(*db->recs), _dbSortFunc);
 
-    PRINT("Layer %s: %d items (%d known, %d unknown)", kLayerNames[layer],
+    PRINT("Layer %s: %d items (%d known, %d unknown)", layerName,
         db->nKv, db->nKvKnown, db->nKvUnknown);
 
     free(kv);
@@ -579,162 +581,6 @@ static void _dbFlag(CFG_DB_t *db, const uint32_t id)
 
 // -------------------------------------------------------------------------------------------------
 
-static int _ubxCfgValget(RX_t *rx, const LAYER_t layer, const uint8_t *keys, const int keysSize, UBLOXCFG_KEYVAL_t *kv, const int maxKv)
-{
-    if ( (rx == NULL) || (keys == NULL) || (kv == NULL) || (maxKv < 1) ||
-         (keysSize > (int)(UBX_CFG_VALGET_V0_MAX_SIZE - UBX_FRAME_SIZE - sizeof(UBX_CFG_VALGET_V0_GROUP0_t))) )
-    {
-        return 0;
-    }
-    uint32_t t0 = TIME();
-
-    uint8_t pollLayer;
-    switch (layer)
-    {
-        case LAYER_RAM:
-            pollLayer = UBX_CFG_VALGET_V0_LAYER_RAM;
-            break;
-        case LAYER_BBR:
-            pollLayer = UBX_CFG_VALGET_V0_LAYER_BBR;
-            break;
-        case LAYER_FLASH:
-            pollLayer = UBX_CFG_VALGET_V0_LAYER_FLASH;
-            break;
-        case LAYER_DEFAULT:
-            pollLayer = UBX_CFG_VALGET_V0_LAYER_DEFAULT;
-            break;
-        default:
-            return 0;
-    }
-
-    bool done = false;
-    bool res = true;
-    int totNumKv = 0;
-    uint16_t position = 0;
-    while (!done)
-    {
-        // UBX-CFG-VALGET poll request payload
-        UBX_CFG_VALGET_V0_GROUP0_t pollHead =
-        {
-            .version  = UBX_CFG_VALGET_V0_VERSION,
-            .layer    = pollLayer,
-            .position = position
-        };
-        uint8_t pollPayload[UBX_CFG_VALGET_V0_MAX_SIZE];
-        memcpy(&pollPayload[0], &pollHead, sizeof(pollHead));
-        memcpy(&pollPayload[sizeof(pollHead)], keys, keysSize);
-
-        // Poll UBX-CFG-VALGET
-        RX_POLL_UBX_t pollParam =
-        {
-            .clsId = UBX_CFG_CLSID, .msgId = UBX_CFG_VALGET_MSGID,
-            .payload = pollPayload, .payloadSize = (sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + keysSize),
-            .retries = 3, .timeout = 2000,
-        };
-        PARSER_MSG_t *msg = rxPollUbx(rx, &pollParam);
-        if (msg == NULL)
-        {
-            WARNING("No response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, kLayerNames[layer]);
-            res = false;
-            break;
-        }
-        // No key-val pairs in data
-        if (msg->size < (int)(UBX_FRAME_SIZE + sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + 4 + 1))
-        {
-            // No data in this layer
-            if ( (position == 0) && ((layer == LAYER_BBR) || (layer == LAYER_FLASH)) )
-            {
-                break;
-            }
-            // No more data for this poll
-            else if (position > 0)
-            {
-                break;
-            }
-            // Unexpectedly no data for layer that must have data
-            else
-            {
-                WARNING("Bad response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, kLayerNames[layer]);
-                res = false;
-                break;
-            }
-
-            res = false;
-            break;
-        }
-
-        // Check result
-        UBX_CFG_VALGET_V1_GROUP0_t respHead;
-        memcpy(&respHead, &msg->data[UBX_HEAD_SIZE], sizeof(respHead));
-        if ( (respHead.version != UBX_CFG_VALGET_V1_VERSION) || (respHead.position != position) ||
-            (respHead.layer != pollLayer) )
-        {
-            WARNING("Unexpected response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, kLayerNames[layer]);
-            DEBUG_HEXDUMP(msg->data, msg->size, "version: %u %u, position: %u %u, layer: %u %u",
-                respHead.version, UBX_CFG_VALGET_V1_VERSION,
-                respHead.position, position, respHead.layer, layer);
-            res = false;
-            break;
-        }
-
-        // Add received data to list
-        int numKv = 0;
-        const int cfgDataSize = msg->size - UBX_FRAME_SIZE - sizeof(UBX_CFG_VALGET_V1_GROUP0_t);
-        if (cfgDataSize > 0)
-        {
-            if (!ubloxcfg_parseData(&msg->data[UBX_HEAD_SIZE + sizeof(UBX_CFG_VALGET_V1_GROUP0_t)],
-                cfgDataSize, &kv[totNumKv], UBX_CFG_VALGET_V1_MAX_KV, &numKv))
-            {
-                WARNING("Bad config data in UBX-CFG-VALGET response (position=%u, layer=%s)!", position, kLayerNames[layer]);
-                DEBUG_HEXDUMP(msg->data, msg->size, NULL);
-                res = false;
-                break;
-            }
-            totNumKv += numKv;
-        }
-
-        // Are we done?
-        if (numKv < UBX_CFG_VALGET_V1_MAX_KV)
-        {
-            done = true;
-        }
-        else
-        {
-            position += UBX_CFG_VALGET_V1_MAX_KV;
-        }
-
-        // Debug
-        DEBUG("Received %d items from (position=%u, layer=%s, done=%s)",
-            numKv, position, kLayerNames[layer], done ? "yes" : "no");
-        if (isTRACE())
-        {
-            for (int ix = totNumKv - numKv; ix < totNumKv; ix++)
-            {
-                char str[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
-                if (ubloxcfg_stringifyKeyVal(str, sizeof(str), &kv[ix]))
-                {
-                    TRACE("kv[%d]: %s", ix, str);
-                }
-            }
-        }
-
-        // Enough space left in list?
-        if ( (totNumKv + UBX_CFG_VALGET_V1_MAX_KV) > maxKv )
-        {
-            WARNING("Too many config items (position=%u, layer=%s)!", position, kLayerNames[layer]);
-            res = false;
-            break;
-        }
-
-    }
-    // while 64 left, not complete, ...
-    DEBUG("Total %d items for layer %s (poll duration %ums), res=%d", totNumKv, kLayerNames[layer], TIME() - t0, res);
-
-    return res ? totNumKv : -1;
-}
-
-// -------------------------------------------------------------------------------------------------
-
 static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, const int size)
 {
     const UBLOXCFG_KEYVAL_t *kvBaudrate      = _dbFindKeyVal(db, cfg->idBaudrate);
@@ -770,7 +616,7 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
     }
     if ( (kvInprotRtcm3x != NULL) && (kvInprotRtcm3x->val.L) )
     {
-        strcat(protStr, ",RTCM3X");
+        strcat(protStr, ",RTCM3");
     }
     snprintf(&str[strlen(str)], size - strlen(str), "  %-20s", strlen(protStr) > 0 ? &protStr[1] : "-");
     protStr[0] = '\0';
@@ -784,7 +630,7 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
     }
     if ( (kvOutprotRtcm3x != NULL) && (kvOutprotRtcm3x->val.L) )
     {
-        strcat(protStr, ",RTCM3X");
+        strcat(protStr, ",RTCM3");
     }
     snprintf(&str[strlen(str)], size - strlen(str), " %s", strlen(protStr) > 0 ? &protStr[1] : "-");
     return true;

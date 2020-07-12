@@ -292,7 +292,7 @@ static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch)
     }
 
     snprintf(epoch->str, sizeof(epoch->str),
-        "%s %s %d %s %04d-%02d-%02d (%c) %02d:%02d:%6.3f (%c) %+.7f %+.7f (%.1f) %+.0f (%.1f)",
+        "%s %s %d %s %04d-%02d-%02d (%c) %02d:%02d:%06.3f (%c) %+.7f %+.7f (%.1f) %+.0f (%.1f)",
         epoch->fixStr, epoch->fixQualStr, epoch->numSv, epoch->rtkStr,
         epoch->year, epoch->month, epoch->day, kValidChar[epoch->validDate],
         epoch->hour, epoch->minute, epoch->second, kValidChar[epoch->validTime],

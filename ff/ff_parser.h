@@ -39,7 +39,7 @@ extern "C" {
 #define PARSER_MAX_GARB_SIZE   256
 #define PARSER_MAX_ANY_SIZE   4096 // the largest of the above
 #define PARSER_MAX_NAME_SIZE   100
-#define PARSER_MAX_INFO_SIZE   200
+#define PARSER_MAX_INFO_SIZE  1000
 
 typedef struct PARSER_s
 {
@@ -63,6 +63,16 @@ typedef enum PARSER_MSGTYPE_e
     PARSER_MSGTYPE_RTCM3
 } PARSER_MSGTYPE_t;
 
+typedef enum PARSER_MSGSRC_e
+{
+    PARSER_MSGSRC_UNKN = 0,
+    PARSER_MSGSRC_FROM_RX,
+    PARSER_MSGSRC_TO_RX,
+    PARSER_MSGSRC_VIRTUAL,
+    PARSER_MSGSRC_USER,
+    PARSER_MSGSRC_LOG
+} PARSER_MSGSRC_t;
+
 typedef struct PARSER_MSG_s
 {
     PARSER_MSGTYPE_t type;
@@ -70,6 +80,7 @@ typedef struct PARSER_MSG_s
     int              size;
     uint32_t         seq;
     uint32_t         ts;
+    PARSER_MSGSRC_t  src;
     const char      *name;
     const char      *info; // may be NULL
 } PARSER_MSG_t;

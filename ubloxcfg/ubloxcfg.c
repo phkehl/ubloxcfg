@@ -1075,16 +1075,31 @@ static bool findConstValue(const char *str, const UBLOXCFG_ITEM_t *item, uint64_
 static bool findEnumValue(const char *str, const UBLOXCFG_ITEM_t *item, int64_t *val)
 {
     bool res = false;
-    for (int ix = 0; ix < item->nConsts; ix++)
+    if (item != NULL)
     {
-        if (strcmp(str, item->consts[ix].name) == 0)
+        for (int ix = 0; ix < item->nConsts; ix++)
         {
-            *val = (int64_t)item->consts[ix].val.E;
-            res = true;
-            break;
+            if (strcmp(str, item->consts[ix].name) == 0)
+            {
+                *val = (int64_t)item->consts[ix].val.E;
+                res = true;
+                break;
+            }
         }
     }
     return res;
+}
+
+const char *ubloxcfg_layerName(const UBLOXCFG_LAYER_t layer)
+{
+    switch (layer)
+    {
+        case UBLOXCFG_LAYER_RAM:      return "RAM";
+        case UBLOXCFG_LAYER_BBR:      return "BBR";
+        case UBLOXCFG_LAYER_FLASH:    return "Flash";
+        case UBLOXCFG_LAYER_DEFAULT:  return "Default";
+    }
+    return "?";
 }
 
 /* ********************************************************************************************** */

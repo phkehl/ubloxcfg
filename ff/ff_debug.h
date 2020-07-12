@@ -21,6 +21,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#ifdef _WIN32
+#  define NOGDI
+#  include <windows.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

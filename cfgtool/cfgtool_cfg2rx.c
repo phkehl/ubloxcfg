@@ -48,8 +48,9 @@ const char *cfg2rxHelp(void)
 "    Optionally the receiver can be reset to default configuration before storing\n"
 "    the configuration. See the 'reset' command for details.\n"
 "\n"
-"    The -a switch hotstarts the receiver after storing the configuration in\n"
-"    order to activate the changed configuration. See the notes below.\n"
+"    The -a switch soft resets the receiver after storing the configuration in\n"
+"    order to activate the changed configuration. See the notes below and the\n"
+"    'reset' command description.\n"
 "\n"
 "    A configuration file consists of one or more lines of configuration\n"
 "    parameters. Leading and trailing whitespace, empty lines as well as comments\n"
@@ -85,7 +86,7 @@ const char *cfg2rxHelp(void)
 "            'I2C' or 'USB'), its baudrate (for UARTs only, use '-' otherwise)\n"
 "            and the input and output protocol filters must be specified. The\n"
 "            protocol filters are space-separated words for the different\n"
-"            protocols ('UBX', 'NMEA', 'RTCM3X') or '-' to not configure the\n"
+"            protocols ('UBX', 'NMEA', 'RTCM3') or '-' to not configure the\n"
 "            filter. Prepending a '!' to the protocol disables it.\n"
 "            This is a shortcut to using some of the various <key> <value> pairs\n"
 "            that configure the communication ports (e.g. CFG-UART1-..., etc.).\n"
@@ -101,9 +102,9 @@ const char *cfg2rxHelp(void)
 "        CFG-NAVSPG-INFIL_CNOTHRS   0x23    # Require C/N0 >= 35\n"
 "        # Configure UART1 baudrate, don't change in/out filters\n"
 "        UART1 115200   -        -\n"
-"        # Disable NMEA and RTCM3X output on USB and SPI\n"
-"        USB            -        !NMEA,!RTCM3X\n"
-"        SPI            -        !NMEA,!RTCM3X\n"
+"        # Disable NMEA and RTCM3 output on USB and SPI\n"
+"        USB            -        !NMEA,!RTCM3\n"
+"        SPI            -        !NMEA,!RTCM3\n"
 "        # Enable some UBX messages on UART1 and USB\n"
 "        UBX-NAV-PVT        1 - - - 1\n"
 "        UBX-NAV-SIG        1 - - - 1\n"
@@ -183,11 +184,15 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     RX_t *rx = rxOpen(portArg, NULL);
     if (rx == NULL)
     {
+        free(kv);
+        free(msgs);
         return EXIT_RXFAIL;
     }
 
     if ( (resetArg != NULL) && !rxReset(rx, reset))
     {
+        free(kv);
+        free(msgs);
         rxClose(rx);
         return EXIT_RXFAIL;
     }
@@ -210,8 +215,10 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     if (res && applyConfig)
     {
         PRINT("Applying configuration");
-        if (!rxReset(rx, RX_RESET_HOT))
+        if (!rxReset(rx, RX_RESET_SOFT))
         {
+            free(kv);
+            free(msgs);
             rxClose(rx);
             return EXIT_RXFAIL;
         }
@@ -535,46 +542,46 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
               .name = "UART1", .baudrateId = UBLOXCFG_CFG_UART1_BAUDRATE_ID,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART1INPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART1INPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART1OUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART1OUTPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_UART1OUTPROT_RTCM3X_ID } }
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART1OUTPROT_RTCM3X_ID } }
             },
             {
               .name = "UART2", .baudrateId = UBLOXCFG_CFG_UART2_BAUDRATE_ID,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART2INPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART2INPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART2OUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART2OUTPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_UART2OUTPROT_RTCM3X_ID } }
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART2OUTPROT_RTCM3X_ID } }
             },
             {
               .name = "SPI", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_SPIINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_SPIINPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_SPIOUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_SPIOUTPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_SPIOUTPROT_RTCM3X_ID } }
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_SPIOUTPROT_RTCM3X_ID } }
             },
             {
               .name = "I2C", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_I2CINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_I2CINPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_I2COUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_I2COUTPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_I2COUTPROT_RTCM3X_ID } }
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_I2COUTPROT_RTCM3X_ID } }
             },
             {
               .name = "USB", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_USBINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_USBINPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_USBINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_USBINPROT_RTCM3X_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_USBOUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_USBOUTPROT_NMEA_ID },
-                           { .name = "RTCM3X", .id = UBLOXCFG_CFG_USBOUTPROT_RTCM3X_ID } }
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_USBOUTPROT_RTCM3X_ID } }
             },
         };
         // Find port config info

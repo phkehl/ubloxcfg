@@ -56,6 +56,33 @@ int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payl
 
 /* ********************************************************************************************** */
 
+static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, const uint8_t msgId);
+
+bool ubxMessageName(char *name, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (name == NULL) || (size < 1) )
+    {
+        return false;
+    }
+    if ( (msgSize < (UBX_HEAD_SIZE)) || (msg == NULL) )
+    {
+        name[0] = '\0';
+        return false;
+    }
+    const uint8_t clsId = UBX_CLSID(msg);
+    const uint8_t msgId = UBX_MSGID(msg);
+    return _ubxMessageName(name, size, clsId, msgId);
+}
+
+bool ubxMessageNameIds(char *name, const int size, const uint8_t clsId, const uint8_t msgId)
+{
+    if ( (name == NULL) || (size < 1) )
+    {
+        return false;
+    }
+    return _ubxMessageName(name, size, clsId, msgId);
+}
+
 typedef struct MSGINFO_s
 {
     uint8_t     clsId;
@@ -66,20 +93,9 @@ typedef struct MSGINFO_s
 #define _P_MSGINFO(_clsId_, _msgId_, _msgName_) { .clsId = (_clsId_), .msgId = (_msgId_), .msgName = (_msgName_) },
 #define _P_MSGINFO_UNKN(_clsId_, _clsName_) { .clsId = (_clsId_), .msgName = (_clsName_) },
 
-bool ubxMessageName(char *name, const int size, const uint8_t *msg, const int msgSize)
+static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, const uint8_t msgId)
 {
-    if (name == NULL)
-    {
-        return false;
-    }
-    if ( (msgSize < (UBX_HEAD_SIZE)) || (msg == NULL) )
-    {
-        name[0] = '\0';
-        return false;
-    }
 
-    const uint8_t clsId = UBX_CLSID(msg);
-    const uint8_t msgId = UBX_MSGID(msg);
     const MSGINFO_t msgInfo[] =
     {
         UBX_MESSAGES(_P_MSGINFO)
@@ -337,10 +353,88 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
 
 /* ********************************************************************************************** */
 
+static int _ubxMonVerStr(char *str, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (msg == NULL) || (str == NULL) || (size < 2) ||
+         (UBX_CLSID(msg) != UBX_MON_CLSID) ||
+         (UBX_MSGID(msg) != UBX_MON_VER_MSGID) ||
+         (msgSize < (int)(UBX_FRAME_SIZE + sizeof(UBX_MON_VER_V0_GROUP0_t))) )
+    {
+        return false;
+    }
+
+    // swVersion: EXT CORE 1.00 (61ce84)
+    // hwVersion: 00190000
+    // extension: ROM BASE 0xDD3FE36C
+    // extension: FWVER=HPG 1.00
+    // extension: PROTVER=27.00
+    // extension: MOD=ZED-F9P
+    // extension: GPS;GLO;GAL;BDS
+    // extension: QZSS
+
+    UBX_MON_VER_V0_GROUP0_t gr0;
+    int offs = UBX_HEAD_SIZE;
+    memcpy(&gr0, &msg[offs], sizeof(gr0));
+    gr0.swVersion[sizeof(gr0.swVersion) - 1] = '\0';
+
+    char verStr[sizeof(gr0.swVersion)];
+    verStr[0] = '\0';
+    char modStr[sizeof(gr0.swVersion)];
+    modStr[0] = '\0';
+
+    offs += sizeof(gr0);
+    UBX_MON_VER_V0_GROUP1_t gr1;
+    while (offs <= (msgSize - 2 - (int)sizeof(gr1)))
+    {
+        memcpy(&gr1, &msg[offs], sizeof(gr1));
+        if ( (verStr[0] == '\0') && (strncmp("FWVER=", gr1.extension, 6) == 0) )
+        {
+            gr1.extension[sizeof(gr1.extension) - 1] = '\0';
+            strcat(verStr, &gr1.extension[6]);
+        }
+        else if ( (modStr[0] == '\0') && (strncmp("MOD=", gr1.extension, 4) == 0) )
+        {
+            gr1.extension[sizeof(gr1.extension) - 1] = '\0';
+            strcat(modStr, &gr1.extension[4]);
+        }
+        offs += sizeof(gr1);
+        if ( (verStr[0] != '\0') && (modStr[0] != '\0') )
+        {
+            break;
+        }
+    }
+    if (verStr[0] == '\0')
+    {
+        strcat(verStr, gr0.swVersion);
+    }
+
+    int len = 0;
+    if (modStr[0] != '\0')
+    {
+        len = snprintf(str, size, "%s (%s)", verStr, modStr);
+    }
+    else
+    {
+        len = snprintf(str, size, "%s", verStr);
+    }
+    return len;
+}
+
+bool ubxMonVerToVerStr(char *str, const int size, const uint8_t *msg, const int msgSize)
+{
+    const int len = _ubxMonVerStr(str, size, msg, msgSize);
+    return (len > 0) && (len < size);
+}
+
+/* ********************************************************************************************** */
+
 static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int msgSize, const int iTowOffs);
 static int _strUbxNavPvt(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack);
 
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
@@ -352,6 +446,12 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
     {
         info[0] = '\0';
         return false;
+    }
+
+    if (msgSize == UBX_FRAME_SIZE)
+    {
+        const int len = snprintf(info, size, "empty message / poll request");
+        return (len > 0) && (len < size);
     }
 
     const uint8_t clsId = UBX_CLSID(msg);
@@ -416,9 +516,37 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                     break;
             }
             break;
+        case UBX_MON_CLSID:
+            switch (msgId)
+            {
+                case UBX_MON_VER_MSGID:
+                    len = _strUbxMonVer(info, size, msg, msgSize);
+                    break;
+            }
+            break;
+        case UBX_CFG_CLSID:
+            switch (msgId)
+            {
+                case UBX_CFG_VALGET_MSGID:
+                    len = _strUbxCfgValget(info, size, msg, msgSize);
+                    break;
+            }
+            break;
+        case UBX_ACK_CLSID:
+            switch (msgId)
+            {
+                case UBX_ACK_ACK_MSGID:
+                    len = _strUbxAckAck(info, size, msg, msgSize, true);
+                    break;
+                case UBX_ACK_NAK_MSGID:
+                    len = _strUbxAckAck(info, size, msg, msgSize, false);
+                    break;
+            }
+            break;
         default:
             break;
     }
+    // TODO: insert ellipsis instead of failing in case len > size
     return (len > 0) && (len < size);
 }
 
@@ -576,6 +704,64 @@ static int _svListSort(const void *a, const void *b)
     {
         return svA->gnssId < svB->gnssId ? -1 : 1;
     }
+}
+
+static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    return ubxMonVerToVerStr(info, size, msg, msgSize);
+}
+
+static const char *_valgetLayerName(const uint8_t layer)
+{
+    switch (layer)
+    {
+        case UBX_CFG_VALGET_V0_LAYER_RAM:     return "RAM";
+        case UBX_CFG_VALGET_V0_LAYER_BBR:     return "BBR";
+        case UBX_CFG_VALGET_V0_LAYER_FLASH:   return "Flash";
+        case UBX_CFG_VALGET_V0_LAYER_DEFAULT: return "Default";
+    }
+    return "?";
+}
+
+static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize < (int)sizeof(UBX_CFG_VALGET_V0_GROUP0_t))
+    {
+        return 0;
+    }
+    UBX_CFG_VALGET_V0_GROUP0_t /* (= UBX_CFG_VALGET_V0_GROUP0_t) */ head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+    switch (head.version)
+    {
+        case UBX_CFG_VALGET_V0_VERSION:
+        {
+            const int numKeys = (msgSize - UBX_FRAME_SIZE - sizeof(head)) / sizeof(uint32_t);
+            return snprintf(info, size, "poll %d items from layer %s, position %u",
+                numKeys, _valgetLayerName(head.layer), head.position);
+            break;
+        }
+        case UBX_CFG_VALGET_V1_VERSION:
+        {
+            const int dataSize = size - UBX_FRAME_SIZE - sizeof(head);
+            return snprintf(info, size, "response %d bytes from layer %s, position %u",
+                dataSize, _valgetLayerName(head.layer), head.position);
+            break; 
+        }
+    }
+    return 0;
+}
+
+static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack)
+{
+    if (msgSize < (int)sizeof(UBX_ACK_ACK_V0_GROUP0_t))
+    {
+        return 0;
+    }
+    UBX_ACK_ACK_V0_GROUP0_t /* (= UBX_ACK_NAK_V0_GROUP0_t) */ acknak;
+    memcpy(&acknak, &msg[UBX_HEAD_SIZE], sizeof(acknak));
+    char tmp[100];
+    ubxMessageNameIds(tmp, sizeof(tmp), acknak.clsId, acknak.msgId);
+    return snprintf(info, size, "%s %s", ack ? "acknowledgement" : "negative-acknowledgement", tmp);
 }
 
 
