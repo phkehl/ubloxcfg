@@ -24,6 +24,8 @@
 #include <fcntl.h>
 #include <limits.h>
 
+#include "ubloxcfg.h"
+
 #include "cfgtool_util.h"
 
 #define INPUT_MAX_LINE_LEN 2000
@@ -300,6 +302,63 @@ bool ioWriteOutput(const bool append)
     {
         WARNING("Failed writing '%s': %s", gOutName, failStr == NULL ? "Unknown error" : failStr);
     }
+    return res;
+}
+
+/* ********************************************************************************************** */
+
+bool layersStringToFlags(const char *layers, bool *ram, bool *bbr, bool *flash, bool *def)
+{
+    char tmp[200];
+    if (snprintf(tmp, sizeof(tmp), "%s", layers) >= (int)sizeof(tmp))
+    {
+        return false;
+    }
+
+    bool res = true;
+    char *tok = strtok(tmp, ",");
+    while (tok != NULL)
+    {
+        UBLOXCFG_LAYER_t layer;
+        if (ubloxcfg_layerFromName(tok, &layer))
+        {
+            switch (layer)
+            {
+                case UBLOXCFG_LAYER_RAM:
+                    if (ram != NULL)
+                    {
+                        *ram = true;
+                    }
+                    break;
+                case UBLOXCFG_LAYER_BBR:
+                    if (bbr != NULL)
+                    {
+                        *bbr = true;
+                    }
+                    break;
+                case UBLOXCFG_LAYER_FLASH:
+                    if (flash != NULL)
+                    {
+                        *flash = true;
+                    }
+                    break;
+                case UBLOXCFG_LAYER_DEFAULT:
+                    if (def != NULL)
+                    {
+                        *def = true;
+                    }
+                    break;
+            }
+        }
+        else
+        {
+            WARNING("Illegal layer '%s' in '%s'!", tok, layers);
+            res = false;
+            break;
+        }
+        tok = strtok(NULL, ",");
+    }
+    
     return res;
 }
 

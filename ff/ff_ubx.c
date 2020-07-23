@@ -22,6 +22,7 @@
 
 #include "ff_stuff.h"
 #include "ff_ubx.h"
+#include "ff_debug.h"
 
 /* ********************************************************************************************** */
 
@@ -52,6 +53,164 @@ int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payl
     *pMsg = a; pMsg++;
     *pMsg = b;
     return payloadSize + UBX_FRAME_SIZE;
+}
+
+/* ********************************************************************************************** */
+
+// It seems that when using transactions, the last message (with UBX-CFG-VALSET.transaction = 3, i.e. end/commit)
+// must not contain any key-value pairs or those key-value pairs in the last message are ignored and not applied.
+#define NEED_EMPTY_TRANSACTION_END
+
+#define UBX_CFG_VALSET_MSG_MAX 20
+
+UBX_CFG_VALSET_MSG_t *ubxKeyValToUbxCfgValset(const UBLOXCFG_KEYVAL_t *kv, const int nKv, const bool ram, const bool bbr, const bool flash, int *nValset)
+{
+    if (nValset == NULL)
+    {
+        return NULL;
+    }
+
+    const int nMsgs = (nKv / (UBX_CFG_VALSET_V1_MAX_KV)) + ((nKv % UBX_CFG_VALSET_V1_MAX_KV) != 0 ? 1 : 0) ;
+#ifdef NEED_EMPTY_TRANSACTION_END
+    if (nMsgs > (UBX_CFG_VALSET_MSG_MAX - 1))
+#else
+    if (nMsgs > UBX_CFG_VALSET_MSG_MAX)
+#endif
+    {
+        return NULL;
+    }
+
+    const uint8_t layers = (ram   ? UBX_CFG_VALSET_V1_LAYER_RAM   : 0x00) |
+                           (bbr   ? UBX_CFG_VALSET_V1_LAYER_BBR   : 0x00) |
+                           (flash ? UBX_CFG_VALSET_V1_LAYER_FLASH : 0x00);
+    if (layers == 0x00)
+    {
+        return NULL;
+    }
+    char layersStr[100];
+    layersStr[0] = '\0';
+    if (ram)
+    {
+        strcat(&layersStr[strlen(layersStr)], ",RAM");
+    }
+    if (bbr)
+    {
+        strcat(&layersStr[strlen(layersStr)], ",BBR");
+    }
+    if (flash)
+    {
+        strcat(&layersStr[strlen(layersStr)], ",Flash");
+    }
+
+    const int msgsSize = (UBX_CFG_VALSET_MSG_MAX + 1) * sizeof(UBX_CFG_VALSET_MSG_t);
+    UBX_CFG_VALSET_MSG_t *msgs = malloc(msgsSize);
+    if (msgs == NULL)
+    {
+        WARNING("ubxKeyValToUbxCfgValset() malloc fail");
+        return NULL;
+    }
+    memset(msgs, 0, msgsSize);
+
+    // Create as many UBX-CFG-VALSET as required
+    bool res = true;
+    for (int msgIx = 0; msgIx < nMsgs; msgIx++)
+    {
+        const int kvOffs = msgIx * UBX_CFG_VALSET_V1_MAX_KV;
+        const int remKv = nKv - kvOffs;
+        const int nKvThisMsg = remKv > UBX_CFG_VALSET_V1_MAX_KV ? UBX_CFG_VALSET_V1_MAX_KV : remKv;
+        //DEBUG("msgIx=%d nMsgs=%d nKv=%d kvOffs=%d remKv=%d nKvThisMsg=%d", msgIx, nMsgs, nKv, kvOffs, remKv, nKvThisMsg);
+
+        // Message header
+        uint8_t transaction = UBX_CFG_VALSET_V1_TRANSACTION_NONE;
+        const char *transactionStr = "no transaction";
+        if (nMsgs > 1)
+        {
+            if (msgIx == 0)
+            {
+                transaction = UBX_CFG_VALSET_V1_TRANSACTION_BEGIN;
+                transactionStr = "transaction begin";
+            }
+            else
+#ifndef NEED_EMPTY_TRANSACTION_END
+                  if (msgIx < (nMsgs - 1))
+#endif
+            {
+                transaction = UBX_CFG_VALSET_V1_TRANSACTION_CONTINUE;
+                transactionStr = "transaction continue";
+            }
+#ifndef NEED_EMPTY_TRANSACTION_END
+            else
+            {
+                transaction = UBX_CFG_VALSET_V1_TRANSACTION_END;
+                transactionStr = "transaction end";
+            }
+#endif
+        }
+        DEBUG("Creating UBX-CFG-VALSET %d items (%d..%d/%d, %s)",
+            nKvThisMsg, kvOffs + 1, kvOffs + nKvThisMsg, nKv, transactionStr);
+
+        uint8_t *pUbxData = msgs[msgIx].msg;
+
+        // Add payload head
+        const UBX_CFG_VALSET_V1_GROUP0_t payloadHead =
+        {
+            .version     = UBX_CFG_VALSET_V1_VERSION,
+            .layers      = layers,
+            .transaction = transaction,
+            .reserved    = UBX_CFG_VALSET_V1_RESERVED
+        };
+        const int payloadHeadSize = sizeof(payloadHead);
+        memcpy(pUbxData, &payloadHead, payloadHeadSize);
+
+        // Add config data
+        int cfgDataSize = 0;
+        if (!ubloxcfg_makeData(&pUbxData[payloadHeadSize], UBX_CFG_VALGET_V1_MAX_SIZE,
+                &kv[kvOffs], nKvThisMsg, &cfgDataSize))
+        {
+            WARNING("UBX-CFG-VALSET.cfgData encode fail!");
+            res = false;
+            break;
+        }
+
+        // Make UBX message
+        const int msgSize = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_VALSET_MSGID,
+            pUbxData, payloadHeadSize + cfgDataSize, pUbxData);
+
+        msgs[msgIx].size = msgSize;
+
+        snprintf(msgs[msgIx].info, sizeof(msgs[msgIx].info), "%d items: %d..%d/%d, %d bytes, %s, %s",
+            nKvThisMsg, kvOffs + 1, kvOffs + nKvThisMsg, nKv, msgSize, &layersStr[1], transactionStr);
+    }
+
+    if (!res)
+    {
+        free(msgs);
+        return NULL;
+    }
+
+#ifdef NEED_EMPTY_TRANSACTION_END
+    // Add empty transaction-complete message
+    if (nMsgs > 1)
+    {
+        const UBX_CFG_VALSET_V1_GROUP0_t payload =
+        {
+            .version     = UBX_CFG_VALSET_V1_VERSION,
+            .layers      = layers,
+            .transaction = UBX_CFG_VALSET_V1_TRANSACTION_END,
+            .reserved    = UBX_CFG_VALSET_V1_RESERVED
+        };
+        msgs[nMsgs].size = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_VALSET_MSGID,
+            (const uint8_t *)&payload, sizeof(payload), msgs[nMsgs].msg);
+        snprintf(msgs[nMsgs].info, sizeof(msgs[nMsgs].info), "no items, %d bytes, %s, transaction end",
+            msgs[nMsgs].size, &layersStr[1]);
+        *nValset = nMsgs + 1;
+    }
+    else
+#endif
+    {
+        *nValset = nMsgs;
+    }
+    return msgs;
 }
 
 /* ********************************************************************************************** */

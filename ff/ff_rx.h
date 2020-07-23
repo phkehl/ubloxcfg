@@ -94,6 +94,8 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset);
 
 int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv);
 
+bool rxSetConfig(RX_t *rx, const UBLOXCFG_KEYVAL_t *kv, const int nKv, const bool ram, const bool bbr, const bool flash);
+
 /* ********************************************************************************************** */
 #ifdef __cplusplus
 }

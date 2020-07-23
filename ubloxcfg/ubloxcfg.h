@@ -188,6 +188,14 @@ typedef enum UBLOXCFG_LAYER_e
 //! Get name for layer
 const char *ubloxcfg_layerName(const UBLOXCFG_LAYER_t layer);
 
+//! Get layer from name
+/*!
+    \param[in]   name   Layer name, case insensitive
+    \param[out]  layer  Layer, only valid if return value is true
+    \returns true if a valid layer name is given
+*/
+bool ubloxcfg_layerFromName(const char *name, UBLOXCFG_LAYER_t *layer);
+
 ///@}
 
 /* ********************************************************************************************** */
@@ -397,8 +405,7 @@ const char *ubloxcfg_typeStr(UBLOXCFG_TYPE_t type);
 
     Constant names will be added for L type, and, where available, for X and E type if \c item is given.
 
-    This function does not apply item scale factors nor does it add item units to the
-    formatted string.
+    This function does not apply item scale factors nor does it add item units to the formatted string.
 
     The stringification is as follows:
     - L type: "0 (false)" or "1 (true)"
@@ -409,11 +416,28 @@ const char *ubloxcfg_typeStr(UBLOXCFG_TYPE_t type);
     - R types: "0", "1", "0.5", "1.25e-24"
     - Unknown items all stringify to X type, i.e. "0x04 (n/a)", "0x1234 (n/a)", etc.
 
-    The \c str buffer should be reasonably big, esp. for stringification of E and X types.
+    That is, the string starts with the numeric value, followed by one space character, followed by a pretty-printed
+    value in brackets (where useful).
+
+    The \c str buffer should be reasonably big (#UBLOXCFG_MAX_KEYVAL_STR_SIZE), esp. for stringification of E and X
+    types.
 */
 bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t type, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_VALUE_t *val);
 
-//! Stringify key-value pair
+//! Split stringified value string
+/*!
+    \param[in]   str        The string formatted by ubloxcfg_stringifyValue()
+    \param[out]  valueStr   String with only the value
+    \param[out]  prettyStr  String with only the pretty part (or NULL)
+
+    \returns true if successfully split, in which case \c str is tainted
+
+    The \c str is split on the space character. A "(n/a)" pretty-printed value in \c str is ignored and \c prettyStr is
+    set to NULL. I.e. "value (pretty)" becomes "value" and "pretty". "value" or "value (n/a)" become "value" and NULL.
+*/
+bool ubloxcfg_splitValueStr(char *str, char **valueStr, char **prettyStr);
+
+//! Stringify key-value pair (for debugging)
 /*!
     \param[out] str     String to format
     \param[in]  size    Size of the \c str buffer
@@ -422,8 +446,8 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
     \returns Returns true if the value was successfully formatted, false otherwise
              (\c size too small, ...)
 
-    The \c str buffer should be reasonably big (> #UBLOXCFG_MAX_KEYVAL_STR_SIZE),
-    esp. for stringification of E and X types.
+    The \c str buffer should be reasonably big (#UBLOXCFG_MAX_KEYVAL_STR_SIZE), esp. for stringification of E and X
+    types.
 
     \b Example
     \code{.c}

@@ -53,5 +53,7 @@ void ioAddOutputHexdump(const uint8_t *data, const int size);
 void ioAddOutputC(const uint8_t *data, const int size, const int wordsPerLine, const char *indent);
 bool ioWriteOutput(const bool append);
 
+bool layersStringToFlags(const char *layers, bool *ram, bool *bbr, bool *flash, bool *def);
+
 /* ********************************************************************************************** */
 #endif // __CFGTOOL_UTIL_H__

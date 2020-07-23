@@ -64,10 +64,6 @@ const char *rx2listHelp(void)
 
 /* ********************************************************************************************** */
 
-typedef enum LAYER_e
-{
-    LAYER_NONE, LAYER_RAM, LAYER_BBR, LAYER_FLASH, LAYER_DEFAULT
-} LAYER_t;
 
 #define MAX_ITEMS 3000
 
@@ -88,7 +84,6 @@ typedef struct CFG_DB_s
 } CFG_DB_t;
 
 // Forward declarations
-static bool _getLayer(const char *name, UBLOXCFG_LAYER_t *layer);
 static CFG_DB_t *_getCfgDb(RX_t *rx, const UBLOXCFG_LAYER_t layer);
 static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t id);
 static void _dbFlag(CFG_DB_t *db, const uint32_t id);
@@ -115,7 +110,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
 {
     // Check parameters
     UBLOXCFG_LAYER_t layer;
-    if (!_getLayer(layerArg, &layer))
+    if (!ubloxcfg_layerFromName(layerArg, &layer))
     {
         return EXIT_BADARGS;
     }
@@ -320,7 +315,25 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         {
             snprintf(itemName, sizeof(itemName), "%s0x%08x", cfgStrsAreSame ? "#" : "", kvLayer->id);
         }
-        ioOutputStr("%-35s %-23s # default: %s", itemName, cfgStrLayer, cfgStrDefault);
+        char typeUnitScale[100];
+        if (item == NULL)
+        {
+            strcpy(typeUnitScale, "unknown/undocumented item");
+        }
+        else
+        {
+            int len = snprintf(typeUnitScale, sizeof(typeUnitScale), "type %s", ubloxcfg_typeStr(item->type));
+            if (item->scale != NULL)
+            {
+                len += snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, ", %s", item->scale);
+            }
+            if (item->unit != NULL)
+            {
+                len += snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, " [%s]", item->unit);
+            }
+        }
+
+        ioOutputStr("%-35s %-23s # default: %-25s (%s)", itemName, cfgStrLayer, cfgStrDefault, typeUnitScale);
 
         ioOutputStr("\n");
     }
@@ -352,7 +365,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
 {
     // Check parameters
     UBLOXCFG_LAYER_t layer;
-    if (!_getLayer(layerArg, &layer))
+    if (!ubloxcfg_layerFromName(layerArg, &layer))
     {
         return EXIT_BADARGS;
     }
@@ -435,37 +448,6 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
 }
 
 /* ********************************************************************************************** */
-
-static bool _getLayer(const char *name, UBLOXCFG_LAYER_t *layer)
-{
-    if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_RAM)) == 0)
-    {
-        *layer = UBLOXCFG_LAYER_RAM;
-        return true;
-    }
-    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_BBR)) == 0)
-    {
-        *layer = UBLOXCFG_LAYER_BBR;
-        return true;
-    }
-    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_FLASH)) == 0)
-    {
-        *layer = UBLOXCFG_LAYER_FLASH;
-        return true;
-    }
-    else if (strcasecmp(name, ubloxcfg_layerName(UBLOXCFG_LAYER_DEFAULT)) == 0)
-    {
-        *layer = UBLOXCFG_LAYER_DEFAULT;
-        return true;
-    }
-    else
-    {
-        WARNING("Illegal configuration layer '%s'!", name);
-    }
-    return false;
-}
-
-// -------------------------------------------------------------------------------------------------
 
 static int _dbSortFunc(const void *a, const void *b);
 
@@ -726,21 +708,12 @@ static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item
         return false;
     }
 
-    // We can have now "3 (AUTO)" or so, prefer constant names over value
-    char *space = strchr(str, ' ');
-    if (space != NULL)
+    // Prefer pretty value
+    char *valueStr;
+    char *prettyStr;
+    if (ubloxcfg_splitValueStr(str, &valueStr, &prettyStr) && (prettyStr != NULL))
     {
-        *space = '\0';
-        char *part = &space[1];
-        // Not interested in "(n/a)", though
-        if (strcmp(part, "(n/a)") != 0)
-        {
-            // Remove brackets
-            part[strlen(part) - 1] = '\0';
-            part++;
-            // Move constant name part to beginning of string
-            memmove(str, part, strlen(part) + 1);
-        }
+        strcpy(str, prettyStr);
     }
 
     return true;
@@ -794,24 +767,9 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     char *valConstStr = NULL;
     if (ubloxcfg_stringifyValue(valStr, sizeof(valStr), type, item, &kv->val))
     {
-        // For E and X types with constants we get "<value> (<name>)", split that in two
-        char *space = strchr(valStr, ' ');
-        if (space != NULL)
-        {
-            *space = '\0';
-            valConstStr = &space[1];
-            // Not interested in "(n/a)", though
-            if (strcmp(valConstStr, "(n/a)") == 0)
-            {
-                valConstStr = NULL;
-            }
-            // And neither the brackets
-            else
-            {
-                valConstStr[strlen(valConstStr) - 1] = '\0';
-                valConstStr++;
-            }
-        }                
+        // Prefer pretty value
+        char *dummy;
+        ubloxcfg_splitValueStr(valStr, &dummy, &valConstStr);
         // We should now either have NULL or "FOO|BAR" style constant names
     }
     // Complain in case stringification unexpectedly failed

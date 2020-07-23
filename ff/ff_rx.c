@@ -493,7 +493,7 @@ bool rxAutobaud(RX_t *rx)
 
     int baudrate = 0;
     const int currentBaudrate = rxGetBaudrate(rx);
-    int baudrates[] = { currentBaudrate, 9600, 38400, 115200, 460800, 921600 };
+    int baudrates[] = { currentBaudrate, 9600, 38400, 115200, 230400, 460800, 921600 };
     PARSER_MSG_t *ubxMonVer = NULL;
 
     // First, try quickly..
@@ -948,6 +948,38 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
 
     return res ? totNumKv : -1;
 }
+
+bool rxSetConfig(RX_t *rx, const UBLOXCFG_KEYVAL_t *kv, const int nKv, const bool ram, const bool bbr, const bool flash)
+{
+    if ( (rx == NULL) || (kv == NULL) || !(ram || bbr || flash) )
+    {
+        return false;
+    }
+
+    int nMsgs = 0;
+    UBX_CFG_VALSET_MSG_t *msgs = ubxKeyValToUbxCfgValset(kv, nKv, ram, bbr, flash, &nMsgs);
+    if (msgs == NULL)
+    {
+        return false;
+    }
+
+    RX_PRINT("Sending %d key-value pairs in %d UBX-CFG-VALSET messages", nKv, nMsgs);
+    bool res = true;
+    for (int ix = 0; ix < nMsgs; ix++)
+    {
+        RX_PRINT("Sending UBX-CFG-VALSET %d/%d (%s)", ix + 1, nMsgs, msgs[ix].info);
+        if (!rxSendUbxCfg(rx, msgs[ix].msg, msgs[ix].size, 2500))
+        {
+            RX_WARNING("Failed configuring receiver!");
+            res = false;
+            break;
+        }
+    }
+
+    free(msgs);
+    return res;
+}
+
 
 /* ********************************************************************************************** */
 // eof

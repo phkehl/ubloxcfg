@@ -37,9 +37,9 @@
             "command": "make", "args": [ "output/cfgtool" ]
         },
         {
-            "label": "make gui",
+            "label": "make cfggui",
             "group": "build",
-            "command": "make", "args": [ "output/gui" ]
+            "command": "make", "args": [ "-j8", "output/cfggui" ]
         },
         {
             "label": "make clean",

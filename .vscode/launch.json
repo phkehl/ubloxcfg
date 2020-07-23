@@ -27,17 +27,30 @@
             "stopAtEntry": false,
             "preLaunchTask" : "make cfgtool",
             "program": "${workspaceFolder}/output/cfgtool",
-            "args": [ "-v", "-i", "test_cfg2ubx.txt", "cfg2ubx" ],
+            "args": [ "-v", "-i", "test_cfg2ubx.txt", "cfg2ubx", "-l", "ram" ],
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "debug gui",
+            "name": "debug cfgtool rxraw",
             "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
             "stopAtEntry": false,
-            "preLaunchTask" : "make gui",
-            "program": "${workspaceFolder}/output/gui",
-            "args": [ ],
+            "preLaunchTask" : "make cfgtool",
+            "program": "${workspaceFolder}/output/cfgtool",
+            "args": [ "-v", "-p", "/dev/ttyACM2", "rxraw" ],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "debug cfggui",
+            "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+            "stopAtEntry": false,
+            "preLaunchTask" : "make cfggui",
+            "program": "${workspaceFolder}/output/cfggui",
+            "args": [ ],
+            "cwd": "${workspaceFolder}",
+            "setupCommands": [
+                { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true },
+                { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true }
+            ]
         }
     ],
     "inputs": [

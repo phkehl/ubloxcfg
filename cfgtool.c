@@ -128,23 +128,39 @@ const CMD_t kCmds[] =
       .need_i = false, .need_o = false, .need_p = true,  .need_l = false, .need_r = true  },
 };
 
-const char * const kHelpStr = 
+const char * const kTitleStr = 
     // -----------------------------------------------------------------------------
     "cfgtool "CONFIG_VERSION" -- u-blox 9 configuration interface tool\n"
-    "\n"
-    "Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
-    "https://oinkzwurgl.org/hacking/ubloxcfg/\n"
-    "\n"
+    "\n";
+
+const char * const kCopyrightStr = 
+    // -----------------------------------------------------------------------------
+    "    Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
+    "    https://oinkzwurgl.org/hacking/ubloxcfg/\n"
+    "\n";
+
+const char * const kVersionStr = 
+    // -----------------------------------------------------------------------------
+    "    version: "CONFIG_VERSION", git hash: "CONFIG_GITHASH", build date and time: "CONFIG_DATE" "CONFIG_TIME"\n"
+    "\n";
+
+const char * const kHelpStr = 
     // -----------------------------------------------------------------------------
     "Usage:\n"
     "\n"
-    "    cfgtool [-h] [-v] [-q] [...] <command>\n"
+    "    cfgtool -h | -H | -h <command> | -V\n"
+    "    cfgtool [-v] [-q] [...] <command>\n"
     "\n"
     // -----------------------------------------------------------------------------
     "Where:\n"
     "\n"
-    "    -h / -H        Prints help summary / full help\n"
+    "    -h             Prints help summary\n"
+    "    -H             Prints full help\n"
+    "    -h <command>   Prints help for a command\n"
+    "    -V             Displays version and license information\n"
+    "\n"
     "    -v / -q        Increases / decreases verbosity\n"
+    "\n"
     "    <command>      Command\n"
     "\n"
     "    And depending on the <command>:\n"
@@ -280,6 +296,8 @@ const char * const kGreeting =
 
 void printHelp(const bool full)
 {
+    fputs(kTitleStr, stdout);
+    fputs(kCopyrightStr, stdout);
     fputs(kHelpStr, stdout);
     for (int ix = 0; ix < NUMOF(kCmds); ix++)
     {
@@ -303,6 +321,17 @@ void printHelp(const bool full)
     fputs(kGreeting, stdout);
 }
 
+void printVersion(void)
+{
+    fputs(kTitleStr, stdout);
+    fputs("Version:\n\n", stdout);
+    fputs(kVersionStr, stdout);
+    fputs("Copyright:\n\n", stdout);
+    fputs(kCopyrightStr, stdout);
+    fputs(kLicenseHelp, stdout);
+    fputs(kGreeting, stdout);
+}
+
 int main(int argc, char **argv)
 {
     memset(&gArgs, 0, sizeof(gArgs));
@@ -316,18 +345,23 @@ int main(int argc, char **argv)
         .arg    = NULL,
     };
     debugSetup(&debugCfg);
+    bool doHelp = false;
 
     for (int argIx = 1; argIx < argc; argIx++)
     {
         bool argOk = true;
         if (strcmp("-h", argv[argIx]) == 0)
         {
-            printHelp(false);
-            exit(EXIT_SUCCESS);
+            doHelp = true;
         }
         else if (strcmp("-H", argv[argIx]) == 0)
         {
             printHelp(true);
+            exit(EXIT_SUCCESS);
+        }
+        else if (strcmp("-V", argv[argIx]) == 0)
+        {
+            printVersion();
             exit(EXIT_SUCCESS);
         }
         else if (strcmp("-v", argv[argIx]) == 0)
@@ -371,6 +405,7 @@ int main(int argc, char **argv)
         {
             WARNING("Illegal argument '%s'!", argv[argIx]);
             gArgs.cmd = NULL;
+            doHelp = false;
             break;
         }
     }
@@ -378,7 +413,22 @@ int main(int argc, char **argv)
     if (gArgs.cmd != NULL)
     {
         debugCfg.mark = gArgs.cmd->name;
-        debugSetup(&debugCfg);
+    }
+    debugSetup(&debugCfg);
+
+    if (doHelp)
+    {
+        if (gArgs.cmd != NULL)
+        {
+            fputs(kTitleStr, stdout);
+            fputs(gArgs.cmd->help(), stdout);
+            fputs(kGreeting, stdout);
+        }
+        else
+        {
+            printHelp(false);
+        }
+        exit(EXIT_SUCCESS);
     }
 
     bool res = true;

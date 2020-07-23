@@ -414,6 +414,19 @@ int main(int argc, char **argv)
         }
     }
 
+    // Split stringified value
+    {
+        char str[100];
+        char *vStr;
+        char *pStr;
+        strcpy(str, "value (pretty)");
+        TEST("splitValueStr: value (pretty)", ubloxcfg_splitValueStr(str, &vStr, &pStr) && (strcmp(vStr, "value") == 0) && (strcmp(pStr, "pretty") == 0));
+        strcpy(str, "value");
+        TEST("splitValueStr: value", ubloxcfg_splitValueStr(str, &vStr, &pStr) && (strcmp(vStr, "value") == 0) && (pStr == NULL));
+        strcpy(str, "value (n/a)");
+        TEST("splitValueStr: value (n/a)", ubloxcfg_splitValueStr(str, &vStr, &pStr) && (strcmp(vStr, "value") == 0) && (pStr == NULL));
+    }
+
     // Output message rate config aliases
     {
         const UBLOXCFG_KEYVAL_t keyVal[] =
@@ -629,6 +642,16 @@ int main(int argc, char **argv)
         TEST("layer name Flash",   strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_FLASH),   "Flash")   == 0);
         TEST("layer name Default", strcmp(ubloxcfg_layerName(UBLOXCFG_LAYER_DEFAULT), "Default") == 0);
         TEST("bad layer name", strcmp(ubloxcfg_layerName((UBLOXCFG_LAYER_t)99), "?") == 0);
+
+        UBLOXCFG_LAYER_t layer;
+        TEST("layer val 'RAM'",     ubloxcfg_layerFromName("RAM",     &layer) && (layer == UBLOXCFG_LAYER_RAM));
+        TEST("layer val 'ram'",     ubloxcfg_layerFromName("ram",     &layer) && (layer == UBLOXCFG_LAYER_RAM));
+        TEST("layer val 'Ram'",     ubloxcfg_layerFromName("Ram",     &layer) && (layer == UBLOXCFG_LAYER_RAM));
+        TEST("layer val 'rAm'",     ubloxcfg_layerFromName("rAm",     &layer) && (layer == UBLOXCFG_LAYER_RAM));
+        TEST("layer val 'BBR'",     ubloxcfg_layerFromName("BBR",     &layer) && (layer == UBLOXCFG_LAYER_BBR));
+        TEST("layer val 'Flash'",   ubloxcfg_layerFromName("Flash",   &layer) && (layer == UBLOXCFG_LAYER_FLASH));
+        TEST("layer val 'Default'", ubloxcfg_layerFromName("Default", &layer) && (layer == UBLOXCFG_LAYER_DEFAULT));
+        TEST("layer val 'meier'",  !ubloxcfg_layerFromName("meier", &layer));
     }
 
     // Examples from ubloxcfg.h

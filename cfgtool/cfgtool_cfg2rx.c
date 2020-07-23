@@ -152,8 +152,10 @@ const char *cfg2rxHelp(void)
 
 int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig)
 {
-    const uint8_t layers = ubxCfgValsetLayer(layerArg);
-    if (layers == 0x00)
+    bool ram = false;
+    bool bbr = false;
+    bool flash = false;
+    if (!layersStringToFlags(layerArg, &ram, &bbr, &flash, NULL) || !(ram || bbr || flash))
     {
         return EXIT_BADARGS;
     }
@@ -172,45 +174,21 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         return EXIT_OTHERFAIL;
     }
 
-    PRINT("Converting %d items into UBX-CFG-VALSET messages", nKv);
-    int nMsgs = 0;
-    VALSET_MSG_t *msgs = keyValToUbxCfgValset(kv, nKv, layers, &nMsgs);
-    if (msgs == NULL)
-    {
-        free(kv);
-        return EXIT_OTHERFAIL;
-    }
-
     RX_t *rx = rxOpen(portArg, NULL);
     if (rx == NULL)
     {
         free(kv);
-        free(msgs);
         return EXIT_RXFAIL;
     }
 
     if ( (resetArg != NULL) && !rxReset(rx, reset))
     {
         free(kv);
-        free(msgs);
         rxClose(rx);
         return EXIT_RXFAIL;
     }
 
-    PRINT("Sending %d UBX-CFG-VALSET messages to the receiver", nMsgs);
-    bool res = true;
-    for (int ix = 0; ix < nMsgs; ix++)
-    {
-        PRINT("Sending UBX-CFG-VALSET %d/%d (%d items, %s)",
-            ix + 1, nMsgs, msgs[ix].nKv, msgs[ix].info);
-        if (!rxSendUbxCfg(rx, msgs[ix].msg, msgs[ix].size, 2500))
-        {
-            WARNING("Failed configuring receiver!");
-            res = false;
-            // TODO: send empty VALSET to abort transaction?
-            break;
-        }
-    }
+    bool res = rxSetConfig(rx, kv, nKv, ram, bbr, flash);
 
     if (res && applyConfig)
     {
@@ -218,7 +196,6 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         if (!rxReset(rx, RX_RESET_SOFT))
         {
             free(kv);
-            free(msgs);
             rxClose(rx);
             return EXIT_RXFAIL;
         }
@@ -229,9 +206,8 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         PRINT("Receiver successfully configured");
     }
 
-    //rxClose(rx);
+    rxClose(rx);
     free(kv);
-    free(msgs);
     return res ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 
@@ -350,7 +326,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         UBLOXCFG_VALUE_t value;
         if (!ubloxcfg_valueFromString(valStr, item->type, item, &value))
         {
-            WARNING_INFILE("Could not parse value '%s' for item '%s'!", valStr, item->name);
+            WARNING_INFILE("Could not parse value '%s' for item '%s' (type %s)!",
+                valStr, item->name, ubloxcfg_typeStr(item->type));
             return false;
         }
 
@@ -429,7 +406,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         }
         if (!valueOk)
         {
-            WARNING_INFILE("Bad value '%s' for item %s!", valStr, keyStr);
+            WARNING_INFILE("Bad value '%s' for item '%s'!", valStr, keyStr);
             return false;
         }
 
@@ -730,173 +707,6 @@ static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, c
         pCfgFilt = strtok(NULL, kCfgPartSep);
     }
     return true;
-}
-
-// -------------------------------------------------------------------------------------------------
-
-uint8_t ubxCfgValsetLayer(const char *layerStr)
-{
-    char tmp[200];
-    if (snprintf(tmp, sizeof(tmp), "%s", layerStr) >= (int)sizeof(tmp))
-    {
-        return 0;
-    }
-
-    uint8_t layer = 0;
-    bool res = true;
-    char *tok = strtok(tmp, ",");
-    while (tok != NULL)
-    {
-        if ( (strcasecmp("RAM", tok) == 0) && ((layer & UBX_CFG_VALSET_V1_LAYER_RAM) == 0) )
-        {
-            layer |= UBX_CFG_VALSET_V1_LAYER_RAM;
-        }
-        else if ( (strcasecmp("BBR", tok) == 0) && ((layer & UBX_CFG_VALSET_V1_LAYER_BBR) == 0) )
-        {
-            layer |= UBX_CFG_VALSET_V1_LAYER_BBR;
-        }
-        else if ( (strcasecmp("Flash", tok) == 0) && ((layer & UBX_CFG_VALSET_V1_LAYER_FLASH) == 0) )
-        {
-            layer |= UBX_CFG_VALSET_V1_LAYER_FLASH;
-        }
-        else
-        {
-            WARNING("Illegal layer '%s' in '%s'!", tok, layerStr);
-            res = false;
-            break;
-        }
-        tok = strtok(NULL, ",");
-    }
-    
-    if (!res)
-    {
-        return 0;
-    }
-
-    return layer;
-}
-
-/* ********************************************************************************************** */
-
-// It seems that when using transactions, the last message (with UBX-CFG-VALSET.transaction = 3, i.e. end/commit)
-// must not contain any key-value pairs or those key-value pairs in the last message are ignored and not applied.
-#define NEED_EMPTY_TRANSACTION_END
-
-VALSET_MSG_t *keyValToUbxCfgValset(UBLOXCFG_KEYVAL_t *kv, const int nKv, const uint8_t layers, int *nValset)
-{
-    if (nValset == NULL)
-    {
-        return NULL;
-    }
-    const int msgsSize = (CFG_SET_MAX_MSGS + 1) * sizeof(VALSET_MSG_t);
-    VALSET_MSG_t *msgs = malloc(msgsSize);
-    if (msgs == NULL)
-    {
-        WARNING("keyValToUbx() malloc fail");
-        return NULL;
-    }
-    memset(msgs, 0, msgsSize);
-
-    // Create as many UBX-CFG-VALSET as required
-    bool res = true;
-    const int nMsgs = (nKv / (UBX_CFG_VALSET_V1_MAX_KV)) + ((nKv % UBX_CFG_VALSET_V1_MAX_KV) != 0 ? 1 : 0);
-    for (int msgIx = 0; msgIx < nMsgs; msgIx++)
-    {
-        const int kvOffs = msgIx * UBX_CFG_VALSET_V1_MAX_KV;
-        const int remKv = nKv - kvOffs;
-        const int nKvThisMsg = remKv > UBX_CFG_VALSET_V1_MAX_KV ? UBX_CFG_VALSET_V1_MAX_KV : remKv;
-        //DEBUG("msgIx=%d nMsgs=%d nKv=%d kvOffs=%d remKv=%d nKvThisMsg=%d", msgIx, nMsgs, nKv, kvOffs, remKv, nKvThisMsg);
-
-        // Message header
-        uint8_t transaction = UBX_CFG_VALSET_V1_TRANSACTION_NONE;
-        const char *transactionStr = "no transaction";
-        if (nMsgs > 1)
-        {
-            if (msgIx == 0)
-            {
-                transaction = UBX_CFG_VALSET_V1_TRANSACTION_BEGIN;
-                transactionStr = "transaction begin";
-            }
-            else
-#ifndef NEED_EMPTY_TRANSACTION_END
-                  if (msgIx < (nMsgs - 1))
-#endif
-            {
-                transaction = UBX_CFG_VALSET_V1_TRANSACTION_CONTINUE;
-                transactionStr = "transaction continue";
-            }
-#ifndef NEED_EMPTY_TRANSACTION_END
-            else
-            {
-                transaction = UBX_CFG_VALSET_V1_TRANSACTION_END;
-                transactionStr = "transaction end";
-            }
-#endif
-        }
-        DEBUG("Creating UBX-CFG-VALSET %d items (%d..%d/%d, %s)",
-            nKvThisMsg, kvOffs + 1, kvOffs + nKvThisMsg, nKv, transactionStr);
-
-        uint8_t *pUbxData = msgs[msgIx].msg;
-        snprintf(msgs[msgIx].info, sizeof(msgs[msgIx].info), "%s", transactionStr);
-        msgs[msgIx].nKv = nKvThisMsg;
-
-        // Add payload head
-        const UBX_CFG_VALSET_V1_GROUP0_t payloadHead =
-        {
-            .version     = UBX_CFG_VALSET_V1_VERSION,
-            .layers      = layers,
-            .transaction = transaction,
-            .reserved    = UBX_CFG_VALSET_V1_RESERVED
-        };
-        const int payloadHeadSize = sizeof(payloadHead);
-        memcpy(pUbxData, &payloadHead, payloadHeadSize);
-
-        // Add config data
-        int cfgDataSize = 0;
-        if (!ubloxcfg_makeData(&pUbxData[payloadHeadSize], UBX_CFG_VALGET_V1_MAX_SIZE,
-                &kv[kvOffs], nKvThisMsg, &cfgDataSize))
-        {
-            WARNING("UBX-CFG-VALSET.cfgData encode fail!");
-            res = false;
-            break;
-        }
-
-        // Make UBX message
-        const int msgSize = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_VALSET_MSGID,
-            pUbxData, payloadHeadSize + cfgDataSize, pUbxData);
-
-        msgs[msgIx].size = msgSize;
-    }
-
-    if (!res)
-    {
-        free(msgs);
-        return NULL;
-    }
-
-#ifdef NEED_EMPTY_TRANSACTION_END
-    // Add empty transaction-complete message
-    if (nMsgs > 1)
-    {
-        const UBX_CFG_VALSET_V1_GROUP0_t payload =
-        {
-            .version     = UBX_CFG_VALSET_V1_VERSION,
-            .layers      = layers,
-            .transaction = UBX_CFG_VALSET_V1_TRANSACTION_END,
-            .reserved    = UBX_CFG_VALSET_V1_RESERVED
-        };
-        snprintf(msgs[nMsgs].info, sizeof(msgs[nMsgs].info), "transaction end");
-        msgs[nMsgs].nKv = 0;
-        msgs[nMsgs].size = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_VALSET_MSGID,
-            (const uint8_t *)&payload, sizeof(payload), msgs[nMsgs].msg);
-        *nValset = nMsgs + 1;
-    }
-    else
-#endif
-    {
-        *nValset = nMsgs;
-    }
-    return msgs;
 }
 
 /* ********************************************************************************************** */

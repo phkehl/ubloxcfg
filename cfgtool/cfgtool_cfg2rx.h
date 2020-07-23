@@ -33,18 +33,5 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
 
 UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv);
 
-typedef struct VALSET_MSG_s
-{
-    uint8_t msg[UBX_CFG_VALSET_V1_MAX_SIZE];
-    int     size;
-    char    info[200];
-    int     nKv;
-} VALSET_MSG_t;
-
-VALSET_MSG_t *keyValToUbxCfgValset(UBLOXCFG_KEYVAL_t *kv, const int nKv, const uint8_t layers, int *nValset);
-
-uint8_t ubxCfgValsetLayer(const char *layerStr);
-
-
 /* ********************************************************************************************** */
 #endif // __CFGTOOL_RX2CFG_H__

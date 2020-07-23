@@ -1,16 +1,22 @@
 cfgtool vX.X -- u-blox 9 configuration interface tool
 
-Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)
-https://oinkzwurgl.org/hacking/ubloxcfg/
+    Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)
+    https://oinkzwurgl.org/hacking/ubloxcfg/
 
 Usage:
 
-    cfgtool [-h] [-v] [-q] [...] <command>
+    cfgtool -h | -H | -h <command> | -V
+    cfgtool [-v] [-q] [...] <command>
 
 Where:
 
-    -h / -H        Prints help summary / full help
+    -h             Prints help summary
+    -H             Prints full help
+    -h <command>   Prints help for a command
+    -V             Displays version and license information
+
     -v / -q        Increases / decreases verbosity
+
     <command>      Command
 
     And depending on the <command>:

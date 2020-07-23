@@ -540,6 +540,32 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
     return res;
 }
 
+bool ubloxcfg_splitValueStr(char *str, char **valueStr, char **prettyStr)
+{
+    if ( (str == NULL) || (valueStr == NULL) || (prettyStr == NULL) )
+    {
+        return false;
+    }
+    *valueStr = str;
+    *prettyStr = NULL;
+    char *space = strchr(str, ' ');
+    if (space != NULL)
+    {
+        *prettyStr = &space[2];
+        char *bracket = strchr(space, ')');
+        *space = '\0';
+        if (bracket != NULL)
+        {
+            bracket[0] = '\0';
+        }
+        if (strcmp(*prettyStr, "n/a") == 0)
+        {
+            *prettyStr = NULL;
+        }
+    }
+    return true;
+}
+
 bool ubloxcfg_stringifyKeyVal(char *str, const int size, const UBLOXCFG_KEYVAL_t *keyVal)
 {
     if ( (str == NULL) || (size <= 0) || (keyVal == NULL) )
@@ -1101,6 +1127,48 @@ const char *ubloxcfg_layerName(const UBLOXCFG_LAYER_t layer)
     }
     return "?";
 }
+
+bool ubloxcfg_layerFromName(const char *name, UBLOXCFG_LAYER_t *layer)
+{
+    if ( (name == NULL) || (name[0] == '\0') )
+    {
+        return false;
+    }
+    char str[20];
+    int len = strlen(name);
+    if (len > ((int)sizeof(str) - 1))
+    {
+        return false;
+    }
+    str[len] = '\0';
+    while (len > 0)
+    {
+        len--;
+        str[len] = tolower(name[len]);
+    }
+    if (strcmp(str, "ram") == 0)
+    {
+        *layer = UBLOXCFG_LAYER_RAM;
+    }
+    else if (strcmp(str, "bbr") == 0)
+    {
+        *layer = UBLOXCFG_LAYER_BBR;
+    }
+    else if (strcmp(str, "flash") == 0)
+    {
+        *layer = UBLOXCFG_LAYER_FLASH;
+    }
+    else if (strcmp(str, "default") == 0)
+    {
+        *layer = UBLOXCFG_LAYER_DEFAULT;
+    }
+    else
+    {
+        return false;
+    }
+    return true;
+}
+
 
 /* ********************************************************************************************** */
 

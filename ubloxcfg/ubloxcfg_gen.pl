@@ -23,11 +23,14 @@ use warnings;
 
 use feature 'state';
 
+use FindBin;
+
+use lib "$FindBin::Bin/../3rdparty/perl";
+
 use JSON::PP;
 use Time::HiRes qw(time);
 use Path::Tiny;
 use Data::Float qw();
-use FindBin;
 
 my $DEBUG = 0;
 my $JSON  = 'ubloxcfg.json';

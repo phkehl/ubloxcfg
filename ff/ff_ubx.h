@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "ubloxcfg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -601,6 +603,16 @@ typedef struct UBX_RXM_RAWX_V1_GROUP1_s
     \returns the message size (= \c payloadSize + #UBX_FRAME_SIZE)
 */
 int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payload, const uint16_t payloadSize, uint8_t *msg);
+
+typedef struct UBX_CFG_VALSET_MSG_s
+{
+    uint8_t msg[UBX_CFG_VALSET_V1_MAX_SIZE];
+    int     size;
+    char    info[200];
+} UBX_CFG_VALSET_MSG_t;
+
+//! Make series of UBX-CFG-VALSET messages
+UBX_CFG_VALSET_MSG_t *ubxKeyValToUbxCfgValset(const UBLOXCFG_KEYVAL_t *kv, const int nKv, const bool ram, const bool bbr, const bool flash, int *nValset);
 
 //! Get message name
 /*!

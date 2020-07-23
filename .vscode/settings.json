@@ -90,7 +90,7 @@
     "C_Cpp.default.intelliSenseMode":        "gcc-x64",
     "C_Cpp.default.compilerPath":            "/usr/bin/gcc",
     "C_Cpp.default.cStandard":               "c99",
-    "C_Cpp.default.cppStandard":             "c++17",
+    "C_Cpp.default.cppStandard":             "c++11",
     "C_Cpp.default.browse.path":           [ "${workspaceFolder}/**" ],
     "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode-cache/browse.db",
     "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,

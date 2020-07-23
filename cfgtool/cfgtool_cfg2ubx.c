@@ -73,8 +73,10 @@ int cfg2cRun(const char *layerArg, const bool extraInfo)
 
 static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
 {
-    const uint8_t layers = ubxCfgValsetLayer(layerArg);
-    if (layers == 0x00)
+    bool ram = false;
+    bool bbr = false;
+    bool flash = false;
+    if (!layersStringToFlags(layerArg, &ram, &bbr, &flash, NULL) || !(ram || bbr || flash))
     {
         return EXIT_BADARGS;
     }
@@ -89,55 +91,25 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
 
     PRINT("Converting %d items into UBX-CFG-VALSET messages", nKv);
     int nMsgs = 0;
-    VALSET_MSG_t *msgs = keyValToUbxCfgValset(kv, nKv, layers, &nMsgs);
+    UBX_CFG_VALSET_MSG_t *msgs = ubxKeyValToUbxCfgValset(kv, nKv, ram, bbr, flash, &nMsgs);
     if (msgs == NULL)
     {
         free(kv);
         return EXIT_OTHERFAIL;
     }
 
-    char layersStr[100];
-    if (fmt != FMT_UBX)
-    {
-        layersStr[0] = '\0';
-        if ((layers & UBX_CFG_VALSET_V1_LAYER_RAM) != 0)
-        {
-            strcat(&layersStr[strlen(layersStr)], ",RAM");
-        }
-        if ((layers & UBX_CFG_VALSET_V1_LAYER_BBR) != 0)
-        {
-            strcat(&layersStr[strlen(layersStr)], ",BBR");
-        }
-        if ((layers & UBX_CFG_VALSET_V1_LAYER_FLASH) != 0)
-        {
-            strcat(&layersStr[strlen(layersStr)], ",FLASH");
-        }
-        switch (fmt)
-        {
-            case FMT_HEX:
-                ioOutputStr("# cfg2hex");
-                break;
-            case FMT_C:
-                ioOutputStr("// cfg2c");
-                break;
-            default:
-                break;
-        }
-        ioOutputStr(" (%d items in %s)\n", nKv, &layersStr[1]);
-    }
-
     int kvOffs = 0;
     for (int msgIx = 0; msgIx < nMsgs; msgIx++)
     {
-        PRINT("Dumping UBX-CFG-VALSET %d/%d (%d items, %s)",
-            msgIx + 1, nMsgs, msgs[msgIx].nKv, msgs[msgIx].info);
+        PRINT("Dumping UBX-CFG-VALSET %d/%d (%s)",
+            msgIx + 1, nMsgs, msgs[msgIx].info);
 
         if (fmt != FMT_UBX)
         {
             const char *comment1 = fmt == FMT_HEX ? "# - " : "// ";
             const char *comment2 = fmt == FMT_HEX ? "#   " : "// ";
-            ioOutputStr("%sUBX-CFG-VALSET %d/%d (%d items, %d bytes, %s, %s)\n",
-                comment1, msgIx + 1, nMsgs, msgs[msgIx].nKv, msgs[msgIx].size, msgs[msgIx].info, &layersStr[1]);
+            ioOutputStr("%sUBX-CFG-VALSET %d/%d (%s)\n",
+                comment1, msgIx + 1, nMsgs, msgs[msgIx].info);
             if (extraInfo)
             {
                 for (int n = 1; n <= nKv; n++)
