@@ -49,7 +49,7 @@ bool nmeaMessageName(char *name, const int size, const char *msg)
     {
         talker[0] = msg[1];
         talker[1] = msg[2];
-        talker[3] = '\0';
+        talker[2] = '\0';
         offs = 3;
     }
     // Formatter

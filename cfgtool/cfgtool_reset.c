@@ -132,15 +132,17 @@ int resetRun(const char *portArg, const char *resetArg)
         return EXIT_BADARGS;
     }
 
-    RX_t *rx = rxOpen(portArg, NULL);
-    if (rx == NULL)
+    RX_t *rx = rxInit(portArg, NULL);
+    if ( (rx == NULL) || !rxOpen(rx) )
     {
+        free(rx);
         return EXIT_RXFAIL;
     }
 
     const bool res = rxReset(rx, reset);
 
     rxClose(rx);
+    free(rx);
     return res ? EXIT_SUCCESS : EXIT_RXFAIL;
 }
 

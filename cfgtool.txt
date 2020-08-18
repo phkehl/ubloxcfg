@@ -34,8 +34,9 @@ Where:
                        soft, hard, hot, warm, cold, default, factory,
                        stop, start, gnss
     -u             Use unknown (undocumented) configuation items
-    -x             Output extra information (comments, hex dumps)
-    -a             Activate configuration after storing.
+    -x             Output extra information (comments, hex dumps, ...)
+    -a             Activate configuration after storing
+    -n             Do not probe/autobaud receiver, use passive reading only
 
     Available <commands>s:
 
@@ -47,10 +48,10 @@ Where:
     cfg2c          Like cfg2ubx but prints a c source code of the message(s)
     uc2cfg         Convert u-center config file to sane config file
     cfginfo        Print information about known configuration items etc.
-    rxtest         Connects to receiver and prints received message frames
-    rxraw          Prints any data received on port
+    dump           Connects to receiver and prints received message frames
     parse          Parse file and output message frames
     reset          Reset receiver
+    status         Connects to receiver and prints status
 
 License:
 
@@ -275,7 +276,7 @@ Command 'cfginfo':
 
 Command 'rxtest':
 
-    Usage: cfgtool rxtest -p <port> [-o <outfile>] [-y] [-x]
+    Usage: cfgtool dump -p <port> [-o <outfile>] [-y] [-x] [-n]
 
     Connects to the receiver and outputs information on the received messages
     and optionally a hex dump of the messages until SIGINT (e.g. CTRL-C), SIGHUP
@@ -286,15 +287,8 @@ Command 'rxtest':
 
     Examples:
 
-        cfgtool rxtest -p /dev/ttyUSB0
-        timeout 20 cfgtool rxtest -p /dev/ttyACM0
-
-Command 'rxraw':
-
-    Usage: cfgtool rxraw -p <port> [-o <outfile>] [-y] [-x]
-
-    Like 'rxtest' but not doing any auto-bauding or receiver detection.
-    That is, this command dumps whatever data is received on the port.
+        cfgtool dump -p /dev/ttyUSB0
+        timeout 20 dump rxtest -p /dev/ttyACM0
 
 Command 'parse':
 
@@ -343,6 +337,10 @@ Command 'reset':
 
         The stop, start and gnss resets do not actually reset anything but
         instead stop, start and restart the GNSS operation.
+
+Command 'status':
+
+    Usage: cfgtool status -p <port> [-n] [-x]
 
 Happy hacking! :-)
 

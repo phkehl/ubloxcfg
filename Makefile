@@ -62,9 +62,9 @@ CFLAGS         := -g -std=gnu99   -Wall -Wextra -Wformat -Werror -Wpointer-arith
 CXXFLAGS       := -ggdb3 -std=gnu++11 -Wall -Wextra -Wformat -Werror -Wpointer-arith -Wundef
 
 # Build flags
-TOOLLDFLAGS    :=
-TOOLLDFLAGSWIN := -lws2_32 -static
-GUILDFLAGS     := -lGL -ldl -lpthread $(shell sdl2-config --libs)
+TOOLLDFLAGS    := -lm
+TOOLLDFLAGSWIN := -lws2_32 -static -lm
+GUILDFLAGS     := -lm -lGL -ldl -lpthread $(shell sdl2-config --libs)
 #GUILDFLAGSWIN  := -lws2_32 -lgdi32 -lopengl32 -limm32 -L$(SDL2WIN)/lib -lmingw32 -lSDL2main -lSDL2 -mwindows
 GUILDFLAGSWIN  := -lws2_32 -lopengl32 -limm32 -L$(SDL2WIN)/lib -lmingw32 -lSDL2main -lSDL2 -mwindows -Wl,--no-undefined -Wl,--dynamicbase -Wl,--nxcompat -lm -ldinput8 -ldxguid -ldxerr8 -luser32 -lgdi32 -lwinmm -limm32 -lole32 -loleaut32 -lshell32 -lsetupapi -lversion -luuid -static-libgcc -static
 TESTCFLAGS     := -std=c99 -pedantic -Wno-pedantic-ms-format

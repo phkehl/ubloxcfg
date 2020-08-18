@@ -30,11 +30,12 @@
 #include "cfgtool_cfg2ubx.h"
 #include "cfgtool_rx2cfg.h"
 #include "cfgtool_cfg2rx.h"
-#include "cfgtool_rxtest.h"
+#include "cfgtool_dump.h"
 #include "cfgtool_uc2cfg.h"
 #include "cfgtool_cfginfo.h"
 #include "cfgtool_parse.h"
 #include "cfgtool_reset.h"
+#include "cfgtool_status.h"
 #include "config.h"
 
 /* ********************************************************************************************** */
@@ -48,6 +49,7 @@ typedef struct CMD_s
     bool          need_l;
     bool          need_r;
     bool          may_r;
+    bool          may_n;
     const char   *info;
     const char *(*help)(void);
     int         (*run)(void);
@@ -71,6 +73,7 @@ typedef struct ARGS_s
     bool         useUnknown;
     bool         extraInfo;
     bool         applyConfig;
+    bool         noProbe;
 
 } ARGS_t;
 
@@ -84,48 +87,49 @@ static int cfg2hex(void) { return cfg2hexRun(gArgs.cfgLayer, gArgs.extraInfo); }
 static int cfg2c(void)   { return cfg2cRun(  gArgs.cfgLayer, gArgs.extraInfo); }
 static int uc2cfg(void)  { return uc2cfgRun(); }
 static int cfginfo(void) { return cfginfoRun(); }
-static int rxtest(void)  { return rxtestRun( gArgs.rxPort, gArgs.extraInfo); }
-static int rxraw(void)   { return rxrawRun(  gArgs.rxPort, gArgs.extraInfo); }
+static int dump(void)    { return dumpRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
 static int parse(void)   { return parseRun(  gArgs.extraInfo); }
 static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
+static int status(void)  { return statusRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
 
 const CMD_t kCmds[] =
 {
     { .name = "cfg2rx",  .info = "Configure a receiver from a configuration file",             .help = cfg2rxHelp,  .run = cfg2rx,
-      .need_i = true,  .need_o = false, .need_p = true,  .need_l = true,  .may_r  = true  },
+      .need_i = true,  .need_o = false, .need_p = true,  .need_l = true,  .may_r  = true,  .may_n = false  },
 
     { .name = "rx2cfg",  .info = "Create configuration file from config in a receiver",        .help = rx2cfgHelp,  .run = rx2cfg,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false },
 
     { .name = "rx2list", .info = "Like rx2cfg but output a flat list of key-value pairs",      .help = rx2listHelp, .run = rx2list,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false },
 
     { .name = "cfg2ubx", .info = "Convert config file to UBX-CFG-VALSET message(s)",           .help = cfg2ubxHelp, .run = cfg2ubx,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
 
     { .name = "cfg2hex", .info = "Like cfg2ubx but prints a hex dump of the message(s)",       .help = NULL,        .run = cfg2hex,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
 
     { .name = "cfg2c",   .info = "Like cfg2ubx but prints a c source code of the message(s)",  .help = NULL,        .run = cfg2c,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
 
     { .name = "uc2cfg",  .info = "Convert u-center config file to sane config file",           .help = uc2cfgHelp,  .run = uc2cfg,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
 
     { .name = "cfginfo", .info = "Print information about known configuration items etc.",     .help = cfginfoHelp, .run = cfginfo,
-      .need_i = false, .need_o = true,  .need_p = false, .need_l = false, .need_r = false },
+      .need_i = false, .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
 
-    { .name = "rxtest",  .info = "Connects to receiver and prints received message frames",    .help = rxtestHelp,  .run = rxtest,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false },
-
-    { .name = "rxraw",   .info = "Prints any data received on port",                           .help = rxrawHelp,   .run = rxraw,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false },
+    { .name = "dump",    .info = "Connects to receiver and prints received message frames",    .help = dumpHelp,    .run = dump,
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true },
 
     { .name = "parse",   .info = "Parse file and output message frames",                       .help = parseHelp,   .run = parse,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
 
     { .name = "reset",   .info = "Reset receiver",                                             .help = resetHelp,   .run = reset,
-      .need_i = false, .need_o = false, .need_p = true,  .need_l = false, .need_r = true  },
+      .need_i = false, .need_o = false, .need_p = true,  .need_l = false, .need_r = true,  .may_n = false  },
+
+    { .name = "status",  .info = "Connects to receiver and prints status",                     .help = statusHelp,  .run = status,
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true },
+
 };
 
 const char * const kTitleStr = 
@@ -178,8 +182,9 @@ const char * const kHelpStr =
     "                       soft, hard, hot, warm, cold, default, factory,\n"
     "                       stop, start, gnss\n"
     "    -u             Use unknown (undocumented) configuation items\n"
-    "    -x             Output extra information (comments, hex dumps)\n"
-    "    -a             Activate configuration after storing.\n"
+    "    -x             Output extra information (comments, hex dumps, ...)\n"
+    "    -a             Activate configuration after storing\n"
+    "    -n             Do not probe/autobaud receiver, use passive reading only\n"
     "\n"
     // -----------------------------------------------------------------------------
     "    Available <commands>s:\n"
@@ -381,6 +386,7 @@ int main(int argc, char **argv)
         _ARGS_BOOL("-x", gArgs.extraInfo, true)
         _ARGS_BOOL("-a", gArgs.applyConfig, true)
         _ARGS_BOOL("-y", gArgs.outOverwrite, true)
+        _ARGS_BOOL("-n", gArgs.noProbe, true)
         else if (gArgs.cmd != NULL)
         {
             argOk = false;
@@ -535,7 +541,7 @@ int main(int argc, char **argv)
     }
 
     // Require -r arg?
-    if ((gArgs.cmd != NULL) && gArgs.cmd->need_r)
+    if ( (gArgs.cmd != NULL) && gArgs.cmd->need_r )
     {
         if ( (gArgs.resetType == NULL) || (gArgs.resetType[0] == '\0') )
         {
@@ -546,6 +552,13 @@ int main(int argc, char **argv)
     else if ( (gArgs.cmd != NULL) && !(gArgs.cmd->need_r || gArgs.cmd->may_r) && (gArgs.resetType != NULL) )
     {
         WARNING("Illegal argument '-r %s'!", gArgs.resetType);
+        res = false;
+    }
+
+    // May use -n arg?
+    if ( (gArgs.cmd != NULL) && (!gArgs.cmd->may_n && gArgs.noProbe) )
+    {
+        WARNING("Illegal argument '-n'!");
         res = false;
     }
 

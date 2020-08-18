@@ -61,9 +61,7 @@ typedef struct RX_s
     bool         abort;
 } RX_t;
 
-static bool _rxOpenDetect(RX_t *rx);
-
-RX_t *rxOpen(const char *port, const RX_ARGS_t *args)
+RX_t *rxInit(const char *port, const RX_ARGS_t *args)
 {
     if (port == NULL)
     {
@@ -74,9 +72,10 @@ RX_t *rxOpen(const char *port, const RX_ARGS_t *args)
     RX_t *rx = (RX_t *)malloc(sizeof(RX_t));
     if (rx == NULL)
     {
-        WARNING("rxOpen() malloc fail!");
+        WARNING("rxInit() malloc fail!");
         return NULL;
     }
+    memset(rx, 0, sizeof(*rx));
 
     {
         const RX_ARGS_t rxArgsDefault = RX_ARGS_DEFAULT();
@@ -109,22 +108,33 @@ RX_t *rxOpen(const char *port, const RX_ARGS_t *args)
         return NULL;
     }
 
+    return rx;
+}
+
+
+static bool _rxOpenDetect(RX_t *rx);
+
+bool rxOpen(RX_t *rx)
+{
+    if (rx == NULL)
+    {
+        return false;
+    }
+
     if (!portOpen(&rx->port))
     {
-        free(rx);
-        return NULL;
+        return false;
     }
 
     // Autobaud
     rx->autobaud = rx->autobaud && portCanBaudrate(&rx->port);
-    if (!_rxOpenDetect(rx))
+    if (rx->detect && !_rxOpenDetect(rx))
     {
         portClose(&rx->port);
-        free(rx);
-        return NULL;
+        return false;
     }
 
-    return rx;
+    return true;
 }
 
 static bool _rxOpenDetect(RX_t *rx)
@@ -205,6 +215,7 @@ void rxClose(RX_t *rx)
 {
     if (rx != NULL)
     {
+        rx->abort = false;
         portClose(&rx->port);
     }
 }
@@ -221,7 +232,7 @@ void rxAbort(RX_t *rx)
 
 bool rxSend(RX_t *rx, const uint8_t *data, const int size)
 {
-    if (rx != NULL)
+    if ( (rx != NULL) && !rx->abort )
     {
         _rxCallbackData(rx, PARSER_MSGSRC_TO_RX, data, size);
         return portWrite(&rx->port, data, size);
@@ -260,7 +271,7 @@ PARSER_MSG_t *rxGetNextMessage(RX_t *rx)
     if (rx != NULL)
     {
         int readSize;
-        while ( portRead(&rx->port, rx->readBuf, sizeof(rx->readBuf), &readSize) && (readSize > 0) )
+        while ( !rx->abort && portRead(&rx->port, rx->readBuf, sizeof(rx->readBuf), &readSize) && (readSize > 0) )
         {
             parserAdd(&rx->parser, rx->readBuf, readSize);
         }
@@ -467,7 +478,7 @@ static bool _rxFlushRx(RX_t *rx)
     }
     int maxRead = 1000;
     int readSize = 0;
-    while ( (maxRead > 0) && portRead(&rx->port, rx->readBuf, sizeof(rx->readBuf), &readSize) && (readSize > 0) )
+    while ( !rx->abort && (maxRead > 0) && portRead(&rx->port, rx->readBuf, sizeof(rx->readBuf), &readSize) && (readSize > 0) )
     {
         maxRead--;
     }
@@ -499,7 +510,7 @@ bool rxAutobaud(RX_t *rx)
     // First, try quickly..
     {
         RX_POLL_UBX_t pollParam = { .clsId = UBX_MON_CLSID, .msgId = UBX_MON_VER_MSGID, .retries = 1, .timeout = 1000 };
-        for (int ix = 0; ix < NUMOF(baudrates); ix++)
+        for (int ix = 0; !rx->abort && (ix < NUMOF(baudrates)); ix++)
         {
             if ( (ix > 0) && (baudrates[ix] == currentBaudrate) )
             {
@@ -523,7 +534,7 @@ bool rxAutobaud(RX_t *rx)
     if (baudrate == 0)
     {
         RX_POLL_UBX_t pollParam = { .clsId = UBX_MON_CLSID, .msgId = UBX_MON_VER_MSGID, .retries = 2, .timeout = 2500 };
-        for (int ix = 0; ix < NUMOF(baudrates); ix++)
+        for (int ix = 0; !rx->abort && (ix < NUMOF(baudrates)); ix++)
         {
             if ( (ix > 0) && (baudrates[ix] == currentBaudrate) )
             {
@@ -546,7 +557,7 @@ bool rxAutobaud(RX_t *rx)
         }
     }
 
-    if (baudrate != 0)
+    if ( !rx->abort && (baudrate != 0) )
     {
         char verStr[100];
         if (!ubxMonVerToVerStr(verStr, sizeof(verStr), ubxMonVer->data, ubxMonVer->size))
@@ -569,45 +580,11 @@ bool rxAutobaud(RX_t *rx)
 
 bool rxReset(RX_t *rx, const RX_RESET_t reset)
 {
-    if (rx == NULL)
+    if ( (rx == NULL) || (reset == RX_RESET_NONE) )
     {
         return false;
     }
-    switch (reset)
-    {
-        case RX_RESET_SOFT:
-            RX_PRINT("Software resetting receiver");
-            break;
-        case RX_RESET_HARD:
-            RX_PRINT("Hardware resetting receiver");
-            break;
-        case RX_RESET_HOT:
-            RX_PRINT("Hotstarting receiver");
-            break;
-        case RX_RESET_WARM:
-            RX_PRINT("Warmstarting receiver");
-            break;
-        case RX_RESET_COLD:
-            RX_PRINT("Coldstarting receiver");
-            break;
-        case RX_RESET_DEFAULT:
-            RX_PRINT("Defaulting receiver configuration");
-            break;
-        case RX_RESET_FACTORY:
-            RX_PRINT("Factory-resetting receiver");
-            break;
-        case RX_RESET_GNSS_STOP:
-            RX_PRINT("Stopping GNSS");
-            break;
-        case RX_RESET_GNSS_START:
-            RX_PRINT("Starting GNSS");
-            break;
-        case RX_RESET_GNSS_RESTART:
-            RX_PRINT("Restarting GNSS");
-            break;
-        default:
-            return false;
-    }
+    RX_PRINT("Doing receiver reset: %s", rxResetStr(reset));
 
     // Delete config?
     if ( (reset == RX_RESET_DEFAULT) || (reset == RX_RESET_FACTORY) )
@@ -660,6 +637,8 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     bool reenumerate = true;
     switch (reset)
     {
+        case RX_RESET_NONE:
+            return false;
         case RX_RESET_SOFT:
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_NONE;
             payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_SW;
@@ -784,6 +763,25 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     return true;
 }
 
+const char *rxResetStr(const RX_RESET_t reset)
+{
+    switch (reset)
+    {
+        case RX_RESET_NONE:         return "None";
+        case RX_RESET_SOFT:         return "Software reset";
+        case RX_RESET_HARD:         return "Hardware reset";
+        case RX_RESET_HOT:          return "Hotstart";
+        case RX_RESET_WARM:         return "Warmstart";
+        case RX_RESET_COLD:         return "Coldstart";
+        case RX_RESET_DEFAULT:      return "Default";
+        case RX_RESET_FACTORY:      return "Factory";
+        case RX_RESET_GNSS_STOP:    return "Stop GNSS";
+        case RX_RESET_GNSS_START:   return "Start GNSS";
+        case RX_RESET_GNSS_RESTART: return "Restart GNSS";
+    }
+    return "?";
+}
+
 /* ********************************************************************************************** */
 
 int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv)
@@ -842,7 +840,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
         {
             .clsId = UBX_CFG_CLSID, .msgId = UBX_CFG_VALGET_MSGID,
             .payload = pollPayload, .payloadSize = (sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + keysSize),
-            .retries = 1, .timeout = 2000,
+            .retries = 2, .timeout = 2000,
         };
         PARSER_MSG_t *msg = rxPollUbx(rx, &pollParam);
         if (msg == NULL)

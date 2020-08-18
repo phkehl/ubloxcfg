@@ -24,17 +24,17 @@
 #include "ff_ubx.h"
 #include "ff_epoch.h"
 
-#include "cfgtool_rxtest.h"
+#include "cfgtool_dump.h"
 
 /* ********************************************************************************************** */
 
-const char *rxtestHelp(void)
+const char *dumpHelp(void)
 {
     return
 // -----------------------------------------------------------------------------
 "Command 'rxtest':\n"
 "\n"
-"    Usage: cfgtool rxtest -p <port> [-o <outfile>] [-y] [-x]\n"
+"    Usage: cfgtool dump -p <port> [-o <outfile>] [-y] [-x] [-n]\n"
 "\n"
 "    Connects to the receiver and outputs information on the received messages\n"
 "    and optionally a hex dump of the messages until SIGINT (e.g. CTRL-C)"NOT_WIN(", SIGHUP")"\n"
@@ -46,27 +46,13 @@ const char *rxtestHelp(void)
 "    Examples:\n"
 "\n"
 #ifdef _WIN32
-"        cfgtool rxtest -p COM3\n"
+"        cfgtool dump -p COM3\n"
 #else
-"        cfgtool rxtest -p /dev/ttyUSB0\n"
-"        timeout 20 cfgtool rxtest -p /dev/ttyACM0\n"
+"        cfgtool dump -p /dev/ttyUSB0\n"
+"        timeout 20 dump rxtest -p /dev/ttyACM0\n"
 #endif
 "\n";
 }
-
-const char *rxrawHelp(void)
-{
-    return
-// -----------------------------------------------------------------------------
-"Command 'rxraw':\n"
-"\n"
-"    Usage: cfgtool rxraw -p <port> [-o <outfile>] [-y] [-x]\n"
-"\n"
-"    Like 'rxtest' but not doing any auto-bauding or receiver detection.\n"
-"    That is, this command dumps whatever data is received on the port.\n"
-"\n";
-}
-
 
 /* ********************************************************************************************** */
 
@@ -81,35 +67,21 @@ static void _sigHandler(int signal)
     }
 }
 
-static int _rxtest(RX_t *rx, const bool extraInfo);
-
-int rxtestRun(const char *portArg, const bool extraInfo)
-{
-    RX_t *rx = rxOpen(portArg, NULL);
-    if (rx == NULL)
-    {
-        return EXIT_RXFAIL;
-    }
-
-    return _rxtest(rx, extraInfo);
-}
-
-int rxrawRun(const char *portArg, const bool extraInfo)
+int dumpRun(const char *portArg, const bool extraInfo, const bool noProbe)
 {
     RX_ARGS_t args = RX_ARGS_DEFAULT();
-    args.autobaud = false;
-    args.detect   = false;
-    RX_t *rx = rxOpen(portArg, &args);
-    if (rx == NULL)
+    if (noProbe)
     {
+        args.autobaud = false;
+        args.detect   = false;
+    }
+    RX_t *rx = rxInit(portArg, &args);
+    if ( (rx == NULL) || !rxOpen(rx) )
+    {
+        free(rx);
         return EXIT_RXFAIL;
     }
 
-    return _rxtest(rx, extraInfo);
-}
-
-static int _rxtest(RX_t *rx, const bool extraInfo)
-{
     uint32_t nNmea = 0, sNmea = 0;
     uint32_t nUbx  = 0, sUbx  = 0;
     uint32_t nRtcm = 0, sRtcm = 0;
@@ -130,7 +102,6 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
     PRINT("Dumping received data...");
     while (!gAbort)
     {
-
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL)
         {
@@ -140,6 +111,10 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
             if (epochCollect(&coll, msg, &epoch))
             {
                 ioOutputStr("epoch %4u, %s\n", epoch.seq, epoch.str);
+                if (!ioWriteOutput(nMsgs == 1 ? false : true))
+                {
+                    break;
+                }
             }
             const char *prot = "?";
             switch (msg->type)
@@ -191,6 +166,7 @@ static int _rxtest(RX_t *rx, const bool extraInfo)
     bool res = ioWriteOutput(true);
 
     rxClose(rx);
+    free(rx);
 
     return res ? (nMsgs > 0 ? EXIT_SUCCESS : EXIT_RXNODATA) : EXIT_OTHERFAIL;
 }

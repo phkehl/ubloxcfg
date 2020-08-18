@@ -536,9 +536,44 @@ typedef struct UBX_NAV_SIG_V0_GROUP1_s
     uint8_t  reserved[4];
 } UBX_NAV_SIG_V0_GROUP1_t;
 
-#define UBX_NAV_SIG_V0_VERSION               0x00
+#define UBX_NAV_SIG_VERSION_GET(msg)             ( (msg)[UBX_HEAD_SIZE + sizeof(uint32_t)] )
 
-#define UBX_NAV_PVT_V1_MIN_SIZE             (sizeof(UBX_NAV_SIG_V0_GROUP0_t) + UBX_FRAME_SIZE)
+#define UBX_NAV_SIG_V0_VERSION                   0x00
+
+#define UBX_NAV_SIG_V0_QUALITYIND_NOSIG          0
+#define UBX_NAV_SIG_V0_QUALITYIND_SEARCH         1
+#define UBX_NAV_SIG_V0_QUALITYIND_ACQUIRED       2
+#define UBX_NAV_SIG_V0_QUALITYIND_UNUSED         3
+#define UBX_NAV_SIG_V0_QUALITYIND_CODELOCK       4
+#define UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK1      5
+#define UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK2      6
+#define UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK3      7
+#define UBX_NAV_SIG_V0_IONOMODEL_NONE            0
+#define UBX_NAV_SIG_V0_IONOMODEL_KLOB_GPS        1
+#define UBX_NAV_SIG_V0_IONOMODEL_SBAS            2
+#define UBX_NAV_SIG_V0_IONOMODEL_KLOB_BDS        3
+#define UBX_NAV_SIG_V0_IONOMODEL_DUALFREQ        8
+#define UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_GET(f)    ( (int16_t)(f) & 0x03 )
+#define UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_UNKNO     0
+#define UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_HEALTHY   1
+#define UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_UNHEALTHY 2
+#define UBX_NAV_SIG_V0_SIGFLAGS_PR_SMOOTHED      0x0004
+#define UBX_NAV_SIG_V0_SIGFLAGS_PR_USED          0x0008
+#define UBX_NAV_SIG_V0_SIGFLAGS_CR_USED          0x0010
+#define UBX_NAV_SIG_V0_SIGFLAGS_DO_USED          0x0020
+#define UBX_NAV_SIG_V0_SIGFLAGS_PR_CORR_USED     0x0040
+#define UBX_NAV_SIG_V0_SIGFLAGS_CR_CORR_USED     0x0080
+#define UBX_NAV_SIG_V0_SIGFLAGS_DO_CORR_USED     0x0100
+#define UBX_NAV_SIG_V0_CORRUSED_NONE             0
+#define UBX_NAV_SIG_V0_CORRUSED_SBAS             1
+#define UBX_NAV_SIG_V0_CORRUSED_BDS              2
+#define UBX_NAV_SIG_V0_CORRUSED_RTCM2            3
+#define UBX_NAV_SIG_V0_CORRUSED_RTCM3_OSR        4
+#define UBX_NAV_SIG_V0_CORRUSED_RTCM3_SSR        5
+#define UBX_NAV_SIG_V0_CORRUSED_QZSS_SLAS        6
+#define UBX_NAV_SIG_V0_PRRES_SCALE               1e-1
+
+#define UBX_NAV_SIG_V0_MIN_SIZE             (sizeof(UBX_NAV_SIG_V0_GROUP0_t) + UBX_FRAME_SIZE)
 
 /* ********************************************************************************************** */
 

@@ -412,7 +412,6 @@ const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId)
                 return "Q?";
             }
         }
-            return "QZSS";
         case UBX_GNSSID_GLO:
         {
             const char * const strs[] =

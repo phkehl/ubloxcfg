@@ -174,10 +174,11 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         return EXIT_OTHERFAIL;
     }
 
-    RX_t *rx = rxOpen(portArg, NULL);
-    if (rx == NULL)
+    RX_t *rx = rxInit(portArg, NULL);
+    if ( (rx == NULL) || !rxOpen(rx) )
     {
         free(kv);
+        free(rx);
         return EXIT_RXFAIL;
     }
 
@@ -185,6 +186,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     {
         free(kv);
         rxClose(rx);
+        free(rx);
         return EXIT_RXFAIL;
     }
 
@@ -197,6 +199,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         {
             free(kv);
             rxClose(rx);
+            free(rx);
             return EXIT_RXFAIL;
         }
     }
@@ -207,6 +210,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     }
 
     rxClose(rx);
+    free(rx);
     free(kv);
     return res ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }

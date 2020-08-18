@@ -115,9 +115,10 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         return EXIT_BADARGS;
     }
 
-    RX_t *rx = rxOpen(portArg, NULL);
-    if (rx == NULL)
+    RX_t *rx = rxInit(portArg, NULL);
+    if ( (rx == NULL) || !rxOpen(rx) )
     {
+        free(rx);
         return EXIT_RXFAIL;
     }
 
@@ -126,6 +127,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     if (dbLayer == NULL)
     {
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -138,6 +140,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         WARNING("No configuration available in layer %s!", layerName);
         free(dbLayer);
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -147,6 +150,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     {
         free(dbLayer);
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -345,6 +349,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     }
     free(dbLayer);
     rxClose(rx);
+    free(rx);
 
     // Write output, done
     if (generateOutput)
@@ -372,9 +377,10 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     const char *layerName = ubloxcfg_layerName(layer);
 
     // Connect and detect receiver
-    RX_t *rx = rxOpen(portArg, NULL);
-    if (rx == NULL)
+    RX_t *rx = rxInit(portArg, NULL);
+    if ( (rx == NULL) || !rxOpen(rx) )
     {
+        free(rx);
         return EXIT_RXFAIL;
     }
 
@@ -383,6 +389,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     if (dbLayer == NULL)
     {
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -393,6 +400,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
         WARNING("No configuration available in layer %s!", layerName);
         free(dbLayer);
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -402,6 +410,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     {
         free(dbLayer);
         rxClose(rx);
+        free(rx);
         return EXIT_RXNODATA;
     }
 
@@ -435,6 +444,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     }
     free(dbLayer);
     rxClose(rx);
+    free(rx);
 
     // Write output, done
     if (generateOutput)

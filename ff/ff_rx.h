@@ -43,7 +43,9 @@ typedef struct RX_ARGS_s
 
 #define RX_ARGS_DEFAULT() { .autobaud = true, .detect = true, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
 
-RX_t *rxOpen(const char *port, const RX_ARGS_t *args);
+RX_t *rxInit(const char *port, const RX_ARGS_t *args);
+
+bool rxOpen(RX_t *rx);
 void rxClose(RX_t *rx);
 
 PARSER_MSG_t *rxGetNextMessage(RX_t *rx);
@@ -78,6 +80,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
 
 typedef enum RX_RESET_e
 {
+    RX_RESET_NONE,          // No reset
     RX_RESET_SOFT,          // Controlled software reset
     RX_RESET_HARD,          // Controlled hardware reset
     RX_RESET_HOT,           // Hotstart (like u-center)
@@ -91,6 +94,8 @@ typedef enum RX_RESET_e
 } RX_RESET_t;
 
 bool rxReset(RX_t *rx, const RX_RESET_t reset);
+
+const char *rxResetStr(const RX_RESET_t reset);
 
 int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv);
 

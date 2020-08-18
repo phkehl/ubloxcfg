@@ -17,18 +17,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#ifndef __CFGTOOL_RXTEST_H__
-#define __CFGTOOL_RXTEST_H__
+#ifndef __CFGTOOL_DUMP_H__
+#define __CFGTOOL_DUMP_H__
 
 /* ********************************************************************************************** */
 
-const char *rxtestHelp(void);
+const char *dumpHelp(void);
 
-int rxtestRun(const char *portArg, const bool extraInfo);
-
-const char *rxrawHelp(void);
-
-int rxrawRun(const char *portArg, const bool extraInfo);
+int dumpRun(const char *portArg, const bool extraInfo, const bool noProbe);
 
 /* ********************************************************************************************** */
-#endif // __CFGTOOL_RXTEST_H__
+#endif // __CFGTOOL_DUMP_H__

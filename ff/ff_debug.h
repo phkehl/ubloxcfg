@@ -22,7 +22,9 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-#  define NOGDI
+#  ifndef NOGDI
+#    define NOGDI
+#  endif
 #  include <windows.h>
 #endif
 

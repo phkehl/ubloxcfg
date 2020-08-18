@@ -873,7 +873,7 @@ static bool strToValUnsigned(const char *str, const UBLOXCFG_TYPE_t type, uint64
         return false;
     }
     const int len = strlen(str);
-    if ( (len < 1) || (isspace(str[0]) != 0) )
+    if ( (len < 1) || (isspace((int)str[0]) != 0) )
     {
         return false;
     }
@@ -948,7 +948,7 @@ static bool strToValSigned(const char *str, UBLOXCFG_TYPE_t type, int64_t *val)
         return false;
     }
     const int len = strlen(str);
-    if ( (len < 1) || (isspace(str[0]) != 0) )
+    if ( (len < 1) || (isspace((int)str[0]) != 0) )
     {
         return false;
     }

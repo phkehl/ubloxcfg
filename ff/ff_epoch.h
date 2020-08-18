@@ -36,8 +36,7 @@ extern "C" {
 
 typedef enum EPOCH_FIX_e
 {
-    EPOCH_FIX_UNKNOWN = 0,
-    EPOCH_FIX_NOFIX,
+    EPOCH_FIX_NOFIX = 0,
     EPOCH_FIX_DRONLY,
     EPOCH_FIX_2D,
     EPOCH_FIX_3D,
@@ -45,103 +44,205 @@ typedef enum EPOCH_FIX_e
     EPOCH_FIX_TIME
 } EPOCH_FIX_t;
 
-typedef enum EPOCH_QUAL_e
-{
-    EPOCH_QUAL_UNKNOWN = 0,
-    EPOCH_QUAL_MASKED,
-    EPOCH_QUAL_OK
-} EPOCH_QUAL_t;
-
 typedef enum EPOCH_RTK_e
 {
-    EPOCH_RTK_UNKNOWN = 0,
-    EPOCH_RTK_NONE,
+    EPOCH_RTK_NONE = 0,
     EPOCH_RTK_FLOAT,
     EPOCH_RTK_FIXED
 } EPOCH_RTK_t;
 
-typedef enum EPOCH_VALID_e
+typedef enum EPOCH_GNSS_e
 {
-    EPOCH_VALID_UNKNOWN = 0,
-    EPOCH_VALID_FALSE,
-    EPOCH_VALID_TRUE,
-    EPOCH_VALID_CONFIRMED
+    EPOCH_GNSS_UNKNOWN = 0,
+    EPOCH_GNSS_GPS,
+    EPOCH_GNSS_GLO,
+    EPOCH_GNSS_BDS,
+    EPOCH_GNSS_GAL,
+    EPOCH_GNSS_SBAS,
+    EPOCH_GNSS_QZSS,
+    // Keep in sync with kEpochGnssStrs!
+} EPOCH_GNSS_t;
 
-} EPOCH_VALID_t;
+typedef enum EPOCH_SIGNAL_e
+{
+    EPOCH_SIGNAL_UNKNOWN = 0,
+    EPOCH_SIGNAL_GPS_L1CA,
+    EPOCH_SIGNAL_GPS_L2CL,
+    EPOCH_SIGNAL_GPS_L2CM,
+    EPOCH_SIGNAL_GLO_L1OF,
+    EPOCH_SIGNAL_GLO_L2OF,
+    EPOCH_SIGNAL_GAL_E1C,
+    EPOCH_SIGNAL_GAL_E1B,
+    EPOCH_SIGNAL_GAL_E5BI,
+    EPOCH_SIGNAL_GAL_E5BQ,
+    EPOCH_SIGNAL_BDS_B1ID1,
+    EPOCH_SIGNAL_BDS_B1ID2,
+    EPOCH_SIGNAL_BDS_B2ID1,
+    EPOCH_SIGNAL_BDS_B2ID2,
+    EPOCH_SIGNAL_SBAS_L1CA,
+    EPOCH_SIGNAL_QZSS_L1CA,
+    EPOCH_SIGNAL_QZSS_L1S,
+    EPOCH_SIGNAL_QZSS_L2CM,
+    EPOCH_SIGNAL_QZSS_L2CL,
+    // Keep in sync with kEpochSignalStrs!
+} EPOCH_SIGNAL_t;
+
+typedef enum EPOCH_SIGQUAL_e
+{
+    EPOCH_SIGQUAL_UNKNOWN = 0,
+    EPOCH_SIGQUAL_NONE,
+    EPOCH_SIGQUAL_SEARCH,
+    EPOCH_SIGQUAL_ACQUIRED,
+    EPOCH_SIGQUAL_UNUSED,
+    EPOCH_SIGQUAL_CODELOCK,
+    EPOCH_SIGQUAL_CARRLOCK,
+    // Keep in sync with kEpochSiqQualStrs!
+} EPOCH_SIGQUAL_t;
+
+typedef enum EPOCH_SIGCORR_e
+{
+    EPOCH_SIGCORR_UNKNOWN = 0,
+    EPOCH_SIGCORR_NONE,
+    EPOCH_SIGCORR_SBAS,
+    EPOCH_SIGCORR_BDS,
+    EPOCH_SIGCORR_RTCM2,
+    EPOCH_SIGCORR_RTCM3_OSR,
+    EPOCH_SIGCORR_RTCM3_SSR,
+    EPOCH_SIGCORR_QZSS_SLAS,
+    // Keep in sync with kEpochSigCorrStrs!
+} EPOCH_SIGCORR_t;
+
+typedef enum EPOCH_SIGIONO_e
+{
+    EPOCH_SIGIONO_UNKNOWN = 0,
+    EPOCH_SIGIONO_NONE,
+    EPOCH_SIGIONO_KLOB_GPS,
+    EPOCH_SIGIONO_KLOB_BDS,
+    EPOCH_SIGIONO_SBAS,
+    EPOCH_SIGIONO_DUAL_FREQ,
+    // Keep in sync with kEpochSigIonoStrs!
+} EPOCH_SIGIONO_t;
+
+typedef enum EPOCH_SIGHEALTH_e
+{
+    EPOCH_SIGHEALTH_UNKNOWN = 0,
+    EPOCH_SIGHEALTH_HEALTHY,
+    EPOCH_SIGHEALTH_UNHEALTHY,
+    // Keep in sync with kEpochSigHealthStrs!
+} EPOCH_SIGHEALTH_t;
+
+typedef struct EPOCH_SIGINFO_s
+{
+    EPOCH_GNSS_t      gnss;
+    uint8_t           sv;
+    EPOCH_SIGNAL_t    signal;
+    int8_t            gloFcn;
+    float             prRes;
+    float             cno;
+    EPOCH_SIGQUAL_t   qual;
+    EPOCH_SIGCORR_t   corr;
+    EPOCH_SIGIONO_t   iono;
+    EPOCH_SIGHEALTH_t health;
+    bool              prUsed;
+    bool              crUsed;
+    bool              doUsed;
+    bool              prCorrUsed;
+    bool              crCorrUsed;
+    bool              doCorrUsed;
+    const char       *gnssStr;
+    const char       *svStr;
+    const char       *signalStr;
+    const char       *qualStr;
+    const char       *corrStr;
+    const char       *ionoStr;
+    const char       *healthStr;
+
+    // Private
+    uint32_t          _order;
+} EPOCH_SIGINFO_t;
 
 typedef struct EPOCH_s
 {
     // Public
+    bool                valid;
+    uint32_t            seq;
+    char                str[256];
 
-    uint32_t      seq;
-    char          str[256];
+    bool                haveFix;
+    EPOCH_FIX_t         fix;
+    bool                fixOk;
+    const char         *fixStr;
+    EPOCH_RTK_t         rtk;
+    const char         *rtkStr;
 
-    EPOCH_FIX_t   fix;
-    EPOCH_QUAL_t  fixQual;
-    const char   *fixStr;
-    const char   *fixQualStr;
-    EPOCH_VALID_t validFix;
+    bool                haveNumSv;
+    int                 numSv;
 
-    int           numSv;
-    EPOCH_VALID_t validNumSv;
+    bool                havePdop;
+    float               pDOP;
 
-    EPOCH_RTK_t   rtk;
-    const char   *rtkStr;
-    EPOCH_VALID_t validRtk;
+    bool                havePos;
+    double              llh[3];
+    double              xyz[3];
+    double              horizAcc;
+    double              vertAcc;
 
-    float         pDOP;
-    EPOCH_VALID_t validPdop;
+    bool                haveMsl;
+    double              heightMsl;
 
-    double        lat;
-    double        lon;
-    double        height;
-    EPOCH_VALID_t validLlh;
+    bool                haveTime;
+    bool                confTime;
+    int                 hour;
+    int                 minute;
+    double              second;
+    double              timeAcc;
 
-    double        horizAcc;
-    double        vertAcc;
-    EPOCH_VALID_t validPosAcc;
+    bool                haveDate;
+    bool                confDate;
+    int                 day;
+    int                 month;
+    int                 year;
 
-    double        x;
-    double        y;
-    double        z;
-    EPOCH_VALID_t validXyz;
+    bool                haveGpsWeek;    
+    int                 gpsWeek;
 
-    double        heightMsl;
-    EPOCH_VALID_t validMsl;
+    bool                haveGpsTow;
+    double              gpsTow;
+    double              gpsTowAcc;
 
-    int           hour;
-    int           minute;
-    double        second;
-    EPOCH_VALID_t validTime;
+    EPOCH_SIGINFO_t     signals[100];
+    int                 numSignals;
 
-    double        timeAcc;
-    EPOCH_VALID_t validTimeAcc;
-
-    int           day;
-    int           month;
-    int           year;
-    EPOCH_VALID_t validDate;
-    
-    int           gpsWeek;
-    EPOCH_VALID_t validGpsWeek;
-
-    double        gpsTow;
-    double        gpsTowAcc;
-    EPOCH_VALID_t validGpsTow;
-
-    // Private
+    // Private   
     bool         _haveUbxNavPvt;
+    bool         _haveUbxNavSig;
     bool         _haveUbxNavHpposLlh;
-    uint32_t     _ubxItow;
-    bool         _haveUbxItow;
+    bool         _haveLlh;
+    bool         _haveXyz;
 
+    uint32_t     _detectTow;
+    bool         _detectHaveTow;
 } EPOCH_t;
+
+#define EPOCH_NUM_GPS        32
+#define EPOCH_NUM_SBAS       39
+#define EPOCH_NUM_GAL        36
+#define EPOCH_NUM_BDS        37
+#define EPOCH_NUM_QZSS       10
+#define EPOCH_NUM_GLO        32
+#define EPOCH_FIRST_GPS       1
+#define EPOCH_FIRST_SBAS    120
+#define EPOCH_FIRST_GAL       1
+#define EPOCH_FIRST_BDS       1
+#define EPOCH_FIRST_QZSS      1
+#define EPOCH_FIRST_GLO       1
+
 
 void epochInit(EPOCH_t *coll);
 
 bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch);
 
-
+const char *epochStrHeader(void);
 
 /* ********************************************************************************************** */
 #ifdef __cplusplus
