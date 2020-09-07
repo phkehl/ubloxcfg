@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define UBX_ACK_CLSID                0x05
 #define UBX_ACK_ACK_MSGID            0x01
@@ -266,7 +266,7 @@ extern "C" {
 #define UBX_FIRST_QZSS      1
 #define UBX_FIRST_GLO       1
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 //! UBX-CFG-VALSET (version 1, input) message payload header
 typedef struct UBX_CFG_VALSET_V1_GROUP0_s
@@ -409,7 +409,7 @@ typedef struct UBX_CFG_CFG_V0_GROUP1_s
 
 #define UBX_CFG_CFG_V0_MAX_SIZE         (sizeof(UBX_CFG_CFG_V0_GROUP0_t) + sizeof(UBX_CFG_CFG_V0_GROUP1_t) + UBX_FRAME_SIZE)
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 //! UBX-MON-VER (version 0, output) message payload header
 typedef struct UBX_MON_VER_V0_GROUP0_s
@@ -424,7 +424,7 @@ typedef struct UBX_MON_VER_V0_GROUP1_s
     char extension[30];
 } UBX_MON_VER_V0_GROUP1_t;
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 //! UBX-ACK-ACK (version 0, output) payload
 typedef struct UBX_ACK_ACK_V0_GROUP0_s
@@ -440,7 +440,7 @@ typedef struct UBX_ACK_NAK_V0_GROUP0_s
     uint8_t msgId;                                   //!< Message ID of not-ack'ed message
 }  UBX_ACK_NAK_V0_GROUP0_t;
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 //! UBX-NAV-PVT (version 1, output) payload
 typedef struct UBX_NAV_PVT_V1_GROUP0_s
@@ -509,7 +509,112 @@ typedef struct UBX_NAV_PVT_V1_GROUP0_s
 
 #define UBX_NAV_PVT_V1_SIZE             (sizeof(UBX_NAV_PVT_V1_GROUP0_t) + UBX_FRAME_SIZE)
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
+
+//! UBX-NAV-POSECEF (version 0, output) payload
+typedef struct UBX_NAV_POSECEF_V0_GROUP0_s
+{
+    uint32_t iTOW;
+    int32_t  ecefX;
+    int32_t  ecefY;
+    int32_t  ecefZ;
+    uint32_t pAcc;
+} UBX_NAV_POSECEF_V0_GROUP0_t;
+
+#define UBX_NAV_POSECEF_V0_ECEF_XYZ_SCALE  1e-2
+#define UBX_NAV_POSECEF_V0_PACC_SCALE      1e-2
+
+#define UBX_NAV_POSECEF_V0_SIZE             (sizeof(UBX_NAV_POSECEF_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ****************************************************************************************************************** */
+
+//! UBX-NAV-HPPOSECEF (version 0, output) payload
+typedef struct UBX_NAV_HPPOSECEF_V0_GROUP0_s
+{
+    uint8_t  version;
+    uint8_t  reserved[3];
+    uint32_t iTOW;
+    int32_t  ecefX;
+    int32_t  ecefY;
+    int32_t  ecefZ;
+    int8_t   ecefXHp;
+    int8_t   ecefYHp;
+    int8_t   ecefZHp;
+    uint8_t  flags;
+    uint32_t pAcc;
+} UBX_NAV_HPPOSECEF_V0_GROUP0_t;
+#define UBX_NAV_HPPOSECEF_V0_VERSION            0x00
+#define UBX_NAV_HPPOSECEF_V0_VERSION_GET(msg)  ((msg)[UBX_HEAD_SIZE + 0])
+
+#define UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_SCALE     1e-2
+#define UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_HP_SCALE  1e-4
+#define UBX_NAV_HPPOSECEF_V0_PACC_SCALE         1e-4
+#define UBX_NAV_HPPOSECEF_V0_FLAGS_INVALIDECEF  0x01
+
+#define UBX_NAV_HPPOSECEF_V0_SIZE             (sizeof(UBX_NAV_HPPOSECEF_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ****************************************************************************************************************** */
+
+//! UBX-NAV-EOE (version 0, output) payload
+typedef struct UBX_NAV_EOE_V0_GROUP0_s
+{
+    uint32_t iTOW;
+} UBX_NAV_EOE_V0_GROUP0_t;
+
+#define UBX_NAV_EOE_V0_SIZE             (sizeof(UBX_NAV_EOE_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ****************************************************************************************************************** */
+
+//! UBX-NAV-RELPOSNED (version 1, output) payload
+typedef struct UBX_NAV_RELPOSNED_V1_GROUP0_s
+{
+    uint8_t  version;
+    uint8_t  reserved0;
+    uint16_t refStationId;
+    uint32_t iTOW;
+    int32_t  relPosN;
+    int32_t  relPosE;
+    int32_t  relPosD;
+    int32_t  relPosLength;
+    int32_t  relPosHeading;
+    uint8_t  reserved1[4];
+    int8_t   relPosHPN;
+    int8_t   relPosHPE;
+    int8_t   relPosHPD;
+    int8_t   relPosHPLength;
+    uint32_t accN;
+    uint32_t accE;
+    uint32_t accD;
+    uint32_t accLength;
+    uint32_t accHeading;
+    uint8_t  reserved2[4];
+    uint32_t flags;
+} UBX_NAV_RELPOSNED_V1_GROUP0_t;
+
+#define UBX_NAV_RELPOSNED_V1_VERSION                0x01
+#define UBX_NAV_RELPOSNED_V1_VERSION_GET(msg)       ((msg)[UBX_HEAD_SIZE + 0])
+#define UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_SCALE      1e-2
+#define UBX_NAV_RELPOSNED_V1_RELPOS_HEAD_SCALE      1e-5
+#define UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_HP_SCALE   1e-4
+#define UBX_NAV_RELPOSNED_V1_ACC_NEDL_SCALE         1e-4
+#define UBX_NAV_RELPOSNED_V1_ACC_HEAD_SCALE         1e-5
+#define UBX_NAV_RELPOSNED_V1_FLAGS_GNSSFIXOK        0x0001
+#define UBX_NAV_RELPOSNED_V1_FLAGS_DIFFSOLN         0x0002
+#define UBX_NAV_RELPOSNED_V1_FLAGS_RELPOS_VALID     0x0004
+#define UBX_NAV_RELPOSNED_V1_FLAGS_CARRSOLN_GET(f)  ( ((int8_t)(f) >> 3) & 0x0003 )
+#define UBX_NAV_RELPOSNED_V1_FLAGS_CARRSOLN_NO      0
+#define UBX_NAV_RELPOSNED_V1_FLAGS_CARRSOLN_FLOAT   1
+#define UBX_NAV_RELPOSNED_V1_FLAGS_CARRSOLN_FIXED   2
+#define UBX_NAV_RELPOSNED_V1_FLAGS_ISMOVING         0x0020
+#define UBX_NAV_RELPOSNED_V1_FLAGS_REFPOSMISS       0x0004
+#define UBX_NAV_RELPOSNED_V1_FLAGS_REFOBSMISS       0x0008
+#define UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSHEAD_VALID 0x0100
+#define UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSNORM       0x02000
+#define UBX_NAV_RELPOSNED_V1_FLAGS_
+
+#define UBX_NAV_RELPOSNED_V1_SIZE             (sizeof(UBX_NAV_RELPOSNED_V1_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ****************************************************************************************************************** */
 
 //! UBX-NAV-SIG (version 0, output) payload head
 typedef struct UBX_NAV_SIG_V0_GROUP0_s
@@ -575,7 +680,7 @@ typedef struct UBX_NAV_SIG_V0_GROUP1_s
 
 #define UBX_NAV_SIG_V0_MIN_SIZE             (sizeof(UBX_NAV_SIG_V0_GROUP0_t) + UBX_FRAME_SIZE)
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 //! UBX-RXM-RAWX (version 1, output) payload head
 typedef struct UBX_RXM_RAWX_V1_GROUP0_s
@@ -616,7 +721,7 @@ typedef struct UBX_RXM_RAWX_V1_GROUP1_s
 
 // FIXME: complete this..
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define UBX_FRAME_SIZE                         8     //!< Size (in bytes) of UBX frame
 #define UBX_SYNC_1                             0xb5
@@ -665,7 +770,7 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId);
 
 bool ubxMonVerToVerStr(char *str, const int size, const uint8_t *msg, const int msgSize);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }
 #endif

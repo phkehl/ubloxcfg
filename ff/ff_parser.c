@@ -26,7 +26,7 @@
 
 #include "ff_parser.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define PARSER_XTRA_TRACE_ENABLE 0 // Set to 1 to enable more trace output
 
@@ -44,7 +44,7 @@
 #define PARSER_DEBUG(fmt, args...)   DEBUG(  "parser(%04x) " fmt, _P_ADDR(parser), ## args)
 #define PARSER_TRACE(fmt, args...)   TRACE(  "parser(%04x) " fmt, _P_ADDR(parser), ## args)
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void parserInit(PARSER_t *parser)
 {
@@ -52,7 +52,7 @@ void parserInit(PARSER_t *parser)
     PARSER_XTRA_TRACE("init");
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void parserAdd(PARSER_t *parser, const uint8_t *data, const int size)
 {
@@ -68,7 +68,7 @@ void parserAdd(PARSER_t *parser, const uint8_t *data, const int size)
     PARSER_XTRA_TRACE("add: size=%d ", size);
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
 {
@@ -82,7 +82,7 @@ const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
     return "UNKNOWN";
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _isUbxMessage(const uint8_t *buf, const int size);
 static int _isNmeaMessage(const uint8_t *buf, const int size);
@@ -181,7 +181,7 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg)
     return false;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
 {
@@ -271,7 +271,7 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     PARSER_XTRA_TRACE("process: emit %s, size %d, type %d ", msg->name, msgSize, msgType);
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 // Parser functions work like this:
 // Input: buffer to check, size >= 1
@@ -335,7 +335,7 @@ static int _isUbxMessage(const uint8_t *buf, const int size)
     return payloadSize + UBX_FRAME_SIZE;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _isNmeaMessage(const uint8_t *buf, const int size)
 {
@@ -399,7 +399,7 @@ static int _isNmeaMessage(const uint8_t *buf, const int size)
     return 0;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _isRtcm3Message(const uint8_t *buf, const int size)
 {
@@ -442,5 +442,5 @@ static int _isRtcm3Message(const uint8_t *buf, const int size)
     return 0;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

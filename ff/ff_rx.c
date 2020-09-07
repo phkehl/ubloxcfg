@@ -28,7 +28,7 @@
 #include "ff_port.h"
 #include "ff_rx.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define RX_XTRA_TRACE_ENABLE 0 // Set to 1 to enable more trace output
 
@@ -43,7 +43,7 @@
 #define RX_DEBUG(fmt, args...)   DEBUG(  "%s: " fmt, rx->name, ## args)
 #define RX_TRACE(fmt, args...)   TRACE(  "%s: " fmt, rx->name, ## args)
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 typedef struct RX_s
 {
@@ -182,7 +182,7 @@ static bool _rxOpenDetect(RX_t *rx)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *buf, const int size)
 {
@@ -209,7 +209,7 @@ static void _rxCallbackMsg(RX_t *rx, PARSER_MSG_t *msg)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void rxClose(RX_t *rx)
 {
@@ -220,7 +220,7 @@ void rxClose(RX_t *rx)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void rxAbort(RX_t *rx)
 {
@@ -228,7 +228,7 @@ void rxAbort(RX_t *rx)
     rx->abort = true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 bool rxSend(RX_t *rx, const uint8_t *data, const int size)
 {
@@ -240,7 +240,7 @@ bool rxSend(RX_t *rx, const uint8_t *data, const int size)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 int rxGetBaudrate(RX_t *rx)
 {
@@ -252,7 +252,7 @@ int rxGetBaudrate(RX_t *rx)
     return 0;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 bool rxSetBaudrate(RX_t *rx, const int baudrate)
 {
@@ -263,7 +263,7 @@ bool rxSetBaudrate(RX_t *rx, const int baudrate)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 PARSER_MSG_t *rxGetNextMessage(RX_t *rx)
 {
@@ -309,9 +309,9 @@ PARSER_MSG_t *rxGetNextMessageTimeout(RX_t *rx, const uint32_t timeout)
     return msg;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
-PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
+PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param, bool *pollNak)
 {
     if ( (rx == NULL) || (param == NULL) ||
          ((param->payload != NULL) && (param->payloadSize > (int)(sizeof(rx->pollBuf) - UBX_FRAME_SIZE))) )
@@ -323,6 +323,7 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
     const int timeout     = param->timeout     > 0 ? param->timeout     : 1500;
     const int respSizeMin = param->respSizeMin > 0 ? param->respSizeMin : (UBX_FRAME_SIZE + 1);
     const int retries     = param->retries     > 0 ? param->retries     : 2;
+    const bool isUbxCfg   = param->clsId == UBX_CFG_CLSID;
 
     // Create poll request message, use parser's tmp message buffer
     const int pollSize = ubxMakeMessage(param->clsId, param->msgId, param->payload, param->payloadSize, rx->pollBuf);
@@ -331,9 +332,11 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
 
     // Poll...
     PARSER_MSG_t *res = NULL;
+    bool _pollNak = false;
     for (int attempt = 1; attempt <= retries; attempt++)
     {
-        RX_DEBUG("poll %s, size %d, timeout=%d, attempt %d/%d.", pollName, pollSize, timeout, attempt, retries);
+        RX_DEBUG("poll %s, size %d, timeout=%d, isUbxCfg=%d, attempt %d/%d.",
+            pollName, pollSize, timeout, attempt, isUbxCfg, retries);
 
         // Send request
         if (!rxSend(rx, rx->pollBuf, pollSize))
@@ -368,6 +371,18 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
             else
             {
                 _rxCallbackMsg(rx, msg);
+
+                // UBX-CFG polls can return NAK in case the message is not pollable
+                if (isUbxCfg && (UBX_CLSID(msg->data) == UBX_ACK_CLSID) && (UBX_MSGID(msg->data) == UBX_ACK_NAK_MSGID))
+                {
+                    const UBX_ACK_ACK_V0_GROUP0_t *ack = (const UBX_ACK_ACK_V0_GROUP0_t *)&msg->data[UBX_HEAD_SIZE];
+                    if ( (ack->clsId == param->clsId) && (ack->msgId == param->msgId) )
+                    {
+                        _pollNak = true;
+                        attempt = retries; // No need to try again
+                        break;
+                    }
+                }
             }
         }
 
@@ -375,12 +390,23 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param)
         {
             break;
         }
-        RX_DEBUG("poll %s timeout", pollName);
+        if (_pollNak)
+        {
+            RX_DEBUG("UBX-ACK-NAK: %s", pollName);
+        }
+        else
+        {
+            RX_DEBUG("poll %s timeout", pollName);
+        }
+        if (pollNak != NULL)
+        {
+            *pollNak = _pollNak;
+        }
     }
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t timeout)
 {
@@ -425,7 +451,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
                 const UBX_ACK_ACK_V0_GROUP0_t *ack = (const UBX_ACK_ACK_V0_GROUP0_t *)&msg->data[UBX_HEAD_SIZE];
                 if ( (ack->clsId == clsId) && (ack->msgId == msgId) )
                 {
-                    RX_DEBUG("UBX-CFG-ACK: %s", sendName);
+                    RX_DEBUG("UBX-ACK-ACK: %s", sendName);
                     res = true;
                     resp = true;
                 }
@@ -435,7 +461,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
                 const UBX_ACK_NAK_V0_GROUP0_t *nak = (const UBX_ACK_NAK_V0_GROUP0_t *)&msg->data[UBX_HEAD_SIZE];
                 if ( (nak->clsId == clsId) && (nak->msgId == msgId) )
                 {
-                    RX_DEBUG("UBX-CFG-NAK: %s", sendName);
+                    RX_DEBUG("UBX-ACK-NAK: %s", sendName);
                     res = false;
                     resp = true;
                 }
@@ -451,7 +477,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 bool rxGetVerStr(RX_t *rx, char *str, const int size)
 {
@@ -461,7 +487,7 @@ bool rxGetVerStr(RX_t *rx, char *str, const int size)
     }
 
     RX_POLL_UBX_t pollParam = { .clsId = UBX_MON_CLSID, .msgId = UBX_MON_VER_MSGID };
-    PARSER_MSG_t *ubxMonVer = rxPollUbx(rx, &pollParam);
+    PARSER_MSG_t *ubxMonVer = rxPollUbx(rx, &pollParam, NULL);
     if (ubxMonVer != NULL)
     {
         _rxCallbackMsg(rx, ubxMonVer);
@@ -521,7 +547,7 @@ bool rxAutobaud(RX_t *rx)
                 continue;
             }
             RX_DEBUG("autobaud %d (quick)", baudrates[ix]);
-            ubxMonVer = rxPollUbx(rx, &pollParam);
+            ubxMonVer = rxPollUbx(rx, &pollParam, NULL);
             if (ubxMonVer != NULL)
             {
                 _rxCallbackMsg(rx, ubxMonVer);
@@ -547,7 +573,7 @@ bool rxAutobaud(RX_t *rx)
             RX_DEBUG("autobaud %d (flush rx/tx)", baudrates[ix]);
             _rxFlushRx(rx);
             _rxFlushTx(rx);
-            ubxMonVer = rxPollUbx(rx, &pollParam);
+            ubxMonVer = rxPollUbx(rx, &pollParam, NULL);
             if (ubxMonVer != NULL)
             {
                 _rxCallbackMsg(rx, ubxMonVer);
@@ -576,7 +602,7 @@ bool rxAutobaud(RX_t *rx)
 }
 
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 bool rxReset(RX_t *rx, const RX_RESET_t reset)
 {
@@ -782,7 +808,7 @@ const char *rxResetStr(const RX_RESET_t reset)
     return "?";
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, const int numKeys, UBLOXCFG_KEYVAL_t *kv, const int maxKv)
 {
@@ -842,11 +868,19 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
             .payload = pollPayload, .payloadSize = (sizeof(UBX_CFG_VALGET_V0_GROUP0_t) + keysSize),
             .retries = 2, .timeout = 2000,
         };
-        PARSER_MSG_t *msg = rxPollUbx(rx, &pollParam);
+        bool pollNak = false;
+        PARSER_MSG_t *msg = rxPollUbx(rx, &pollParam, &pollNak);
         if (msg == NULL)
         {
-            RX_WARNING("No response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, layerName);
-            res = false;
+            if (pollNak)
+            {
+                RX_DEBUG("No data in layer %s!", layerName);
+            }
+            else
+            {
+                RX_WARNING("No response polling UBX-CFG-VALGET (position=%u, layer=%s)!", position, layerName);
+                res = false;
+            }
             break;
         }
 
@@ -979,5 +1013,5 @@ bool rxSetConfig(RX_t *rx, const UBLOXCFG_KEYVAL_t *kv, const int nKv, const boo
 }
 
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

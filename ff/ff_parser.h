@@ -30,9 +30,9 @@
 extern "C" {
 #endif
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
-#define PARSER_BUF_SIZE       8192 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
+#define PARSER_BUF_SIZE      16384 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
 #define PARSER_MAX_UBX_SIZE   4096 // messages larger than this will be GARBAGE
 #define PARSER_MAX_NMEA_SIZE   200 // messages larger than this will be GARBAGE
 #define PARSER_MAX_RTCM3_SIZE 4096 // messages larger than this will be GARBAGE
@@ -91,7 +91,7 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg);
 
 const char *parserMsgtypeName(const PARSER_MSGTYPE_t type);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }
 #endif

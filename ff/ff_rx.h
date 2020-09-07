@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 typedef struct RX_s RX_t;
 
@@ -59,7 +59,7 @@ bool rxSetBaudrate(RX_t *rx, const int baudrate);
 
 void rxAbort(RX_t *rx);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 bool rxGetVerStr(RX_t *rx, char *str, const int size);
 
@@ -74,7 +74,7 @@ typedef struct RX_POLL_UBX_s
     int            respSizeMin;
 } RX_POLL_UBX_t;
 
-PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param);
+PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param, bool *pollNak);
 
 bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t timeout);
 
@@ -101,7 +101,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
 
 bool rxSetConfig(RX_t *rx, const UBLOXCFG_KEYVAL_t *kv, const int nKv, const bool ram, const bool bbr, const bool flash);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }
 #endif

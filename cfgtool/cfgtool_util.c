@@ -292,7 +292,7 @@ bool ioWriteOutput(const bool append)
         {
             PRINT("Writing output to '%s'.", gOutName);
         }
-        DEBUG("Writing output to '%s' (%d bytes).", gOutName, gOutputBufSize);
+        TRACE("Writing output to '%s' (%d bytes).", gOutName, gOutputBufSize);
         res = (int)fwrite(gOutputBuf, 1, gOutputBufSize, gOutFile) == gOutputBufSize;
     }
 
@@ -305,7 +305,7 @@ bool ioWriteOutput(const bool append)
     return res;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 bool layersStringToFlags(const char *layers, bool *ram, bool *bbr, bool *flash, bool *def)
 {
@@ -362,5 +362,5 @@ bool layersStringToFlags(const char *layers, bool *ram, bool *bbr, bool *flash, 
     return res;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

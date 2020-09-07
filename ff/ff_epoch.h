@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 typedef enum EPOCH_FIX_e
 {
@@ -166,6 +166,7 @@ typedef struct EPOCH_s
     // Public
     bool                valid;
     uint32_t            seq;
+    uint32_t            ts;
     char                str[256];
 
     bool                haveFix;
@@ -186,6 +187,7 @@ typedef struct EPOCH_s
     double              xyz[3];
     double              horizAcc;
     double              vertAcc;
+    double              posAcc;
 
     bool                haveMsl;
     double              heightMsl;
@@ -213,12 +215,16 @@ typedef struct EPOCH_s
     EPOCH_SIGINFO_t     signals[100];
     int                 numSignals;
 
-    // Private   
-    bool         _haveUbxNavPvt;
-    bool         _haveUbxNavSig;
-    bool         _haveUbxNavHpposLlh;
-    bool         _haveLlh;
-    bool         _haveXyz;
+    // Private
+    int          _haveFix;
+    int          _haveTime;
+    int          _haveDate;
+    int          _haveLlh;
+    int          _haveHacc;
+    int          _haveVacc;
+    int          _havePacc;
+    int          _haveXyz;
+    int          _haveSig;
 
     uint32_t     _detectTow;
     bool         _detectHaveTow;
@@ -244,7 +250,7 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch);
 
 const char *epochStrHeader(void);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }
 #endif

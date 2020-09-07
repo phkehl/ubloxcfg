@@ -24,26 +24,26 @@
 
 #include "ff_trafo.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
-inline double rad2deg(const double rad)
+double rad2deg(const double rad)
 {
     return rad * 180.0 * (1.0 / M_PI);
 }
 
-inline double deg2rad(const double deg)
+double deg2rad(const double deg)
 {
     return deg * (1.0 / 180.0) * M_PI;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 #define WGS84_A  6378137.000
 #define WGS84_E2 0.00669438
 
 enum { _LAT_ = 0, _LON_ = 1, _HEIGHT_ = 2, _X_ = 0, _Y_ = 1, _Z_ = 2, _EAST_ = 0, _NORTH_ = 1, _UP_ = 2 };
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 inline void llh2xyz_deg(const double lat, const double lon, const double height, double *x, double *y, double *z)
 {
@@ -73,7 +73,7 @@ void llh2xyz_vec(const double llh[3], double xyz[3])
     xyz[2] = ((n * (1.0 - WGS84_E2)) + llh[_HEIGHT_]) * sinLat;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 inline void xyz2llh_deg(const double x, const double y, const double z, double *lat, double *lon, double *height)
 {
@@ -125,7 +125,7 @@ void xyz2llh_vec(const double xyz[3], double llh[3])
     llh[_HEIGHT_] = h;    
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 void xyz2enu_vec(const double xyz[3], const double xyzRef[3], const double llhRef[3], double enu[3])
 {
@@ -145,22 +145,44 @@ void xyz2enu_vec(const double xyz[3], const double xyzRef[3], const double llhRe
     // https://gssc.esa.int/navipedia/index.php/Transformations_between_ECEF_and_ENU_coordinates
     // https://en.wikipedia.org/wiki/Geographic_coordinate_conversion#From_ECEF_to_ENU
     //
-    // | e |   |     -sin(lon)            cos(lon)          0      |   | dX |
-    // | n | = | -cos(lon)*sin(lat)  -sin(lon)*sin(lat)   cos(lat) | * | dY |
-    // | u |   |  cos(lon)*cos(lat)   sin(lon)*cos(lat)   sin(lat) |   | dZ |
+    // | e |   |     -sin(lon)            cos(lon)          0      |   | Xp - Xr |
+    // | n | = | -cos(lon)*sin(lat)  -sin(lon)*sin(lat)   cos(lat) | * | Yp - Yr |
+    // | u |   |  cos(lon)*cos(lat)   sin(lon)*cos(lat)   sin(lat) |   | Zp - Zr |
 
     const double sinLat = sin(llhRef[_LAT_]);
     const double cosLat = cos(llhRef[_LAT_]);
     const double sinLon = sin(llhRef[_LON_]);
     const double cosLon = cos(llhRef[_LON_]);
 
-    enu[_EAST_]  = (-sinLon          * d[_X_]) +  (cosLon          * d[_Y_]);
+    enu[_EAST_]  = (-sinLon          * d[_X_]) +  (cosLon          * d[_Y_]) /* + (0   * d[_Z_])*/;
     enu[_NORTH_] = (-cosLon * sinLat * d[_X_]) + (-sinLon * sinLat * d[_Y_]) + (cosLat * d[_Z_]);
     enu[_UP_]    = (-cosLon * cosLat * d[_X_]) +  (sinLon * cosLat * d[_Y_]) + (sinLat * d[_Z_]);
 }
 
+void enu2xyz_vec(const double enu[3], const double xyzRef[3], const double llhRef[3], double xyz[3])
+{
+    double _llhRef[3];
+    if (llhRef == NULL)
+    {
+        xyz2llh_vec(xyz, _llhRef);
+        llhRef = _llhRef;
+    }
 
-/* ********************************************************************************************** */
+    // | Xp |   | -sin(lon)  -cos(lon)*sin(lat)   cos(lon)*cos(lat) |   | e |   | Xr |
+    // | Yp | = |  cos(lon)  -sin(lon)*sin(lat)   sin(lon)*cos(lat) | * | n | + | Yr |
+    // | Zp |   |     0           cos(lat)            sin(lat)      |   | u |   | Zr |
+
+    const double sinLat = sin(llhRef[_LAT_]);
+    const double cosLat = cos(llhRef[_LAT_]);
+    const double sinLon = sin(llhRef[_LON_]);
+    const double cosLon = cos(llhRef[_LON_]);
+
+    xyz[_X_] = (-sinLon * enu[_EAST_]) + (-cosLon * sinLat * enu[_NORTH_]) + (cosLon * cosLat * enu[_UP_]) + xyzRef[_X_];
+    xyz[_Y_] =  (cosLon * enu[_EAST_]) + (-sinLon * sinLat * enu[_NORTH_]) + (sinLon * cosLat * enu[_UP_]) + xyzRef[_Y_];
+    xyz[_Z_] =  /*(0 * enu[_EAST_]) */ +           (cosLat * enu[_NORTH_]) +          (sinLat * enu[_UP_]) + xyzRef[_Z_];
+}
+
+/* ****************************************************************************************************************** */
 
 // gcc -o trafo_test ff_trafo.c -DFF_TRAFO_TEST -lm && ./trafo_test
 #ifdef FF_TRAFO_TEST
@@ -227,5 +249,5 @@ int main(int argc, char **argv)
 
 #endif // FF_TRAFO_TEST
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

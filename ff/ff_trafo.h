@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 double rad2deg(const double rad);
 
@@ -39,8 +39,9 @@ void xyz2llh_deg(const double x, const double y, const double z, double *lat, do
 void xyz2llh_rad(const double x, const double y, const double z, double *lat, double *lon, double *height);
 
 void xyz2enu_vec(const double xyz[3], const double xyzRef[3], const double llhRef[3], double enu[3]);
+void enu2xyz_vec(const double enu[3], const double xyzRef[3], const double llhRef[3], double xyz[3]);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }
 #endif

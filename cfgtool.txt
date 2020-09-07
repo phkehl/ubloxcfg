@@ -158,7 +158,7 @@ Command 'cfg2rx':
             words such as 'AUTO'. Type X constants are one or more words or
             hexadecimal strings separated by a '|', e.g. 'FIRST|0x02'.
 
-         <messagename>> <uart1> <uart2> <spi> <i2c> <usb>
+         <messagename> <uart1> <uart2> <spi> <i2c> <usb>
             A message name (e.g. 'UBX-NAV-PVT', 'NMEA-STANDARD-GGA', etc.) and
             output rates for the listed ports. For each port a value '0'...'255'
             or the '-' character must be given to set the given rate resp.

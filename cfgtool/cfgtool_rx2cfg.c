@@ -26,7 +26,7 @@
 
 #include "cfgtool_rx2cfg.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 const char *rx2cfgHelp(void)
 {
@@ -62,7 +62,7 @@ const char *rx2listHelp(void)
 "\n";
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 
 #define MAX_ITEMS 3000
@@ -88,7 +88,7 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, const UBLOXCFG_LAYER_t layer);
 static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t id);
 static void _dbFlag(CFG_DB_t *db, const uint32_t id);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 typedef struct PORT_CFG_s
 {
@@ -362,7 +362,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     }
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv);
 
@@ -457,7 +457,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     }
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 static int _dbSortFunc(const void *a, const void *b);
 
@@ -543,7 +543,7 @@ static int _dbSortFunc(const void *a, const void *b)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t id)
 {
@@ -571,7 +571,7 @@ static void _dbFlag(CFG_DB_t *db, const uint32_t id)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, const int size)
 {
@@ -628,7 +628,7 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _rateCfgStr(const UBLOXCFG_MSGRATE_t *cfg, const CFG_DB_t *db, char *str, const int size)
 {
@@ -686,7 +686,7 @@ static bool _rateCfgStr(const UBLOXCFG_MSGRATE_t *cfg, const CFG_DB_t *db, char 
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, char *str, const int size)
 {
@@ -729,7 +729,7 @@ static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv)
 {
@@ -869,5 +869,5 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     ioOutputStr("\n");
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

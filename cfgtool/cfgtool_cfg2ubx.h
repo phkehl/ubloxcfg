@@ -20,12 +20,12 @@
 #ifndef __CFGTOOL_CFG2UBX_H__
 #define __CFGTOOL_CFG2UBX_H__
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 const char *cfg2ubxHelp(void);
 int cfg2ubxRun(const char *layerArg, const bool extraInfo);
 int cfg2hexRun(const char *layerArg, const bool extraInfo);
 int cfg2cRun(const char *layerArg, const bool extraInfo);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #endif // __CFGTOOL_CFG2UBX_H__

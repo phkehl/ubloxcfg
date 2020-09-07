@@ -20,7 +20,7 @@
 #ifndef __CFGTOOL_RX2CFG_H__
 #define __CFGTOOL_RX2CFG_H__
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 const char *rx2cfgHelp(void);
 int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownItems);
@@ -28,5 +28,5 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
 const char *rx2listHelp(void);
 int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownItems);
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 #endif // __CFGTOOL_RX2CFG_H__

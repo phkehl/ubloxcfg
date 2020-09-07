@@ -42,7 +42,7 @@
 #include "ff_stuff.h"
 #include "ff_port.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define PORT_XTRA_TRACE_ENABLE 0 // Set to 1 to enable more trace output
 
@@ -99,7 +99,7 @@ const char *_portErrStr(PORT_t *port, int err)
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static uint32_t _portBaudrateValue(const int baudrate);
 
@@ -268,7 +268,7 @@ bool portOpen(PORT_t *port)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseSer(PORT_t *port);
 static void _portCloseTcp(PORT_t *port);
@@ -295,7 +295,7 @@ void portClose(PORT_t *port)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size);
 static bool _portWriteTcp(PORT_t *port, const uint8_t *data, const int size);
@@ -327,7 +327,7 @@ bool portWrite(PORT_t *port, const uint8_t *data, const int size)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead);
 static bool _portReadTcp(PORT_t *port, uint8_t *data, const int size, int *nRead);
@@ -363,7 +363,7 @@ bool portRead(PORT_t *port, uint8_t *data, const int size, int *nRead)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateSer(PORT_t *port);
 static bool _portCanBaudrateTcp(PORT_t *port);
@@ -390,7 +390,7 @@ bool portCanBaudrate(PORT_t *port)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateSer(PORT_t *port, const int baudrate);
 static bool _portSetBaudrateTcp(PORT_t *port, const int baudrate);
@@ -418,7 +418,7 @@ bool portSetBaudrate(PORT_t *port, const int baudrate)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateSer(PORT_t *port);
 static int _portGetBaudrateTcp(PORT_t *port);
@@ -544,7 +544,7 @@ static uint32_t _portBaudrateValue(const int baudrate)
     return 0;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseSer(PORT_t *port)
 {
@@ -556,7 +556,7 @@ static void _portCloseSer(PORT_t *port)
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
 {
@@ -588,7 +588,7 @@ static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead)
 {
@@ -627,7 +627,7 @@ static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateSer(PORT_t *port)
 {
@@ -635,7 +635,7 @@ static bool _portCanBaudrateSer(PORT_t *port)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateSer(PORT_t *port, const int baudrate)
 {
@@ -679,7 +679,7 @@ static bool _portSetBaudrateSer(PORT_t *port, const int baudrate)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateSer(PORT_t *port)
 {
@@ -786,6 +786,24 @@ static bool _portOpenTcp(PORT_t *port)
             continue;
         }
 
+#ifndef _WIN32
+#  if 1
+        struct timeval timeout;
+        timeout.tv_sec  = 5;
+        timeout.tv_usec = 0;
+        if (setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout)) != 0)
+        {
+            PORT_WARNING("Failed setting SO_SNDTIMEO option: %s", _portErrStr(port, 0));
+        }
+#  else
+        const int count = 3;
+        if (setsockopt(fd, IPPROTO_TCP, TCP_SYNCNT, &count, sizeof(count)) != 0)
+        {
+            PORT_WARNING("Failed setting TCP_SYNCNT option: %s", _portErrStr(port, 0));
+        }
+#  endif
+#endif
+
         int res = connect(fd, rp->ai_addr, rp->ai_addrlen);
         if (res == SOCKET_ERROR)
         {
@@ -853,7 +871,7 @@ static bool _portOpenTcp(PORT_t *port)
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable)) != 0)
     {
 #endif
-        PORT_WARNING("Failed setting TCP options: %s", _portErrStr(port, 0));
+        PORT_WARNING("Failed setting TCP_NODELAY option: %s", _portErrStr(port, 0));
         close(fd);
         return false;
     }
@@ -868,7 +886,7 @@ static bool _portOpenTcp(PORT_t *port)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseTcp(PORT_t *port)
 {
@@ -880,7 +898,7 @@ static void _portCloseTcp(PORT_t *port)
 #endif
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteTcp(PORT_t *port, const uint8_t *data, const int size)
 {
@@ -922,7 +940,7 @@ static bool _portWriteTcp(PORT_t *port, const uint8_t *data, const int size)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadTcp(PORT_t *port, uint8_t *data, const int size, int *nRead)
 {
@@ -947,7 +965,7 @@ static bool _portReadTcp(PORT_t *port, uint8_t *data, const int size, int *nRead
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateTcp(PORT_t *port)
 {
@@ -955,7 +973,7 @@ static bool _portCanBaudrateTcp(PORT_t *port)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateTcp(PORT_t *port, const int baudrate)
 {
@@ -964,7 +982,7 @@ static bool _portSetBaudrateTcp(PORT_t *port, const int baudrate)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateTcp(PORT_t *port)
 {
@@ -1392,14 +1410,14 @@ static bool _portOpenTelnet(PORT_t *port)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseTelnet(PORT_t *port)
 {
     _portCloseTcp(port);
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteTelnet(PORT_t *port, const uint8_t *data, const int size)
 {
@@ -1458,7 +1476,7 @@ static bool _portWriteTelnet(PORT_t *port, const uint8_t *data, const int size)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadTelnet(PORT_t *port, uint8_t *data, const int size, int *nRead)
 {
@@ -1473,7 +1491,7 @@ static bool _portReadTelnet(PORT_t *port, uint8_t *data, const int size, int *nR
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateTelnet(PORT_t *port)
 {
@@ -1481,7 +1499,7 @@ static bool _portCanBaudrateTelnet(PORT_t *port)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateTelnet(PORT_t *port, const int baudrate)
 {
@@ -1504,7 +1522,7 @@ static bool _portSetBaudrateTelnet(PORT_t *port, const int baudrate)
     return res;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateTelnet(PORT_t *port)
 {
@@ -1520,14 +1538,14 @@ static bool _portOpenXyz(PORT_t *port)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseXyz(PORT_t *port)
 {
     (void)port;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteXyz(PORT_t *port, const uint8_t *data, const int size)
 {
@@ -1537,7 +1555,7 @@ static bool _portWriteXyz(PORT_t *port, const uint8_t *data, const int size)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadXyz(PORT_t *port, uint8_t *data, const int size, int *nRead)
 {
@@ -1548,7 +1566,7 @@ static bool _portReadXyz(PORT_t *port, uint8_t *data, const int size, int *nRead
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateXyz(PORT_t *port)
 {
@@ -1556,7 +1574,7 @@ static bool _portCanBaudrateXyz(PORT_t *port)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateXyz(PORT_t *port, const int baudrate)
 {
@@ -1565,7 +1583,7 @@ static bool _portSetBaudrateXyz(PORT_t *port, const int baudrate)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateXyz(PORT_t *port)
 {
@@ -1573,7 +1591,7 @@ static int _portGetBaudrateXyz(PORT_t *port)
     return 0;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 static bool _portOpenXyz(PORT_t *port)
 {
@@ -1581,14 +1599,14 @@ static bool _portOpenXyz(PORT_t *port)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static void _portCloseXyz(PORT_t *port)
 {
     (void)port;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portWriteXyz(PORT_t *port, const uint8_t *data, const int size)
 {
@@ -1598,7 +1616,7 @@ static bool _portWriteXyz(PORT_t *port, const uint8_t *data, const int size)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portReadXyz(PORT_t *port, uint8_t *data, const int size, int *nRead)
 {
@@ -1609,7 +1627,7 @@ static bool _portReadXyz(PORT_t *port, uint8_t *data, const int size, int *nRead
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portCanBaudrateXyz(PORT_t *port)
 {
@@ -1617,7 +1635,7 @@ static bool _portCanBaudrateXyz(PORT_t *port)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _portSetBaudrateXyz(PORT_t *port, const int baudrate)
 {
@@ -1626,7 +1644,7 @@ static bool _portSetBaudrateXyz(PORT_t *port, const int baudrate)
     return false;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _portGetBaudrateXyz(PORT_t *port)
 {
@@ -1634,5 +1652,5 @@ static int _portGetBaudrateXyz(PORT_t *port)
     return 0;
 }
 #endif
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

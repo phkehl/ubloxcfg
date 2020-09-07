@@ -31,7 +31,7 @@
 
 #include "cfgtool_cfg2rx.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 const char *cfg2rxHelp(void)
 {
@@ -74,7 +74,7 @@ const char *cfg2rxHelp(void)
 "            words such as 'AUTO'. Type X constants are one or more words or\n"
 "            hexadecimal strings separated by a '|', e.g. 'FIRST|0x02'.\n"
 "\n"
-"         <messagename>> <uart1> <uart2> <spi> <i2c> <usb>\n"
+"         <messagename> <uart1> <uart2> <spi> <i2c> <usb>\n"
 "            A message name (e.g. 'UBX-NAV-PVT', 'NMEA-STANDARD-GGA', etc.) and\n"
 "            output rates for the listed ports. For each port a value '0'...'255'\n"
 "            or the '-' character must be given to set the given rate resp.\n"
@@ -140,7 +140,7 @@ const char *cfg2rxHelp(void)
 "\n";
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 #define WARNING_INFILE(fmt, args...) WARNING("%s:%d: " fmt, line->file, line->lineNr, ## args)
 #define DEBUG_INFILE(fmt, args...)   DEBUG("%s:%d: " fmt, line->file, line->lineNr, ## args)
@@ -148,7 +148,7 @@ const char *cfg2rxHelp(void)
 #define CFG_SET_MAX_MSGS 20
 #define CFG_SET_MAX_KV   (UBX_CFG_VALSET_V1_MAX_KV * CFG_SET_MAX_MSGS)
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig)
 {
@@ -215,7 +215,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     return res ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 typedef struct CFG_DB_s
 {
@@ -264,7 +264,7 @@ UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
     return kv;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 typedef struct MSGRATE_CFG_s
 {
@@ -635,7 +635,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value)
 {
@@ -677,7 +677,7 @@ static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, co
     return true;
 }
 
-// -------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg)
 {
@@ -713,5 +713,5 @@ static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, c
     return true;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof
