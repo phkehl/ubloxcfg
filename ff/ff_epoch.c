@@ -204,56 +204,56 @@ static const char * const kEpochGnssStrs[] =
     [EPOCH_GNSS_QZSS] = "QZSS",
 };
 
-static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigId)
+static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigId, EPOCH_BAND_t *band)
 {
     switch (gnssId)
     {
         case UBX_GNSSID_GPS:
             switch (sigId)
             {
-                case UBX_SIGID_GPS_L1CA:  return EPOCH_SIGNAL_GPS_L1CA;
-                case UBX_SIGID_GPS_L2CL:  return EPOCH_SIGNAL_GPS_L2CL;
-                case UBX_SIGID_GPS_L2CM:  return EPOCH_SIGNAL_GPS_L2CM;
+                case UBX_SIGID_GPS_L1CA:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GPS_L1CA;
+                case UBX_SIGID_GPS_L2CL:
+                case UBX_SIGID_GPS_L2CM:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GPS_L2C;
             }
             break;
         case UBX_GNSSID_SBAS:
             switch (sigId)
             {
-                case UBX_SIGID_SBAS_L1CA: return EPOCH_SIGNAL_SBAS_L1CA;
+                case UBX_SIGID_SBAS_L1CA: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_SBAS_L1CA;
             }
             break;
         case UBX_GNSSID_GAL:
             switch (sigId)
             {
-                case UBX_SIGID_GAL_E1C:   return EPOCH_SIGNAL_GAL_E1C;
-                case UBX_SIGID_GAL_E1B:   return EPOCH_SIGNAL_GAL_E1B;
-                case UBX_SIGID_GAL_E5BI:  return EPOCH_SIGNAL_GAL_E5BI;
-                case UBX_SIGID_GAL_E5BQ:  return EPOCH_SIGNAL_GAL_E5BQ;
+                case UBX_SIGID_GAL_E1C:
+                case UBX_SIGID_GAL_E1B:   *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GAL_E1;
+                case UBX_SIGID_GAL_E5BI:
+                case UBX_SIGID_GAL_E5BQ:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GAL_E5B;
             }
             break;
         case UBX_GNSSID_BDS:
             switch (sigId)
             {
-                case UBX_SIGID_BDS_B1ID1: return EPOCH_SIGNAL_BDS_B1ID1;
-                case UBX_SIGID_BDS_B1ID2: return EPOCH_SIGNAL_BDS_B1ID2;
-                case UBX_SIGID_BDS_B2ID1: return EPOCH_SIGNAL_BDS_B2ID1;
-                case UBX_SIGID_BDS_B2ID2: return EPOCH_SIGNAL_BDS_B2ID2;
+                case UBX_SIGID_BDS_B1ID1:
+                case UBX_SIGID_BDS_B1ID2: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_BDS_B1I;
+                case UBX_SIGID_BDS_B2ID1:
+                case UBX_SIGID_BDS_B2ID2: *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_BDS_B2I;
             }
             break;
         case UBX_GNSSID_QZSS:
             switch (sigId)
             {
-                case UBX_SIGID_QZSS_L1CA: return EPOCH_SIGNAL_QZSS_L1CA;
-                case UBX_SIGID_QZSS_L1S:  return EPOCH_SIGNAL_QZSS_L1S;
-                case UBX_SIGID_QZSS_L2CM: return EPOCH_SIGNAL_QZSS_L2CM;
-                case UBX_SIGID_QZSS_L2CL: return EPOCH_SIGNAL_QZSS_L2CL;
+                case UBX_SIGID_QZSS_L1CA: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_QZSS_L1CA;
+                case UBX_SIGID_QZSS_L1S:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_QZSS_L1S;
+                case UBX_SIGID_QZSS_L2CM:
+                case UBX_SIGID_QZSS_L2CL: *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_QZSS_L2C;
             }
             break;
         case UBX_GNSSID_GLO:
             switch (sigId)
             {
-                case UBX_SIGID_GLO_L1OF:  return EPOCH_SIGNAL_GLO_L1OF;
-                case UBX_SIGID_GLO_L2OF:  return EPOCH_SIGNAL_GLO_L2OF;
+                case UBX_SIGID_GLO_L1OF:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GLO_L1OF;
+                case UBX_SIGID_GLO_L2OF:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GLO_L2OF;
             }
             break;
     }
@@ -264,23 +264,25 @@ const char * const kEpochSignalStrs[] =
 {
     [EPOCH_SIGNAL_UNKNOWN]   = "?",
     [EPOCH_SIGNAL_GPS_L1CA]  = "L1CA",
-    [EPOCH_SIGNAL_GPS_L2CL]  = "L2CL",
-    [EPOCH_SIGNAL_GPS_L2CM]  = "L2CL",
-    [EPOCH_SIGNAL_GLO_L1OF]  = "L1OF",
-    [EPOCH_SIGNAL_GLO_L2OF]  = "L2OF",
-    [EPOCH_SIGNAL_GAL_E1C]   = "E1C",
-    [EPOCH_SIGNAL_GAL_E1B]   = "E1B",
-    [EPOCH_SIGNAL_GAL_E5BI]  = "E5BI",
-    [EPOCH_SIGNAL_GAL_E5BQ]  = "E5BQ",
-    [EPOCH_SIGNAL_BDS_B1ID1] = "B1ID1",
-    [EPOCH_SIGNAL_BDS_B1ID2] = "B1ID2",
-    [EPOCH_SIGNAL_BDS_B2ID1] = "B2ID1",
-    [EPOCH_SIGNAL_BDS_B2ID2] = "B2ID2",
+    [EPOCH_SIGNAL_GPS_L2C]   = "L2C",
     [EPOCH_SIGNAL_SBAS_L1CA] = "L1CA",
+    [EPOCH_SIGNAL_GAL_E1]    = "E1",
+    [EPOCH_SIGNAL_GAL_E5B]   = "E5B",
+    [EPOCH_SIGNAL_BDS_B1I]   = "B1I",
+    [EPOCH_SIGNAL_BDS_B2I]   = "B2I",
     [EPOCH_SIGNAL_QZSS_L1CA] = "L1CA",
     [EPOCH_SIGNAL_QZSS_L1S]  = "L1S",
-    [EPOCH_SIGNAL_QZSS_L2CM] = "L2CM",
-    [EPOCH_SIGNAL_QZSS_L2CL] = "L2CL",
+    [EPOCH_SIGNAL_QZSS_L2C]  = "L2C",
+    [EPOCH_SIGNAL_GLO_L1OF]  = "L1OF",
+    [EPOCH_SIGNAL_GLO_L2OF]  = "L2OF",
+};
+
+const char * const kEpochBandStrs[] =
+{
+    [EPOCH_BAND_UNKNOWN] = "?",
+    [EPOCH_BAND_L1]      = "L1",
+    [EPOCH_BAND_L2]      = "L2",
+    [EPOCH_BAND_L5]      = "L5",
 };
 
 static const char *_epochSvStr(const EPOCH_GNSS_t gnss, const uint8_t sv)
@@ -351,7 +353,7 @@ static const char *_epochSvStr(const EPOCH_GNSS_t gnss, const uint8_t sv)
                 "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "B10",
                 "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20",
                 "B21", "B22", "B23", "B24", "B25", "B26", "B27", "B28", "B29", "B30",
-                "B31", "B32"
+                "B31", "B32", "B33", "B34", "B35", "B36", "B37"
             };
             const int ix = sv - 1;
             if ( (ix >= 0) && (ix < NUMOF(strs)) )
@@ -407,31 +409,31 @@ static const char *_epochSvStr(const EPOCH_GNSS_t gnss, const uint8_t sv)
     return "?";
 }
 
-static EPOCH_SIGQUAL_t _ubxSigQual(const uint8_t qualityInd)
+static EPOCH_SIGUSE_t _ubxSigUse(const uint8_t qualityInd)
 {
     switch (qualityInd)
     {
-        case UBX_NAV_SIG_V0_QUALITYIND_SEARCH:    return EPOCH_SIGQUAL_SEARCH;
-        case UBX_NAV_SIG_V0_QUALITYIND_ACQUIRED:  return EPOCH_SIGQUAL_ACQUIRED;
-        case UBX_NAV_SIG_V0_QUALITYIND_UNUSED:    return EPOCH_SIGQUAL_UNUSED;
-        case UBX_NAV_SIG_V0_QUALITYIND_CODELOCK:  return EPOCH_SIGQUAL_CODELOCK;
+        case UBX_NAV_SIG_V0_QUALITYIND_SEARCH:    return EPOCH_SIGUSE_SEARCH;
+        case UBX_NAV_SIG_V0_QUALITYIND_ACQUIRED:  return EPOCH_SIGUSE_ACQUIRED;
+        case UBX_NAV_SIG_V0_QUALITYIND_UNUSED:    return EPOCH_SIGUSE_UNUSED;
+        case UBX_NAV_SIG_V0_QUALITYIND_CODELOCK:  return EPOCH_SIGUSE_CODELOCK;
         case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK1:
         case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK2:
-        case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK3: return EPOCH_SIGQUAL_CARRLOCK;
-        case UBX_NAV_SIG_V0_QUALITYIND_NOSIG:     return EPOCH_SIGQUAL_NONE;
-        default:                                  return EPOCH_SIGQUAL_UNKNOWN;
+        case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK3: return EPOCH_SIGUSE_CARRLOCK;
+        case UBX_NAV_SIG_V0_QUALITYIND_NOSIG:     return EPOCH_SIGUSE_NONE;
+        default:                                  return EPOCH_SIGUSE_UNKNOWN;
     }
 }
 
-static const char * const kEpochSiqQualStrs[] =
+static const char * const kEpochSiqUseStrs[] =
 {
-    [EPOCH_SIGQUAL_UNKNOWN]  = "UNKNOWN",
-    [EPOCH_SIGQUAL_NONE]     = "NONE",
-    [EPOCH_SIGQUAL_SEARCH]   = "SEARCH",
-    [EPOCH_SIGQUAL_ACQUIRED] = "ACQUIRED",
-    [EPOCH_SIGQUAL_UNUSED]   = "UNUSED",
-    [EPOCH_SIGQUAL_CODELOCK] = "CODELOCK",
-    [EPOCH_SIGQUAL_CARRLOCK] = "CARRLOCK",
+    [EPOCH_SIGUSE_UNKNOWN]  = "UNKNOWN",
+    [EPOCH_SIGUSE_NONE]     = "NONE",
+    [EPOCH_SIGUSE_SEARCH]   = "SEARCH",
+    [EPOCH_SIGUSE_ACQUIRED] = "ACQUIRED",
+    [EPOCH_SIGUSE_UNUSED]   = "UNUSED",
+    [EPOCH_SIGUSE_CODELOCK] = "CODELOCK",
+    [EPOCH_SIGUSE_CARRLOCK] = "CARRLOCK",
 };
 
 static EPOCH_SIGCORR_t _ubxSigCorrSource(const uint8_t corrSource)
@@ -467,8 +469,8 @@ static EPOCH_SIGIONO_t _ubxIonoModel(const uint8_t ionoModel)
     {
         case UBX_NAV_SIG_V0_IONOMODEL_NONE:     return EPOCH_SIGIONO_NONE;
         case UBX_NAV_SIG_V0_IONOMODEL_KLOB_GPS: return EPOCH_SIGIONO_KLOB_GPS;
-        case UBX_NAV_SIG_V0_IONOMODEL_KLOB_BDS: return EPOCH_SIGIONO_KLOB_BDS; 
-        case UBX_NAV_SIG_V0_IONOMODEL_SBAS:     return EPOCH_SIGIONO_SBAS; 
+        case UBX_NAV_SIG_V0_IONOMODEL_KLOB_BDS: return EPOCH_SIGIONO_KLOB_BDS;
+        case UBX_NAV_SIG_V0_IONOMODEL_SBAS:     return EPOCH_SIGIONO_SBAS;
         case UBX_NAV_SIG_V0_IONOMODEL_DUALFREQ: return EPOCH_SIGIONO_DUAL_FREQ;
         default:                                return EPOCH_SIGIONO_UNKNOWN;
     }
@@ -502,10 +504,26 @@ static const char * const kEpochSigHealthStrs[] =
     [EPOCH_SIGHEALTH_UNHEALTHY] = "UNHEALTHY",
 };
 
+static const char * const kEpochOrbStrs[] =
+{
+    [EPOCH_SATORB_NONE]  = "NONE",
+    [EPOCH_SATORB_EPH]   = "EPH",
+    [EPOCH_SATORB_ALM]   = "ALM",
+    [EPOCH_SATORB_PRED]  = "PRED",
+    [EPOCH_SATORB_OTHER] = "OTHER",
+};
+
 static int _epochSigInfoSort(const void *a, const void *b)
 {
     const EPOCH_SIGINFO_t *sA = (const EPOCH_SIGINFO_t *)a;
     const EPOCH_SIGINFO_t *sB = (const EPOCH_SIGINFO_t *)b;
+    return (int32_t)(sA->_order - sB->_order);
+}
+
+static int _epochSatInfoSort(const void *a, const void *b)
+{
+    const EPOCH_SATINFO_t *sA = (const EPOCH_SATINFO_t *)a;
+    const EPOCH_SATINFO_t *sB = (const EPOCH_SATINFO_t *)b;
     return (int32_t)(sA->_order - sB->_order);
 }
 
@@ -537,9 +555,9 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                     {
                         case UBX_NAV_PVT_V1_FIXTYPE_NOFIX:  coll->fix = EPOCH_FIX_NOFIX;  break;
                         case UBX_NAV_PVT_V1_FIXTYPE_DRONLY: coll->fix = EPOCH_FIX_DRONLY; break;
-                        case UBX_NAV_PVT_V1_FIXTYPE_2D:     coll->fix = EPOCH_FIX_2D;     break;
-                        case UBX_NAV_PVT_V1_FIXTYPE_3D:     coll->fix = EPOCH_FIX_3D;     break;
-                        case UBX_NAV_PVT_V1_FIXTYPE_3D_DR:  coll->fix = EPOCH_FIX_3D_DR;  break;
+                        case UBX_NAV_PVT_V1_FIXTYPE_2D:     coll->fix = EPOCH_FIX_S2D;    break;
+                        case UBX_NAV_PVT_V1_FIXTYPE_3D:     coll->fix = EPOCH_FIX_S3D;    break;
+                        case UBX_NAV_PVT_V1_FIXTYPE_3D_DR:  coll->fix = EPOCH_FIX_S3D_DR; break;
                         case UBX_NAV_PVT_V1_FIXTYPE_TIME:   coll->fix = EPOCH_FIX_TIME;   break;
                     }
                     if (coll->fix > EPOCH_FIX_NOFIX)
@@ -548,9 +566,12 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                     }
                     switch (UBX_NAV_PVT_V1_FLAGS_CARRSOLN_GET(pvt.flags))
                     {
-                        case UBX_NAV_PVT_V1_FLAGS_CARRSOLN_NO:    coll->rtk = EPOCH_RTK_NONE;  break;
-                        case UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FLOAT: coll->rtk = EPOCH_RTK_FLOAT; break;
-                        case UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FIXED: coll->rtk = EPOCH_RTK_FIXED; break;
+                        case UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FLOAT:
+                            coll->fix = coll->fix == EPOCH_FIX_S3D_DR ? EPOCH_FIX_RTK_FLOAT_DR : EPOCH_FIX_RTK_FLOAT;
+                            break;
+                        case UBX_NAV_PVT_V1_FLAGS_CARRSOLN_FIXED:
+                            coll->fix = coll->fix == EPOCH_FIX_S3D_DR ? EPOCH_FIX_RTK_FIXED_DR : EPOCH_FIX_RTK_FIXED;
+                            break;
                     }
                     coll->haveFix = true;
                 }
@@ -562,13 +583,10 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                     coll->hour        = pvt.hour;
                     coll->minute      = pvt.min;
                     coll->second      = (double)pvt.sec + ((double)pvt.nano * 1e-9);
-                    if (coll->second < 0.0)
-                    {
-                        coll->second += 60.0;
-                    }
                     coll->haveTime    = FLAG(pvt.valid, UBX_NAV_PVT_V1_VALID_VALIDTIME);
                     coll->confTime    = FLAG(pvt.flags2, UBX_NAV_PVT_V1_FLAGS2_CONFTIME);
                     coll->timeAcc     = (double)pvt.tAcc * UBX_NAV_PVT_V1_TACC_SCALE;
+                    coll->leapSecKnown = FLAG(pvt.valid, UBX_NAV_PVT_V1_VALID_FULLYRESOLVED);
                 }
 
                 // Date
@@ -614,9 +632,13 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                 coll->numSv       = pvt.numSV;
                 coll->haveNumSv   = true;
 
-                coll->gpsTow      = pvt.iTOW;
-                coll->gpsTowAcc   = coll->timeAcc > 1e-3 ? coll->timeAcc : 1e-3;
-                coll->haveGpsTow  = true;
+                if (coll->_haveGpsTow < HAVE_UBX)
+                {
+                    coll->_haveGpsTow = HAVE_UBX;
+                    coll->gpsTow      = pvt.iTOW * UBX_NAV_PVT_V1_ITOW_SCALE;
+                    coll->gpsTowAcc   = coll->timeAcc > 1e-3 ? coll->timeAcc : 1e-3; // 1ms at best
+                    coll->haveGpsTow  = coll->haveTime;
+                }
             }
             break;
         case UBX_NAV_POSECEF_MSGID:
@@ -639,8 +661,36 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                 }
             }
             break;
+        case UBX_NAV_TIMEGPS_MSGID:
+            if (msg->size == UBX_NAV_TIMEGPS_V0_SIZE)
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_TIMEGPS_V0_GROUP0_t time;
+                memcpy(&time, &msg->data[UBX_HEAD_SIZE], sizeof(time));
+                if (FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_WEEKVALID))
+                {
+                    coll->gpsWeek = time.week;
+                    coll->haveGpsWeek = true;
+                }
+
+                if (coll->_haveGpsTow < HAVE_UBX_HP)
+                {
+                    coll->_haveGpsTow = HAVE_UBX_HP;
+                    coll->gpsTow      = (time.iTow * UBX_NAV_TIMEGPS_V0_ITOW_SCALE) + (time.fTOW * UBX_NAV_TIMEGPS_V0_FTOW_SCALE);
+                    coll->gpsTowAcc   = time.tAcc * UBX_NAV_TIMEGPS_V0_TACC_SCALE;
+                    coll->haveGpsTow  = FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_TOWVALID);
+                }
+
+                if (coll->_haveGpsWeek < HAVE_UBX)
+                {
+                    coll->_haveGpsWeek = HAVE_UBX;
+                    coll->gpsWeek      = time.week;
+                    coll->haveGpsWeek  = FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_WEEKVALID);
+                }
+            }
+            break;
         case UBX_NAV_HPPOSECEF_MSGID:
-            if ( (msg->size == UBX_NAV_HPPOSECEF_V0_SIZE) && (UBX_NAV_HPPOSECEF_V0_VERSION_GET(msg->data) == UBX_NAV_HPPOSECEF_V0_VERSION) )
+            if ( (msg->size == UBX_NAV_HPPOSECEF_V0_SIZE) && (UBX_NAV_HPPOSECEF_VERSION_GET(msg->data) == UBX_NAV_HPPOSECEF_V0_VERSION) )
             {
                 EPOCH_DEBUG("collect %s", msg->name);
                 UBX_NAV_HPPOSECEF_V0_GROUP0_t pos;
@@ -662,6 +712,26 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                 }
             }
             break;
+        case UBX_NAV_RELPOSNED_MSGID:
+            if ( (msg->size == UBX_NAV_RELPOSNED_V1_SIZE) && (UBX_NAV_RELPOSNED_VERSION_GET(msg->data) == UBX_NAV_RELPOSNED_V1_VERSION) )
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_RELPOSNED_V1_GROUP0_t rel;
+                memcpy(&rel, &msg->data[UBX_HEAD_SIZE], sizeof(rel));
+                if (FLAG(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSVALID))
+                {
+                    coll->relNed[0] = (rel.relPosN * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + (rel.relPosHPN * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE);
+                    coll->relNed[1] = (rel.relPosE * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + (rel.relPosHPE * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE);
+                    coll->relNed[2] = (rel.relPosD * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + (rel.relPosHPD * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE);
+                    coll->relAcc[0] = rel.accN * UBX_NAV_RELPOSNED_V1_ACCN_E_D_SCALE;
+                    coll->relAcc[1] = rel.accE * UBX_NAV_RELPOSNED_V1_ACCN_E_D_SCALE;
+                    coll->relAcc[2] = rel.accD * UBX_NAV_RELPOSNED_V1_ACCN_E_D_SCALE;
+                    coll->relLen    = (rel.relPosLength * UBX_NAV_RELPOSNED_V1_RELPOSLENGTH_SCALE) + (rel.relPosHPLength * UBX_NAV_RELPOSNED_V1_RELPOSHPLENGTH_SCALE);
+                    coll->_haveRelPos = HAVE_UBX_HP;
+                    coll->_relPosValid = FLAG(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSVALID);
+                }
+            }
+            break;
         case UBX_NAV_SIG_MSGID:
             if ( (msg->size >= (int)UBX_NAV_SIG_V0_MIN_SIZE) && (UBX_NAV_SIG_VERSION_GET(msg->data) == UBX_NAV_SIG_V0_VERSION) )
             {
@@ -679,7 +749,7 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         EPOCH_SIGINFO_t *eInfo = &coll->signals[ix];
                         eInfo->gnss        = _ubxGnssIdToGnss(uInfo.gnssId);
                         eInfo->sv          = uInfo.svId;
-                        eInfo->signal      = _ubxSigIdToSignal(uInfo.gnssId, uInfo.sigId);
+                        eInfo->signal      = _ubxSigIdToSignal(uInfo.gnssId, uInfo.sigId, &eInfo->band);
                         eInfo->gloFcn      = (int)uInfo.freqId - 7;
                         eInfo->prRes       = (float)uInfo.prRes * (float)UBX_NAV_SIG_V0_PRRES_SCALE;
                         eInfo->cno         = uInfo.cno;
@@ -689,20 +759,74 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         eInfo->prCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_PR_CORR_USED);
                         eInfo->crCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_CR_CORR_USED);
                         eInfo->doCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_DO_CORR_USED);
-                        eInfo->qual        = _ubxSigQual(uInfo.qualityInd);
+                        eInfo->use         = _ubxSigUse(uInfo.qualityInd);
                         eInfo->corr        = _ubxSigCorrSource(uInfo.corrSource);
                         eInfo->iono        = _ubxIonoModel(uInfo.ionoModel);
                         eInfo->health      = _ubxSigHealth(UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_GET(uInfo.sigFlags));
                         eInfo->gnssStr     = eInfo->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[eInfo->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
                         eInfo->svStr       = _epochSvStr(eInfo->gnss, eInfo->sv);
                         eInfo->signalStr   = eInfo->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[eInfo->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
-                        eInfo->qualStr     = eInfo->qual   < NUMOF(kEpochSiqQualStrs)   ? kEpochSiqQualStrs[eInfo->qual]     : kEpochSiqQualStrs[EPOCH_SIGQUAL_UNKNOWN];
+                        eInfo->bandStr     = eInfo->band   < NUMOF(kEpochBandStrs)      ? kEpochBandStrs[eInfo->band]        : kEpochBandStrs[EPOCH_BAND_UNKNOWN];
+                        eInfo->useStr      = eInfo->use    < NUMOF(kEpochSiqUseStrs)    ? kEpochSiqUseStrs[eInfo->use]       : kEpochSiqUseStrs[EPOCH_SIGUSE_UNKNOWN];
                         eInfo->corrStr     = eInfo->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[eInfo->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
                         eInfo->ionoStr     = eInfo->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[eInfo->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
                         eInfo->healthStr   = eInfo->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[eInfo->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
                         eInfo->_order = ((eInfo->gnss & 0xff) << 24) | ((eInfo->sv & 0xff) << 16) | ((eInfo->signal & 0xff) << 8);
                     }
                     qsort(coll->signals, coll->numSignals, sizeof(*coll->signals), _epochSigInfoSort);
+                }
+            }
+            break;
+        case UBX_NAV_SAT_MSGID:
+            if ( (msg->size >= (int)UBX_NAV_SAT_V1_MIN_SIZE) && (UBX_NAV_SAT_VERSION_GET(msg->data) == UBX_NAV_SAT_V1_VERSION) )
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                if (coll->_haveSat < HAVE_UBX)
+                {
+                    coll->_haveSat = HAVE_UBX;
+                    UBX_NAV_SAT_V1_GROUP0_t head;
+                    memcpy(&head, &msg->data[UBX_HEAD_SIZE], sizeof(head));
+                    int ix;
+                    for (coll->numSatellites = 0, ix = 0; (coll->numSatellites < (int)head.numSvs) && (coll->numSatellites < NUMOF(coll->satellites)); coll->numSatellites++, ix++)
+                    {
+                        UBX_NAV_SAT_V1_GROUP1_t uInfo;
+                        memcpy(&uInfo, &msg->data[UBX_HEAD_SIZE + sizeof(UBX_NAV_SAT_V1_GROUP0_t) + (ix * sizeof(uInfo))], sizeof(uInfo));
+                        EPOCH_SATINFO_t *eInfo = &coll->satellites[ix];
+                        eInfo->gnss        = _ubxGnssIdToGnss(uInfo.gnssId);
+                        eInfo->sv          = uInfo.svId;
+                        const int orbSrc = UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_GET(uInfo.flags);
+                        eInfo->orbUsed = EPOCH_SATORB_NONE;
+                        eInfo->azim = uInfo.azim;
+                        eInfo->elev = uInfo.elev;
+                        switch (orbSrc)
+                        {
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_NONE: break;
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_EPH:    eInfo->orbUsed = EPOCH_SATORB_EPH; break;
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_ALM:    eInfo->orbUsed = EPOCH_SATORB_ALM; break;
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_ANO:    /* FALLTHROUGH */
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_ANA:    eInfo->orbUsed = EPOCH_SATORB_PRED; break;
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_OTHER1: /* FALLTHROUGH */
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_OTHER2: /* FALLTHROUGH */
+                            case UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_OTHER3: eInfo->orbUsed = EPOCH_SATORB_OTHER; break;
+                        }
+                        if (FLAG(uInfo.flags, UBX_NAV_SAT_V1_FLAGS_EPHAVAIL))
+                        {
+                            eInfo->orbAvail |= BIT(EPOCH_SATORB_EPH);
+                        }
+                        if (FLAG(uInfo.flags, UBX_NAV_SAT_V1_FLAGS_ALMAVAIL))
+                        {
+                            eInfo->orbAvail |= BIT(EPOCH_SATORB_ALM);
+                        }
+                        if (FLAG(uInfo.flags, UBX_NAV_SAT_V1_FLAGS_ANOAVAIL) || FLAG(uInfo.flags, UBX_NAV_SAT_V1_FLAGS_AOPAVAIL))
+                        {
+                            eInfo->orbAvail |= BIT(EPOCH_SATORB_PRED);
+                        }
+                        eInfo->gnssStr    = eInfo->gnss    < NUMOF(kEpochGnssStrs) ? kEpochGnssStrs[eInfo->gnss]   : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+                        eInfo->orbUsedStr = eInfo->orbUsed < NUMOF(kEpochOrbStrs)  ? kEpochOrbStrs[eInfo->orbUsed] : kEpochOrbStrs[EPOCH_SATORB_NONE];
+                        eInfo->svStr   = _epochSvStr(eInfo->gnss, eInfo->sv);
+                        eInfo->_order = ((eInfo->gnss & 0xff) << 24) | ((eInfo->sv & 0xff) << 16);
+                    }
+                    qsort(coll->signals, coll->numSatellites, sizeof(*coll->satellites), _epochSatInfoSort);
                 }
             }
             break;
@@ -722,19 +846,19 @@ static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch)
     epoch->valid = true;
     epoch->ts = TIME();
 
-    // Convert stuff, prefer better quality
+    // Convert stuff, prefer better quality, FIXME: this assumes WGS84...
 
     if (epoch->_haveLlh > epoch->_haveXyz)
     {
         EPOCH_DEBUG("complete: llh (%d) -> xyz (%d)", epoch->_haveLlh, epoch->_haveXyz);
         llh2xyz_vec(epoch->llh, epoch->xyz);
-        epoch->havePos = true;
+        epoch->havePos = epoch->fix > EPOCH_FIX_NOFIX;
     }
     else if (epoch->_haveXyz > epoch->_haveLlh)
     {
         EPOCH_DEBUG("complete: xyz (%d) -> llh (%d)", epoch->_haveXyz, epoch->_haveLlh);
         xyz2llh_vec(epoch->xyz, epoch->llh);
-        epoch->havePos = true;
+        epoch->havePos = epoch->fix > EPOCH_FIX_NOFIX;
     }
     else
     {
@@ -747,38 +871,97 @@ static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch)
         epoch->_havePacc = MIN(epoch->_haveHacc, epoch->_haveVacc);
     }
 
+    if (epoch->numSignals > 0)
+    {
+        epoch->haveNumSig = true;
+        epoch->haveNumSat = true;
+        const char *prevSvStr = "";
+        for (int ix = 0; ix < epoch->numSignals; ix++)
+        {
+            const EPOCH_SIGINFO_t *sig = &epoch->signals[ix];
+            if (sig->use < EPOCH_SIGUSE_ACQUIRED)
+            {
+                continue;
+            }
+
+            const int histIx = sig->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0 ? (sig->cno / 5) : 0 );
+            epoch->sigCnoHistTrk[histIx]++;
+
+            if (sig->prUsed || sig->crUsed || sig->doUsed)
+            {
+                epoch->sigCnoHistNav[histIx]++;
+
+                epoch->numSigUsed++;
+                switch (sig->gnss)
+                {
+                    case EPOCH_GNSS_GPS:  epoch->numSigUsedGps++;  break;
+                    case EPOCH_GNSS_GLO:  epoch->numSigUsedGlo++;  break;
+                    case EPOCH_GNSS_BDS:  epoch->numSigUsedGal++;  break;
+                    case EPOCH_GNSS_GAL:  epoch->numSigUsedBds++;  break;
+                    case EPOCH_GNSS_SBAS: epoch->numSigUsedSbas++; break;
+                    case EPOCH_GNSS_QZSS: epoch->numSigUsedQzss++; break;
+                    case EPOCH_GNSS_UNKNOWN: break;
+                }
+
+                if (/*strcmp(prevSvStr, sig->svStr) != 0*/ prevSvStr != sig->svStr)
+                {
+                    epoch->numSatUsed++;
+                    switch (sig->gnss)
+                    {
+                        case EPOCH_GNSS_GPS:  epoch->numSatUsedGps++;  break;
+                        case EPOCH_GNSS_GLO:  epoch->numSatUsedGlo++;  break;
+                        case EPOCH_GNSS_BDS:  epoch->numSatUsedGal++;  break;
+                        case EPOCH_GNSS_GAL:  epoch->numSatUsedBds++;  break;
+                        case EPOCH_GNSS_SBAS: epoch->numSatUsedSbas++; break;
+                        case EPOCH_GNSS_QZSS: epoch->numSatUsedQzss++; break;
+                        case EPOCH_GNSS_UNKNOWN: break;
+                    }
+                }
+                prevSvStr = sig->svStr;
+            }
+        }
+    }
+
+    if (epoch->_haveRelPos > HAVE_NOTHING)
+    {
+        epoch->haveRelPos = true;
+        // Somethimes fix is still RTK_FIXED/FLOAT but UBX-NAV-RELPOSNED.relPosValid indicates that the
+        // relative (RTK) position is no longer available. Don't trust that fix.
+        if ( (coll->fix >= EPOCH_FIX_RTK_FLOAT) && !coll->_relPosValid )
+        {
+            coll->fixOk = false;
+        }
+    }
+
     // Stringify
     epoch->fixStr = epoch->fixOk ? "UNKN" : "(UNKN)";
     switch (epoch->fix)
     {
-        case EPOCH_FIX_NOFIX:   epoch->fixStr = epoch->fixOk ? "NOFIX" : "(NOFIX)"; break;
-        case EPOCH_FIX_DRONLY:  epoch->fixStr = epoch->fixOk ? "DR"    : "(DR)";    break;
-        case EPOCH_FIX_2D:      epoch->fixStr = epoch->fixOk ? "2D"    : "(2D)";    break;
-        case EPOCH_FIX_3D:      epoch->fixStr = epoch->fixOk ? "3D"    : "(3D)";    break;
-        case EPOCH_FIX_3D_DR:   epoch->fixStr = epoch->fixOk ? "3D+DR" : "(3D+DR)"; break;
-        case EPOCH_FIX_TIME:    epoch->fixStr = epoch->fixOk ? "TIME"  : "(TIME)";  break;
-    }
-
-    epoch->rtkStr = "UNKN";
-    switch (epoch->rtk)
-    {
-        case EPOCH_RTK_NONE:    epoch->rtkStr = "NORTK";  break;
-        case EPOCH_RTK_FLOAT:   epoch->rtkStr = "FLOAT"; break;
-        case EPOCH_RTK_FIXED:   epoch->rtkStr = "FIXED"; break;
+        case EPOCH_FIX_UNKNOWN: break;
+        case EPOCH_FIX_NOFIX:        epoch->fixStr = epoch->fixOk ? "NOFIX"        : "(NOFIX)";     break;
+        case EPOCH_FIX_DRONLY:       epoch->fixStr = epoch->fixOk ? "DR"           : "(DR)";        break;
+        case EPOCH_FIX_TIME:         epoch->fixStr = epoch->fixOk ? "TIME"         : "(TIME)";      break;
+        case EPOCH_FIX_S2D:          epoch->fixStr = epoch->fixOk ? "S2D"          : "(2D)";        break;
+        case EPOCH_FIX_S3D:          epoch->fixStr = epoch->fixOk ? "S3D"          : "(3D)";        break;
+        case EPOCH_FIX_S3D_DR:       epoch->fixStr = epoch->fixOk ? "S3D+DR"       : "(3D+DR)";     break;
+        case EPOCH_FIX_RTK_FLOAT:    epoch->fixStr = epoch->fixOk ? "RTK_FLOAT"    : "(RTK_FLOAT)"; break;
+        case EPOCH_FIX_RTK_FIXED:    epoch->fixStr = epoch->fixOk ? "RTK_FIXED"    : "(RTK_FIXED)"; break;
+        case EPOCH_FIX_RTK_FLOAT_DR: epoch->fixStr = epoch->fixOk ? "RTK_FLOAT_DR" : "(RTK_FLOAT_DR)"; break;
+        case EPOCH_FIX_RTK_FIXED_DR: epoch->fixStr = epoch->fixOk ? "RTK_FIXED_DR" : "(RTK_FIXED_DR)"; break;
     }
 
     snprintf(epoch->str, sizeof(epoch->str),
-        "%-7s %-5s %2d %04d-%02d-%02d (%c) %02d:%02d:%06.3f (%c) %+11.7f %+12.7f (%5.1f) %+5.0f (%5.1f) %4.1f",
-        epoch->fixStr, epoch->rtkStr, epoch->numSv,
+        "%-12s %2d %04d-%02d-%02d (%c) %02d:%02d:%06.3f (%c) %+11.7f %+12.7f (%5.1f) %+5.0f (%5.1f) %4.1f",
+        epoch->fixStr, epoch->numSv,
         epoch->year, epoch->month, epoch->day, epoch->haveDate ? (epoch->confDate ? 'Y' : 'y') : 'N',
-        epoch->hour, epoch->minute, epoch->second, epoch->haveTime ? (epoch->confTime ? 'Y' : 'y') : 'N',
+        epoch->hour, epoch->minute, epoch->second < 0.001 ? 0.0 : epoch->second, epoch->haveTime ? (epoch->confTime ? 'Y' : 'y') : 'N',
         rad2deg(epoch->llh[0]), rad2deg(epoch->llh[1]), epoch->horizAcc, epoch->llh[2], epoch->vertAcc,
         epoch->pDOP);
 }
 
 const char *epochStrHeader(void)
 {
-    return "Fix     RTK  #SV YYYY-MM-DD     HH:MM:SS         Latitude      Longitude           Height       PDOP";
+    return "Fix         #SV YYYY-MM-DD     HH:MM:SS         Latitude      Longitude           Height       PDOP";
 }
 
 /* ****************************************************************************************************************** */

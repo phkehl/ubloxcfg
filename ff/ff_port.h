@@ -66,7 +66,7 @@ typedef struct PORT_s
     uint8_t     tnInband[12];
     int         nTnInband;
     char        tmp[PORT_SPEC_MAX_LEN + 32];
-
+    uint32_t    lastWarn;
 } PORT_t;
 
 bool portInit(PORT_t *port, const char *spec);

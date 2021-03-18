@@ -40,10 +40,6 @@
 #  define PARSER_XTRA_TRACE(fmt, ...) /* nothing */
 #endif
 
-#define PARSER_WARNING(fmt, args...) WARNING("parser(%04x) " fmt, _P_ADDR(parser), ## args)
-#define PARSER_DEBUG(fmt, args...)   DEBUG(  "parser(%04x) " fmt, _P_ADDR(parser), ## args)
-#define PARSER_TRACE(fmt, args...)   TRACE(  "parser(%04x) " fmt, _P_ADDR(parser), ## args)
-
 // ---------------------------------------------------------------------------------------------------------------------
 
 void parserInit(PARSER_t *parser)
@@ -54,18 +50,18 @@ void parserInit(PARSER_t *parser)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void parserAdd(PARSER_t *parser, const uint8_t *data, const int size)
+bool parserAdd(PARSER_t *parser, const uint8_t *data, const int size)
 {
     // Overflow, discard all
     if ((parser->offs + parser->size + size) > (int)sizeof(parser->buf))
     {
-        PARSER_WARNING("buffer overflow!");
-        parserInit(parser);
+        return false;
     }
     // Add to buffer
     memcpy(&parser->buf[parser->offs + parser->size], data, size);
     parser->size += size;
     PARSER_XTRA_TRACE("add: size=%d ", size);
+    return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -110,12 +106,12 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg)
     {
         // Run parser functions
         int msgSize = 0;
-        PARSER_MSGTYPE_t msgType;
+        PARSER_MSGTYPE_t msgType = PARSER_MSGTYPE_GARBAGE;
         for (int ix = 0; ix < NUMOF(kParserFuncs); ix++)
         {
             msgSize = kParserFuncs[ix].func(&parser->buf[parser->offs], parser->size);
             PARSER_XTRA_TRACE("process: try %s, msgSize=%d ", kParserFuncs[ix].name, msgSize);
-            
+
             // Parser said: Wait, need more data
             if (msgSize < 0)
             {
@@ -285,7 +281,7 @@ static int _isUbxMessage(const uint8_t *buf, const int size)
     {
         return 0;
     }
-    
+
     if (size < 2)
     {
         return -1;
@@ -419,7 +415,7 @@ static int _isRtcm3Message(const uint8_t *buf, const int size)
     const uint16_t head = (uint16_t)buf[2] | ((uint16_t)buf[1] << 8);
     const uint16_t payloadSize = head & 0x03ff; // 10 bits
     //const uint16_t empty       = head & 0xfc00; // 6 bits
-    
+
     // Too large?
     if ( (payloadSize > PARSER_MAX_RTCM3_SIZE) /*|| (empty != 0x0000)*/ )
     {

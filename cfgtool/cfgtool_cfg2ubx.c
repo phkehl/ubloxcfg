@@ -112,12 +112,12 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
                 comment1, msgIx + 1, nMsgs, msgs[msgIx].info);
             if (extraInfo)
             {
-                for (int n = 1; n <= nKv; n++)
+                for (int kvIx = 0; (kvIx < UBX_CFG_VALSET_V1_MAX_KV) && (kvOffs < nKv); kvIx++, kvOffs++)
                 {
                     char str[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
-                    if (ubloxcfg_stringifyKeyVal(str, sizeof(str), &kv[kvOffs + n - 1]))
+                    if (ubloxcfg_stringifyKeyVal(str, sizeof(str), &kv[kvOffs]))
                     {
-                        ioOutputStr("%s%2d. %s\n", comment2, n, str);
+                        ioOutputStr("%s%2d. %s\n", comment2, kvOffs + 1, str);
                     }
                 }
             }

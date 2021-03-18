@@ -38,6 +38,20 @@ double deg2rad(const double deg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+void deg2dms(const double deg, int *d, int *m, double *s)
+{
+    double tmp = deg;
+    *d = floor(tmp);
+    tmp -= *d;
+    tmp *= 60.0;
+    *m = floor(tmp);
+    tmp -= *m;
+    tmp *= 60.0;
+    *s = tmp;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 #define WGS84_A  6378137.000
 #define WGS84_E2 0.00669438
 
@@ -122,7 +136,7 @@ void xyz2llh_vec(const double xyz[3], double llh[3])
         }
     }
     llh[_LON_] = atan2(xyz[_Y_], xyz[_X_]);
-    llh[_HEIGHT_] = h;    
+    llh[_HEIGHT_] = h;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -156,7 +170,7 @@ void xyz2enu_vec(const double xyz[3], const double xyzRef[3], const double llhRe
 
     enu[_EAST_]  = (-sinLon          * d[_X_]) +  (cosLon          * d[_Y_]) /* + (0   * d[_Z_])*/;
     enu[_NORTH_] = (-cosLon * sinLat * d[_X_]) + (-sinLon * sinLat * d[_Y_]) + (cosLat * d[_Z_]);
-    enu[_UP_]    = (-cosLon * cosLat * d[_X_]) +  (sinLon * cosLat * d[_Y_]) + (sinLat * d[_Z_]);
+    enu[_UP_]    =  (cosLon * cosLat * d[_X_]) +  (sinLon * cosLat * d[_Y_]) + (sinLat * d[_Z_]);
 }
 
 void enu2xyz_vec(const double enu[3], const double xyzRef[3], const double llhRef[3], double xyz[3])
@@ -180,6 +194,18 @@ void enu2xyz_vec(const double enu[3], const double xyzRef[3], const double llhRe
     xyz[_X_] = (-sinLon * enu[_EAST_]) + (-cosLon * sinLat * enu[_NORTH_]) + (cosLon * cosLat * enu[_UP_]) + xyzRef[_X_];
     xyz[_Y_] =  (cosLon * enu[_EAST_]) + (-sinLon * sinLat * enu[_NORTH_]) + (sinLon * cosLat * enu[_UP_]) + xyzRef[_Y_];
     xyz[_Z_] =  /*(0 * enu[_EAST_]) */ +           (cosLat * enu[_NORTH_]) +          (sinLat * enu[_UP_]) + xyzRef[_Z_];
+}
+
+
+void xyz2ned_vec(const double ned[3], const double llhRef[3], double xyz[3])
+{
+    const double sinLat = sin(llhRef[_LAT_]);
+    const double cosLat = cos(llhRef[_LAT_]);
+    const double sinLon = sin(llhRef[_LON_]);
+    const double cosLon = cos(llhRef[_LON_]);
+    xyz[_X_] = (-sinLat * cosLon * ned[0]) + (-sinLon * ned[1]) + (-cosLat * cosLon * ned[2]);
+    xyz[_Y_] = (-sinLat * sinLon * ned[0]) +  (cosLon * ned[1]) + (-cosLat * sinLon * ned[2]);
+    xyz[_Z_] =  (cosLat          * ned[0])                      + (-sinLat * ned[2]);
 }
 
 /* ****************************************************************************************************************** */
@@ -232,7 +258,7 @@ int main(int argc, char **argv)
         xyz2llh_deg(4286008.1, 640548.2, 4664851.1, &lat, &lon, &height);
         TEST("xyz2llh(4286008.1, 640548.2, 4664851.1)", (fabs(lat - 47.3) < 0.1) && (fabs(lon - 8.5) < 0.1) && (fabs(height - 550.0) < 0.1));
     }
-    
+
     {
         const double xyzRef[3] = { 4286008.1,      640548.2,      4664851.1 };
         const double xyzTst[3] = { 4285916.105624, 640610.928009, 4664926.528159 };

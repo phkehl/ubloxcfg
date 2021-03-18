@@ -57,6 +57,24 @@ uint32_t timeOfDay(void);
 
 #define MIN(a, b)  ((b) < (a) ? (b) : (a)) //!< smaller value of a and b \hideinitializer
 #define MAX(a, b)  ((b) > (a) ? (b) : (a)) //!< bigger value of a and b \hideinitializer
+#define ABS(x) ( (x) < 0 ? -(x) : (x) ) //!< absolute value \hideinitializer
+
+//! Bit \hideinitializer
+#define BIT(bit) (1<<(bit))
+
+//! Check if bits are set \hideinitializer
+#define CHKBITS(mask, bits)    ( ((mask) & (bits)) == (bits))
+
+//! Sets the bits \hideinitializer
+#define SETBITS(mask, bits)    ( (mask) |= (bits) )
+
+//! Clears the bits \hideinitializer
+#define CLRBITS(mask, bits)    ( (mask) &= ~(bits) )
+
+//! Toggles the bits \hideinitializer
+#define TOGBITS(mask, bits)    ( (mask) ^= (bits) )
+
+#define PRINTF_ATTR(n) __attribute__ ((format (printf, n, n + 1)))
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

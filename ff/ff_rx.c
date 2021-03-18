@@ -38,10 +38,10 @@
 #  define RX_XTRA_TRACE(fmt, ...) /* nothing */
 #endif
 
-#define RX_PRINT(fmt, args...)   if (rx->verbose) { PRINT("%s: " fmt, rx->name, ## args); }
-#define RX_WARNING(fmt, args...) WARNING("%s: " fmt, rx->name, ## args)
-#define RX_DEBUG(fmt, args...)   DEBUG(  "%s: " fmt, rx->name, ## args)
-#define RX_TRACE(fmt, args...)   TRACE(  "%s: " fmt, rx->name, ## args)
+#define RX_PRINT(fmt, ...)   if (rx->verbose) { PRINT("%s: " fmt, rx->name, ## __VA_ARGS__); }
+#define RX_WARNING(fmt, ...) WARNING("%s: " fmt, rx->name, ## __VA_ARGS__)
+#define RX_DEBUG(fmt, ...)   DEBUG(  "%s: " fmt, rx->name, ## __VA_ARGS__)
+#define RX_TRACE(fmt, ...)   TRACE(  "%s: " fmt, rx->name, ## __VA_ARGS__)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -190,7 +190,11 @@ static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *
     {
         PARSER_t p;
         parserInit(&p);
-        parserAdd(&p, buf, size);
+        if (!parserAdd(&p, buf, size))
+        {
+            RX_WARNING("Parser overflow!");
+            parserInit(&p);
+        }
         PARSER_MSG_t msg;
         if (parserProcess(&p, &msg))
         {
@@ -423,7 +427,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
 
     if (!rxSend(rx, msg, size))
     {
-        return NULL;
+        return false;
     }
 
     const uint32_t t0 = TIME();
@@ -436,19 +440,19 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
         {
             break;
         }
-        PARSER_MSG_t *msg = rxGetNextMessage(rx);
-        if (msg == NULL)
+        PARSER_MSG_t *pmsg = rxGetNextMessage(rx);
+        if (pmsg == NULL)
         {
             SLEEP(10);
             continue;
         }
-        _rxCallbackMsg(rx, msg);
-        if ( (msg->type == PARSER_MSGTYPE_UBX) && (UBX_CLSID(msg->data) == UBX_ACK_CLSID) )
+        _rxCallbackMsg(rx, pmsg);
+        if ( (pmsg->type == PARSER_MSGTYPE_UBX) && (UBX_CLSID(pmsg->data) == UBX_ACK_CLSID) )
         {
-            const uint8_t respMsgId = UBX_MSGID(msg->data);
+            const uint8_t respMsgId = UBX_MSGID(pmsg->data);
             if (respMsgId == UBX_ACK_ACK_MSGID)
             {
-                const UBX_ACK_ACK_V0_GROUP0_t *ack = (const UBX_ACK_ACK_V0_GROUP0_t *)&msg->data[UBX_HEAD_SIZE];
+                const UBX_ACK_ACK_V0_GROUP0_t *ack = (const UBX_ACK_ACK_V0_GROUP0_t *)&pmsg->data[UBX_HEAD_SIZE];
                 if ( (ack->clsId == clsId) && (ack->msgId == msgId) )
                 {
                     RX_DEBUG("UBX-ACK-ACK: %s", sendName);
@@ -458,7 +462,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
             }
             else if (respMsgId == UBX_ACK_NAK_MSGID)
             {
-                const UBX_ACK_NAK_V0_GROUP0_t *nak = (const UBX_ACK_NAK_V0_GROUP0_t *)&msg->data[UBX_HEAD_SIZE];
+                const UBX_ACK_NAK_V0_GROUP0_t *nak = (const UBX_ACK_NAK_V0_GROUP0_t *)&pmsg->data[UBX_HEAD_SIZE];
                 if ( (nak->clsId == clsId) && (nak->msgId == msgId) )
                 {
                     RX_DEBUG("UBX-ACK-NAK: %s", sendName);
@@ -658,7 +662,7 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
     }
 
     // Reset
-    UBX_CFG_RST_V0_GROUP0_t payload;
+    UBX_CFG_RST_V0_GROUP0_t payload = { 0 };
     payload.reserved = UBX_CFG_RST_V0_RESERVED;
     bool reenumerate = true;
     switch (reset)
@@ -820,7 +824,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
     const char *layerName = ubloxcfg_layerName(layer);
     RX_DEBUG("Polling receiver configuration for layer %s", layerName);
 
-    uint8_t pollLayer;
+    uint8_t pollLayer = UBLOXCFG_LAYER_DEFAULT;
     switch (layer)
     {
         case UBLOXCFG_LAYER_RAM:

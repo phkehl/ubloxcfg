@@ -286,7 +286,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     {
         const UBLOXCFG_KEYVAL_t *kvLayer = &dbLayer->recs[ix].kv;
         const UBLOXCFG_ITEM_t *item = dbLayer->recs[ix].item; // NULL if item is unknown
-        
+
         // Skip those used above, and unknown items unless we want to output them
         if ( dbLayer->recs[ix].flag || ((item == NULL) && !useUnknownItems) )
         {
@@ -329,11 +329,11 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
             int len = snprintf(typeUnitScale, sizeof(typeUnitScale), "type %s", ubloxcfg_typeStr(item->type));
             if (item->scale != NULL)
             {
-                len += snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, ", %s", item->scale);
+                /*len += */snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, ", %s", item->scale);
             }
             if (item->unit != NULL)
             {
-                len += snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, " [%s]", item->unit);
+                /*len += */snprintf(&typeUnitScale[len], (int)sizeof(typeUnitScale) - len, " [%s]", item->unit);
             }
         }
 
@@ -424,7 +424,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
     {
         const UBLOXCFG_KEYVAL_t *kv = &dbLayer->recs[ix].kv;
         const UBLOXCFG_ITEM_t *item = dbLayer->recs[ix].item; // NULL if item is unknown
-        
+
         // Skip unknown items unless we want to output them
         if ( (item == NULL) && !useUnknownItems )
         {
@@ -478,8 +478,8 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, UBLOXCFG_LAYER_t layer)
 
     // Poll all configuration items
     PRINT("Polling receiver configuration for layer %s", layerName);
-    
-    
+
+
     uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
     db->nKv = rxGetConfig(rx, layer, keys, NUMOF(keys), kv, NUMOF(db->recs));
 
@@ -847,7 +847,7 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
                 str[strLen] = '\0';
                 ioOutputStr("= \"%s\", ", str);
             }
-        } 
+        }
 
         // Add ID and type
         ioOutputStr("0x%08x, %s", kv->id, ubloxcfg_typeStr(type));

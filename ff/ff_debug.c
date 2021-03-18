@@ -193,7 +193,7 @@ void _hexdump(const DEBUG_LEVEL_t level, const DEBUG_COLOUR_t colour, const void
             int pos2 = 51 + ix2;
             if (ix2 > 7)
             {
-                   pos1++;
+                pos1++;
             }
             str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
             str[pos1 + 1] = i2hex[  c       & 0xf ];

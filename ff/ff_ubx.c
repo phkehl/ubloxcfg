@@ -311,7 +311,7 @@ const char *ubxGnssStr(const uint8_t gnssId)
         case UBX_GNSSID_GLO:
             return "GLO";
     }
-    return "?";    
+    return "?";
 }
 
 const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId)
@@ -382,7 +382,7 @@ const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId)
                 "B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09", "B10",
                 "B11", "B12", "B13", "B14", "B15", "B16", "B17", "B18", "B19", "B20",
                 "B21", "B22", "B23", "B24", "B25", "B26", "B27", "B28", "B29", "B30",
-                "B31", "B32"
+                "B31", "B32", "B33", "B34", "B35", "B36", "B37"
             };
             const int ix = svId - UBX_FIRST_BDS;
             if ( (ix >= 0) && (ix < NUMOF(strs)) )
@@ -461,14 +461,15 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
         case UBX_GNSSID_GAL:
             switch (sigId)
             {
+                // E1 ~ L1, E5 ~ L2
                 case UBX_SIGID_GAL_E1C:
                     return "E1C";
                 case UBX_SIGID_GAL_E1B:
                     return "E1B";
                 case UBX_SIGID_GAL_E5BI:
-                    return "E5bI";
+                    return "E5BI";
                 case UBX_SIGID_GAL_E5BQ:
-                    return "E5bQ";
+                    return "E5BQ";
             }
             break;
         case UBX_GNSSID_BDS:
@@ -507,7 +508,7 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
             }
             break;
     }
-    return "?";    
+    return "?";
 }
 
 /* ****************************************************************************************************************** */
@@ -725,7 +726,7 @@ static int _strUbxNav(char *info, const int size, const uint8_t *msg, const int 
 
 static int _strUbxNavPvt(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if (msgSize != UBX_NAV_PVT_V1_SIZE) 
+    if (msgSize != UBX_NAV_PVT_V1_SIZE)
     {
         return 0;
     }
@@ -784,7 +785,7 @@ static int _strUbxNavPosecef(char *info, const int size, const uint8_t *msg, con
 
 static int _strUbxNavHpposecef(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize != UBX_NAV_HPPOSECEF_V0_SIZE) || (UBX_NAV_HPPOSECEF_V0_VERSION_GET(msg) != UBX_NAV_HPPOSECEF_V0_VERSION) )
+    if ( (msgSize != UBX_NAV_HPPOSECEF_V0_SIZE) || (UBX_NAV_HPPOSECEF_VERSION_GET(msg) != UBX_NAV_HPPOSECEF_V0_VERSION) )
     {
         return 0;
     }
@@ -807,7 +808,7 @@ static int _strUbxNavHpposecef(char *info, const int size, const uint8_t *msg, c
 
 static int _strUbxNavRelposned(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize != UBX_NAV_RELPOSNED_V1_SIZE) || (UBX_NAV_RELPOSNED_V1_VERSION_GET(msg) != UBX_NAV_RELPOSNED_V1_VERSION) )
+    if ( (msgSize != UBX_NAV_RELPOSNED_V1_SIZE) || (UBX_NAV_RELPOSNED_VERSION_GET(msg) != UBX_NAV_RELPOSNED_V1_VERSION) )
     {
         return 0;
     }
@@ -816,22 +817,22 @@ static int _strUbxNavRelposned(char *info, const int size, const uint8_t *msg, c
     const int carrSoln = UBX_NAV_RELPOSNED_V1_FLAGS_CARRSOLN_GET(rel.flags);
     return snprintf(info, size, "%010.3f N %.3f E %.3f D %.3f L %.3f (%.3f) H %.1f (%.1f) %s %s %s pos:%c head:%c moving:%c posMiss:%c obsMiss:%c norm:%c",
         (double)rel.iTOW * 1e-3,
-        ((double)rel.relPosN * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_SCALE) + ((double)rel.relPosHPN * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_HP_SCALE),
-        ((double)rel.relPosE * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_SCALE) + ((double)rel.relPosHPE * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_HP_SCALE),
-        ((double)rel.relPosD * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_SCALE) + ((double)rel.relPosHPD * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_HP_SCALE),
-        ((double)rel.relPosLength * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_SCALE) + ((double)rel.relPosHPLength * UBX_NAV_RELPOSNED_V1_RELPOS_NEDL_HP_SCALE),
-        ((double)rel.accLength * UBX_NAV_RELPOSNED_V1_ACC_NEDL_SCALE),
-        ((double)rel.relPosHeading * UBX_NAV_RELPOSNED_V1_RELPOS_HEAD_SCALE),
-        ((double)rel.accHeading * UBX_NAV_RELPOSNED_V1_ACC_HEAD_SCALE),
+        ((double)rel.relPosN * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + ((double)rel.relPosHPN * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE),
+        ((double)rel.relPosE * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + ((double)rel.relPosHPE * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE),
+        ((double)rel.relPosD * UBX_NAV_RELPOSNED_V1_RELPOSN_E_D_SCALE) + ((double)rel.relPosHPD * UBX_NAV_RELPOSNED_V1_RELPOSHPN_E_D_SCALE),
+        ((double)rel.relPosLength * UBX_NAV_RELPOSNED_V1_RELPOSLENGTH_SCALE) + ((double)rel.relPosHPLength * UBX_NAV_RELPOSNED_V1_RELPOSHPLENGTH_SCALE),
+        ((double)rel.accLength * UBX_NAV_RELPOSNED_V1_ACCLENGTH_SCALE),
+        ((double)rel.relPosHeading * UBX_NAV_RELPOSNED_V1_RELPOSHEADING_SCALE),
+        ((double)rel.accHeading * UBX_NAV_RELPOSNED_V1_ACCHEADING_SCALE),
         F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_GNSSFIXOK)        ? "OK" : "masked",
         F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_DIFFSOLN)         ? "diff" : "(diff)",
         carrSoln == 0 ? "none" : (carrSoln == 1 ? "float" : (carrSoln == 2 ? "fixed" : "rtk?")),
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOS_VALID)     ? 'Y' : 'N',
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSHEAD_VALID) ? 'Y' : 'N',
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_ISMOVING)         ? 'Y' : 'N',
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFPOSMISS)       ? 'Y' : 'N',
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFOBSMISS)       ? 'Y' : 'N',
-        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSNORM)       ? 'Y' : 'N');
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSVALID)        ? 'Y' : 'N',
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSHEADINGVALID) ? 'Y' : 'N',
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_ISMOVING)           ? 'Y' : 'N',
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFPOSMISS)         ? 'Y' : 'N',
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFOBSMISS)         ? 'Y' : 'N',
+        F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSNORMALIZED)   ? 'Y' : 'N');
 }
 
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize)
@@ -867,7 +868,7 @@ static int _svListSort(const void *a, const void *b);
 
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize < (int)UBX_RXM_RAWX_MIN_SIZE) || (UBX_RXM_RAWX_V1_VERSION_GET(msg) != UBX_RXM_RAWX_V1_VERSION) )
+    if ( (msgSize < (int)UBX_RXM_RAWX_V1_MIN_SIZE) || (UBX_RXM_RAWX_VERSION_GET(msg) != UBX_RXM_RAWX_V1_VERSION) )
     {
         return 0;
     }
@@ -982,7 +983,7 @@ static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, cons
             const int dataSize = size - UBX_FRAME_SIZE - sizeof(head);
             return snprintf(info, size, "response %d bytes from layer %s, position %u",
                 dataSize, _valgetLayerName(head.layer), head.position);
-            break; 
+            break;
         }
     }
     return 0;

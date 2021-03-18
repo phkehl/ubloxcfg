@@ -28,6 +28,8 @@
 #  include <windows.h>
 #endif
 
+#include "ff_stuff.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,18 +62,18 @@ void debugSetup(const DEBUG_CFG_t *cfg);
 
 void debugGetCfg(DEBUG_CFG_t *cfg);
 
-void ERROR(const char *fmt, ...)    __attribute__ ((format (printf, 1, 2)));
-void WARNING(const char *fmt, ...)  __attribute__ ((format (printf, 1, 2)));
-void NOTICE(const char *fmt, ...)   __attribute__ ((format (printf, 1, 2)));
-void PRINT(const char *fmt, ...)    __attribute__ ((format (printf, 1, 2)));
-void DEBUG(const char *fmt, ...)    __attribute__ ((format (printf, 1, 2)));
-void TRACE(const char *fmt, ...)    __attribute__ ((format (printf, 1, 2)));
+void ERROR(const char *fmt, ...)    PRINTF_ATTR(1);
+void WARNING(const char *fmt, ...)  PRINTF_ATTR(1);
+void NOTICE(const char *fmt, ...)   PRINTF_ATTR(1);
+void PRINT(const char *fmt, ...)    PRINTF_ATTR(1);
+void DEBUG(const char *fmt, ...)    PRINTF_ATTR(1);
+void TRACE(const char *fmt, ...)    PRINTF_ATTR(1);
 
 bool isDEBUG(void);
 bool isTRACE(void);
 
-void DEBUG_HEXDUMP(const void *data, const int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
-void TRACE_HEXDUMP(const void *data, const int size, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
+void DEBUG_HEXDUMP(const void *data, const int size, const char *fmt, ...) PRINTF_ATTR(3);
+void TRACE_HEXDUMP(const void *data, const int size, const char *fmt, ...) PRINTF_ATTR(3);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

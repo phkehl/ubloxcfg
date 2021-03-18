@@ -41,7 +41,7 @@ const char *statusHelp(void)
 
 /* ****************************************************************************************************************** */
 
-bool gAbort;
+static bool gAbort;
 
 static void _sigHandler(int signal)
 {
@@ -65,7 +65,6 @@ typedef struct INFO_s
 typedef enum STATUS_COLOUR_e
 {
     STATUS_COLOUR_NOFIX, STATUS_COLOUR_MASKED, STATUS_COLOUR_FIXOK,
-    STATUS_COLOUR_RTKNONE, STATUS_COLOUR_RTKFLOAT, STATUS_COLOUR_RTKFIXED,
     STATUS_COLOUR_OFF
 } STATUS_COLOUR_t;
 
@@ -75,15 +74,12 @@ static void _statusColour(const STATUS_COLOUR_t colour)
     switch (colour)
     {
         case STATUS_COLOUR_NOFIX:
-        case STATUS_COLOUR_RTKNONE:
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED |                                      FOREGROUND_INTENSITY);
             break;
         case STATUS_COLOUR_MASKED:
-        case STATUS_COLOUR_RTKFLOAT:
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED |                    FOREGROUND_BLUE | FOREGROUND_INTENSITY);
             break;
         case STATUS_COLOUR_FIXOK:
-        case STATUS_COLOUR_RTKFIXED:
             SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),                  FOREGROUND_GREEN |                   FOREGROUND_INTENSITY);
             break;
         case STATUS_COLOUR_OFF:
@@ -94,15 +90,12 @@ static void _statusColour(const STATUS_COLOUR_t colour)
     switch (colour)
     {
         case STATUS_COLOUR_NOFIX:
-        case STATUS_COLOUR_RTKNONE:
             ioOutputStr("\e[1;31m");
             break;
         case STATUS_COLOUR_MASKED:
-        case STATUS_COLOUR_RTKFLOAT:
             ioOutputStr("\e[1;36m");
             break;
         case STATUS_COLOUR_FIXOK:
-        case STATUS_COLOUR_RTKFIXED:
             ioOutputStr("\e[1;32m");
             break;
         case STATUS_COLOUR_OFF:
@@ -125,14 +118,20 @@ static bool _printInfo(const bool colours, const INFO_t *info, const EPOCH_t *ep
     {
         switch (epoch->fix)
         {
+            case EPOCH_FIX_UNKNOWN:
+                break;
             case EPOCH_FIX_NOFIX:
                 COLOUR(NOFIX);
                 break;
             case EPOCH_FIX_DRONLY:
-            case EPOCH_FIX_2D:
-            case EPOCH_FIX_3D:
-            case EPOCH_FIX_3D_DR:
             case EPOCH_FIX_TIME:
+            case EPOCH_FIX_S2D:
+            case EPOCH_FIX_S3D:
+            case EPOCH_FIX_S3D_DR:
+            case EPOCH_FIX_RTK_FLOAT:
+            case EPOCH_FIX_RTK_FIXED:
+            case EPOCH_FIX_RTK_FLOAT_DR:
+            case EPOCH_FIX_RTK_FIXED_DR:
                 if (epoch->fixOk)
                 {
                     COLOUR(FIXOK);
@@ -143,11 +142,12 @@ static bool _printInfo(const bool colours, const INFO_t *info, const EPOCH_t *ep
                 }
                 break;
         }
-    
+
         epochStr = epoch->str;
     }
 
     ioOutputStr("%s", epochStr);
+    ioWriteOutput(true);
 
     COLOUR(OFF);
 
@@ -170,7 +170,8 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
         return EXIT_RXFAIL;
     }
 
-    const bool colours = isatty(fileno(stderr)) == 1;
+    DEBUG_CFG_t debugCfg;
+    debugGetCfg(&debugCfg);
 
     (void)extraInfo;
 
@@ -204,7 +205,7 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
             {
                 info.nEpoch++;
                 lastEpoch = now;
-                if (!_printInfo(colours, &info, &epoch))
+                if (!_printInfo(debugCfg.colour, &info, &epoch))
                 {
                     break;
                 }
@@ -232,7 +233,7 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
         }
         if ( (now - lastEpoch) > 5000 )
         {
-            _printInfo(colours, &info, NULL);
+            _printInfo(debugCfg.colour, &info, NULL);
             lastEpoch = now;
         }
     }

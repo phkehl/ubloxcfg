@@ -1,6 +1,6 @@
 # u-blox 9 positioning receivers configuration library and tool
 
-Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)
+Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
 
 [https://oinkzwurgl.org/hacking/ubloxcfg](https://oinkzwurgl.org/hacking/ubloxcfg)
 
@@ -83,8 +83,8 @@ gcc -o output/cfgtool.exe ubloxcfg*.c cfgtool*.c ff*.c crc*.c
 
 ## Configuration definitions
 
-The definitions for the configuration items (parameters) have been taken from [1] and converted into a JSON file (with
-comments): [`ubloxcfg.json`](./ubloxcfg.json).
+The definitions for the configuration items (parameters) have been taken from u-blox manuals and converted into a JSON
+file (with comments): [`ubloxcfg.json`](./ubloxcfg.json).
 
 The [`ubloxcfg_gen.pl`](./ubloxcfg_gen.pl) script converts this to c source code: [`ubloxcfg_gen.h`](./ubloxcfg_gen.h)
 and [`ubloxcfg_gen.c`](./ubloxcfg_gen.c).
@@ -110,7 +110,7 @@ The `cfgtool` command line tool can do the following:
 * Configure a receiver from a configuration text file
 * Receiver connection on local serial ports, remote raw TCP/IP ports or telnet (inc. RFC2217) connections
 * Retrieve configuration from a receiver
-* Convert a config text file into UBX-CFG-VALSET messages, output as binary UBX messages, u-center [2] compatible hex
+* Convert a config text file into UBX-CFG-VALSET messages, output as binary UBX messages, u-center compatible hex
   dumps, or c code
 * And more...
 
@@ -119,7 +119,8 @@ Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 ## License
 
 * Configuration library (`ubloxcfg*.[ch]`): GNU Lesser General Public License (LGPL), see [`COPYING.LESSER`](./COPYING.LESSER)
-* Tool (`cfgtool*.[ch]`) and the other libraries (`ff_*.[ch]`): GNU General Public License (GPL), see [`COPYING`](./COPYING)
+* Configuration tool (`cfgtool*.[ch]`) and the other libraries (`ff_*.[ch]`): GNU General Public License (GPL), see [`COPYING`](./COPYING)
+* Various third-party code comes with its own license, see [`3rdparty/`](./3rdparty) and below
 
 See the individual source files and scripts for details.
 
@@ -135,7 +136,3 @@ The tool uses the following third-party code:
 * Document ff_* better.
 * Fix FIXMEs and TODOs. :)
 
-## References
-
-* [1] [ZED-F9P Interface Description](https://www.u-blox.com/en/docs/UBX-18010854)
-* [2] [u-center](https://www.u-blox.com/en/product/u-center)

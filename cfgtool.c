@@ -38,7 +38,7 @@
 #include "cfgtool_status.h"
 #include "config.h"
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 
 typedef struct CMD_s
 {
@@ -344,7 +344,11 @@ int main(int argc, char **argv)
     DEBUG_CFG_t debugCfg =
     {
         .level  = DEBUG_LEVEL_PRINT,
+#ifdef _WIN32
+        .colour = true,
+#else
         .colour = isatty(fileno(stderr)) == 1,
+#endif
         .mark   = NULL,
         .func   = NULL,
         .arg    = NULL,
@@ -427,7 +431,10 @@ int main(int argc, char **argv)
         if (gArgs.cmd != NULL)
         {
             fputs(kTitleStr, stdout);
-            fputs(gArgs.cmd->help(), stdout);
+            if (gArgs.cmd->help != NULL)
+            {
+                fputs(gArgs.cmd->help(), stdout);
+            }
             fputs(kGreeting, stdout);
         }
         else
@@ -576,5 +583,5 @@ int main(int argc, char **argv)
     return exitCode;
 }
 
-/* ********************************************************************************************** */
+/* ****************************************************************************************************************** */
 // eof

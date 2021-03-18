@@ -36,20 +36,18 @@ extern "C" {
 
 typedef enum EPOCH_FIX_e
 {
-    EPOCH_FIX_NOFIX = 0,
+    EPOCH_FIX_UNKNOWN = 0,
+    EPOCH_FIX_NOFIX,
     EPOCH_FIX_DRONLY,
-    EPOCH_FIX_2D,
-    EPOCH_FIX_3D,
-    EPOCH_FIX_3D_DR,
-    EPOCH_FIX_TIME
+    EPOCH_FIX_TIME,
+    EPOCH_FIX_S2D,
+    EPOCH_FIX_S3D,
+    EPOCH_FIX_S3D_DR,
+    EPOCH_FIX_RTK_FLOAT,
+    EPOCH_FIX_RTK_FIXED,
+    EPOCH_FIX_RTK_FLOAT_DR,
+    EPOCH_FIX_RTK_FIXED_DR,
 } EPOCH_FIX_t;
-
-typedef enum EPOCH_RTK_e
-{
-    EPOCH_RTK_NONE = 0,
-    EPOCH_RTK_FLOAT,
-    EPOCH_RTK_FIXED
-} EPOCH_RTK_t;
 
 typedef enum EPOCH_GNSS_e
 {
@@ -65,39 +63,33 @@ typedef enum EPOCH_GNSS_e
 
 typedef enum EPOCH_SIGNAL_e
 {
-    EPOCH_SIGNAL_UNKNOWN = 0,
-    EPOCH_SIGNAL_GPS_L1CA,
-    EPOCH_SIGNAL_GPS_L2CL,
-    EPOCH_SIGNAL_GPS_L2CM,
-    EPOCH_SIGNAL_GLO_L1OF,
-    EPOCH_SIGNAL_GLO_L2OF,
-    EPOCH_SIGNAL_GAL_E1C,
-    EPOCH_SIGNAL_GAL_E1B,
-    EPOCH_SIGNAL_GAL_E5BI,
-    EPOCH_SIGNAL_GAL_E5BQ,
-    EPOCH_SIGNAL_BDS_B1ID1,
-    EPOCH_SIGNAL_BDS_B1ID2,
-    EPOCH_SIGNAL_BDS_B2ID1,
-    EPOCH_SIGNAL_BDS_B2ID2,
-    EPOCH_SIGNAL_SBAS_L1CA,
-    EPOCH_SIGNAL_QZSS_L1CA,
-    EPOCH_SIGNAL_QZSS_L1S,
-    EPOCH_SIGNAL_QZSS_L2CM,
-    EPOCH_SIGNAL_QZSS_L2CL,
+    EPOCH_SIGNAL_UNKNOWN = 0,               //!< Unspecified signal
+    EPOCH_SIGNAL_GPS_L1CA,                  //!< GPS L1 C/A signal
+    EPOCH_SIGNAL_GPS_L2C,                   //!< GPS L2 C signal
+    EPOCH_SIGNAL_SBAS_L1CA,                 //!< SBAS L1 C/A signal
+    EPOCH_SIGNAL_GAL_E1,                    //!< Galileo E1 signal
+    EPOCH_SIGNAL_GAL_E5B,                   //!< Galileo E5b signal
+    EPOCH_SIGNAL_BDS_B1I,                   //!< BeiDou B1I signal
+    EPOCH_SIGNAL_BDS_B2I,                   //!< BeiDou B2I signal
+    EPOCH_SIGNAL_QZSS_L1CA,                 //!< QZSS L1 C/A signal
+    EPOCH_SIGNAL_QZSS_L1S,                  //!< QZSS L1 S signal
+    EPOCH_SIGNAL_QZSS_L2C,                  //!< QZSS L2 CM signal
+    EPOCH_SIGNAL_GLO_L1OF,                  //!< GLONASS L1 OF signal
+    EPOCH_SIGNAL_GLO_L2OF,                  //!< GLONASS L2 OF signal
     // Keep in sync with kEpochSignalStrs!
 } EPOCH_SIGNAL_t;
 
-typedef enum EPOCH_SIGQUAL_e
+typedef enum EPOCH_SIGUSE_e
 {
-    EPOCH_SIGQUAL_UNKNOWN = 0,
-    EPOCH_SIGQUAL_NONE,
-    EPOCH_SIGQUAL_SEARCH,
-    EPOCH_SIGQUAL_ACQUIRED,
-    EPOCH_SIGQUAL_UNUSED,
-    EPOCH_SIGQUAL_CODELOCK,
-    EPOCH_SIGQUAL_CARRLOCK,
-    // Keep in sync with kEpochSiqQualStrs!
-} EPOCH_SIGQUAL_t;
+    EPOCH_SIGUSE_UNKNOWN = 0,
+    EPOCH_SIGUSE_NONE,
+    EPOCH_SIGUSE_SEARCH,
+    EPOCH_SIGUSE_ACQUIRED,
+    EPOCH_SIGUSE_UNUSED,
+    EPOCH_SIGUSE_CODELOCK,
+    EPOCH_SIGUSE_CARRLOCK,
+    // Keep in sync with kEpochSiqUseStrs!
+} EPOCH_SIGUSE_t;
 
 typedef enum EPOCH_SIGCORR_e
 {
@@ -131,15 +123,25 @@ typedef enum EPOCH_SIGHEALTH_e
     // Keep in sync with kEpochSigHealthStrs!
 } EPOCH_SIGHEALTH_t;
 
+typedef enum EPOCH_BAND_e
+{
+    EPOCH_BAND_UNKNOWN = 0,
+    EPOCH_BAND_L1,    //!< L1 band (~1.5GHz)
+    EPOCH_BAND_L2,    //!< L2 band (~1.2GHz)
+    EPOCH_BAND_L5,    //!< L5 band (~1.1GHz)
+    // Keep in sync with kEpochBandStrs!
+} EPOCH_BAND_t;
+
 typedef struct EPOCH_SIGINFO_s
 {
     EPOCH_GNSS_t      gnss;
     uint8_t           sv;
     EPOCH_SIGNAL_t    signal;
+    EPOCH_BAND_t      band;
     int8_t            gloFcn;
     float             prRes;
     float             cno;
-    EPOCH_SIGQUAL_t   qual;
+    EPOCH_SIGUSE_t    use;
     EPOCH_SIGCORR_t   corr;
     EPOCH_SIGIONO_t   iono;
     EPOCH_SIGHEALTH_t health;
@@ -152,7 +154,8 @@ typedef struct EPOCH_SIGINFO_s
     const char       *gnssStr;
     const char       *svStr;
     const char       *signalStr;
-    const char       *qualStr;
+    const char       *bandStr;
+    const char       *useStr;
     const char       *corrStr;
     const char       *ionoStr;
     const char       *healthStr;
@@ -160,6 +163,34 @@ typedef struct EPOCH_SIGINFO_s
     // Private
     uint32_t          _order;
 } EPOCH_SIGINFO_t;
+
+typedef enum EPOCH_SATORB_e
+{
+    EPOCH_SATORB_NONE = 0,
+    EPOCH_SATORB_EPH,
+    EPOCH_SATORB_ALM,
+    EPOCH_SATORB_PRED,
+    EPOCH_SATORB_OTHER,
+    // Keep in sync with kEpochOrbStrs!
+} EPOCH_SATORB_t;
+
+typedef struct EPOCH_SATINFO_s
+{
+    EPOCH_GNSS_t      gnss;
+    uint8_t           sv;
+    EPOCH_SATORB_t    orbUsed;
+    int               orbAvail;
+    int8_t            elev;  // only valid if orbit > NONE
+    int16_t           azim;  // only valid if orbit > NONE
+    const char       *gnssStr;
+    const char       *svStr;
+    const char       *orbUsedStr;
+
+    // Private
+    uint32_t          _order;
+} EPOCH_SATINFO_t;
+
+#define EPOCH_SIGCNOHIST_NUM 12
 
 typedef struct EPOCH_s
 {
@@ -173,8 +204,6 @@ typedef struct EPOCH_s
     EPOCH_FIX_t         fix;
     bool                fixOk;
     const char         *fixStr;
-    EPOCH_RTK_t         rtk;
-    const char         *rtkStr;
 
     bool                haveNumSv;
     int                 numSv;
@@ -189,11 +218,17 @@ typedef struct EPOCH_s
     double              vertAcc;
     double              posAcc;
 
+    bool                haveRelPos;
+    double              relLen;
+    double              relNed[3];
+    double              relAcc[3];
+
     bool                haveMsl;
     double              heightMsl;
 
     bool                haveTime;
     bool                confTime;
+    bool                leapSecKnown;
     int                 hour;
     int                 minute;
     double              second;
@@ -205,7 +240,7 @@ typedef struct EPOCH_s
     int                 month;
     int                 year;
 
-    bool                haveGpsWeek;    
+    bool                haveGpsWeek;
     int                 gpsWeek;
 
     bool                haveGpsTow;
@@ -214,6 +249,31 @@ typedef struct EPOCH_s
 
     EPOCH_SIGINFO_t     signals[100];
     int                 numSignals;
+
+    EPOCH_SATINFO_t     satellites[100];
+    int                 numSatellites;
+
+    bool                haveNumSig;
+    int                 numSigUsed;
+    int                 numSigUsedGps;
+    int                 numSigUsedGlo;
+    int                 numSigUsedGal;
+    int                 numSigUsedBds;
+    int                 numSigUsedSbas;
+    int                 numSigUsedQzss;
+
+    bool                haveNumSat;
+    int                 numSatUsed;
+    int                 numSatUsedGps;
+    int                 numSatUsedGlo;
+    int                 numSatUsedGal;
+    int                 numSatUsedBds;
+    int                 numSatUsedSbas;
+    int                 numSatUsedQzss;
+
+    bool                haveSigCnoHist;
+    int                 sigCnoHistTrk[EPOCH_SIGCNOHIST_NUM];
+    int                 sigCnoHistNav[EPOCH_SIGCNOHIST_NUM];
 
     // Private
     int          _haveFix;
@@ -225,6 +285,11 @@ typedef struct EPOCH_s
     int          _havePacc;
     int          _haveXyz;
     int          _haveSig;
+    int          _haveSat;
+    int          _haveGpsTow;
+    int          _haveGpsWeek;
+    int          _haveRelPos;
+    bool         _relPosValid;
 
     uint32_t     _detectTow;
     bool         _detectHaveTow;

@@ -30,6 +30,8 @@ double rad2deg(const double rad);
 
 double deg2rad(const double deg);
 
+void deg2dms(const double deg, int *d, int *m, double *s);
+
 void llh2xyz_vec(const double llh[3], double xyz[3]);
 void llh2xyz_deg(const double lat, const double lon, const double height, double *x, double *y, double *z);
 void llh2xyz_rad(const double lat, const double lon, const double height, double *x, double *y, double *z);
@@ -38,8 +40,12 @@ void xyz2llh_vec(const double xyz[3], double llh[3]);
 void xyz2llh_deg(const double x, const double y, const double z, double *lat, double *lon, double *height);
 void xyz2llh_rad(const double x, const double y, const double z, double *lat, double *lon, double *height);
 
+// FIXME: this is more like xyzxyz2enu()
 void xyz2enu_vec(const double xyz[3], const double xyzRef[3], const double llhRef[3], double enu[3]);
+// FIXME: this is more like enuxyz2xyz()
 void enu2xyz_vec(const double enu[3], const double xyzRef[3], const double llhRef[3], double xyz[3]);
+
+void xyz2ned_vec(const double ned[3], const double llhRef[3], double xyz[3]);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

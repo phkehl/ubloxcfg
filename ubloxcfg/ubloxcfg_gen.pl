@@ -86,7 +86,7 @@ do
     {
         exit(1);
     }
-   
+
 };
 
 sub verifyJson
@@ -286,7 +286,7 @@ sub genCodeC
                     $h .= sprintf("#define %-50s %-40s //!< %s\n", "UBLOXCFG_${itemNameC}_$const->{name}", $const->{value}, $const->{title});
                 }
             }
-        
+
             my $constNameLen = length(join('|', map { $_->{name} } @{$item->{consts}}));
             if ($constNameLen > $maxConstNamesLen)
             {
@@ -378,7 +378,7 @@ sub genCodeC
         {
             my ($cfg, $msg, $port) = ($1, $2, $3);
             # get message name from description
-            if ($item->{title} =~ m{output rate of the (.+) message on port}i)
+            if ($item->{title} =~ m{output rate of the ([-_A-Z0-9]+)}i)
             {
                 my $name = uc($1);
                 #DEBUG("msgCfg: $name $port $cfg");

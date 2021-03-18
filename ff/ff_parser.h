@@ -86,7 +86,7 @@ typedef struct PARSER_MSG_s
 } PARSER_MSG_t;
 
 void parserInit(PARSER_t *parser);
-void parserAdd(PARSER_t *parser, const uint8_t *data, const int size);
+bool parserAdd(PARSER_t *parser, const uint8_t *data, const int size);
 bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg);
 
 const char *parserMsgtypeName(const PARSER_MSGTYPE_t type);

@@ -20,11 +20,14 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/file.h>
 #include <sys/types.h>
+
 #ifdef _WIN32
 #  define NOGDI
 #  include <winsock2.h>
@@ -52,9 +55,14 @@
 #  define PORT_XTRA_TRACE(fmt, ...) /* nothing */
 #endif
 
-#define PORT_WARNING(fmt, args...) WARNING("port(%s) " fmt, portSpecStr(port), ## args)
-#define PORT_DEBUG(fmt, args...)   DEBUG(  "port(%s) " fmt, portSpecStr(port), ## args)
-#define PORT_TRACE(fmt, args...)   TRACE(  "port(%s) " fmt, portSpecStr(port), ## args)
+#define PORT_WARNING(fmt, ...) WARNING("port(%s) " fmt, portSpecStr(port), ##__VA_ARGS__)
+#define PORT_DEBUG(fmt, ...)   DEBUG(  "port(%s) " fmt, portSpecStr(port), ##__VA_ARGS__)
+#define PORT_TRACE(fmt, ...)   TRACE(  "port(%s) " fmt, portSpecStr(port), ##__VA_ARGS__)
+
+#define PORT_WARNING_THROTTLE(fmt, ...) do { \
+    const uint32_t now = TIME(); if ((now - port->lastWarn) > 1000) { \
+    WARNING("port(%s) " fmt, portSpecStr(port), __VA_ARGS__); \
+    port->lastWarn = now; } } while (false);
 
 static const char *portSpecStr(PORT_t *port)
 {
@@ -568,7 +576,7 @@ static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
     PORT_XTRA_TRACE("write %d -> %d %u", size, res, num);
     if ( (res == 0) || ((int)num != size) )
     {
-        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
+        PORT_WARNING_THROTTLE("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
 
@@ -579,7 +587,7 @@ static bool _portWriteSer(PORT_t *port, const uint8_t *data, const int size)
     // FIXME: handle EAGAIN?
     if ( (res < 0) || (res != size) )
     {
-        PORT_WARNING("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
+        PORT_WARNING_THROTTLE("write fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
 
@@ -600,7 +608,7 @@ static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead
     PORT_XTRA_TRACE("read %d -> %d %u", size, res, num);
     if (res == 0)
     {
-        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
+        PORT_WARNING_THROTTLE("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         return false;
     }
     *nRead = (int)num;
@@ -616,7 +624,7 @@ static bool _portReadSer(PORT_t *port, uint8_t *data, const int size, int *nRead
     }
     if (res < 0)
     {
-        PORT_WARNING("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
+        PORT_WARNING_THROTTLE("read fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         *nRead = 0;
         return false;
     }
@@ -821,7 +829,7 @@ static bool _portOpenTcp(PORT_t *port)
             break;
         }
     }
-    
+
     // Cleanup
     freeaddrinfo(result);
 
@@ -843,6 +851,7 @@ static bool _portOpenTcp(PORT_t *port)
         PORT_WARNING("Failed setting non-blocking operation: %s", _portErrStr(port, 0));
         closesocket(fd);
         _winsockDeinit(port);
+        return false;
     }
 #else
     const int flags = fcntl(fd, F_GETFL, 0);
@@ -866,15 +875,20 @@ static bool _portOpenTcp(PORT_t *port)
     const DWORD enable = 1;
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const char *)&enable, sizeof(enable)) != 0)
     {
+        PORT_WARNING("Failed setting TCP_NODELAY option: %s", _portErrStr(port, 0));
+        closesocket(fd);
+        _winsockDeinit(port);
+        return false;
+    }
 #else
     const int enable = 1;
     if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &enable, sizeof(enable)) != 0)
     {
-#endif
         PORT_WARNING("Failed setting TCP_NODELAY option: %s", _portErrStr(port, 0));
         close(fd);
         return false;
     }
+#endif
 
     // Remember socket
 #ifdef _WIN32
@@ -931,7 +945,7 @@ static bool _portWriteTcp(PORT_t *port, const uint8_t *data, const int size)
         // FIXME: handle EAGAIN?
         if ( (res < 0) || (res != sendSize) )
         {
-            PORT_WARNING("tcp send fail (%d, %d): %s", sendSize, res, _portErrStr(port, 0));
+            PORT_WARNING_THROTTLE("tcp send fail (%d, %d): %s", sendSize, res, _portErrStr(port, 0));
             return false;
         }
         offs += sendSize;
@@ -950,19 +964,29 @@ static bool _portReadTcp(PORT_t *port, uint8_t *data, const int size, int *nRead
     const int res = recv(port->fd, data, size, 0);
 #endif
     PORT_XTRA_TRACE("tpc recv %d -> %d", size, res);
-    if (res == -1) // EAGAIN
+    // Got data
+    if (res > 0)
+    {
+        *nRead = res;
+        return true;
+    }
+    // No more data at the moment
+#ifdef _WIN32
+    else if ( (res == -1) && (GetLastError() == WSAEWOULDBLOCK) )
+#else
+    else if ( (res == -1) && (errno == EAGAIN) )
+#endif
     {
         *nRead = 0;
         return true;
     }
-    if (res < 0)
+    // Error
+    else
     {
-        PORT_WARNING("tcp recv fail (%d, %d): %s", size, res, _portErrStr(port, 0));
+        PORT_WARNING_THROTTLE("tcp recv fail (%d, %d): %s", size, res, _portErrStr(port, 0));
         *nRead = 0;
         return false;
     }
-    *nRead = res;
-    return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1168,7 +1192,7 @@ void _telnetProcessInband(PORT_t *port, uint8_t *buf, int nIn, int *nOut, TELNET
                         break;
                     default:
                         PORT_TRACE("inband command %s", _telnetCommandStr(port, *pIn));
-                        state = TELNET_STATE_NORMAL; 
+                        state = TELNET_STATE_NORMAL;
                         break;
                 }
                 break;
@@ -1389,7 +1413,7 @@ static bool _portOpenTelnet(PORT_t *port)
         { .cpco = TELNET_CPCO_SET_CONTROL,         .arg = 1 }, // no flow control
         { .cpco = TELNET_CPCO_SET_MODEMSTATE_MASK, .arg = 0 },
         { .cpco = TELNET_CPCO_SET_LINESTATE_MASK,  .arg = 0 }  // FIXME: maybe we should watch some of these?
-    };    
+    };
     for (int ix = 0; ix < NUMOF(kTelnetCpco); ix++)
     {
         buf[(ix * 6) + 0] = TELNET_IAC;

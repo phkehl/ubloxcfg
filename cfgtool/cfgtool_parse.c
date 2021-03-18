@@ -44,7 +44,7 @@ const char *parseHelp(void)
 
 /* ****************************************************************************************************************** */
 
-bool gAbort;
+static bool gAbort;
 
 static void _sigHandler(int signal)
 {
