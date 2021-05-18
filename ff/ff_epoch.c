@@ -56,10 +56,9 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     {
         return false;
     }
-
     // Detect end of epoch / start of next epoch
     bool detect = false;
-    switch (msg->type)
+	switch (msg->type)
     {
         case PARSER_MSGTYPE_UBX:
             detect = _detectUbx(coll, msg);
@@ -100,7 +99,6 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
         default:
             break;
     }
-
     return detect;
 }
 
@@ -537,6 +535,7 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
     {
         return;
     }
+
     const uint8_t msgId = UBX_MSGID(msg->data);
     switch (msgId)
     {
@@ -828,6 +827,30 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                     }
                     qsort(coll->signals, coll->numSatellites, sizeof(*coll->satellites), _epochSatInfoSort);
                 }
+            }
+            break;
+		case UBX_NAV_TIMELS_MSGID:
+			if (msg->size == UBX_NAV_TIMELS_V0_SIZE)
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_TIMELS_V0_GROUP0_t leapsec;
+                memcpy(&leapsec, &msg->data[UBX_HEAD_SIZE], sizeof(leapsec));
+
+                if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_CURRLSVALID))
+                {
+                    coll->leapSeconds = leapsec.currLs;
+                    coll->haveLeapSeconds = true;
+                }
+
+				if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_TIMETOLSEVENTVALID))
+				{
+					coll->lsChange = leapsec.lsChange;
+					coll->srcOfLsChange = leapsec.srcOfLsChange;
+					coll->timeToLsEvent = leapsec.timeToLsEvent;
+					coll->dateOfLsGpsWn = leapsec.dateOfLsGpsWn;
+					coll->dateOfLsGpsDn  = leapsec.dateOfLsGpsDn;
+					coll->haveLeapSecondEvent = true;
+				}
             }
             break;
     }

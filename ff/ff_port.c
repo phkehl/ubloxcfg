@@ -167,6 +167,7 @@ bool portInit(PORT_t *port, const char *spec)
             {
                 addr = strtok(addr, "@");
                 char *arg = strtok(NULL, "@");
+
 #ifdef _WIN32
                 const bool isAcm = false; // FIXME: How to detect?
 #else
@@ -174,7 +175,8 @@ bool portInit(PORT_t *port, const char *spec)
                 const bool isAcm = (real != NULL) && (strstr(real, "ttyACM") != NULL);
                 free(real);
 #endif
-                const int baudrate = arg != NULL ? atoi(arg) : (isAcm ? 921600 : 9600);
+				const int baudrate = arg != NULL ? atoi(arg) : (isAcm ? 921600 : 115200);
+				PRINT("BAUDRATE is %d",  baudrate);
                 if (_portBaudrateValue(baudrate) == 0)
                 {
                     WARNING("%s: Bad baudrate %s!", spec, arg);

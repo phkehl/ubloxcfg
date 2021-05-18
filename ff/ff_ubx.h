@@ -123,6 +123,7 @@ extern "C" {
 #define UBX_NAV_TIMEGLO_MSGID        0x23
 #define UBX_NAV_TIMEBDS_MSGID        0x24
 #define UBX_NAV_TIMEGAL_MSGID        0x25
+#define UBX_NAV_TIMELS_MSGID         0x26
 #define UBX_NAV_COV_MSGID            0x36
 #define UBX_NAV_EELL_MSGID           0x3d
 
@@ -803,6 +804,32 @@ typedef struct UBX_NAV_TIMEGPS_V0_GROUP0_s
 #define UBX_NAV_TIMEGPS_V0_VALID_LEAPSVALID 0x04
 
 #define UBX_NAV_TIMEGPS_V0_SIZE             (sizeof(UBX_NAV_TIMEGPS_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-NAV-TIMEGPS payload
+typedef struct UBX_NAV_TIMELS_V0_GROUP0_s
+{
+    uint32_t iTow;
+    uint8_t  version;
+    uint8_t  __pad0[3];
+    uint8_t  srcOfCurrLs;
+    int8_t   currLs;
+    uint8_t  srcOfLsChange;
+    int8_t   lsChange;
+    int32_t  timeToLsEvent;
+    uint16_t dateOfLsGpsWn;
+    uint16_t dateOfLsGpsDn;
+    uint8_t  __pad1[3];
+    uint8_t  valid;
+} UBX_NAV_TIMELS_V0_GROUP0_t;
+
+#define UBX_NAV_TIMELS_V0_ITOW_SCALE                1e-3
+#define UBX_NAV_TIMELS_V0_VALID_CURRLSVALID         0x01
+#define UBX_NAV_TIMELS_V0_VALID_TIMETOLSEVENTVALID  0x02
+
+#define UBX_NAV_TIMELS_V0_SIZE             (sizeof(UBX_NAV_TIMELS_V0_GROUP0_t) + UBX_FRAME_SIZE)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
