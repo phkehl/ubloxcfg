@@ -24,6 +24,15 @@ This is tested in Linux ([GCC](https://gcc.gnu.org/)). It should work in Windows
 
 ## Building
 
+### Building as a library
+
+Program can be compiled as a shared library:
+
+```
+make libubloxcfg.so
+sudo make install-library
+```
+
 ### Linux
 
 Note that this probably only works when building on Linux.
