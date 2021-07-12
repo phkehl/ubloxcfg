@@ -3,6 +3,8 @@
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
+// Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
+//
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version.
@@ -274,6 +276,20 @@ typedef struct EPOCH_s
     bool                haveSigCnoHist;
     int                 sigCnoHistTrk[EPOCH_SIGCNOHIST_NUM];
     int                 sigCnoHistNav[EPOCH_SIGCNOHIST_NUM];
+
+    bool                haveLeapSeconds;
+    int                 leapSeconds;
+
+    // Information as per UBX-NAV-TIMELS
+    // Warning: This is subject to changed (simplified) in future versions of this library. Users are advised
+    //          to directly use the UBX-NAV-TIMELS message if they have to rely on u-blox specific behaviour.
+    bool                haveLeapSecondEvent;
+    int                 srcOfCurrLs;
+    int                 srcOfLsChange;
+    int                 lsChange;
+    int                 timeToLsEvent;
+    int                 dateOfLsGpsWn;
+    int                 dateOfLsGpsDn;
 
     // Private
     int          _haveFix;

@@ -3,6 +3,8 @@
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
+// Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
+//
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version.
@@ -827,6 +829,30 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         eInfo->_order = ((eInfo->gnss & 0xff) << 24) | ((eInfo->sv & 0xff) << 16);
                     }
                     qsort(coll->signals, coll->numSatellites, sizeof(*coll->satellites), _epochSatInfoSort);
+                }
+            }
+            break;
+        case UBX_NAV_TIMELS_MSGID:
+            if (msg->size == UBX_NAV_TIMELS_V0_SIZE)
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_TIMELS_V0_GROUP0_t leapsec;
+                memcpy(&leapsec, &msg->data[UBX_HEAD_SIZE], sizeof(leapsec));
+
+                if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_CURRLSVALID))
+                {
+                    coll->leapSeconds = leapsec.currLs;
+                    coll->haveLeapSeconds = true;
+                }
+
+                if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_TIMETOLSEVENTVALID))
+                {
+                    coll->lsChange = leapsec.lsChange;
+                    coll->srcOfLsChange = leapsec.srcOfLsChange;
+                    coll->timeToLsEvent = leapsec.timeToLsEvent;
+                    coll->dateOfLsGpsWn = leapsec.dateOfLsGpsWn;
+                    coll->dateOfLsGpsDn  = leapsec.dateOfLsGpsDn;
+                    coll->haveLeapSecondEvent = true;
                 }
             }
             break;

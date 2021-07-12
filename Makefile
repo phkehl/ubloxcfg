@@ -59,6 +59,8 @@ VERSION               := $(shell $(SED) -rn '/define CONFIG_VERSION/s/.*"(.+)"/\
 
 # ubloxcfg library
 CFILES_ubloxcfg       := $(wildcard ubloxcfg/*.c)
+CFLAGS_library        := -fPIC
+LDFLAGS_library       := -shared -lm
 
 # ff library souces
 CFILES_ff             := $(wildcard ff/*.c)
@@ -108,7 +110,7 @@ $(eval $(call makeTarget, test_m64-gperf$(EXE),   $(CFILES_test_m64) $(CFILES_ub
 $(eval $(call makeTarget, cfgtool-release$(EXE),  $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfgtool)))
 $(eval $(call makeTarget, cfgtool-debug$(EXE),    $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfgtool)))
 $(eval $(call makeTarget, cfgtool-gperf$(EXE),    $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_gperf)   $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_gperf)   $(LDFLAGS_cfgtool)))
-
+$(eval $(call makeTarget, libubloxcfg.so,         $(CFILES_ubloxcfg) $(CFILES_ff) 3rdparty/stuff/crc24q.c,               $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_library),                                                        , $(LDFLAGS_ALL) $(LDFLAGS_release) $(LDFLAGS_library)))
 ########################################################################################################################
 
 # Make config.h
@@ -246,6 +248,19 @@ $(OUTPUTDIR)/scan-build/.done: Makefile | $(OUTPUTDIR)
 	@echo "$(HLC)scan-build$(HLO) $(HLG)$(OUTPUTDIR)/scan-build$(HLO) $(HLM)($(scanbuildtargets))$(HLO)"
 	$(V)$(SCANBUILD) -o $(OUTPUTDIR)/scan-build -plist-html --exclude 3rdparty $(MAKE) --no-print-directory $(scanbuildtargets) BUILDDIR=$(BUILDDIR)/scan-build
 	$(V)$(TOUCH) $@
+
+########################################################################################################################
+
+LIBPREFIX := /usr/local
+
+.PHONY: install-library
+install-library:
+	$(V)$(MKDIR) -p $(LIBPREFIX)/include/ubloxcfg
+	$(V)$(MKDIR) -p $(LIBPREFIX)/lib/pkgconfig
+	$(V)$(CP) ubloxcfg/*.h $(LIBPREFIX)/include/ubloxcfg
+	$(V)$(CP) ff/*.h $(LIBPREFIX)/include/ubloxcfg
+	$(V)$(SED) "s@/usr/local@$(LIBPREFIX)@" ubloxcfg/libubloxcfg.pc > $(LIBPREFIX)/lib/pkgconfig/libubloxcfg.pc
+	$(V)$(CP) output/libubloxcfg.so $(LIBPREFIX)/lib
 
 ########################################################################################################################
 # eof

@@ -81,6 +81,15 @@ To manually compile, start a Strawberry Perl shell, navigate to the source code,
 gcc -o output/cfgtool.exe ubloxcfg*.c cfgtool*.c ff*.c crc*.c
 ```
 
+### Building as a library (Linux)
+
+Parts of this can be compiled as a shared library:
+
+```sh
+make libubloxcfg.so
+sudo make install-library  # for installing in /usr/local, or:
+make install-library LIBPREFIX=/tmp/some/where
+```
 ## Configuration definitions
 
 The definitions for the configuration items (parameters) have been taken from u-blox manuals and converted into a JSON
