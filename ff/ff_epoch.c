@@ -3,6 +3,8 @@
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
+// Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
+//
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version.
