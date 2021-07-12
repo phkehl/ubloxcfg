@@ -1,3 +1,6 @@
+// Library test program
+// Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
+
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -37,8 +40,8 @@ int main()
 			nMsgs++;
 			sMsgs += msg->size;
 			const uint32_t latency = (msg->ts - tOffs) % 1000; // Relative to wall clock top of second
-			
-			
+
+
 			const char *prot = "?";
 			switch (msg->type)
 			{
@@ -82,7 +85,7 @@ int main()
 				t_of_day = mktime(&t);
 
     			printf("seconds since the Epoch: %ld\n", (long) t_of_day);
-				
+
 				if (epoch.haveLeapSeconds) {
 					printf("leaps seconds count is %d\n", epoch.leapSeconds);
 				}

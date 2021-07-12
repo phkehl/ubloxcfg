@@ -278,16 +278,18 @@ typedef struct EPOCH_s
     int                 sigCnoHistNav[EPOCH_SIGCNOHIST_NUM];
 
     bool                haveLeapSeconds;
-    int8_t              leapSeconds;
+    int                 leapSeconds;
 
+    // Information as per UBX-NAV-TIMELS
+    // Warning: This is subject to changed (simplified) in future versions of this library. Users are advised
+    //          to directly use the UBX-NAV-TIMELS message if they have to rely on u-blox specific behaviour.
     bool                haveLeapSecondEvent;
-    uint8_t             srcOfCurrLs;
-    uint8_t             srcOfLsChange;
-    int8_t              lsChange;
-    int32_t             timeToLsEvent;
-    uint16_t            dateOfLsGpsWn;
-    uint16_t            dateOfLsGpsDn;
-
+    int                 srcOfCurrLs;
+    int                 srcOfLsChange;
+    int                 lsChange;
+    int                 timeToLsEvent;
+    int                 dateOfLsGpsWn;
+    int                 dateOfLsGpsDn;
 
     // Private
     int          _haveFix;

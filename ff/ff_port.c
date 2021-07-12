@@ -3,8 +3,6 @@
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
-// Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
-//
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version.
@@ -169,7 +167,6 @@ bool portInit(PORT_t *port, const char *spec)
             {
                 addr = strtok(addr, "@");
                 char *arg = strtok(NULL, "@");
-
 #ifdef _WIN32
                 const bool isAcm = false; // FIXME: How to detect?
 #else
@@ -177,8 +174,7 @@ bool portInit(PORT_t *port, const char *spec)
                 const bool isAcm = (real != NULL) && (strstr(real, "ttyACM") != NULL);
                 free(real);
 #endif
-				const int baudrate = arg != NULL ? atoi(arg) : (isAcm ? 921600 : 115200);
-				PRINT("BAUDRATE is %d",  baudrate);
+                const int baudrate = arg != NULL ? atoi(arg) : (isAcm ? 921600 : 9600);
                 if (_portBaudrateValue(baudrate) == 0)
                 {
                     WARNING("%s: Bad baudrate %s!", spec, arg);
