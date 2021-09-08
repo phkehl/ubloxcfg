@@ -96,6 +96,7 @@ extern "C" {
 #define UBX_MON_PATH_MSGID           0x27
 #define UBX_MON_RXR_MSGID            0x21
 #define UBX_MON_RXBUF_MSGID          0x07
+#define UBX_MON_SPAN_MSGID           0x31
 #define UBX_MON_TXBUF_MSGID          0x08
 #define UBX_MON_VER_MSGID            0x04
 
@@ -171,11 +172,11 @@ extern "C" {
     _P_(UBX_CFG_CLSID, UBX_CFG_VALSET_MSGID,      "UBX-CFG-VALSET") \
     _P_(UBX_CFG_CLSID, UBX_CFG_VALGET_MSGID,      "UBX-CFG-VALGET") \
     _P_(UBX_CFG_CLSID, UBX_CFG_VALDEL_MSGID,      "UBX-CFG-VALDEL") \
-    _P_(UBX_INF_CLSID, UBX_ESF_ALG_MSGID,         "UBX-ESF-ALG") \
-    _P_(UBX_INF_CLSID, UBX_ESF_INS_MSGID,         "UBX-ESF-INS") \
-    _P_(UBX_INF_CLSID, UBX_ESF_MEAS_MSGID,        "UBX-ESF-MEAS") \
-    _P_(UBX_INF_CLSID, UBX_ESF_RAW_MSGID,         "UBX-ESF-RAW") \
-    _P_(UBX_INF_CLSID, UBX_ESF_STATUS_MSGID,      "UBX-ESF-STATUS") \
+    _P_(UBX_ESF_CLSID, UBX_ESF_ALG_MSGID,         "UBX-ESF-ALG") \
+    _P_(UBX_ESF_CLSID, UBX_ESF_INS_MSGID,         "UBX-ESF-INS") \
+    _P_(UBX_ESF_CLSID, UBX_ESF_MEAS_MSGID,        "UBX-ESF-MEAS") \
+    _P_(UBX_ESF_CLSID, UBX_ESF_RAW_MSGID,         "UBX-ESF-RAW") \
+    _P_(UBX_ESF_CLSID, UBX_ESF_STATUS_MSGID,      "UBX-ESF-STATUS") \
     _P_(UBX_INF_CLSID, UBX_INF_ERROR_MSGID,       "UBX-INF-ERROR") \
     _P_(UBX_INF_CLSID, UBX_INF_WARNING_MSGID,     "UBX-INF-WARNING") \
     _P_(UBX_INF_CLSID, UBX_INF_NOTICE_MSGID,      "UBX-INF-NOTICE") \
@@ -209,6 +210,7 @@ extern "C" {
     _P_(UBX_MON_CLSID, UBX_MON_PATH_MSGID,        "UBX-MON-PATH") \
     _P_(UBX_MON_CLSID, UBX_MON_RXR_MSGID,         "UBX-MON-RXR") \
     _P_(UBX_MON_CLSID, UBX_MON_RXBUF_MSGID,       "UBX-MON-RXBUF") \
+    _P_(UBX_MON_CLSID, UBX_MON_SPAN_MSGID,        "UBX-MON-SPAN") \
     _P_(UBX_MON_CLSID, UBX_MON_TXBUF_MSGID,       "UBX-MON-TXBUF") \
     _P_(UBX_MON_CLSID, UBX_MON_VER_MSGID,         "UBX-MON-VER") \
     _P_(UBX_NAV_CLSID, UBX_NAV_PVT_MSGID,         "UBX-NAV-PVT") \
@@ -1064,6 +1066,35 @@ typedef struct UBX_MON_RF_V0_GROUP1_s
 #define UBX_MON_RF_V0_ANTPOWER_DONTKNOW          2
 
 #define UBX_MON_RF_V0_MIN_SIZE             (sizeof(UBX_MON_RF_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
+/* ****************************************************************************************************************** */
+
+//! UBX-MON-RF (version 0, output) payload head
+typedef struct UBX_MON_SPAN_V0_GROUP0_s
+{
+    uint8_t  version;
+    uint8_t  numRfBlocks;
+    uint8_t  reserved[2];
+} UBX_MON_SPAN_V0_GROUP0_t;
+
+//! UBX-MON-RF (version 0, output) payload repeated group
+typedef struct UBX_MON_SPAN_V0_GROUP1_s
+{
+    uint8_t  spectrum[256];
+    uint32_t span;
+    uint32_t res;
+    uint32_t center;
+    uint8_t  pga;
+    uint8_t  reserved[3];
+} UBX_MON_SPAN_V0_GROUP1_t;
+
+#define UBX_MON_SPAN_VERSION_GET(msg)       ((msg)[UBX_HEAD_SIZE + 0])
+#define UBX_MON_SPAN_V0_VERSION             0x00
+
+#define UBX_MON_SPAN_BIN_CENT_FREQ(g1, ix) ( (double)g1.center + (double)g1.span * (((double)(ix) - 128.0) / 256.0) )
+
+#define UBX_MON_SPAN_V0_MIN_SIZE             (sizeof(UBX_MON_SPAN_V0_GROUP0_t) + UBX_FRAME_SIZE)
+
 
 /* ****************************************************************************************************************** */
 

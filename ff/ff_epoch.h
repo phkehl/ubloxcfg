@@ -16,12 +16,6 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-// This is a UBX, NMEA and RTCM3 message parser. It only parses the frames, not the content
-// of the message (it does not decode any message fields).
-// The parser will pass-through all data that is input. Unknown parts (other protocols,
-// spurious data, incorrect messages, etc.) are output as GARBAGE type messages. GARBAGE messages
-// are not guaranteed to be combined and can be split arbitrarily (into several GARBAGE messages).
-
 #ifndef __FF_EPOCH_H__
 #define __FF_EPOCH_H__
 
@@ -330,6 +324,10 @@ void epochInit(EPOCH_t *coll);
 bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch);
 
 const char *epochStrHeader(void);
+
+const char *epochGnssStr(const EPOCH_GNSS_t gnss);
+const char *epochSignalStr(const EPOCH_SIGNAL_t signal);
+EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

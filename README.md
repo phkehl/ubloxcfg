@@ -125,23 +125,52 @@ The `cfgtool` command line tool can do the following:
 
 Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 
-## License
+## GUI
 
-* Configuration library (`ubloxcfg*.[ch]`): GNU Lesser General Public License (LGPL), see [`COPYING.LESSER`](./COPYING.LESSER)
-* Configuration tool (`cfgtool*.[ch]`) and the other libraries (`ff_*.[ch]`): GNU General Public License (GPL), see [`COPYING`](./COPYING)
+A *very experimental* GUI is available. Say `make cfggui`. Linux only. YMMV.
+
+## Licenses
+
+* Configuration library (`ubloxcfg*.*`): GNU Lesser General Public License (LGPL), see [`COPYING.LESSER`](./COPYING.LESSER)
+* Configuration tool (`cfgtool*.*`), configuration GUI (`cfggui*.*`, `gui*.*`) and the other libraries (`ff_*.[ch]`):
+  GNU General Public License (GPL), see [`COPYING`](./COPYING)
 * Various third-party code comes with its own license, see [`3rdparty/`](./3rdparty) and below
+* Definitions for various maps are built into the cfggui. Check if the licenses cover your use!
+  See [`maps.conf`](./cfggui/maps.conf)
 
-See the individual source files and scripts for details.
+See the individual source files, scripts and other files for details.
 
 ## Third-party code
 
 The tool uses the following third-party code:
 
-* _CRC-24Q_ routines from [https://gitlab.com/gpsd/](https://gitlab.com/gpsd/)
+* _CRC-24Q_ routines from <https://gitlab.com/gpsd/>
   See the source code ([`crc24q.c`](./crc24q.c)) and license ([`crc24q.COPYING`](./crc24q.COPYING)).
+
+The GUI uses the following third-party code:
+
+* Dear ImGui from <https://github.com/ocornut/imgui>
+* ImPlot from <https://github.com/epezent/implot>
+* PlatformFolders from <https://github.com/sago007/PlatformFolders>
+* DejaVu fonts from <https://dejavu-fonts.github.io/>
+* ProggyClean fron from <https://proggyfonts.net>
+* ForkAwesome font from <https://forkaweso.me/Fork-Awesome/>
+* SDL2 (<https://www.libsdl.org/>)
+* curl (<https://curl.se/>)
 
 ## Todo, ideas
 
 * Document ff_* better.
 * Fix FIXMEs and TODOs. :)
+* Get the GUI cross-compile for Windows (using mingw-w64)
+* Check out stuff here: <https://github.com/mahilab/mahi-gui>
+* Check out doing maps using ImPlot (<https://github.com/epezent/implot_demos>)
+* Maybe better use glfw instead of SDL?
+* Check out <https://github.com/bkaradzic/bgfx>
+* Check out <https://github.com/jnmaloney/WebGui>
+* Debugging gui: `LIBGL_SHOW_FPS=1 LIBGL_DEBUG=verbose ./output/gui` (<https://docs.mesa3d.org/envvars.html>)
+* Checkout icons in <https://github.com/leiradel/ImGuiAl/tree/master/fonts>
+
+
+
 

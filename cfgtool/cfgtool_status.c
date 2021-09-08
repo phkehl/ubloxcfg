@@ -214,6 +214,16 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
             {
                 case PARSER_MSGTYPE_UBX:
                     info.nUbx++;
+                    if (UBX_CLSID(msg->data) == UBX_INF_CLSID)
+                    {
+                        switch (UBX_MSGID(msg->data))
+                        {
+                            case UBX_INF_WARNING_MSGID:
+                            case UBX_INF_ERROR_MSGID:
+                                WARNING("%s: %s", msg->name, msg->info);
+                                break;
+                        }
+                    }
                     break;
                 case PARSER_MSGTYPE_NMEA:
                     info.nNmea++;

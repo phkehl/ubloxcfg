@@ -1,0 +1,13 @@
+diff --git a/3rdparty/imgui/imgui_draw.cpp b/3rdparty/imgui/imgui_draw.cpp
+index c41a1ba0..aa0845c3 100644
+--- a/3rdparty/imgui/imgui_draw.cpp
++++ b/3rdparty/imgui/imgui_draw.cpp
+@@ -3357,7 +3357,7 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
+             }
+
+             // Allow wrapping after punctuation.
+-            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"');
++            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"' && c != '|');
+         }
+
+         // We ignore blank width at the end of the line (they can be skipped)

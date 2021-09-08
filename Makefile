@@ -79,10 +79,6 @@ CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb
 CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb
 LDFLAGS_debug         := -ggdb
 
-CFLAGS_gperf          := -DFF_BUILD_GPERF -Og -ggdb
-CXXFLAGS_gperf        := -DFF_BUILD_GPERF -Og -ggdb
-LDFLAGS_gperf         := -ggdb -lprofiler
-
 # test
 CFILES_test_m32       := test.c
 CFLAGS_test_m32       := -std=c99 -pedantic -Wno-pedantic-ms-format -m32
@@ -100,16 +96,37 @@ ifeq ($(WIN),64)
 LDFLAGS_cfgtool       += -lws2_32 -static
 endif
 
+# cfggui
+CXXFILES_cfggui       := cfggui.cpp $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
+CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) 3rdparty/stuff/platform_folders.cpp
+CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c
+CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
+CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
+LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++
+CXXFLAGS_cfggui       += $(shell sdl2-config --cflags) $(shell curl-config --cflags)
+LDFLAGS_cfggui        += $(shell sdl2-config --libs)   $(shell curl-config --libs)
+ifeq ($(MSYSTEM),MINGW64)
+LDFLAGS_cfggui        += -lglu32 -lopengl32 -luuid -lole32 -lxinput
+CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_ES2
+else
+LDFLAGS_cfggui        += -lGL -ldl
+#CFILES_cfggui         += 3rdparty/imgui/GL/gl3w.c
+#CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_LOADER_GL3W
+endif
+
+$(CXXFILES_cfggui): $(BUILDDIR)/config.h $(BUILDDIR)/tilenope.c $(BUILDDIR)/tileload.c $(BUILDDIR)/tilefail.c $(BUILDDIR)/tiletest.c $(BUILDDIR)/maps_conf.c
+
 # Binaries, makeTarget: name, .c/.cpp files, CFLAGS, CXXFLAGS, LDFLAGS -- The final CFLAGS, CXXFLAGS and LDFLAGS will be $(CFLAGS) etc. from the environment, + those given here
 $(eval $(call makeTarget, test_m32-release$(EXE), $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m32)))
 $(eval $(call makeTarget, test_m32-debug$(EXE),   $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_test_m32)))
-$(eval $(call makeTarget, test_m32-gperf$(EXE),   $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_gperf)   $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_gperf)   $(LDFLAGS_test_m32)))
 $(eval $(call makeTarget, test_m64-release$(EXE), $(CFILES_test_m64) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m64),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m64)))
 $(eval $(call makeTarget, test_m64-debug$(EXE),   $(CFILES_test_m64) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_test_m64),                                                       , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_test_m64)))
-$(eval $(call makeTarget, test_m64-gperf$(EXE),   $(CFILES_test_m64) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_gperf)   $(CFLAGS_test_m64),                                                       , $(LDLFAGS_all) $(LDFLAGS_gperf)   $(LDFLAGS_test_m64)))
 $(eval $(call makeTarget, cfgtool-release$(EXE),  $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfgtool)))
 $(eval $(call makeTarget, cfgtool-debug$(EXE),    $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfgtool)))
-$(eval $(call makeTarget, cfgtool-gperf$(EXE),    $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_gperf)   $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_gperf)   $(LDFLAGS_cfgtool)))
+ifeq ($(WIN),)
+$(eval $(call makeTarget, cfggui-release$(EXE),   $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_release) $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfggui)))
+$(eval $(call makeTarget, cfggui-debug$(EXE),     $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_debug)   $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfggui)))
+endif
 $(eval $(call makeTarget, libubloxcfg.so,         $(CFILES_ubloxcfg) $(CFILES_ff) 3rdparty/stuff/crc24q.c,               $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_library),                                                        , $(LDFLAGS_ALL) $(LDFLAGS_release) $(LDFLAGS_library)))
 ########################################################################################################################
 
@@ -132,6 +149,33 @@ $(OUTPUTDIR)/ubloxcfg_html/index.html: ubloxcfg/Doxyfile $(LIBHFILES) $(LIBCFILE
 	@echo "$(HLY)*$(HLO) $(HLC)doxygen$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
 	$(V)( $(CAT) $<; $(ECHO) "OUTPUT_DIRECTORY = $(OUTPUTDIR)"; $(ECHO) "INPUT = $(LIBHFILES) $(LIBCFILES)"; $(ECHO) "QUIET = YES"; ) | $(DOXYGEN) -
 
+# Make compiled-in default files
+$(BUILDDIR)/maps_conf.c: cfggui/maps.conf Makefile | $(BUILDDIR)
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(XXD) -i $< > $@.tmp
+	$(V)$(CP) $@.tmp $@
+	$(V)$(RM) $@.tmp
+$(BUILDDIR)/tilefail.c: cfggui/tilefail.png Makefile | $(BUILDDIR)
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(XXD) -i $< > $@.tmp
+	$(V)$(CP) $@.tmp $@
+	$(V)$(RM) $@.tmp
+$(BUILDDIR)/tileload.c: cfggui/tileload.png Makefile | $(BUILDDIR)
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(XXD) -i $< > $@.tmp
+	$(V)$(CP) $@.tmp $@
+	$(V)$(RM) $@.tmp
+$(BUILDDIR)/tilenope.c: cfggui/tilenope.png Makefile | $(BUILDDIR)
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(XXD) -i $< > $@.tmp
+	$(V)$(CP) $@.tmp $@
+	$(V)$(RM) $@.tmp
+$(BUILDDIR)/tiletest.c: cfggui/tiletest.png Makefile | $(BUILDDIR)
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
+	$(V)$(XXD) -i $< > $@.tmp
+	$(V)$(CP) $@.tmp $@
+	$(V)$(RM) $@.tmp
+
 ########################################################################################################################
 
 # Used in .github/workflows/main.yml
@@ -140,7 +184,7 @@ ci: all
 
 # Make everything
 .PHONY: all
-all: test_m32-release test_m64-release cfgtool-release release
+all: test_m32-release test_m64-release cfgtool-release cfggui-release release
 
 # Some shortcuts
 test_m32: test_m32-release
@@ -150,6 +194,8 @@ test: test_m32 test_m64
 	$(OUTPUTDIR)/test_m64-release
 .PHONY: cfgtool
 cfgtool: cfgtool-release
+.PHONY: cfggui
+cfggui: cfggui-release
 .PHONY: doc
 doc: $(OUTPUTDIR)/ubloxcfg_html/index.html cfgtool.txt
 
@@ -166,11 +212,12 @@ help:
 	@echo
 	@echo "    clean           Clean all ($(OUTPUTDIR) and $(BUILDDIR) directories)"
 	@echo "    all             Build (mostly) everything"
-	@echo "    <prog>-<build>  Make binary, <prog> is cfgtool, ... and <build> is release, debug, or gperf"
+	@echo "    <prog>-<build>  Make binary, <prog> is cfgtool, cfggui, ... and <build> is release, debug"
 	@echo "    test            Build and run tests"
 	@echo "    doc             Build HTML docu of the ubloxcfg libaray"
 	@echo "    debugmf         Show some Makefile variables"
 	@echo "    scan-build      Run scan-build"
+	@echo "    cfggui-valgrind Run cfggui with valgrind"
 	@echo
 	@echo "To cross-compile for windows, use 'make <prog>.exe-<build> WIN=64'."
 	@echo
@@ -187,14 +234,10 @@ ci-build: all
 ci-test: test
 
 ####################################################################################################
-# Release
-
-LICENSES_IN := $(wildcard *COPYING*) $(wildcard 3rdparty/stuff/*COPYING*)
-LICENSES_OUT := $(addprefix $(OUTPUTDIR)/, $(notdir $(LICENSES_IN)))
+# Release (cfgtool only, no gui yet...)
 
 RELEASEFILES := $(sort $(OUTPUTDIR)/cfgtool_$(VERSION).bin  \
     $(OUTPUTDIR)/cfgtool_$(VERSION).txt $(LICENSES_OUT))
-# TODO $(OUTPUTDIR)/cfgtool_$(VERSION).exe
 
 RELEASEZIP := $(OUTPUTDIR)/ubloxcfg_$(VERSION).zip
 
@@ -207,6 +250,9 @@ $(OUTPUTDIR)/cfgtool_$(VERSION).bin: $(OUTPUTDIR)/cfgtool-release Makefile | $(O
 	$(V)$(STRIP) $@.tmp
 	$(V)$(CP) $@.tmp $@
 	$(V)$(RM) $@.tmp
+	$(V)$(CP) ff/COPYING                      $(OUTPUTDIR)/ff_COPYING
+	$(V)$(CP) ubloxcfg/COPYING.LESSER         $(OUTPUTDIR)/ubloxcfg_COPYING.LESSER
+	$(V)$(CP) 3rdparty/stuff/crc24q.COPYING   $(OUTPUTDIR)/crc24q_COPYING
 
 cfgtool.txt: $(OUTPUTDIR)/cfgtool-release
 	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"
@@ -227,19 +273,15 @@ $(OUTPUTDIR)/cfgtool_$(VERSION).txt: cfgtool.txt Makefile | $(OUTPUTDIR)
 	@echo "$(HLY)*$(HLO) $(HLC)REL$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
 	$(V)$(CP) $< $@
 
-$(LICENSES_OUT): $(LICENSES_IN) Makefile | $(OUTPUTDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)CP$(HLO) $(HLG)$(LICENSES_IN)$(HLO)"
-	$(V)$(CP) $(LICENSES_IN) $(OUTPUTDIR)
-
 $(RELEASEZIP): $(RELEASEFILES)
 	@echo "$(HLY)*$(HLO) $(HLC)ZIP$(HLO) $(HLGG)$@$(HLO) $(HLM)($(notdir $^))$(HLO)"
 	$(V)$(RM) -f $@
-	$(V)( cd $(OUTPUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) )
+	$(V)( cd $(OUTPUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) *COPYING* )
 
 ####################################################################################################
 # Analysers
 
-scanbuildtargets := cfgtool-release test_m32-release test_m64-release
+scanbuildtargets := cfgtool-release test_m32-release test_m64-release cfggui-release
 
 .PHONY: scan-build
 scan-build: $(OUTPUTDIR)/scan-build/.done
@@ -248,6 +290,10 @@ $(OUTPUTDIR)/scan-build/.done: Makefile | $(OUTPUTDIR)
 	@echo "$(HLC)scan-build$(HLO) $(HLG)$(OUTPUTDIR)/scan-build$(HLO) $(HLM)($(scanbuildtargets))$(HLO)"
 	$(V)$(SCANBUILD) -o $(OUTPUTDIR)/scan-build -plist-html --exclude 3rdparty $(MAKE) --no-print-directory $(scanbuildtargets) BUILDDIR=$(BUILDDIR)/scan-build
 	$(V)$(TOUCH) $@
+
+.PHONY: cfggui-valgrind
+cfggui-valgrind: cfggui-debug
+	$(VALGRIND) -leak-check=full --suppressions=cfggui.supp $(OUTPUTDIR)/cfggui-debug
 
 ########################################################################################################################
 

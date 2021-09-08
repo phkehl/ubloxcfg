@@ -206,6 +206,11 @@ static const char * const kEpochGnssStrs[] =
     [EPOCH_GNSS_QZSS] = "QZSS",
 };
 
+const char *epochGnssStr(const EPOCH_GNSS_t gnss)
+{
+    return (gnss >= 0) && (gnss < NUMOF(kEpochGnssStrs)) ? kEpochGnssStrs[gnss] : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+}
+
 static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigId, EPOCH_BAND_t *band)
 {
     switch (gnssId)
@@ -278,6 +283,39 @@ const char * const kEpochSignalStrs[] =
     [EPOCH_SIGNAL_GLO_L1OF]  = "L1OF",
     [EPOCH_SIGNAL_GLO_L2OF]  = "L2OF",
 };
+
+const char *epochSignalStr(const EPOCH_SIGNAL_t signal)
+{
+    return (signal >= 0) && (signal < NUMOF(kEpochSignalStrs)) ? kEpochSignalStrs[signal] : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
+}
+
+EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal)
+{
+    switch (signal)
+    {
+        case EPOCH_SIGNAL_UNKNOWN:
+            return EPOCH_GNSS_UNKNOWN;
+        case EPOCH_SIGNAL_GPS_L1CA:
+        case EPOCH_SIGNAL_GPS_L2C:
+            return EPOCH_GNSS_GPS;
+        case EPOCH_SIGNAL_SBAS_L1CA:
+            return EPOCH_GNSS_SBAS;
+        case EPOCH_SIGNAL_GAL_E1:
+        case EPOCH_SIGNAL_GAL_E5B:
+            return EPOCH_GNSS_GAL;
+        case EPOCH_SIGNAL_BDS_B1I:
+        case EPOCH_SIGNAL_BDS_B2I:
+            return EPOCH_GNSS_BDS;
+        case EPOCH_SIGNAL_QZSS_L1CA:
+        case EPOCH_SIGNAL_QZSS_L1S:
+        case EPOCH_SIGNAL_QZSS_L2C:
+            return EPOCH_GNSS_QZSS;
+        case EPOCH_SIGNAL_GLO_L1OF:
+        case EPOCH_SIGNAL_GLO_L2OF:
+            return EPOCH_GNSS_GLO;
+    }
+    return EPOCH_GNSS_UNKNOWN;
+}
 
 const char * const kEpochBandStrs[] =
 {

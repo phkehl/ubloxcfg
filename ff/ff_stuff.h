@@ -31,7 +31,11 @@ void SLEEP(uint32_t dur);
 
 uint32_t timeOfDay(void);
 
+//! Number of elements in array \hideinitializer
 #define NUMOF(x) (int)(sizeof(x)/sizeof(*(x)))
+
+//! Mark variable as unused to silence compiler warnings \hideinitializer
+#define UNUSED(thing) (void)thing
 
 #ifdef _WIN32
 #  define IF_WIN(x) x
@@ -62,8 +66,11 @@ uint32_t timeOfDay(void);
 //! Bit \hideinitializer
 #define BIT(bit) (1<<(bit))
 
-//! Check if bits are set \hideinitializer
-#define CHKBITS(mask, bits)    ( ((mask) & (bits)) == (bits))
+//! Check if all bit(s) is (are) set \hideinitializer
+#define CHKBITS(mask, bits)    (((mask) & (bits)) == (bits))
+
+//! Check if any bit(s) is (are) set \hideinitializer
+#define CHKBITS_ANY(mask, bits)    (((mask) & (bits)) != 0)
 
 //! Sets the bits \hideinitializer
 #define SETBITS(mask, bits)    ( (mask) |= (bits) )
@@ -75,6 +82,8 @@ uint32_t timeOfDay(void);
 #define TOGBITS(mask, bits)    ( (mask) ^= (bits) )
 
 #define PRINTF_ATTR(n) __attribute__ ((format (printf, n, n + 1)))
+
+#define CLIP(x, a, b) ((x) <= (a) ? (a) : ((x) >= (b) ? (b) : (x))) //!< Clip value in range [a:b] \hideinitializer
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

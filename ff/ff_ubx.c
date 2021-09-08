@@ -593,6 +593,9 @@ static int _strUbxNavPvt(char *info, const int size, const uint8_t *msg, const i
 static int _strUbxNavPosecef(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxNavHpposecef(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxNavRelposned(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
@@ -637,10 +640,16 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                 case UBX_NAV_RELPOSNED_MSGID:
                     len = _strUbxNavRelposned(info, size, msg, msgSize);
                     break;
-                case UBX_NAV_SAT_MSGID:
-                case UBX_NAV_ORB_MSGID:
                 case UBX_NAV_STATUS_MSGID:
+                    len = _strUbxNavStatus(info, size, msg, msgSize);
+                    break;
+                case UBX_NAV_SAT_MSGID:
+                    len = _strUbxNavSat(info, size, msg, msgSize);
+                    break;
                 case UBX_NAV_SIG_MSGID:
+                    len = _strUbxNavSig(info, size, msg, msgSize);
+                    break;
+                case UBX_NAV_ORB_MSGID:
                 case UBX_NAV_CLOCK_MSGID:
                 case UBX_NAV_DOP_MSGID:
                 case UBX_NAV_POSLLH_MSGID:
@@ -833,6 +842,40 @@ static int _strUbxNavRelposned(char *info, const int size, const uint8_t *msg, c
         F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFPOSMISS)         ? 'Y' : 'N',
         F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_REFOBSMISS)         ? 'Y' : 'N',
         F(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSNORMALIZED)   ? 'Y' : 'N');
+}
+
+static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_NAV_STATUS_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_NAV_STATUS_V0_GROUP0_t sta;
+    memcpy(&sta, &msg[UBX_HEAD_SIZE], sizeof(sta));
+    return snprintf(info, size, "%010.3f %.3f %.3f",
+        (double)sta.iTow * 1e-3, (double)sta.ttff * 1e-3, (double)sta.msss * 1e-3);
+}
+
+static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (msgSize < (int)UBX_NAV_SIG_V0_MIN_SIZE) || (UBX_NAV_SIG_VERSION_GET(msg) != UBX_NAV_SIG_V0_VERSION) )
+    {
+        return 0;
+    }
+    UBX_NAV_SIG_V0_GROUP0_t head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+    return snprintf(info, size, "%010.3f %d", (double)head.iTOW * 1e-3, head.numSigs);
+}
+
+static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (msgSize < (int)UBX_NAV_SAT_V1_MIN_SIZE) || (UBX_NAV_SAT_VERSION_GET(msg) != UBX_NAV_SAT_V1_VERSION) )
+    {
+        return 0;
+    }
+    UBX_NAV_SAT_V1_GROUP0_t head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+    return snprintf(info, size, "%010.3f %d", (double)head.iTOW * 1e-3, head.numSvs);
 }
 
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize)

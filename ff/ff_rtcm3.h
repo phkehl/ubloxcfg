@@ -115,7 +115,22 @@ typedef struct RTCM3_ARP_s
 } RTCM3_ARP_t;
 
 //! Get ARP from message types 1005, 1006 or 1032
-bool rtcmGetArp(const uint8_t *msg, RTCM3_ARP_t *arp);
+bool rtcm3GetArp(const uint8_t *msg, RTCM3_ARP_t *arp);
+
+//! Antenna info
+typedef struct RTCM3_ANT_s
+{
+    int     refStaId;
+    char    antDesc[32];
+    char    antSerial[32];
+    uint8_t antSetupId;
+    char    rxType[32];
+    char    rxFw[32];
+    char    rxSerial[32];
+} RTCM3_ANT_t;
+
+//! Get (some) antenna info from  message type 1007, 1008 or 1033
+bool rtcm3GetAnt(const uint8_t *msg, RTCM3_ANT_t *ant);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

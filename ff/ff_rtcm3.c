@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -77,9 +76,6 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         case 1004:
             len = snprintf(info, size, "Extended L1/L2 GPS RTK observables");
             break;
-        case 1007:
-            len = snprintf(info, size, "Antenna descriptor");
-            break;
         case 1009:
             len = snprintf(info, size, "L1-only GLONASS RTK observables");
             break;
@@ -97,9 +93,6 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
             break;
         case 1031:
             len = snprintf(info, size, "GLONASS network RTK residual message");
-            break;
-        case 1033:
-            len = snprintf(info, size, "Receiver and Antenna Description");
             break;
         case 1230:
             len = snprintf(info, size, "GLONASS code-phase biases");
@@ -128,7 +121,7 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
     if ( (len == 0) && ((type == 1005) || (type == 1006) || (type == 1032)) )
     {
         RTCM3_ARP_t arp;
-        if (rtcmGetArp(msg, &arp))
+        if (rtcm3GetArp(msg, &arp))
         {
             len = snprintf(info, size, "(#%d) %.2f %.2f %.2f - ", arp.refStaId, arp.X, arp.Y, arp.Z);
         }
@@ -149,6 +142,30 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         }
     }
 
+    if ( (len == 0) && ((type == 1007) || (type == 1008) || (type == 1033)) )
+    {
+        RTCM3_ANT_t ant;
+        if (rtcm3GetAnt(msg, &ant))
+        {
+            len = snprintf(info, size, "(#%d) [%s] [%s] %u [%s] [%s] [%s] - ",
+                ant.refStaId, ant.antDesc, ant.antSerial, ant.refStaId, ant.rxType, ant.rxFw, ant.rxSerial);
+        }
+        if (len < size)
+        {
+            switch (type)
+            {
+                case 1007:
+                    len = snprintf(&info[len], size - len, "Antenna descriptor");
+                    break;
+                case 1008:
+                    len = snprintf(&info[len], size - len, "Antenna descriptor and serial number");
+                    break;
+                case 1033:
+                    len = snprintf(&info[len], size - len, "Receiver and antenna descriptors");
+                    break;
+            }
+        }
+    }
 
     const int gnss = ((type - 1000) / 10) * 10;
     const int msm  = type % 10;
@@ -298,7 +315,7 @@ bool rtcm3GetMsmHeader(const uint8_t *msg, RTCM3_MSM_HEADER_t *header)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool rtcmGetArp(const uint8_t *msg, RTCM3_ARP_t *arp)
+bool rtcm3GetArp(const uint8_t *msg, RTCM3_ARP_t *arp)
 {
     memset(arp, 0, sizeof(*arp));
     const uint8_t *data = &msg[RTCM3_HEAD_SIZE];
@@ -323,6 +340,73 @@ bool rtcmGetArp(const uint8_t *msg, RTCM3_ARP_t *arp)
         default:
             res = false;
             break;
+    }
+    return res;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool rtcm3GetAnt(const uint8_t *msg, RTCM3_ANT_t *ant)
+{
+    memset(ant, 0, sizeof(*ant));
+    const uint8_t *data = &msg[RTCM3_HEAD_SIZE];
+
+    const int msgType = bits(data, 0, 12); // DF002
+    bool res = true;
+    if ( (msgType == 1007) || (msgType == 1008) || (msgType == 1033) )
+    {
+        int offs = 12;
+        ant->refStaId = bits(data, offs, 12);        // DF003
+        offs += 12;
+        const int n   = bits(data, offs, 8);         // DF029
+        offs += 8;
+        for (int ix = 0; (ix < n) && (ix < ((int)sizeof(ant->antDesc)-1)); ix++)
+        {
+            ant->antDesc[ix] = bits(data, offs, 8);  // DF030
+            offs += 8;
+        }
+        ant->antSetupId = bits(data, offs, 8);       // DF031
+        offs += 8;
+
+        if ( (msgType == 1008) || (msgType == 1033) )
+        {
+            const int m = bits(data, offs, 8);           // DF032
+            offs += 8;
+            for (int ix = 0; (ix < m) && (ix < ((int)sizeof(ant->antSerial)-1)); ix++)
+            {
+                ant->antSerial[ix] = bits(data, offs, 8);  // DF033
+                offs += 8;
+            }
+        }
+
+        if ( msgType == 1033 )
+        {
+            const int i = bits(data, offs, 8);           // DF227
+            offs += 8;
+            for (int ix = 0; (ix < i) && (ix < ((int)sizeof(ant->rxType)-1)); ix++)
+            {
+                ant->rxType[ix] = bits(data, offs, 8);   // DF228
+                offs += 8;
+            }
+            const int j = bits(data, offs, 8);           // DF229
+            offs += 8;
+            for (int ix = 0; (ix < j) && (ix < ((int)sizeof(ant->rxFw)-1)); ix++)
+            {
+                ant->rxFw[ix] = bits(data, offs, 8);     // DF230
+                offs += 8;
+            }
+            const int k = bits(data, offs, 8);           // DF231
+            offs += 8;
+            for (int ix = 0; (ix < k) && (ix < ((int)sizeof(ant->rxSerial)-1)); ix++)
+            {
+                ant->rxSerial[ix] = bits(data, offs, 8); // DF232
+                offs += 8;
+            }
+        }
+    }
+    else
+    {
+        res = false;
     }
     return res;
 }
