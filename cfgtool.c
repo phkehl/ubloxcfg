@@ -40,6 +40,8 @@
 
 /* ****************************************************************************************************************** */
 
+// FIXME: there's room for improvement...
+
 typedef struct CMD_s
 {
     const char   *name;
@@ -50,6 +52,7 @@ typedef struct CMD_s
     bool          need_r;
     bool          may_r;
     bool          may_n;
+    bool          may_e;
     const char   *info;
     const char *(*help)(void);
     int         (*run)(void);
@@ -74,6 +77,7 @@ typedef struct ARGS_s
     bool         extraInfo;
     bool         applyConfig;
     bool         noProbe;
+    bool         doEpoch;
 
 } ARGS_t;
 
@@ -88,67 +92,67 @@ static int cfg2c(void)   { return cfg2cRun(  gArgs.cfgLayer, gArgs.extraInfo); }
 static int uc2cfg(void)  { return uc2cfgRun(); }
 static int cfginfo(void) { return cfginfoRun(); }
 static int dump(void)    { return dumpRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
-static int parse(void)   { return parseRun(  gArgs.extraInfo); }
+static int parse(void)   { return parseRun(  gArgs.extraInfo, gArgs.doEpoch ); }
 static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
 static int status(void)  { return statusRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
 
 const CMD_t kCmds[] =
 {
     { .name = "cfg2rx",  .info = "Configure a receiver from a configuration file",             .help = cfg2rxHelp,  .run = cfg2rx,
-      .need_i = true,  .need_o = false, .need_p = true,  .need_l = true,  .may_r  = true,  .may_n = false  },
+      .need_i = true,  .need_o = false, .need_p = true,  .need_l = true,  .may_r  = true,  .may_n = false, .may_e = false  },
 
     { .name = "rx2cfg",  .info = "Create configuration file from config in a receiver",        .help = rx2cfgHelp,  .run = rx2cfg,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "rx2list", .info = "Like rx2cfg but output a flat list of key-value pairs",      .help = rx2listHelp, .run = rx2list,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = true,  .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "cfg2ubx", .info = "Convert config file to UBX-CFG-VALSET message(s)",           .help = cfg2ubxHelp, .run = cfg2ubx,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "cfg2hex", .info = "Like cfg2ubx but prints a hex dump of the message(s)",       .help = NULL,        .run = cfg2hex,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "cfg2c",   .info = "Like cfg2ubx but prints a c source code of the message(s)",  .help = NULL,        .run = cfg2c,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = true,  .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "uc2cfg",  .info = "Convert u-center config file to sane config file",           .help = uc2cfgHelp,  .run = uc2cfg,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "cfginfo", .info = "Print information about known configuration items etc.",     .help = cfginfoHelp, .run = cfginfo,
-      .need_i = false, .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
+      .need_i = false, .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false },
 
     { .name = "dump",    .info = "Connects to receiver and prints received message frames",    .help = dumpHelp,    .run = dump,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true,  .may_e = false },
 
     { .name = "parse",   .info = "Parse file and output message frames",                       .help = parseHelp,   .run = parse,
-      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false },
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = true },
 
     { .name = "reset",   .info = "Reset receiver",                                             .help = resetHelp,   .run = reset,
-      .need_i = false, .need_o = false, .need_p = true,  .need_l = false, .need_r = true,  .may_n = false  },
+      .need_i = false, .need_o = false, .need_p = true,  .need_l = false, .need_r = true,  .may_n = false, .may_e = false  },
 
     { .name = "status",  .info = "Connects to receiver and prints status",                     .help = statusHelp,  .run = status,
-      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true },
+      .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true,  .may_e = false },
 
 };
 
-const char * const kTitleStr = 
+const char * const kTitleStr =
     // -----------------------------------------------------------------------------
-    "cfgtool "CONFIG_VERSION" -- u-blox 9 configuration interface tool\n"
+    "cfgtool " CONFIG_VERSION " -- u-blox 9 configuration interface tool\n"
     "\n";
 
-const char * const kCopyrightStr = 
+const char * const kCopyrightStr =
     // -----------------------------------------------------------------------------
-    "    Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
+    "    Copyright (c) " CONFIG_YEAR " Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
     "    https://oinkzwurgl.org/hacking/ubloxcfg/\n"
     "\n";
 
-const char * const kVersionStr = 
+const char * const kVersionStr =
     // -----------------------------------------------------------------------------
-    "    version: "CONFIG_VERSION", git hash: "CONFIG_GITHASH", build date and time: "CONFIG_DATE" "CONFIG_TIME"\n"
+    "    version: " CONFIG_VERSION ", git hash: " CONFIG_GITHASH ", build date and time: " CONFIG_DATE " " CONFIG_TIME "\n"
     "\n";
 
-const char * const kHelpStr = 
+const char * const kHelpStr =
     // -----------------------------------------------------------------------------
     "Usage:\n"
     "\n"
@@ -184,7 +188,8 @@ const char * const kHelpStr =
     "    -u             Use unknown (undocumented) configuation items\n"
     "    -x             Output extra information (comments, hex dumps, ...)\n"
     "    -a             Activate configuration after storing\n"
-    "    -n             Do not probe/autobaud receiver, use passive reading only\n"
+    "    -n             Do not probe/autobaud receiver, use passive reading only.\n"
+    "                   For example, for other receivers or read-only connection.\n"
     "\n"
     // -----------------------------------------------------------------------------
     "    Available <commands>s:\n"
@@ -218,7 +223,7 @@ const char * const kPortHelp =
     "\n"
     "    Local serial ports: [ser://]<device>[@<baudrate>], where:\n"
     "\n"
-#ifdef _WIN    
+#ifdef _WIN
     "        <device>     COM1, COM23, etc.\n"
 #else
     "        <device>     /dev/ttyUSB0, /dev/ttyACM1, /dev/serial/..., etc.\n"
@@ -229,7 +234,7 @@ const char * const kPortHelp =
     "        is specified, it is be automatically detected. That is, '-p <device>'\n"
     "        works in most cases.\n"
     "\n"
-#ifndef _WIN    
+#ifndef _WIN
     "        It is recommended to use /dev/serial/by-path/... device names for USB\n"
     "        (CDC ACM) connections as the names remain after a hardware reset and\n"
     "        USB re-enumeration. See the 'reset' command.\n"
@@ -268,11 +273,11 @@ const char * const kLayersHelp =
 const char * const kExitHelp =
     "Exit status:\n"
     "\n"
-    "    Command successful:            "STRINGIFY(EXIT_SUCCESS)"\n"
-    "    Bad command-line arguments:    "STRINGIFY(EXIT_BADARGS)"\n"
-    "    Detecting receiver failed:     "STRINGIFY(EXIT_RXFAIL)"\n"
-    "    No data from receiver:         "STRINGIFY(EXIT_RXNODATA)"\n"
-    "    Unspecified error:             "STRINGIFY(EXIT_OTHERFAIL)"\n"
+    "    Command successful:            " STRINGIFY(EXIT_SUCCESS) "\n"
+    "    Bad command-line arguments:    " STRINGIFY(EXIT_BADARGS) "\n"
+    "    Detecting receiver failed:     " STRINGIFY(EXIT_RXFAIL) "\n"
+    "    No data from receiver:         " STRINGIFY(EXIT_RXNODATA) "\n"
+    "    Unspecified error:             " STRINGIFY(EXIT_OTHERFAIL) "\n"
     "\n";
 
 const char * const kGreeting =
@@ -391,6 +396,7 @@ int main(int argc, char **argv)
         _ARGS_BOOL("-a", gArgs.applyConfig, true)
         _ARGS_BOOL("-y", gArgs.outOverwrite, true)
         _ARGS_BOOL("-n", gArgs.noProbe, true)
+        _ARGS_BOOL("-e", gArgs.doEpoch, true)
         else if (gArgs.cmd != NULL)
         {
             argOk = false;
@@ -566,6 +572,13 @@ int main(int argc, char **argv)
     if ( (gArgs.cmd != NULL) && (!gArgs.cmd->may_n && gArgs.noProbe) )
     {
         WARNING("Illegal argument '-n'!");
+        res = false;
+    }
+
+    // May use -e arg?
+    if ( (gArgs.cmd != NULL) && (!gArgs.cmd->may_e && gArgs.doEpoch) )
+    {
+        WARNING("Illegal argument '-e'!");
         res = false;
     }
 

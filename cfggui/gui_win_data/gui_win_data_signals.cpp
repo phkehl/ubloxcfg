@@ -37,7 +37,7 @@ GuiWinDataSignals::GuiWinDataSignals(const std::string &name,
     _table.AddColumn("Signal", 60.0f);
     _table.AddColumn("Bd.", 30.0f);
     _table.AddColumn("Level", 155.0f);
-    _table.AddColumn("Use", 85.0f);
+    _table.AddColumn("Use", 75.0f);
     _table.AddColumn("Iono", 80.0f);
     _table.AddColumn("Health", 80.0f);
     _table.AddColumn("Used", 70.0f);
@@ -317,7 +317,7 @@ void GuiWinDataSignals::_DrawSignals(const EPOCH_GNSS_t filter)
         draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(PLOT_GRID_MAJOR));
         ImGui::NextColumn();
 
-        _table.ColTextF("%d %s", sig->use, sig->useStr);
+        _table.ColTextF("%s", sig->useStr);
 
         _table.ColText(sig->ionoStr);
 

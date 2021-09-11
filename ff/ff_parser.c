@@ -248,9 +248,9 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
                 parser->info : NULL;
             break;
         case PARSER_MSGTYPE_NMEA:
-            msg->name = nmeaMessageName(parser->name, sizeof(parser->name), (const char *)parser->tmp) ?
+            msg->name = nmeaMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "NMEA-?-?";
-            msg->info = nmeaMessageInfo(parser->info, sizeof(parser->info), (const char *)parser->tmp) ?
+            msg->info = nmeaMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
                 parser->info : NULL;
             break;
         case PARSER_MSGTYPE_RTCM3:

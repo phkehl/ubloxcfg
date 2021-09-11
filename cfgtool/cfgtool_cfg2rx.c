@@ -353,7 +353,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         {
             WARNING_INFILE("Expected hex key-value pair!");
             return false;
-        }   
+        }
 
         uint32_t id = 0;
         int numChar = 0;
@@ -362,7 +362,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
             WARNING_INFILE("Bad hex item ID (%s)!", keyStr);
             return false;
         }
-  
+
         UBLOXCFG_VALUE_t value = { ._raw = 0 };
         bool valueOk = false;
         const UBLOXCFG_SIZE_t size = UBLOXCFG_ID2SIZE(id);
@@ -438,7 +438,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
             WARNING_INFILE("Expected output message rate config!");
             return false;
         }
-        
+
         // Get config items for this message
         const UBLOXCFG_MSGRATE_t *items = ubloxcfg_getMsgRateCfg(name);
         if (items == NULL)

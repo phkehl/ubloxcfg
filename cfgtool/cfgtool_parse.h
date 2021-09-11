@@ -24,7 +24,7 @@
 
 const char *parseHelp(void);
 
-int parseRun(const bool extraInfo);
+int parseRun(const bool extraInfo, const bool doEpoch);
 
 /* ****************************************************************************************************************** */
 #endif // __CFGTOOL_PARSE_H__

@@ -309,6 +309,15 @@
                     "cwd": "${workspaceFolder}"
                 },
                 {
+                    "name": "debug cfgtool parse",
+                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                    "stopAtEntry": false,
+                    "preLaunchTask" : "make cfgtool-debug",
+                    "program": "${workspaceFolder}/output/cfgtool-debug",
+                    "args": [ "-v", "-i", "tmp/nmeagsv", "parse", "-x", "-e" ],
+                    "cwd": "${workspaceFolder}"
+                },
+                {
                     "name": "debug cfggui",
                     "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
                     "stopAtEntry": false,

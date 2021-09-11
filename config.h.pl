@@ -12,12 +12,14 @@ do
     my $hash = getGithash();
     my $date = getDate();
     my $time = getTime();
+    my $year = substr($date, 0, 4);
 
     while (my $line = <STDIN>)
     {
         $line =~ s{%HASH%}{$hash}g;
         $line =~ s{%DATE%}{$date}g;
         $line =~ s{%TIME%}{$time}g;
+        $line =~ s{%YEAR%}{$year}g;
         print($line);
     }
 };

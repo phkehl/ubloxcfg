@@ -173,8 +173,31 @@ void GuiWinDataMessages::DrawWindow()
                         const UBLOXCFG_MSGRATE_t *rate = msgrates[ix];
                         if (std::strncmp(className.c_str(), rate->msgName, className.size()) == 0)
                         {
-                            const auto entry = _messages.find(rate->msgName);
-                            const bool enabled = !( (entry == _messages.end()) || ((now - entry->second.msg->ts) > 1500) );
+                            bool enabled = false;
+
+                            // NMEA 0183 messages are named NMEA-<talker>-<formatter>, but in the configuration
+                            // library we use NMEA-STANDARD-<formatter>. Look for formatter
+                            if ( (rate->msgName[5] == 'S') && (rate->msgName[12] == 'D') )
+                            {
+                                const std::string search = &rate->msgName[14];
+                                for (const auto &entry: _messages)
+                                {
+                                    if (entry.first.substr(8) == search)
+                                    {
+                                        if ( (now - entry.second.msg->ts) < 1500 )
+                                        {
+                                            enabled = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            // Otherwise we can just look for the name
+                            else
+                            {
+                                const auto entry = _messages.find(rate->msgName);
+                                enabled = !( (entry == _messages.end()) || ((now - entry->second.msg->ts) > 1500) );
+                            }
                             if (ImGui::MenuItem(rate->msgName, NULL, enabled))
                             {
                                 _SetRate(rate, enabled ? 0 : 1);

@@ -280,7 +280,7 @@ typedef struct UBLOXCFG_KEYVAL_s
     \param[in]  rate   The message rate (0..255)
 
     \returns The #UBLOXCFG_KEYVAL_t initialiser
-    
+
     \b Example
     \code{.c}
         const UBLOXCFG_KEYVAL_t keyVal[] =
@@ -289,8 +289,8 @@ typedef struct UBLOXCFG_KEYVAL_s
             UBLOXCFG_KEYVAL_MSG( UBX_NAV_PVT, UART1, 1),
             // Set UBX-MON-COMMS output rate to 5 on port USB
             UBLOXCFG_KEYVAL_MSG( UBX_MON_COMMS, USB, 5)
-            // Disable NMEA-STANDARD-RMC message on port UART2
-            UBLOXCFG_KEYVAL_MSG( NMEA_STANDARD_RMC, UART2, 0 )
+            // Disable NMEA-0183-RMC message on port UART2
+            UBLOXCFG_KEYVAL_MSG( NMEA_0183_RMC, UART2, 0 )
         };
     \endcode
 */
@@ -332,7 +332,7 @@ typedef struct UBLOXCFG_KEYVAL_s
             // size   = 26
             // data[] = { 0x13, 0x00, 0x11, 0x10,   0x01,
             //            0x17, 0x00, 0x11, 0x30,   0x33, 0x08,
-            //            0x11, 0x00, 0x11, 0x20,   0x03, 
+            //            0x11, 0x00, 0x11, 0x20,   0x03,
             //            0x07, 0x00, 0x91, 0x20,   0x01,
             //            0x50, 0x03, 0x91, 0x20,   0x05 }
         }

@@ -230,6 +230,9 @@ typedef struct EPOCH_s
     double              second;
     double              timeAcc;
 
+    bool                haveLeapSeconds;
+    int                 leapSeconds;
+
     bool                haveDate;
     bool                confDate;
     int                 day;
@@ -271,19 +274,8 @@ typedef struct EPOCH_s
     int                 sigCnoHistTrk[EPOCH_SIGCNOHIST_NUM];
     int                 sigCnoHistNav[EPOCH_SIGCNOHIST_NUM];
 
-    bool                haveLeapSeconds;
-    int                 leapSeconds;
-
-    // Information as per UBX-NAV-TIMELS
-    // Warning: This is subject to changed (simplified) in future versions of this library. Users are advised
-    //          to directly use the UBX-NAV-TIMELS message if they have to rely on u-blox specific behaviour.
-    bool                haveLeapSecondEvent;
-    int                 srcOfCurrLs;
-    int                 srcOfLsChange;
-    int                 lsChange;
-    int                 timeToLsEvent;
-    int                 dateOfLsGpsWn;
-    int                 dateOfLsGpsDn;
+    bool                haveDiffAge;
+    double              diffAge;
 
     // Private
     int          _haveFix;
@@ -300,9 +292,12 @@ typedef struct EPOCH_s
     int          _haveGpsWeek;
     int          _haveRelPos;
     bool         _relPosValid;
+    int          _haveDiffAge;
 
     uint32_t     _detectTow;
     bool         _detectHaveTow;
+    int          _detectNmeaMs;
+    bool         _detectHaveNmeaMs;
 } EPOCH_t;
 
 #define EPOCH_NUM_GPS        32

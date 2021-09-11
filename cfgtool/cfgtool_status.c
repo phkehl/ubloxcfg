@@ -226,6 +226,11 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
                     }
                     break;
                 case PARSER_MSGTYPE_NMEA:
+                    if ( (msg->name[8] == 'T') && (msg->name[9] == 'X') && (msg->name[10] == 'T') && // "NMEA-GP-TXT"
+                        ( (msg->info[0] == 'W') || (msg->info[0] == 'E') ) ) // "WARNING: ...", "ERROR: ..."
+                    {
+                        WARNING("%s: %s", msg->name, msg->info);
+                    }
                     info.nNmea++;
                     break;
                 case PARSER_MSGTYPE_RTCM3:

@@ -96,7 +96,7 @@ void GuiWinDataInf::ProcessData(const Data &data)
                 }
                 else
                 {
-                    _log.AddLine(std::string("Other:   ") + data.msg->info.substr(9), Gui::InfOther);
+                    _log.AddLine(std::string("Other:   ") + data.msg->info, Gui::InfOther);
                     _nOther++;
                     _nInf++;
                 }

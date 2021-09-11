@@ -22,6 +22,7 @@
 
 #include "ff_ubx.h"
 #include "ff_parser.h"
+#include "ff_epoch.h"
 
 #include "cfgtool_parse.h"
 
@@ -33,12 +34,14 @@ const char *parseHelp(void)
 // -----------------------------------------------------------------------------
 "Command 'parse':\n"
 "\n"
-"    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x]\n"
+"    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x] [-e]\n"
 "\n"
 "    This processes data from the input file through the parser and outputs\n"
 "    information on the found messages and optionally a hex dump of the messages.\n"
-"    It stops at the end of the file or when SIGINT (e.g. CTRL-C)"NOT_WIN(", SIGHUP")"\n"
+"    It stops at the end of the file or when SIGINT (e.g. CTRL-C)" NOT_WIN(", SIGHUP") "\n"
 "    or SIGTERM is received.\n"
+"\n"
+"    Add -e to enable epoch detection and to output detected epochs.\n"
 "\n";
 }
 
@@ -55,13 +58,14 @@ static void _sigHandler(int signal)
     }
 }
 
-int parseRun(const bool extraInfo)
+int parseRun(const bool extraInfo, const bool doEpoch)
 {
     uint32_t nNmea = 0, sNmea = 0;
     uint32_t nUbx  = 0, sUbx  = 0;
     uint32_t nRtcm = 0, sRtcm = 0;
     uint32_t nGarb = 0, sGarb = 0;
     uint32_t nMsgs = 0, sMsgs = 0;
+    uint32_t nEpochs = 0;
 
     gAbort = false;
     signal(SIGINT, _sigHandler);
@@ -70,6 +74,10 @@ int parseRun(const bool extraInfo)
 
     PARSER_t parser;
     parserInit(&parser);
+
+    EPOCH_t coll;
+    EPOCH_t epoch;
+    epochInit(&coll);
 
     while (!gAbort)
     {
@@ -91,8 +99,13 @@ int parseRun(const bool extraInfo)
         {
             nMsgs++;
             sMsgs += msg.size;
+
+            if (doEpoch && epochCollect(&coll, &msg, &epoch))
+            {
+                nEpochs++;
+                ioOutputStr("epoch   %4d, size    0, NONE     EPOCH                %s\n", nEpochs, epoch.str);
+            }
             const char *prot = "?";
-            ioOutputStr("message %4u, size %4d, ", msg.seq, msg.size);
             switch (msg.type)
             {
                 case PARSER_MSGTYPE_UBX:
@@ -134,6 +147,10 @@ int parseRun(const bool extraInfo)
     ioOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
     ioOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
     ioOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    if (doEpoch)
+    {
+        ioOutputStr("stats EPOCH    count %5u (%5.1f%%)\n", nEpochs, nMsgs > 0 ? (double)nEpochs / (double)nMsgs * 1e2 : 0.0);
+    }
 
     return ioWriteOutput(true) ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }

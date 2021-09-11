@@ -2,3 +2,4 @@
 #define CONFIG_GITHASH "%HASH%"
 #define CONFIG_DATE    "%DATE%"
 #define CONFIG_TIME    "%TIME%"
+#define CONFIG_YEAR    "%YEAR%"

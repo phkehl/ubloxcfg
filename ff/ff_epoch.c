@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 
 #include "ff_stuff.h"
 #include "ff_ubx.h"
@@ -44,19 +45,27 @@ void epochInit(EPOCH_t *coll)
     memset(coll, 0, sizeof(*coll));
 }
 
-static bool _detectUbx(EPOCH_t *coll, PARSER_MSG_t *msg);
-static bool _detectNmea(EPOCH_t *coll, PARSER_MSG_t *msg);
+static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg);
+static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea);
 
-static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg);
-static void _collectNmea(EPOCH_t *coll, PARSER_MSG_t *msg);
+static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg);
+static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea);
 
-static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch);
+static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch);
 
 bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
 {
     if ( (coll == NULL) || (msg == NULL) )
     {
         return false;
+    }
+
+    // Decode NMEA here, as this is quite expensive
+    NMEA_MSG_t nmea;
+    bool haveNmea = false;
+    if (msg->type == PARSER_MSGTYPE_NMEA)
+    {
+        haveNmea = nmeaDecode(&nmea, msg->data, msg->size);
     }
 
     // Detect end of epoch / start of next epoch
@@ -67,7 +76,10 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
             detect = _detectUbx(coll, msg);
             break;
         case PARSER_MSGTYPE_NMEA:
-            detect = _detectNmea(coll, msg);
+            if (haveNmea)
+            {
+                detect = _detectNmea(coll, &nmea);
+            }
             break;
         default:
             break;
@@ -97,7 +109,10 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
             _collectUbx(coll, msg);
             break;
         case PARSER_MSGTYPE_NMEA:
-            _collectNmea(coll, msg);
+            if (haveNmea)
+            {
+                _collectNmea(coll, &nmea);
+            }
             break;
         default:
             break;
@@ -106,7 +121,7 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     return detect;
 }
 
-static bool _detectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
+static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
 {
     const uint8_t clsId = UBX_CLSID(msg->data);
     if (clsId != UBX_NAV_CLSID)
@@ -172,11 +187,34 @@ static bool _detectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
     return detect;
 }
 
-static bool _detectNmea(EPOCH_t *coll, PARSER_MSG_t *msg)
+static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
 {
-    (void)coll;
-    (void)msg;
-    return false;
+    bool detect = false;
+    int ms = -1;
+    switch (nmea->type)
+    {
+        case NMEA_TYPE_NONE:
+        case NMEA_TYPE_TXT:
+        case NMEA_TYPE_GSV:
+            break;
+        case NMEA_TYPE_GGA:
+            ms = (int)floor(nmea->gga.time.second * 1e3);
+            break;
+        case NMEA_TYPE_RMC:
+            ms = (int)floor(nmea->rmc.time.second * 1e3);
+            coll->_detectHaveNmeaMs = true;
+            break;
+        case NMEA_TYPE_GLL:
+            ms = (int)floor(nmea->gll.time.second * 1e3);
+            break;
+    }
+    if ( coll->_detectHaveNmeaMs && (ms > -1) && (ms != coll->_detectNmeaMs) )
+    {
+        detect = true;
+    }
+    coll->_detectNmeaMs = ms;
+    coll->_detectHaveNmeaMs = true;
+    return detect;
 }
 
 #define FLAG(field, flag) ( ((field) & (flag)) == (flag) )
@@ -195,6 +233,21 @@ static EPOCH_GNSS_t _ubxGnssIdToGnss(const uint8_t gnssId)
     }
 }
 
+static EPOCH_GNSS_t _nmeaGnssToGnss(NMEA_GNSS_t gnss)
+{
+    switch (gnss)
+    {
+        case NMEA_GNSS_UNKNOWN: break;;
+        case NMEA_GNSS_GPS:     return EPOCH_GNSS_GPS;
+        case NMEA_GNSS_GLO:     return EPOCH_GNSS_GLO;
+        case NMEA_GNSS_BDS:     return EPOCH_GNSS_BDS;
+        case NMEA_GNSS_GAL:     return EPOCH_GNSS_GAL;
+        case NMEA_GNSS_SBAS:    return EPOCH_GNSS_SBAS;
+        case NMEA_GNSS_QZSS:    return EPOCH_GNSS_QZSS;
+    }
+    return EPOCH_GNSS_UNKNOWN;
+}
+
 static const char * const kEpochGnssStrs[] =
 {
     [EPOCH_GNSS_UNKNOWN] = "?",
@@ -211,58 +264,79 @@ const char *epochGnssStr(const EPOCH_GNSS_t gnss)
     return (gnss >= 0) && (gnss < NUMOF(kEpochGnssStrs)) ? kEpochGnssStrs[gnss] : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
 }
 
-static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigId, EPOCH_BAND_t *band)
+static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigId)
 {
     switch (gnssId)
     {
         case UBX_GNSSID_GPS:
             switch (sigId)
             {
-                case UBX_SIGID_GPS_L1CA:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GPS_L1CA;
+                case UBX_SIGID_GPS_L1CA: return EPOCH_SIGNAL_GPS_L1CA;
                 case UBX_SIGID_GPS_L2CL:
-                case UBX_SIGID_GPS_L2CM:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GPS_L2C;
+                case UBX_SIGID_GPS_L2CM: return EPOCH_SIGNAL_GPS_L2C;
             }
             break;
         case UBX_GNSSID_SBAS:
             switch (sigId)
             {
-                case UBX_SIGID_SBAS_L1CA: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_SBAS_L1CA;
+                case UBX_SIGID_SBAS_L1CA: return EPOCH_SIGNAL_SBAS_L1CA;
             }
             break;
         case UBX_GNSSID_GAL:
             switch (sigId)
             {
                 case UBX_SIGID_GAL_E1C:
-                case UBX_SIGID_GAL_E1B:   *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GAL_E1;
+                case UBX_SIGID_GAL_E1B:  return EPOCH_SIGNAL_GAL_E1;
                 case UBX_SIGID_GAL_E5BI:
-                case UBX_SIGID_GAL_E5BQ:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GAL_E5B;
+                case UBX_SIGID_GAL_E5BQ: return EPOCH_SIGNAL_GAL_E5B;
             }
             break;
         case UBX_GNSSID_BDS:
             switch (sigId)
             {
                 case UBX_SIGID_BDS_B1ID1:
-                case UBX_SIGID_BDS_B1ID2: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_BDS_B1I;
+                case UBX_SIGID_BDS_B1ID2: return EPOCH_SIGNAL_BDS_B1I;
                 case UBX_SIGID_BDS_B2ID1:
-                case UBX_SIGID_BDS_B2ID2: *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_BDS_B2I;
+                case UBX_SIGID_BDS_B2ID2: return EPOCH_SIGNAL_BDS_B2I;
             }
             break;
         case UBX_GNSSID_QZSS:
             switch (sigId)
             {
-                case UBX_SIGID_QZSS_L1CA: *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_QZSS_L1CA;
-                case UBX_SIGID_QZSS_L1S:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_QZSS_L1S;
+                case UBX_SIGID_QZSS_L1CA: return EPOCH_SIGNAL_QZSS_L1CA;
+                case UBX_SIGID_QZSS_L1S:  return EPOCH_SIGNAL_QZSS_L1S;
                 case UBX_SIGID_QZSS_L2CM:
-                case UBX_SIGID_QZSS_L2CL: *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_QZSS_L2C;
+                case UBX_SIGID_QZSS_L2CL: return EPOCH_SIGNAL_QZSS_L2C;
             }
             break;
         case UBX_GNSSID_GLO:
             switch (sigId)
             {
-                case UBX_SIGID_GLO_L1OF:  *band = EPOCH_BAND_L1; return EPOCH_SIGNAL_GLO_L1OF;
-                case UBX_SIGID_GLO_L2OF:  *band = EPOCH_BAND_L2; return EPOCH_SIGNAL_GLO_L2OF;
+                case UBX_SIGID_GLO_L1OF: return EPOCH_SIGNAL_GLO_L1OF;
+                case UBX_SIGID_GLO_L2OF: return EPOCH_SIGNAL_GLO_L2OF;
             }
             break;
+    }
+    return EPOCH_SIGNAL_UNKNOWN;
+}
+
+static EPOCH_SIGNAL_t _nmeaSignalToSignal(NMEA_SIGNAL_t signal)
+{
+    switch (signal)
+    {
+        case NMEA_SIGNAL_UNKNOWN:    break;
+        case NMEA_SIGNAL_GPS_L1CA:   return EPOCH_SIGNAL_GPS_L1CA;
+        case NMEA_SIGNAL_GPS_L2C:    return EPOCH_SIGNAL_GPS_L2C;
+        case NMEA_SIGNAL_SBAS_L1CA:  return EPOCH_SIGNAL_SBAS_L1CA;
+        case NMEA_SIGNAL_GAL_E1:     return EPOCH_SIGNAL_GAL_E1;
+        case NMEA_SIGNAL_GAL_E5B:    return EPOCH_SIGNAL_GAL_E5B;
+        case NMEA_SIGNAL_BDS_B1I:    return EPOCH_SIGNAL_BDS_B1I;
+        case NMEA_SIGNAL_BDS_B2I:    return EPOCH_SIGNAL_BDS_B2I;
+        case NMEA_SIGNAL_QZSS_L1CA:  return EPOCH_SIGNAL_QZSS_L1CA;
+        case NMEA_SIGNAL_QZSS_L1S:   return EPOCH_SIGNAL_QZSS_L1S;
+        case NMEA_SIGNAL_QZSS_L2C:   return EPOCH_SIGNAL_QZSS_L2C;
+        case NMEA_SIGNAL_GLO_L1OF:   return EPOCH_SIGNAL_GLO_L1OF;
+        case NMEA_SIGNAL_GLO_L2OF:   return EPOCH_SIGNAL_GLO_L2OF;
     }
     return EPOCH_SIGNAL_UNKNOWN;
 }
@@ -568,9 +642,9 @@ static int _epochSatInfoSort(const void *a, const void *b)
 }
 
 // "Quality" (precision) if information: UBX better than NMEA, UBX high-precision messages better than normal UBX
-enum { HAVE_NOTHING = 0, HAVE_NMEA = 1, HAVE_UBX = 2, HAVE_UBX_HP = 3 };
+enum { HAVE_NOTHING = 0, HAVE_NMEA = 1, HAVE_BETTER_NMEA = 2, HAVE_UBX = 3, HAVE_UBX_HP = 4 };
 
-static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
+static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
 {
     const uint8_t clsId = UBX_CLSID(msg->data);
     if (clsId != UBX_NAV_CLSID)
@@ -727,6 +801,12 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                     coll->gpsWeek      = time.week;
                     coll->haveGpsWeek  = FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_WEEKVALID);
                 }
+
+                if (!coll->haveLeapSeconds && FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_LEAPSVALID))
+                {
+                    coll->haveLeapSeconds = true;
+                    coll->leapSeconds = time.leapS;
+                }
             }
             break;
         case UBX_NAV_HPPOSECEF_MSGID:
@@ -789,7 +869,7 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         EPOCH_SIGINFO_t *eInfo = &coll->signals[ix];
                         eInfo->gnss        = _ubxGnssIdToGnss(uInfo.gnssId);
                         eInfo->sv          = uInfo.svId;
-                        eInfo->signal      = _ubxSigIdToSignal(uInfo.gnssId, uInfo.sigId, &eInfo->band);
+                        eInfo->signal      = _ubxSigIdToSignal(uInfo.gnssId, uInfo.sigId);
                         eInfo->gloFcn      = (int)uInfo.freqId - 7;
                         eInfo->prRes       = (float)uInfo.prRes * (float)UBX_NAV_SIG_V0_PRRES_SCALE;
                         eInfo->cno         = uInfo.cno;
@@ -803,17 +883,7 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         eInfo->corr        = _ubxSigCorrSource(uInfo.corrSource);
                         eInfo->iono        = _ubxIonoModel(uInfo.ionoModel);
                         eInfo->health      = _ubxSigHealth(UBX_NAV_SIG_V0_SIGFLAGS_HEALTH_GET(uInfo.sigFlags));
-                        eInfo->gnssStr     = eInfo->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[eInfo->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
-                        eInfo->svStr       = _epochSvStr(eInfo->gnss, eInfo->sv);
-                        eInfo->signalStr   = eInfo->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[eInfo->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
-                        eInfo->bandStr     = eInfo->band   < NUMOF(kEpochBandStrs)      ? kEpochBandStrs[eInfo->band]        : kEpochBandStrs[EPOCH_BAND_UNKNOWN];
-                        eInfo->useStr      = eInfo->use    < NUMOF(kEpochSiqUseStrs)    ? kEpochSiqUseStrs[eInfo->use]       : kEpochSiqUseStrs[EPOCH_SIGUSE_UNKNOWN];
-                        eInfo->corrStr     = eInfo->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[eInfo->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
-                        eInfo->ionoStr     = eInfo->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[eInfo->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
-                        eInfo->healthStr   = eInfo->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[eInfo->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
-                        eInfo->_order = ((eInfo->gnss & 0xff) << 24) | ((eInfo->sv & 0xff) << 16) | ((eInfo->signal & 0xff) << 8);
                     }
-                    qsort(coll->signals, coll->numSignals, sizeof(*coll->signals), _epochSigInfoSort);
                 }
             }
             break;
@@ -861,12 +931,7 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
                         {
                             eInfo->orbAvail |= BIT(EPOCH_SATORB_PRED);
                         }
-                        eInfo->gnssStr    = eInfo->gnss    < NUMOF(kEpochGnssStrs) ? kEpochGnssStrs[eInfo->gnss]   : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
-                        eInfo->orbUsedStr = eInfo->orbUsed < NUMOF(kEpochOrbStrs)  ? kEpochOrbStrs[eInfo->orbUsed] : kEpochOrbStrs[EPOCH_SATORB_NONE];
-                        eInfo->svStr   = _epochSvStr(eInfo->gnss, eInfo->sv);
-                        eInfo->_order = ((eInfo->gnss & 0xff) << 24) | ((eInfo->sv & 0xff) << 16);
                     }
-                    qsort(coll->signals, coll->numSatellites, sizeof(*coll->satellites), _epochSatInfoSort);
                 }
             }
             break;
@@ -874,41 +939,210 @@ static void _collectUbx(EPOCH_t *coll, PARSER_MSG_t *msg)
             if (msg->size == UBX_NAV_TIMELS_V0_SIZE)
             {
                 EPOCH_DEBUG("collect %s", msg->name);
-                UBX_NAV_TIMELS_V0_GROUP0_t leapsec;
-                memcpy(&leapsec, &msg->data[UBX_HEAD_SIZE], sizeof(leapsec));
+                UBX_NAV_TIMELS_V0_GROUP0_t timels;
+                memcpy(&timels, &msg->data[UBX_HEAD_SIZE], sizeof(timels));
 
-                if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_CURRLSVALID))
+                if (!coll->haveLeapSeconds && FLAG(timels.valid, UBX_NAV_TIMELS_V0_VALID_CURRLSVALID))
                 {
-                    coll->leapSeconds = leapsec.currLs;
+                    coll->leapSeconds = timels.currLs;
                     coll->haveLeapSeconds = true;
-                }
-
-                if (FLAG(leapsec.valid, UBX_NAV_TIMELS_V0_VALID_TIMETOLSEVENTVALID))
-                {
-                    coll->lsChange = leapsec.lsChange;
-                    coll->srcOfLsChange = leapsec.srcOfLsChange;
-                    coll->timeToLsEvent = leapsec.timeToLsEvent;
-                    coll->dateOfLsGpsWn = leapsec.dateOfLsGpsWn;
-                    coll->dateOfLsGpsDn  = leapsec.dateOfLsGpsDn;
-                    coll->haveLeapSecondEvent = true;
                 }
             }
             break;
     }
 }
 
-static void _collectNmea(EPOCH_t *coll, PARSER_MSG_t *msg)
+static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
 {
-    // TODO...
-    (void)coll;
-    (void)msg;
+    switch (nmea->type)
+    {
+        case NMEA_TYPE_GGA:
+            EPOCH_DEBUG("collect %s", msg->name);
+            if (coll->_haveTime < HAVE_NMEA)
+            {
+                coll->_haveTime = HAVE_NMEA;
+                coll->hour      = nmea->gga.time.hour;
+                coll->minute    = nmea->gga.time.minute;
+                coll->second    = nmea->gga.time.second;
+                coll->haveTime  = nmea->gga.time.valid;
+            }
+            if (coll->_haveFix < HAVE_NMEA)
+            {
+                coll->_haveFix = HAVE_NMEA;
+                switch (nmea->gga.fix)
+                {
+                    case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
+                    case NMEA_FIX_NOFIX:     coll->fix = EPOCH_FIX_NOFIX;     break;
+                    case NMEA_FIX_DRONLY:    coll->fix = EPOCH_FIX_DRONLY;    break;
+                    case NMEA_FIX_S2D:       coll->fix = EPOCH_FIX_S2D;       break;
+                    case NMEA_FIX_S3D:       coll->fix = EPOCH_FIX_S3D;       break;
+                    case NMEA_FIX_S3D_DR:    coll->fix = EPOCH_FIX_S3D_DR;    break;
+                    case NMEA_FIX_RTK_FLOAT: coll->fix = EPOCH_FIX_RTK_FLOAT; break;
+                    case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
+                }
+                coll->fixOk = true;
+            }
+            if ( (nmea->gga.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_BETTER_NMEA) )
+            {
+                coll->_haveLlh = HAVE_BETTER_NMEA;
+                coll->llh[0]      = deg2rad(nmea->gga.lat);
+                coll->llh[1]      = deg2rad(nmea->gga.lon);
+                coll->llh[2]      = nmea->gga.height;
+                coll->heightMsl   = nmea->gga.heightMsl;
+                coll->haveMsl     = true;
+            }
+            if ( (nmea->gga.diffAge > -DBL_EPSILON) && (coll->_haveDiffAge < HAVE_NMEA) )
+            {
+                coll->_haveDiffAge = HAVE_NMEA;
+                coll->diffAge = nmea->gga.diffAge;
+                coll->haveDiffAge = true;
+            }
+
+            if (!coll->haveNumSv)
+            {
+                coll->numSv       = nmea->gga.numSv;
+                coll->haveNumSv   = true;
+            }
+
+            break;
+        case NMEA_TYPE_RMC:
+            EPOCH_DEBUG("collect %s", msg->name);
+            if (coll->_haveTime < HAVE_NMEA)
+            {
+                coll->_haveTime = HAVE_NMEA;
+                coll->hour      = nmea->rmc.time.hour;
+                coll->minute    = nmea->rmc.time.minute;
+                coll->second    = nmea->rmc.time.second;
+                coll->haveTime  = nmea->rmc.time.valid;
+            }
+            if (coll->_haveDate < HAVE_NMEA)
+            {
+                coll->_haveDate = HAVE_NMEA;
+                coll->day       = nmea->rmc.date.day;
+                coll->month     = nmea->rmc.date.month;
+                coll->year      = nmea->rmc.date.year;
+                coll->haveDate  = nmea->rmc.date.valid;
+            }
+            if (coll->_haveFix < HAVE_BETTER_NMEA)
+            {
+                coll->_haveFix = HAVE_BETTER_NMEA;
+                switch (nmea->rmc.fix)
+                {
+                    case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
+                    case NMEA_FIX_NOFIX:     coll->fix = EPOCH_FIX_NOFIX;     break;
+                    case NMEA_FIX_DRONLY:    coll->fix = EPOCH_FIX_DRONLY;    break;
+                    case NMEA_FIX_S2D:       coll->fix = EPOCH_FIX_S2D;       break;
+                    case NMEA_FIX_S3D:       coll->fix = EPOCH_FIX_S3D;       break;
+                    case NMEA_FIX_S3D_DR:    coll->fix = EPOCH_FIX_S3D_DR;    break;
+                    case NMEA_FIX_RTK_FLOAT: coll->fix = EPOCH_FIX_RTK_FLOAT; break;
+                    case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
+                }
+                coll->fixOk = nmea->rmc.valid;
+            }
+            if ( (nmea->rmc.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_NMEA) )
+            {
+                coll->_haveLlh = HAVE_BETTER_NMEA;
+                coll->llh[0]      = deg2rad(nmea->rmc.lat);
+                coll->llh[1]      = deg2rad(nmea->rmc.lon);
+                coll->llh[2]      = 0.0;
+                coll->heightMsl   = 0.0;
+                coll->haveMsl     = false;
+            }
+            break;
+        case NMEA_TYPE_GLL:
+            EPOCH_DEBUG("collect %s", msg->name);
+            if (coll->_haveTime < HAVE_NMEA)
+            {
+                coll->_haveTime = HAVE_NMEA;
+                coll->hour      = nmea->gll.time.hour;
+                coll->minute    = nmea->gll.time.minute;
+                coll->second    = nmea->gll.time.second;
+                coll->haveTime  = nmea->gll.time.valid;
+            }
+            if (coll->_haveFix < HAVE_BETTER_NMEA)
+            {
+                coll->_haveFix = HAVE_BETTER_NMEA;
+                switch (nmea->gll.fix)
+                {
+                    case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
+                    case NMEA_FIX_NOFIX:     coll->fix = EPOCH_FIX_NOFIX;     break;
+                    case NMEA_FIX_DRONLY:    coll->fix = EPOCH_FIX_DRONLY;    break;
+                    case NMEA_FIX_S2D:       coll->fix = EPOCH_FIX_S2D;       break;
+                    case NMEA_FIX_S3D:       coll->fix = EPOCH_FIX_S3D;       break;
+                    case NMEA_FIX_S3D_DR:    coll->fix = EPOCH_FIX_S3D_DR;    break;
+                    case NMEA_FIX_RTK_FLOAT: coll->fix = EPOCH_FIX_RTK_FLOAT; break;
+                    case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
+                }
+                coll->fixOk = nmea->gll.valid;
+            }
+            if ( (nmea->gll.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_NMEA) )
+            {
+                coll->_haveLlh = HAVE_BETTER_NMEA;
+                coll->llh[0]      = deg2rad(nmea->gll.lat);
+                coll->llh[1]      = deg2rad(nmea->gll.lon);
+                coll->llh[2]      = 0.0;
+                coll->heightMsl   = 0.0;
+                coll->haveMsl     = false;
+            }
+            break;
+        case NMEA_TYPE_GSV:
+            EPOCH_DEBUG("collect %s", msg->name);
+            if (coll->_haveSat <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
+            {
+                coll->_haveSat = HAVE_NMEA;
+                for (int ix = 0; (ix < nmea->gsv.nSvs) && (coll->numSatellites < (int)NUMOF(coll->satellites)); ix++)
+                {
+                    EPOCH_SATINFO_t *sat = &coll->satellites[coll->numSatellites];
+                    sat->gnss      = _nmeaGnssToGnss(nmea->gsv.svs[ix].gnss);
+                    sat->sv        = nmea->gsv.svs[ix].svId;
+                    sat->orbUsed   = EPOCH_SATORB_EPH;       // presumably..
+                    sat->orbAvail |= BIT(EPOCH_SATORB_EPH);  // presumably..
+                    sat->elev      = nmea->gsv.svs[ix].elev;
+                    sat->azim      = nmea->gsv.svs[ix].azim;
+                    coll->numSatellites++;
+                }
+            }
+            if (coll->_haveSig <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
+            {
+                coll->_haveSig = HAVE_NMEA;
+                for (int ix = 0; (ix < nmea->gsv.nSvs) && (coll->numSignals < (int)NUMOF(coll->signals)); ix++)
+                {
+                    EPOCH_SIGINFO_t *sig = &coll->signals[coll->numSignals];
+                    switch (nmea->gsv.svs[ix].gnss)
+                    {
+                        case NMEA_GNSS_UNKNOWN: sig->gnss = EPOCH_GNSS_UNKNOWN; break;
+                        case NMEA_GNSS_GPS:     sig->gnss = EPOCH_GNSS_GPS;     break;
+                        case NMEA_GNSS_GLO:     sig->gnss = EPOCH_GNSS_GLO;     break;
+                        case NMEA_GNSS_BDS:     sig->gnss = EPOCH_GNSS_BDS;     break;
+                        case NMEA_GNSS_GAL:     sig->gnss = EPOCH_GNSS_GAL;     break;
+                        case NMEA_GNSS_SBAS:    sig->gnss = EPOCH_GNSS_SBAS;    break;
+                        case NMEA_GNSS_QZSS:    sig->gnss = EPOCH_GNSS_QZSS;    break;
+                    }
+                    sig->gnss      = _nmeaGnssToGnss(nmea->gsv.svs[ix].gnss);
+                    sig->sv        = nmea->gsv.svs[ix].svId;
+                    sig->signal    = _nmeaSignalToSignal(nmea->gsv.svs[ix].sig);
+                    sig->cno       = nmea->gsv.svs[ix].cno;
+                    sig->use       = EPOCH_SIGUSE_CODELOCK;   // presumably..
+                    sig->health    = EPOCH_SIGHEALTH_HEALTHY; // presumably..
+                    sig->prUsed    = true; // presumably..
+                    coll->numSignals++;
+                }
+            }
+            break;
+
+        case NMEA_TYPE_NONE:
+        case NMEA_TYPE_TXT:
+            break;
+
+    }
 }
 
-static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch)
+static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch)
 {
     memcpy(epoch, coll, sizeof(*epoch));
     epoch->valid = true;
     epoch->ts = TIME();
+    coll = NULL; // must work on epoch, not coll
 
     // Convert stuff, prefer better quality, FIXME: this assumes WGS84...
 
@@ -991,11 +1225,54 @@ static void _epochComplete(EPOCH_t *coll, EPOCH_t *epoch)
         epoch->haveRelPos = true;
         // Somethimes fix is still RTK_FIXED/FLOAT but UBX-NAV-RELPOSNED.relPosValid indicates that the
         // relative (RTK) position is no longer available. Don't trust that fix.
-        if ( (coll->fix >= EPOCH_FIX_RTK_FLOAT) && !coll->_relPosValid )
+        if ( (epoch->fix >= EPOCH_FIX_RTK_FLOAT) && !epoch->_relPosValid )
         {
-            coll->fixOk = false;
+            epoch->fixOk = false;
         }
     }
+
+    for (int ix = 0; ix < epoch->numSatellites; ix++)
+    {
+        EPOCH_SATINFO_t *sat = &epoch->satellites[ix];
+        sat->gnssStr    = sat->gnss    < NUMOF(kEpochGnssStrs) ? kEpochGnssStrs[sat->gnss]   : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+        sat->orbUsedStr = sat->orbUsed < NUMOF(kEpochOrbStrs)  ? kEpochOrbStrs[sat->orbUsed] : kEpochOrbStrs[EPOCH_SATORB_NONE];
+        sat->svStr      = _epochSvStr(sat->gnss, sat->sv);
+        sat->_order     = ((sat->gnss & 0xff) << 24) | ((sat->sv & 0xff) << 16);
+    }
+    qsort(epoch->satellites, epoch->numSatellites, sizeof(*epoch->satellites), _epochSatInfoSort);
+
+    for (int ix = 0; ix < epoch->numSignals; ix++)
+    {
+        EPOCH_SIGINFO_t *sig = &epoch->signals[ix];
+        switch (sig->signal)
+        {
+            case EPOCH_SIGNAL_UNKNOWN:    sig->band = EPOCH_BAND_UNKNOWN; break;
+            case EPOCH_SIGNAL_GPS_L1CA:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GPS_L2C:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_SBAS_L1CA:  sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GAL_E1:     sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GAL_E5B:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_BDS_B1I:    sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_BDS_B2I:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_QZSS_L1CA:  sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_QZSS_L1S:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_QZSS_L2C:   sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
+        }
+        sig->gnssStr     = sig->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[sig->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+        sig->svStr       = _epochSvStr(sig->gnss, sig->sv);
+        sig->signalStr   = sig->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[sig->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
+        sig->bandStr     = sig->band   < NUMOF(kEpochBandStrs)      ? kEpochBandStrs[sig->band]        : kEpochBandStrs[EPOCH_BAND_UNKNOWN];
+        sig->useStr      = sig->use    < NUMOF(kEpochSiqUseStrs)    ? kEpochSiqUseStrs[sig->use]       : kEpochSiqUseStrs[EPOCH_SIGUSE_UNKNOWN];
+        sig->corrStr     = sig->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[sig->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
+        sig->ionoStr     = sig->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[sig->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
+        sig->healthStr   = sig->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[sig->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
+        sig->_order = ((sig->gnss & 0xff) << 24) | ((sig->sv & 0xffff) << 8) | ((sig->signal & 0xff) << 0);
+    }
+    qsort(&epoch->signals, epoch->numSignals, sizeof(*epoch->signals), _epochSigInfoSort);
+
+    // TODO: time/date <--(leapSec)--> wno/tow
 
     // Stringify
     epoch->fixStr = epoch->fixOk ? "UNKN" : "(UNKN)";
