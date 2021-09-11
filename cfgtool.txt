@@ -1,6 +1,6 @@
-cfgtool vX.X -- u-blox 9 configuration interface tool
+cfgtool v1.10 -- u-blox 9 configuration interface tool
 
-    Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)
+    Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
     https://oinkzwurgl.org/hacking/ubloxcfg/
 
 Usage:
@@ -36,7 +36,8 @@ Where:
     -u             Use unknown (undocumented) configuation items
     -x             Output extra information (comments, hex dumps, ...)
     -a             Activate configuration after storing
-    -n             Do not probe/autobaud receiver, use passive reading only
+    -n             Do not probe/autobaud receiver, use passive reading only.
+                   For example, for other receivers or read-only connection.
 
     Available <commands>s:
 
@@ -292,12 +293,14 @@ Command 'rxtest':
 
 Command 'parse':
 
-    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x]
+    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x] [-e]
 
     This processes data from the input file through the parser and outputs
     information on the found messages and optionally a hex dump of the messages.
     It stops at the end of the file or when SIGINT (e.g. CTRL-C), SIGHUP
     or SIGTERM is received.
+
+    Add -e to enable epoch detection and to output detected epochs.
 
 Command 'reset':
 
