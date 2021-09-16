@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.9)
 
 # Sets PROJECT_NAME, PROJECT_VERSION and PROJECT_DESCRIPTION
 project(ubloxcfg
-    VERSION       0.0
+    VERSION       1.11
     DESCRIPTION   "u-blox 9 positioning receivers configuration and control library"
     LANGUAGES     "C"
     HOMEPAGE_URL  "https://oinkzwurgl.org/projaeggd/ubloxcfg/")
