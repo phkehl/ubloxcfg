@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),

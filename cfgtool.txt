@@ -1,6 +1,6 @@
 cfgtool vX.X -- u-blox 9 configuration interface tool
 
-    Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org)
+    Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
     https://oinkzwurgl.org/hacking/ubloxcfg/
 
 Usage:
@@ -36,7 +36,8 @@ Where:
     -u             Use unknown (undocumented) configuation items
     -x             Output extra information (comments, hex dumps, ...)
     -a             Activate configuration after storing
-    -n             Do not probe/autobaud receiver, use passive reading only
+    -n             Do not probe/autobaud receiver, use passive reading only.
+                   For example, for other receivers or read-only connection.
 
     Available <commands>s:
 
@@ -52,6 +53,8 @@ Where:
     parse          Parse file and output message frames
     reset          Reset receiver
     status         Connects to receiver and prints status
+    bin2hex        Convert to hex dump
+    hex2bin        Convert from hex dump
 
 License:
 
@@ -72,6 +75,11 @@ Third-party code:
 
     This program includes CRC24Q routines from the GPSD project, under a
     BSD-2-Clause license. See source code or https://gitlab.com/gpsd/.
+
+Third-party data:
+
+    This program includes data (identifiers, constants and descriptions of
+    configuration items) from public u-blox documentation. Copyright u-blox AG.
 
 Serial ports:
 
@@ -274,7 +282,7 @@ Command 'cfginfo':
     This generates a list with information on all configuration items and
     messages known to this tool.
 
-Command 'rxtest':
+Command 'dump':
 
     Usage: cfgtool dump -p <port> [-o <outfile>] [-y] [-x] [-n]
 
@@ -288,16 +296,18 @@ Command 'rxtest':
     Examples:
 
         cfgtool dump -p /dev/ttyUSB0
-        timeout 20 dump rxtest -p /dev/ttyACM0
+        timeout 20 cfgtool dump -p /dev/ttyACM0
 
 Command 'parse':
 
-    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x]
+    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x] [-e]
 
     This processes data from the input file through the parser and outputs
     information on the found messages and optionally a hex dump of the messages.
     It stops at the end of the file or when SIGINT (e.g. CTRL-C), SIGHUP
     or SIGTERM is received.
+
+    Add -e to enable epoch detection and to output detected epochs.
 
 Command 'reset':
 
@@ -324,6 +334,7 @@ Command 'reset':
         All hardware resets cause a USB disconnect, which triggers the the host
         to re-enumerate the device. For local serial <port>s (ser://<device>)
         this is taken into account and should be handled by this command.
+        However, this is not 100% reliable. Don't use USB...
 
         The hot, warm, and cold resets use the same command as the corresponding
         buttons in u-center.
@@ -341,6 +352,22 @@ Command 'reset':
 Command 'status':
 
     Usage: cfgtool status -p <port> [-n] [-x]
+
+    Connects to the receiver and outputs the navigation status for each
+    detected epoch. This requires navigation messages, such as UBX-NAV-PVT to
+    be enabled. The program stops when SIGINT (e.g. CTRL-C), SIGHUP
+    or SIGTERM is received.
+
+Commands 'bin2hex' and 'hex2bin':
+
+    Usage: cfgtool bin2hex [-i <infile>] [-o <outfile>] [-y]
+           cfgtool hex2bin [-i <infile>] [-o <outfile>] [-y]
+
+    Convert data from or to u-center style hex dump.
+
+    Example:
+
+        echo 48 61 6B 75 6E 61 20 4D 61 74 61 74 61 21 0A | cfgtool -q hex2bin
 
 Happy hacking! :-)
 

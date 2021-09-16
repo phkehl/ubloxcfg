@@ -1,5 +1,8 @@
-#define CONFIG_VERSION "vX.X"
-#define CONFIG_GITHASH "%HASH%"
-#define CONFIG_DATE    "%DATE%"
-#define CONFIG_TIME    "%TIME%"
-#define CONFIG_YEAR    "%YEAR%"
+#define CONFIG_VERSION       "vX.X"
+#define CONFIG_VERSION_MAJOR 0
+#define CONFIG_VERSION_MINOR 0
+#define CONFIG_GITHASH       "%HASH%"
+#define CONFIG_DATE          "%DATE%"
+#define CONFIG_TIME          "%TIME%"
+#define CONFIG_YEAR          "%YEAR%"
+

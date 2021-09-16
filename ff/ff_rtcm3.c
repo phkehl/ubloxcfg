@@ -253,10 +253,10 @@ bool rtcm3typeToMsm(int msgType, RTCM3_MSM_GNSS_t *gnss, RTCM3_MSM_TYPE_t *msm)
 static uint64_t bits(const uint8_t *data, const int offs, const int size)
 {
     uint64_t val = 0;
-    const int max = offs + size;
-    for (int bit = offs; bit < max; bit++)
+    for (int bo = 0; bo < size; bo++)
     {
         val <<= 1;
+        const int bit = offs + bo;
         val |= ( data[bit / 8] >> (7 - (bit % 8)) ) & 0x01;
     }
     return val;

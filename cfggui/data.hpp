@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
 // Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -23,7 +24,7 @@
 #include "ubloxcfg.h"
 #include "ff_parser.h"
 #include "ff_epoch.h"
-#include "ff_cpp.h"
+#include "ff_cpp.hpp"
 #include "ff_rx.h"
 
 #include "data.hpp"

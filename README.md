@@ -5,7 +5,7 @@ Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
 [https://oinkzwurgl.org/hacking/ubloxcfg](https://oinkzwurgl.org/hacking/ubloxcfg)
 
 This implements a library (API) do deal with the new configuration interface introduced in u-blox 9 positioning
-receivers (e.g. [1]).
+receivers (see references in [ubloxcfg.json](./ubloxcfg/ubloxcfg.json)).
 
 A command line `cfgtool` is provided to configure a receiver from the configuration defined in a human-readable
 configuration file, as well as a few other functions.
@@ -25,8 +25,6 @@ This is tested in Linux ([GCC](https://gcc.gnu.org/)). It should work in Windows
 ## Building
 
 ### Linux
-
-Note that this probably only works when building on Linux.
 
 To build and run the tests:
 
@@ -90,13 +88,22 @@ make libubloxcfg.so
 sudo make install-library  # for installing in /usr/local, or:
 make install-library LIBPREFIX=/tmp/some/where
 ```
+
+Alternatively, use cmake:
+
+```sh
+cmake -S cmake -B build/libubloxcfg -DCMAKE_INSTALL_PREFIX=/where/the/library/should/go
+make -C build/libubloxcfg
+make -C build/libubloxcfg install
+```
+
 ## Configuration definitions
 
 The definitions for the configuration items (parameters) have been taken from u-blox manuals and converted into a JSON
 file (with comments): [`ubloxcfg.json`](./ubloxcfg.json).
 
-The [`ubloxcfg_gen.pl`](./ubloxcfg_gen.pl) script converts this to c source code: [`ubloxcfg_gen.h`](./ubloxcfg_gen.h)
-and [`ubloxcfg_gen.c`](./ubloxcfg_gen.c).
+The [`ubloxcfg_gen.pl`](./ubloxcfg/ubloxcfg_gen.pl) script converts this to c source code:
+[`ubloxcfg_gen.h`](./ubloxcfg/ubloxcfg_gen.h) and [`ubloxcfg_gen.c`](./ubloxcfg/ubloxcfg_gen.c).
 
 ## Configuration library
 
@@ -117,10 +124,11 @@ See [`ubloxcfg.h`](./ubloxcfg.h) or the generated HTML documentation for details
 The `cfgtool` command line tool can do the following:
 
 * Configure a receiver from a configuration text file
-* Receiver connection on local serial ports, remote raw TCP/IP ports or telnet (inc. RFC2217) connections
+* Receiver connection on local serial ports, remote raw TCP/IP ports or telnet (incl. RFC2217) connections
 * Retrieve configuration from a receiver
 * Convert a config text file into UBX-CFG-VALSET messages, output as binary UBX messages, u-center compatible hex
   dumps, or c code
+* Display receiver navigation status
 * And more...
 
 Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
@@ -131,9 +139,10 @@ A *very experimental* GUI is available. Say `make cfggui`. Linux only. YMMV.
 
 ## Licenses
 
-* Configuration library (`ubloxcfg*.*`): GNU Lesser General Public License (LGPL), see [`COPYING.LESSER`](./COPYING.LESSER)
-* Configuration tool (`cfgtool*.*`), configuration GUI (`cfggui*.*`, `gui*.*`) and the other libraries (`ff_*.[ch]`):
-  GNU General Public License (GPL), see [`COPYING`](./COPYING)
+* Configuration library (`ubloxcfg`): GNU Lesser General Public License (LGPL),
+  see [`COPYING.LESSER`](./ubloxcfg/COPYING.LESSER)
+* Configuration tool (`cfgtool`), configuration GUI (`cfggui`) and the other libraries (`ff`):
+  GNU General Public License (GPL), see [`COPYING`](./ff/COPYING)
 * Various third-party code comes with its own license, see [`3rdparty/`](./3rdparty) and below
 * Definitions for various maps are built into the cfggui. Check if the licenses cover your use!
   See [`maps.conf`](./cfggui/maps.conf)
@@ -144,19 +153,21 @@ See the individual source files, scripts and other files for details.
 
 The tool uses the following third-party code:
 
-* _CRC-24Q_ routines from <https://gitlab.com/gpsd/>
-  See the source code ([`crc24q.c`](./crc24q.c)) and license ([`crc24q.COPYING`](./crc24q.COPYING)).
+* _CRC-24Q_ routines from _GPSd_ (<https://gitlab.com/gpsd/>)
+  See the included source code ([`crc24q.c`](./3rdparty/stuff/crc24q.c)) and license
+  ([`crc24q.COPYING`](./3rdparty/stuff/crc24q.COPYING)).
 
 The GUI uses the following third-party code:
 
-* Dear ImGui from <https://github.com/ocornut/imgui>
-* ImPlot from <https://github.com/epezent/implot>
-* PlatformFolders from <https://github.com/sago007/PlatformFolders>
-* DejaVu fonts from <https://dejavu-fonts.github.io/>
-* ProggyClean fron from <https://proggyfonts.net>
-* ForkAwesome font from <https://forkaweso.me/Fork-Awesome/>
-* SDL2 (<https://www.libsdl.org/>)
-* curl (<https://curl.se/>)
+* _Dear ImGui_ (<https://github.com/ocornut/imgui>), see [3rdparty/imgui/](./3rdparty/imgui/)
+* _ImPlot_ (<https://github.com/epezent/implot>), see [3rdparty/implot/](./3rdparty/implot/)
+* _PlatformFolders_ (<https://github.com/sago007/PlatformFolders>), see [3rdparty/stuff/](./3rdparty/stuff/)
+* _DejaVu_ fonts (<https://dejavu-fonts.github.io/>), see [3rdparty/fonts/](./3rdparty/fonts/)
+* _ProggyClean_ font (<https://proggyfonts.net>), see [3rdparty/fonts/](./3rdparty/fonts/)
+* _ForkAwesome_ font (<https://forkaweso.me/Fork-Awesome/>), see [3rdparty/fonts/](./3rdparty/fonts/)
+* _SDL2_ (<https://www.libsdl.org/>), dynamically linked
+* _curl_ (<https://curl.se/>), dynamically linked
+* And a bunch of other libraries that SDL, ImGui etc. need...
 
 ## Todo, ideas
 

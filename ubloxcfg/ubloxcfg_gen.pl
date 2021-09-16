@@ -2,7 +2,7 @@
 ####################################################################################################
 # u-blox 9 positioning receivers configuration library
 #
-# Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+# Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
 # https://oinkzwurgl.org/hacking/ubloxcfg
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -33,52 +33,69 @@ use Path::Tiny;
 use Data::Float qw();
 
 my $DEBUG = 0;
-my $JSON  = 'ubloxcfg.json';
-my $OUT   = 'ubloxcfg_gen';
-chdir($FindBin::Bin);
+my $OUT   = shift(@ARGV);
+my @IN    = @ARGV;
+
+die("RTFS :-)") unless ($OUT && ($#IN > -1));
 
 ####################################################################################################
 
 do
 {
-    # read raw JSON (with comments)
-    my $json = '';
-    eval { $json = path($JSON)->slurp_raw(); };
-    if ($! || $@)
-    {
-        my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{};
-        print(STDERR "Cannot read '$JSON': $err\n");
-        exit(1);
-    }
-    #DEBUG("json raw %d bytes", length($json));
+    my @sources = ();
+    my @items = ();
 
-    # remove (some) comments
-    $json =~ s{^\s*//.*}{}mg;
-    $json =~ s{//.*$}{}mg;
-    #DEBUG("json w/o comments %d bytes", length($json));
-
-    # parse JSON
-    my $data;
-    eval { $data = JSON::PP->new()->utf8()->decode($json); };
-    if ($! || $@)
+    foreach my $JSON (@IN)
     {
-        my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{}; $err =~ s{at $0 line .*}{};
-        print(STDERR "JSON parse fail: $err\n");
-        exit(1);
+        # read raw JSON (with comments)
+        my $json = '';
+        eval { $json = path($JSON)->slurp_raw(); };
+        if ($! || $@)
+        {
+            my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{};
+            print(STDERR "Cannot read '$JSON': $err\n");
+            exit(1);
+        }
+        DEBUG("$JSON: json raw %d bytes", length($json));
+
+        # remove (some) comments
+        $json =~ s{^\s*//.*}{}mg;
+        #$json =~ s{//.*$}{}mg;
+        DEBUG("$JSON: json w/o comments %d bytes", length($json));
+
+        # parse JSON
+        my $data;
+        eval { $data = JSON::PP->new()->utf8()->decode($json); };
+        if ($! || $@)
+        {
+            my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{}; $err =~ s{at $0 line .*}{};
+            print(STDERR "$JSON: parse fail: $err\n");
+            exit(1);
+        }
+
+        if (!UNIVERSAL::isa($data->{items}, 'ARRAY'))
+        {
+            print(STDERR "$JSON: Unexpected data structure!\n");
+            exit(1);
+        }
+
+        push(@sources, @{$data->{sources}});
+        push(@items, @{$data->{items}});
+
     }
 
     # verify content
-    if (!verifyJson($data))
+    if (!verifyItems(\@items))
     {
         exit(1);
     }
 
 
-    DEBUG("Have %d configuration items.", $#{$data} + 1);
+    DEBUG("Have %d configuration items.", $#items + 1);
 
     # generate output
     my $errors = 0;
-    if (genCodeC(@{$data}))
+    if (genCodeC(\@items, \@sources))
     {
         exit(0);
     }
@@ -89,15 +106,9 @@ do
 
 };
 
-sub verifyJson
+sub verifyItems
 {
     my ($data) = @_;
-
-    if (!UNIVERSAL::isa($data, 'ARRAY'))
-    {
-        print(STDERR "JSON data is not an array!\n");
-        return 0;
-    }
 
     my $errors = 0;
     my %namesSeen = ();
@@ -107,50 +118,50 @@ sub verifyJson
         my $item = $data->[$ix];
         if (!$item->{name} || !$item->{id} || !defined $item->{size})
         {
-            print(STDERR "$JSON: Missing data it index $ix!\n");
+            print(STDERR "Missing data at index $ix!\n");
             $errors++;
             next;
         }
         if ($namesSeen{ $item->{name} })
         {
-            print(STDERR "$JSON: Duplicate name '$item->{name}' at index $ix!\n");
+            print(STDERR "Duplicate name '$item->{name}' at index $ix!\n");
             $errors++;
         }
         $namesSeen{ $item->{name} }++;
         if ($idsSeen{ $item->{id} })
         {
-            print(STDERR "$JSON: Duplicate name '$item->{id}' at index $ix!\n");
+            print(STDERR "Duplicate name '$item->{id}' at index $ix!\n");
             $errors++;
         }
         $idsSeen{ $item->{id} }++;
         my $id = hex($item->{id});
         if ($id & 0x80000000)
         {
-            print(STDERR "$JSON: Use of reserved ID bit 31 at index $ix ($item->{name})\n");
+            print(STDERR "Use of reserved ID bit 31 at index $ix ($item->{name})\n");
             $errors++;
         }
         if ($id & 0x0f000000)
         {
-            print(STDERR "$JSON: Use of reserved ID bits 27..24 at index $ix ($item->{name})\n");
+            print(STDERR "Use of reserved ID bits 27..24 at index $ix ($item->{name})\n");
             $errors++;
         }
         if ($id & 0x0000f000) # u-blox docu is wrong. ID is 12 bits, not 8
         {
-            print(STDERR "$JSON: Use of reserved ID bits 15..12 at index $ix ($item->{name})\n");
+            print(STDERR "Use of reserved ID bits 15..12 at index $ix ($item->{name})\n");
             $errors++;
         }
         my %sizeNumToSize = ( 1 => 0, 2 => 1, 3 => 2, 4 => 4, 5 => 8 );
         my $sizeNum = ($id >> 28) & 0xf;
         if ( !defined $sizeNumToSize{$sizeNum} || ($sizeNumToSize{$sizeNum} != $item->{size}) )
         {
-            printf(STDERR "$JSON: ID and size mismatch (ID 0x%x......., size $item->{size}) at index $ix ($item->{name})!\n", $sizeNum);
+            printf(STDERR "ID and size mismatch (ID 0x%x......., size $item->{size}) at index $ix ($item->{name})!\n", $sizeNum);
             $errors++;
         }
         my %sizeToType = ( 0 => { L => 1 }, 1 => { U1 => 1, I1 => 1, X1 => 1, E1 => 1 }, 2 => { U2 => 1, I2 => 1, X2 => 1, E2 => 1 },
                            4 => { U4 => 1, I4 => 1, X4 => 1, E4 => 1, R4 => 1 }, 8 => { U8 => 1, I8 => 1, X8 => 1, R8 => 1 } );
         if (!$sizeToType{$item->{size}} || !$sizeToType{$item->{size}}->{$item->{type}})
         {
-            print(STDERR "$JSON: Size and type mismatch (size $item->{size}, type $item->{type}) at index $ix ($item->{name})!\n");
+            print(STDERR "Size and type mismatch (size $item->{size}, type $item->{type}) at index $ix ($item->{name})!\n");
             $errors++;
         }
     }
@@ -163,11 +174,11 @@ sub verifyJson
 # generate c code
 sub genCodeC
 {
-    my (@items) = @_;
+    my ($items, $sources) = @_;
 
     my $errors = 0;
 
-    my $numItems = $#items + 1;
+    my $numItems = $#{$items} + 1;
 
     my $c = '';
     my $h = '';
@@ -176,7 +187,7 @@ sub genCodeC
 
     my $top = "// u-blox 9 positioning receivers configuration library\n" .
               "//\n" .
-              "// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),\n" .
+              "// Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org),\n" .
               "// https://oinkzwurgl.org/hacking/ubloxcfg\n" .
               "//\n" .
               "//    This program is free software: you can redistribute it and/or modify it under the terms of the\n" .
@@ -190,7 +201,7 @@ sub genCodeC
               "//    You should have received a copy of the GNU Lesser General Public License along with this\n" .
               "//    program. If not, see <https://www.gnu.org/licenses/>.\n" .
               "//\n" .
-              "// This file is automatically generated from $JSON. Do not edit.\n" .
+              "// This file is automatically generated. Do not edit.\n" .
               "\n";
 
     $h .= $top;
@@ -205,10 +216,16 @@ sub genCodeC
     $h .= "/*!\n";
     $h .= "    \\defgroup UBLOXCFG_ITEMS Configuration items\n";
     $h .= "    \\ingroup UBLOXCFG\n";
+    $h .= "\n";
+    $h .= "    Sources:\n";
+    $h .= "    - $_\n" for (@{$sources});
+    $h .= "\n";
     $h .= "    \@{\n";
     $h .= "*/\n";
 
     $c .= $top;
+    $c .= "// Sources:\n";
+    $c .= "// - $_\n" for (@{$sources});
     $c .= "\n";
     $c .= "#include <stddef.h>\n";
     $c .= "#include \"ubloxcfg.h\"\n";
@@ -225,9 +242,9 @@ sub genCodeC
 
     # generate item definitions
     my $lastGroup = '';
-    for (my $itemIx = 0; $itemIx <= $#items; $itemIx++)
+    for (my $itemIx = 0; $itemIx < $numItems; $itemIx++)
     {
-        my $item = $items[$itemIx];
+        my $item = $items->[$itemIx];
         my $itemNameC = $item->{name}; $itemNameC =~ s{-}{_}g;               # CFG_FOO_BAR
         my $groupName = $item->{name}; $groupName =~ s{^(CFG-[^-]+)-.+}{$1}; # CFG-FOO
         my $groupNameC = $groupName; $groupNameC =~ s{-}{_}g;                # CFG_FOO
@@ -296,7 +313,7 @@ sub genCodeC
         $h .= "///@}\n"; # UBLOXCFG_ITEMS_FOO_BAR (item)
 
         # end last group
-        if ($itemIx == $#items)
+        if ($itemIx == $#${items})
         {
             $h .= "\n";
             $h .= "///@}\n"; # UBLOXCFG_ITEMS_FOO (group)

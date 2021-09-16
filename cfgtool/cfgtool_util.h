@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -48,7 +49,7 @@ IO_LINE_t *ioGetNextInputLine(void);
 int  ioReadInput(uint8_t *data, const int size);
 void ioOutputStr(const char *fmt, ...);
 void ioAddOutputBin(const uint8_t *data, const int size);
-void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine);
+void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine, const bool ugly);
 void ioAddOutputHexdump(const uint8_t *data, const int size);
 void ioAddOutputC(const uint8_t *data, const int size, const int wordsPerLine, const char *indent);
 bool ioWriteOutput(const bool append);

@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 /*!
     \file
     \brief u-blox 9 positioning receivers configuration library
@@ -532,6 +533,22 @@ bool ubloxcfg_stringifyKeyVal(char *str, const int size, const UBLOXCFG_KEYVAL_t
     \endcode
 */
 bool ubloxcfg_valueFromString(const char *str, const UBLOXCFG_TYPE_t type, const UBLOXCFG_ITEM_t *item, UBLOXCFG_VALUE_t *value);
+
+///@}
+
+/* ****************************************************************************************************************** */
+
+/*!
+    \defgroup UBLOXCFG_OTHER Other functions
+    @{
+*/
+
+//! Get library version
+/*!
+    \return the library version as major and minor versions encoded in two bytes ((major << 8) | minor),
+        or 0 if unknown
+*/
+uint16_t ubloxcfg_getVersion(void);
 
 ///@}
 

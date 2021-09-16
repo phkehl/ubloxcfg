@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -129,7 +130,7 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
         switch (fmt)
         {
             case FMT_HEX:
-                ioAddOutputHex(msgs[msgIx].msg, msgs[msgIx].size, 4);
+                ioAddOutputHex(msgs[msgIx].msg, msgs[msgIx].size, 4, false);
                 break;
             case FMT_C:
                 ioAddOutputC(msgs[msgIx].msg, msgs[msgIx].size, 4, "    ");
@@ -138,7 +139,7 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
                 ioAddOutputBin(msgs[msgIx].msg, msgs[msgIx].size);
                 break;
             default:
-                break;                
+                break;
         }
         if (fmt == FMT_C)
         {
@@ -150,7 +151,7 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
         ioOutputStr("const struct { const int size; const uint8_t *data; } ubxCfgValsetMsgs[%d] =\n{\n", nMsgs);
         for (int ix = 0; ix < nMsgs; ix++)
         {
-            ioOutputStr("    { .size = sizeof(ubxCfgValset%d), .data = ubxCfgValset%d }%s\n", 
+            ioOutputStr("    { .size = sizeof(ubxCfgValset%d), .data = ubxCfgValset%d }%s\n",
                 ix, ix, (ix + 1) < nMsgs ? "," : "");
         }
         ioOutputStr("};\n", nMsgs);

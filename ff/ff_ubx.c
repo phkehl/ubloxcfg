@@ -599,6 +599,7 @@ static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const i
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack);
 
@@ -696,6 +697,9 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
         case UBX_CFG_CLSID:
             switch (msgId)
             {
+                case UBX_CFG_VALSET_MSGID:
+                    len = _strUbxCfgValset(info, size, msg, msgSize);
+                    break;
                 case UBX_CFG_VALGET_MSGID:
                     len = _strUbxCfgValget(info, size, msg, msgSize);
                     break;
@@ -992,6 +996,55 @@ static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const i
     return ubxMonVerToVerStr(info, size, msg, msgSize);
 }
 
+static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize < (int)sizeof(UBX_CFG_VALSET_V1_GROUP0_t))
+    {
+        return 0;
+    }
+    UBX_CFG_VALSET_V1_GROUP0_t /* (~= UBX_CFG_VALGET_V0_GROUP0_t) */ head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+    const int dataSize = msgSize - UBX_FRAME_SIZE - sizeof(head);
+    char layers[100];
+    layers[0] = '\0';
+    layers[1] = '\0';
+    int len = 0;
+    if (CHKBITS(head.layers, UBX_CFG_VALSET_V1_LAYER_RAM))
+    {
+        len += snprintf(&layers[len], sizeof(layers) - len, ",RAM");
+    }
+    if (CHKBITS(head.layers, UBX_CFG_VALSET_V1_LAYER_BBR))
+    {
+        len += snprintf(&layers[len], sizeof(layers) - len, ",BBR");
+    }
+    if (CHKBITS(head.layers, UBX_CFG_VALSET_V1_LAYER_FLASH))
+    {
+        len += snprintf(&layers[len], sizeof(layers) - len, ",Flash");
+    }
+    switch (head.version)
+    {
+        case UBX_CFG_VALSET_V0_VERSION:
+        {
+            return snprintf(info, size, "set %d bytes, layers %s", dataSize, &layers[1]);
+            break;
+        }
+        case UBX_CFG_VALSET_V1_VERSION:
+        {
+            const char *transaction = "?";
+            switch (head.transaction)
+            {
+                case UBX_CFG_VALSET_V1_TRANSACTION_NONE:     transaction = "none";     break;
+                case UBX_CFG_VALSET_V1_TRANSACTION_BEGIN:    transaction = "begin";    break;
+                case UBX_CFG_VALSET_V1_TRANSACTION_CONTINUE: transaction = "continue"; break;
+                case UBX_CFG_VALSET_V1_TRANSACTION_END:      transaction = "end";      break;
+            }
+            return snprintf(info, size, "set %d bytes, layers %s, transaction %s", dataSize, &layers[1], transaction);
+            break;
+        }
+    }
+    return 0;
+}
+
 static const char *_valgetLayerName(const uint8_t layer)
 {
     switch (layer)
@@ -1010,21 +1063,21 @@ static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, cons
     {
         return 0;
     }
-    UBX_CFG_VALGET_V0_GROUP0_t /* (= UBX_CFG_VALGET_V0_GROUP0_t) */ head;
+    UBX_CFG_VALGET_V0_GROUP0_t head;
     memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
     switch (head.version)
     {
         case UBX_CFG_VALGET_V0_VERSION:
         {
             const int numKeys = (msgSize - UBX_FRAME_SIZE - sizeof(head)) / sizeof(uint32_t);
-            return snprintf(info, size, "poll %d items from layer %s, position %u",
+            return snprintf(info, size, "poll %d items, layer %s, position %u",
                 numKeys, _valgetLayerName(head.layer), head.position);
             break;
         }
         case UBX_CFG_VALGET_V1_VERSION:
         {
             const int dataSize = size - UBX_FRAME_SIZE - sizeof(head);
-            return snprintf(info, size, "response %d bytes from layer %s, position %u",
+            return snprintf(info, size, "response %d bytes, layer %s, position %u",
                 dataSize, _valgetLayerName(head.layer), head.position);
             break;
         }

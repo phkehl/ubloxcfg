@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
 // Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -24,7 +25,7 @@
 
 #include "imgui.h"
 
-#include "ff_cpp.h"
+#include "ff_cpp.hpp"
 
 #include "gui_win.hpp"
 

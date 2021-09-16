@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
 // Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -23,7 +24,7 @@
 #include <tuple>
 #include <map>
 
-#include "ff_cpp.h"
+#include "ff_cpp.hpp"
 #include "maptiles.hpp"
 #include "imgui.h"
 #include "implot.h"

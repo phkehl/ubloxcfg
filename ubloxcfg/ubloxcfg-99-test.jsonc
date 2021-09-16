@@ -1,0 +1,63 @@
+// u-blox 9 positioning receivers configuration library
+{
+    "sources": [
+
+    ], "items": [
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // Test items
+    { "id" : "0x10fe0001", "name" : "CFG-UBLOXCFGTEST-L",                   "size" : 0, "type" : "L",                                          "title" : "ubloxcfg library test item type L" },
+    { "id" : "0x20fe0011", "name" : "CFG-UBLOXCFGTEST-U1",                  "size" : 1, "type" : "U1",                                         "title" : "ubloxcfg library test item type U1" },
+    { "id" : "0x30fe0012", "name" : "CFG-UBLOXCFGTEST-U2",                  "size" : 2, "type" : "U2",                                         "title" : "ubloxcfg library test item type U2" },
+    { "id" : "0x40fe0013", "name" : "CFG-UBLOXCFGTEST-U4",                  "size" : 4, "type" : "U4",                                         "title" : "ubloxcfg library test item type U4" },
+    { "id" : "0x50fe0014", "name" : "CFG-UBLOXCFGTEST-U8",                  "size" : 8, "type" : "U8",                                         "title" : "ubloxcfg library test item type U8" },
+    { "id" : "0x20fe0021", "name" : "CFG-UBLOXCFGTEST-I1",                  "size" : 1, "type" : "I1",                                         "title" : "ubloxcfg library test item type I1" },
+    { "id" : "0x30fe0022", "name" : "CFG-UBLOXCFGTEST-I2",                  "size" : 2, "type" : "I2",                                         "title" : "ubloxcfg library test item type I2" },
+    { "id" : "0x40fe0023", "name" : "CFG-UBLOXCFGTEST-I4",                  "size" : 4, "type" : "I4",                                         "title" : "ubloxcfg library test item type I4" },
+    { "id" : "0x50fe0024", "name" : "CFG-UBLOXCFGTEST-I8",                  "size" : 8, "type" : "I8",                                         "title" : "ubloxcfg library test item type I8" },
+    { "id" : "0x20fe0031", "name" : "CFG-UBLOXCFGTEST-X1",                  "size" : 1, "type" : "X1",                                         "title" : "ubloxcfg library test item type X1",
+            "consts" : [ { "name" : "FIRST",                                "value" : "0x01",                                                  "title" : "first bit (LSB)" },
+                         { "name" : "SECOND",                               "value" : "0x02",                                                  "title" : "second bit" },
+                         { "name" : "LAST",                                 "value" : "0x80",                                                  "title" : "last bit (MSB)" } ] },
+    { "id" : "0x30fe0032", "name" : "CFG-UBLOXCFGTEST-X2",                  "size" : 2, "type" : "X2",                                         "title" : "ubloxcfg library test item type X2",
+            "consts" : [ { "name" : "FIRST",                                "value" : "0x0001",                                                "title" : "first bit (LSB)" },
+                         { "name" : "SECOND",                               "value" : "0x0002",                                                "title" : "second bit" },
+                         { "name" : "LAST",                                 "value" : "0x8000",                                                "title" : "last bit (MSB)" } ] },
+    { "id" : "0x40fe0033", "name" : "CFG-UBLOXCFGTEST-X4",                  "size" : 4, "type" : "X4",                                         "title" : "ubloxcfg library test item type X4",
+            "consts" : [ { "name" : "FIRST",                                "value" : "0x00000001",                                            "title" : "first bit (LSB)" },
+                         { "name" : "SECOND",                               "value" : "0x00000002",                                            "title" : "second bit" },
+                         { "name" : "LAST",                                 "value" : "0x80000000",                                            "title" : "last bit (MSB)" } ] },
+    { "id" : "0x50fe0034", "name" : "CFG-UBLOXCFGTEST-X8",                  "size" : 8, "type" : "X8",                                         "title" : "ubloxcfg library test item type X8",
+            "consts" : [ { "name" : "FIRST",                                "value" : "0x0000000000000001",                                    "title" : "first bit (LSB)" },
+                         { "name" : "SECOND",                               "value" : "0x0000000000000002",                                    "title" : "second bit" },
+                         { "name" : "LAST",                                 "value" : "0x8000000000000000",                                    "title" : "last bit (MSB)" } ] },
+    { "id" : "0x40fe0041", "name" : "CFG-UBLOXCFGTEST-R4",                  "size" : 4, "type" : "R4",                                         "title" : "ubloxcfg library test item type R4" },
+    { "id" : "0x50fe0042", "name" : "CFG-UBLOXCFGTEST-R8",                  "size" : 8, "type" : "R8",                                         "title" : "ubloxcfg library test item type R8" },
+    { "id" : "0x20fe0041", "name" : "CFG-UBLOXCFGTEST-E1",                  "size" : 1, "type" : "E1",                                         "title" : "ubloxcfg library test item type E1",
+            "consts" : [ { "name" : "ONE",                                  "value" : "1",                                                     "title" : "test value 1" },
+                         { "name" : "TWO",                                  "value" : "2",                                                     "title" : "test value 2" },
+                         { "name" : "THREE",                                "value" : "3",                                                     "title" : "test value 3" },
+                         { "name" : "MINUS_ONE",                            "value" : "-1",                                                    "title" : "test value -1" },
+                         { "name" : "FOUR_HEX",                             "value" : "0x04",                                                  "title" : "test value 0x04" } ] },
+    { "id" : "0x30fe0042", "name" : "CFG-UBLOXCFGTEST-E2",                  "size" : 2, "type" : "E2",                                         "title" : "ubloxcfg library test item type E2",
+            "consts" : [ { "name" : "ONE",                                  "value" : "1",                                                     "title" : "test value 1" },
+                         { "name" : "TWO",                                  "value" : "2",                                                     "title" : "test value 2" },
+                         { "name" : "THREE",                                "value" : "3",                                                     "title" : "test value 3" },
+                         { "name" : "MINUS_ONE",                            "value" : "-1",                                                    "title" : "test value -1" },
+                         { "name" : "FOUR_HEX",                             "value" : "0x0004",                                                "title" : "test value 0x0004" } ] },
+    { "id" : "0x40fe0043", "name" : "CFG-UBLOXCFGTEST-E4",                  "size" : 4, "type" : "E4",                                         "title" : "ubloxcfg library test item type E4",
+            "consts" : [ { "name" : "ONE",                                  "value" : "1",                                                     "title" : "test value 1" },
+                         { "name" : "TWO",                                  "value" : "2",                                                     "title" : "test value 2" },
+                         { "name" : "THREE",                                "value" : "3",                                                     "title" : "test value 3" },
+                         { "name" : "MINUS_ONE",                            "value" : "-1",                                                    "title" : "test value -1" },
+                         { "name" : "FOUR_HEX",                             "value" : "0x00000004",                                            "title" : "test value 0x00000004" } ] }
+    // Undocumented (unknown) items for test
+  //{ "id" : "0x10fe0ff1", "name" : "CFG-UBLOXCFGTEST-NOPE_L",              "size" : 0, "type" : "L",                                          "title" : "ubloxcfg library test inexistent item size 0" },
+  //{ "id" : "0x20fe0ff2", "name" : "CFG-UBLOXCFGTEST-NOPE_U1",             "size" : 1, "type" : "U1",                                         "title" : "ubloxcfg library test inexistent item size 1" },
+  //{ "id" : "0x30fe0ff3", "name" : "CFG-UBLOXCFGTEST-NOPE_U2",             "size" : 2, "type" : "U2",                                         "title" : "ubloxcfg library test inexistent item size 2" },
+  //{ "id" : "0x40fe0ff4", "name" : "CFG-UBLOXCFGTEST-NOPE_U4",             "size" : 4, "type" : "U4",                                         "title" : "ubloxcfg library test inexistent item size 4" },
+  //{ "id" : "0x50fe0ff5", "name" : "CFG-UBLOXCFGTEST-NOPE_U8",             "size" : 8, "type" : "U8",                                         "title" : "ubloxcfg library test inexistent item size 8" },
+    // ..and a few more in the range 0x.0fe0f00 .. 0x.0fe0fff!
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+]
+}

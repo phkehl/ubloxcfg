@@ -93,7 +93,7 @@ extern "C" {
 #define UBX_MON_IO_MSGID             0x02
 #define UBX_MON_COMMS_MSGID          0x36
 #define UBX_MON_MSGPP_MSGID          0x06
-#define UBX_MON_PATH_MSGID           0x27
+#define UBX_MON_PATCH_MSGID          0x27
 #define UBX_MON_RXR_MSGID            0x21
 #define UBX_MON_RXBUF_MSGID          0x07
 #define UBX_MON_SPAN_MSGID           0x31
@@ -148,11 +148,12 @@ extern "C" {
 
 #define UBX_UPD_CLSID                0x09
 #define UBX_UPD_SOS_MSGID            0x14
+#define UBX_UPD_POS_MSGID            0x15 // says u-center...
 
 #define UBX_CLASSES(_P_) \
     _P_(UBX_ACK_CLSID, "UBX-ACK") \
-    _P_(UBX_CFG_CLSID, "UBX-ACK") \
-    _P_(UBX_INF_CLSID, "UBX-ESF") \
+    _P_(UBX_CFG_CLSID, "UBX-CFG") \
+    _P_(UBX_ESF_CLSID, "UBX-ESF") \
     _P_(UBX_INF_CLSID, "UBX-INF") \
     _P_(UBX_LOG_CLSID, "UBX-LOG") \
     _P_(UBX_MGA_CLSID, "UBX-MGA") \
@@ -207,7 +208,7 @@ extern "C" {
     _P_(UBX_MON_CLSID, UBX_MON_IO_MSGID,          "UBX-MON-IO") \
     _P_(UBX_MON_CLSID, UBX_MON_COMMS_MSGID,       "UBX-MON-COMMS") \
     _P_(UBX_MON_CLSID, UBX_MON_MSGPP_MSGID,       "UBX-MON-MSGPP") \
-    _P_(UBX_MON_CLSID, UBX_MON_PATH_MSGID,        "UBX-MON-PATH") \
+    _P_(UBX_MON_CLSID, UBX_MON_PATCH_MSGID,       "UBX-MON-PATCH") \
     _P_(UBX_MON_CLSID, UBX_MON_RXR_MSGID,         "UBX-MON-RXR") \
     _P_(UBX_MON_CLSID, UBX_MON_RXBUF_MSGID,       "UBX-MON-RXBUF") \
     _P_(UBX_MON_CLSID, UBX_MON_SPAN_MSGID,        "UBX-MON-SPAN") \
@@ -250,7 +251,8 @@ extern "C" {
     _P_(UBX_TIM_CLSID, UBX_TIM_TM2_MSGID,         "UBX-TIM-TM2") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TP_MSGID,          "UBX-TIM-TP") \
     _P_(UBX_TIM_CLSID, UBX_TIM_VRFY_MSGID,        "UBX-TIM-VRFY") \
-    _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS")
+    _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS") \
+    _P_(UBX_UPD_CLSID, UBX_UPD_POS_MSGID,         "UBX-UPD-POS")
 
 
 #define UBX_GNSSID_NONE     0xff
@@ -297,6 +299,24 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
+//! UBX-CFG-VALSET (version 0, input) message payload header
+typedef struct UBX_CFG_VALSET_V0_GROUP0_s
+{
+    uint8_t  version;                                //!< Message version (#UBX_CFG_VALSET_V1_VERSION)
+    uint8_t  layers;                                 //!< Configuration layers
+    uint8_t  reserved[2];                            //!< Reserved (set to 0x00)
+} UBX_CFG_VALSET_V0_GROUP0_t;
+
+#define UBX_CFG_VALSET_V0_VERSION              0x00  //!< UBX-CFG-VALSET.version value
+#define UBX_CFG_VALSET_V0_LAYER_RAM            0x01  //!< UBX-CFG-VALSET.layers flag: layer RAM
+#define UBX_CFG_VALSET_V0_LAYER_BBR            0x02  //!< UBX-CFG-VALSET.layers flag: layer BBR
+#define UBX_CFG_VALSET_V0_LAYER_FLASH          0x04  //!< UBX-CFG-VALSET.layers flag: layer Flash
+#define UBX_CFG_VALSET_V0_RESERVED             0x00  //!< UBX-CFG-VALSET.reserved value
+#define UBX_CFG_VALSET_V0_MAX_KV               64    //!< UBX-CFG-VALSET.cfgData: maximum number of key-value pairs
+#define UBX_CFG_VALSET_V0_CFGDATA_MAX (UBX_CFG_VALSET_V1_MAX_KV * (4 + 8)) //!< UBX-CFG-VALSET.cfgData maximum size
+
+#define UBX_CFG_VALSET_VERSION_GET(msg)             ( (msg)[UBX_HEAD_SIZE + 0] )
+
 //! UBX-CFG-VALSET (version 1, input) message payload header
 typedef struct UBX_CFG_VALSET_V1_GROUP0_s
 {
@@ -317,6 +337,7 @@ typedef struct UBX_CFG_VALSET_V1_GROUP0_s
 #define UBX_CFG_VALSET_V1_RESERVED             0x00  //!< UBX-CFG-VALSET.reserved value
 #define UBX_CFG_VALSET_V1_MAX_KV               64    //!< UBX-CFG-VALSET.cfgData: maximum number of key-value pairs
 #define UBX_CFG_VALSET_V1_CFGDATA_MAX (UBX_CFG_VALSET_V1_MAX_KV * (4 + 8)) //!< UBX-CFG-VALSET.cfgData maximum size
+
 
 #define UBX_CFG_VALSET_V1_MAX_SIZE             (sizeof(UBX_CFG_VALSET_V1_GROUP0_t) + UBX_CFG_VALSET_V1_CFGDATA_MAX + UBX_FRAME_SIZE)
 

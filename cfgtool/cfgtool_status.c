@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -36,6 +37,11 @@ const char *statusHelp(void)
 "Command 'status':\n"
 "\n"
 "    Usage: cfgtool status -p <port> [-n] [-x]\n"
+"\n"
+"    Connects to the receiver and outputs the navigation status for each\n"
+"    detected epoch. This requires navigation messages, such as UBX-NAV-PVT to\n"
+"    be enabled. The program stops when SIGINT (e.g. CTRL-C)"NOT_WIN(", SIGHUP")"\n"
+"    or SIGTERM is received.\n"
 "\n";
 }
 

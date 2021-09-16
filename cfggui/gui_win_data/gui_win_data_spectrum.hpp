@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 // Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
 // All rights reserved.

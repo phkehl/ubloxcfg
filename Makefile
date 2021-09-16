@@ -138,16 +138,17 @@ $(BUILDDIR)/config.h: config.h.in config.h.pl Makefile | $(BUILDDIR)
 	$(V)$(RM) $@.tmp
 
 # Generate config items info
-ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h: ubloxcfg/ubloxcfg.json ubloxcfg/ubloxcfg_gen.pl Makefile
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(PERL) ubloxcfg/ubloxcfg_gen.pl
+CFG_JSONC := $(sort $(wildcard ubloxcfg/ubloxcfg-*.jsonc))
+ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h: $(CFG_JSONC) ubloxcfg/ubloxcfg_gen.pl Makefile
+	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($(CFG_JSONC))$(HLO)"
+	$(V)$(PERL) ubloxcfg/ubloxcfg_gen.pl ubloxcfg/ubloxcfg_gen $(CFG_JSONC)
 
 ubloxcfg/ubloxcfg.c: ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h
 
 # Documentation
 $(OUTPUTDIR)/ubloxcfg_html/index.html: ubloxcfg/Doxyfile $(LIBHFILES) $(LIBCFILES) Makefile | $(OUTPUTDIR)
 	@echo "$(HLY)*$(HLO) $(HLC)doxygen$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)( $(CAT) $<; $(ECHO) "OUTPUT_DIRECTORY = $(OUTPUTDIR)"; $(ECHO) "INPUT = $(LIBHFILES) $(LIBCFILES)"; $(ECHO) "QUIET = YES"; ) | $(DOXYGEN) -
+	$(V)( $(CAT) $<; $(ECHO) "OUTPUT_DIRECTORY = $(OUTPUTDIR)"; $(ECHO) "QUIET = YES"; ) | $(DOXYGEN) -
 
 # Make compiled-in default files
 $(BUILDDIR)/maps_conf.c: cfggui/maps.conf Makefile | $(BUILDDIR)
@@ -184,7 +185,7 @@ ci: all
 
 # Make everything
 .PHONY: all
-all: test_m32-release test_m64-release cfgtool-release cfggui-release release
+all: test_m32-release test_m64-release cfgtool-release cfggui-release release cfgtool.txt
 
 # Some shortcuts
 test_m32: test_m32-release
@@ -197,7 +198,7 @@ cfgtool: cfgtool-release
 .PHONY: cfggui
 cfggui: cfggui-release
 .PHONY: doc
-doc: $(OUTPUTDIR)/ubloxcfg_html/index.html cfgtool.txt
+doc: $(OUTPUTDIR)/ubloxcfg_html/index.html
 
 ########################################################################################################################
 
@@ -214,7 +215,7 @@ help:
 	@echo "    all             Build (mostly) everything"
 	@echo "    <prog>-<build>  Make binary, <prog> is cfgtool, cfggui, ... and <build> is release, debug"
 	@echo "    test            Build and run tests"
-	@echo "    doc             Build HTML docu of the ubloxcfg libaray"
+	@echo "    doc             Build HTML docu of the ubloxcfg library"
 	@echo "    debugmf         Show some Makefile variables"
 	@echo "    scan-build      Run scan-build"
 	@echo "    cfggui-valgrind Run cfggui with valgrind"

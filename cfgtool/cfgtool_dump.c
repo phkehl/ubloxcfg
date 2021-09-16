@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -32,7 +33,7 @@ const char *dumpHelp(void)
 {
     return
 // -----------------------------------------------------------------------------
-"Command 'rxtest':\n"
+"Command 'dump':\n"
 "\n"
 "    Usage: cfgtool dump -p <port> [-o <outfile>] [-y] [-x] [-n]\n"
 "\n"
@@ -49,7 +50,7 @@ const char *dumpHelp(void)
 "        cfgtool dump -p COM3\n"
 #else
 "        cfgtool dump -p /dev/ttyUSB0\n"
-"        timeout 20 dump rxtest -p /dev/ttyACM0\n"
+"        timeout 20 cfgtool dump -p /dev/ttyACM0\n"
 #endif
 "\n";
 }

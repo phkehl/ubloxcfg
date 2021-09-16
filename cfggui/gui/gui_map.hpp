@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
 // Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -21,7 +22,7 @@
 #include <cmath>
 
 #include "ff_stuff.h"
-#include "ff_cpp.h"
+#include "ff_cpp.hpp"
 #include "maptiles.hpp"
 
 #include "imgui.h"

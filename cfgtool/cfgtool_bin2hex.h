@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
-// flipflip's cfggui
+// u-blox 9 positioning receivers configuration tool
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -15,12 +15,17 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_STUFF_H__
-#define __GUI_STUFF_H__
+#include <stdint.h>
+#include <stdbool.h>
+
+#ifndef __CFGTOOL_BIN2HEX_H__
+#define __CFGTOOL_BIN2HEX_H__
 
 /* ****************************************************************************************************************** */
 
+const char *bin2hexHelp(void);
+int bin2hexRun(void);
+int hex2binRun(void);
 
 /* ****************************************************************************************************************** */
-
-#endif // __GUI_STUFF_H__
+#endif // __CFGTOOL_BIN2HEX_H__

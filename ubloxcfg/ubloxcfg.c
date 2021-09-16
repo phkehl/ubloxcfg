@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 /*!
     \file
     \brief u-blox 9 positioning receivers configuration library
@@ -672,7 +673,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
     {
         return false;
     }
-    
+
     bool res = false;
 
     uint64_t valUnsigned;
@@ -747,7 +748,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
                 value->U1 = (uint8_t)valUnsigned;
                 res = true;
             }
-            break; 
+            break;
         case UBLOXCFG_TYPE_X2:
             if (findConstValue(str, item, &valUnsigned))
             {
@@ -759,7 +760,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
                 value->X2 = (uint16_t)valUnsigned;
                 res = true;
             }
-            break; 
+            break;
         case UBLOXCFG_TYPE_X4:
             if (findConstValue(str, item, &valUnsigned))
             {
@@ -771,7 +772,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
                 value->X4 = (uint32_t)valUnsigned;
                 res = true;
             }
-            break; 
+            break;
         case UBLOXCFG_TYPE_X8:
             if (findConstValue(str, item, &valUnsigned))
             {
@@ -783,7 +784,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
                 value->X8 = valUnsigned;
                 res = true;
             }
-            break; 
+            break;
         case UBLOXCFG_TYPE_I1:
             if (strToValSigned(str, type, &valSigned))
             {
@@ -932,7 +933,7 @@ static bool strToValUnsigned(const char *str, const UBLOXCFG_TYPE_t type, uint64
             res = true;
         }
     }
-    
+
     if (res)
     {
         *val = value;
@@ -1020,7 +1021,7 @@ static bool strToValSigned(const char *str, UBLOXCFG_TYPE_t type, int64_t *val)
             res = true;
         }
     }
-    
+
     if (res)
     {
         *val = value;
@@ -1169,6 +1170,14 @@ bool ubloxcfg_layerFromName(const char *name, UBLOXCFG_LAYER_t *layer)
     return true;
 }
 
+uint16_t ubloxcfg_getVersion(void)
+{
+#if defined(CONFIG_VERSION_MAJOR) && defined(CONFIG_VERSION_MINOR)
+    return (CONFIG_VERSION_MAJOR << 8 | CONFIG_VERSION_MINOR);
+#else
+    return 0;
+#endif
+}
 
 /* ****************************************************************************************************************** */
 

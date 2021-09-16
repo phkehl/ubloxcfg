@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -56,6 +57,7 @@ const char *resetHelp(void)
 "        All hardware resets cause a USB disconnect, which triggers the the host\n"
 "        to re-enumerate the device. For local serial <port>s (ser://<device>)\n"
 "        this is taken into account and should be handled by this command.\n"
+"        However, this is not 100% reliable. Don't use USB...\n"
 "\n"
 "        The hot, warm, and cold resets use the same command as the corresponding\n"
 "        buttons in u-center.\n"

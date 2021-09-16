@@ -36,6 +36,7 @@
 #include "cfgtool_parse.h"
 #include "cfgtool_reset.h"
 #include "cfgtool_status.h"
+#include "cfgtool_bin2hex.h"
 #include "config.h"
 
 /* ****************************************************************************************************************** */
@@ -95,6 +96,8 @@ static int dump(void)    { return dumpRun( gArgs.rxPort, gArgs.extraInfo, gArgs.
 static int parse(void)   { return parseRun(  gArgs.extraInfo, gArgs.doEpoch ); }
 static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
 static int status(void)  { return statusRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
+static int bin2hex(void) { return bin2hexRun(); }
+static int hex2bin(void) { return hex2binRun(); }
 
 const CMD_t kCmds[] =
 {
@@ -133,6 +136,12 @@ const CMD_t kCmds[] =
 
     { .name = "status",  .info = "Connects to receiver and prints status",                     .help = statusHelp,  .run = status,
       .need_i = false, .need_o = true,  .need_p = true,  .need_l = false, .need_r = false, .may_n = true,  .may_e = false },
+
+    { .name = "bin2hex", .info = "Convert to hex dump",                                        .help = bin2hexHelp, .run = bin2hex,
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false },
+
+    { .name = "hex2bin", .info = "Convert from hex dump",                                      .help = NULL,        .run = hex2bin,
+      .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false },
 
 };
 
@@ -216,6 +225,11 @@ const char * const kLicenseHelp =
     "\n"
     "    This program includes CRC24Q routines from the GPSD project, under a\n"
     "    BSD-2-Clause license. See source code or https://gitlab.com/gpsd/.\n"
+    "\n"
+    "Third-party data:\n"
+    "\n"
+    "    This program includes data (identifiers, constants and descriptions of\n"
+    "    configuration items) from public u-blox documentation. Copyright u-blox AG.\n"
     "\n";
 
 const char * const kPortHelp =

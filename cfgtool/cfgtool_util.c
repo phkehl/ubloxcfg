@@ -1,3 +1,4 @@
+/* ************************************************************************************************/ // clang-format off
 // u-blox 9 positioning receivers configuration tool
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
@@ -182,7 +183,7 @@ void ioAddOutputBin(const uint8_t *data, const int size)
     gOutputBufSize += size;
 }
 
-void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine)
+void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine, const bool ugly)
 {
     const int bytesPerLine = wordsPerLine * 4;
     for (int ix = 0; ix < size; ix++)
@@ -192,7 +193,7 @@ void ioAddOutputHex(const uint8_t *data, const int size, const int wordsPerLine)
         {
             ioOutputStr((pos % 4) == 0 ? "  " : " ");
         }
-        ioOutputStr("%02"PRIx8, data[ix]);
+        ioOutputStr(ugly ? "%02" PRIX8 : "%02" PRIx8, data[ix]);
         if ( (pos == (bytesPerLine - 1)) || (ix == (size - 1)) )
         {
             ioOutputStr("\n");
@@ -358,7 +359,7 @@ bool layersStringToFlags(const char *layers, bool *ram, bool *bbr, bool *flash, 
         }
         tok = strtok(NULL, ",");
     }
-    
+
     return res;
 }
 

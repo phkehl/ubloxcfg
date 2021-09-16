@@ -74,11 +74,19 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     {
         case PARSER_MSGTYPE_UBX:
             detect = _detectUbx(coll, msg);
+            if (detect)
+            {
+                coll->_detectHaveNmeaMs = false;
+            }
             break;
         case PARSER_MSGTYPE_NMEA:
             if (haveNmea)
             {
                 detect = _detectNmea(coll, &nmea);
+                if (detect)
+                {
+                    coll->_detectHaveTow = false;
+                }
             }
             break;
         default:
@@ -96,10 +104,15 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
         const uint32_t seq = coll->seq;
         const uint32_t tow = coll->_detectTow;
         const bool detectHaveTow = coll->_detectHaveTow;
+        const int ms = coll->_detectNmeaMs;
+        const bool detectHaveMs = coll->_detectHaveNmeaMs;
         memset(coll, 0, sizeof(*coll));
         coll->seq = seq;
         coll->_detectTow = tow;
         coll->_detectHaveTow = detectHaveTow;
+        coll->_detectNmeaMs = ms;
+        coll->_detectHaveNmeaMs = detectHaveMs;
+        //DEBUG("epoch %u ubx %u %d nmea %d %d", seq, tow, detectHaveTow, ms, detectHaveMs);
     }
 
     // Collect data
@@ -184,6 +197,7 @@ static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
             }
             break;
     }
+
     return detect;
 }
 
@@ -202,18 +216,21 @@ static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
             break;
         case NMEA_TYPE_RMC:
             ms = (int)floor(nmea->rmc.time.second * 1e3);
-            coll->_detectHaveNmeaMs = true;
             break;
         case NMEA_TYPE_GLL:
             ms = (int)floor(nmea->gll.time.second * 1e3);
             break;
     }
-    if ( coll->_detectHaveNmeaMs && (ms > -1) && (ms != coll->_detectNmeaMs) )
+    if (ms >= 0)
     {
-        detect = true;
+        if ( coll->_detectHaveNmeaMs && (ms != coll->_detectNmeaMs) )
+        {
+            detect = true;
+        }
+        coll->_detectNmeaMs = ms;
+        coll->_detectHaveNmeaMs = true;
     }
-    coll->_detectNmeaMs = ms;
-    coll->_detectHaveNmeaMs = true;
+
     return detect;
 }
 
