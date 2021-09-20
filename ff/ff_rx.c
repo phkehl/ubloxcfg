@@ -196,7 +196,7 @@ static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *
             parserInit(&p);
         }
         PARSER_MSG_t msg;
-        if (parserProcess(&p, &msg))
+        if (parserProcess(&p, &msg, true))
         {
             msg.src = src;
             rx->msgcb(&msg, rx->cbarg);
@@ -280,7 +280,7 @@ PARSER_MSG_t *rxGetNextMessage(RX_t *rx)
             parserAdd(&rx->parser, rx->readBuf, readSize);
         }
 
-        if (parserProcess(&rx->parser, &rx->msg))
+        if (parserProcess(&rx->parser, &rx->msg, true))
         {
             msg = &rx->msg;
             msg->src = PARSER_MSGSRC_FROM_RX;

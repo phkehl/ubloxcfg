@@ -84,7 +84,7 @@ static int _isUbxMessage(const uint8_t *buf, const int size);
 static int _isNmeaMessage(const uint8_t *buf, const int size);
 static int _isRtcm3Message(const uint8_t *buf, const int size);
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg);
-static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType);
+static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType, const bool info);
 
 typedef struct PARSER_FUNC_s
 {
@@ -100,7 +100,7 @@ static const PARSER_FUNC_t kParserFuncs[] =
     { .func = _isRtcm3Message, .type = PARSER_MSGTYPE_RTCM3, .name = "RTCM3" },
 };
 
-bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg)
+bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg, const bool info)
 {
     while (parser->size > 0)
     {
@@ -161,7 +161,7 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg)
             }
             // else parser->offs == 0: Return message
             {
-                _emitMessage(parser, msg, msgSize, msgType);
+                _emitMessage(parser, msg, msgSize, msgType, info);
                 return true;
             }
         }
@@ -209,7 +209,7 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
     PARSER_XTRA_TRACE("process: emit %s, size %d ", msg->name, size);
 }
 
-static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType)
+static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType, const bool info)
 {
     uint32_t now = TIME();
 
@@ -244,20 +244,29 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
         case PARSER_MSGTYPE_UBX:
             msg->name = ubxMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "UBX-?-?";
-            msg->info = ubxMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                parser->info : NULL;
+            if (info)
+            {
+                msg->info = ubxMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL;
+            }
             break;
         case PARSER_MSGTYPE_NMEA:
             msg->name = nmeaMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "NMEA-?-?";
-            msg->info = nmeaMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                parser->info : NULL;
+            if (info)
+            {
+                msg->info = nmeaMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL;
+            }
             break;
         case PARSER_MSGTYPE_RTCM3:
             msg->name = rtcm3MessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "RTCM3-?";
-            msg->info = rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                parser->info : NULL;
+            if (info)
+            {
+                msg->info = rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL;
+            }
             break;
         default:
             msg->name = "?";

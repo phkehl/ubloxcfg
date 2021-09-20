@@ -537,7 +537,7 @@ void GuiWinReceiver::_DrawRecordButton()
 
 void GuiWinReceiver::_DrawRxStatus()
 {
-    const float dataOffs = _winSettings->charSize.x * 12;
+    const float dataOffs = _winSettings->charSize.x * 13;
     const EPOCH_t *epoch = _epoch && _epoch->epoch.valid ? &_epoch->epoch : nullptr;
     const float statusHeight = ImGui::GetTextLineHeightWithSpacing() * 10;
 
@@ -550,7 +550,7 @@ void GuiWinReceiver::_DrawRxStatus()
         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
 
     // Sequence / status
-    ImGui::Selectable("Sequence");
+    ImGui::Selectable("Seq, uptime");
     ImGui::SameLine(dataOffs);
     if (_receiver->IsReady())
     {
@@ -563,6 +563,17 @@ void GuiWinReceiver::_DrawRxStatus()
         else
         {
             ImGui::Text("%d", _epoch->seq);
+            ImGui::SameLine();
+            if (_epoch->epoch.haveUptime)
+            {
+                ImGui::Text("%.1f", _epoch->epoch.uptime);
+            }
+            else
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+                ImGui::TextUnformatted("n/a");
+                ImGui::PopStyleColor();
+            }
         }
     }
     else if (_receiver->IsBusy())
@@ -584,6 +595,10 @@ void GuiWinReceiver::_DrawRxStatus()
         ImGui::SameLine(dataOffs);
         ImGui::PushStyleColor(ImGuiCol_Text, _winSettings->GetFixColour(epoch));
         ImGui::TextUnformatted(epoch->fixStr);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+        ImGui::Text("%.1f", ImGui::GetTime() - _fixTime);
         ImGui::PopStyleColor();
     }
 
@@ -672,18 +687,14 @@ void GuiWinReceiver::_DrawRxStatus()
         if (!epoch->haveGpsTow) { ImGui::PopStyleColor(); }
     }
 
-    ImGui::Selectable("Date");
+    ImGui::Selectable("Date/time");
     if (epoch)
     {
         ImGui::SameLine(dataOffs);
         if (!epoch->haveDate) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         ImGui::Text("%04d-%02d-%02d", epoch->year, epoch->month, epoch->day);
         if (!epoch->haveDate) { ImGui::PopStyleColor(); }
-    }
-    ImGui::Selectable("Time");
-    if (epoch)
-    {
-        ImGui::SameLine(dataOffs);
+        ImGui::SameLine();
         if (!epoch->haveTime) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         ImGui::Text("%02d:%02d", epoch->hour, epoch->minute);
         if (!epoch->haveTime) { ImGui::PopStyleColor(); }
@@ -698,7 +709,6 @@ void GuiWinReceiver::_DrawRxStatus()
     Gui::VerticalSeparator();
     ImGui::BeginChild("##StatusRight", ImVec2(0, statusHeight), false,
         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
-
 
     ImGui::Selectable("Sat. used");
     if (epoch)
@@ -949,6 +959,11 @@ void GuiWinReceiver::ProcessData(const Data &data)
             {
                 _epoch = data.epoch;
                 _epochTs = ImGui::GetTime();
+                if (_fixStr != _epoch->epoch.fixStr)
+                {
+                    _fixStr  = _epoch->epoch.fixStr;
+                    _fixTime = _epochTs;
+                }
             }
         default:
             break;
@@ -962,7 +977,7 @@ void GuiWinReceiver::_ClearData()
     // Our own stuff
     _log.Clear();
     _database->Clear();
-
+    _fixStr = nullptr;
     if (_clearCb)
     {
         _clearCb();

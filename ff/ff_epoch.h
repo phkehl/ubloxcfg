@@ -277,27 +277,13 @@ typedef struct EPOCH_s
     bool                haveDiffAge;
     double              diffAge;
 
-    // Private
-    int          _haveFix;
-    int          _haveTime;
-    int          _haveDate;
-    int          _haveLlh;
-    int          _haveHacc;
-    int          _haveVacc;
-    int          _havePacc;
-    int          _haveXyz;
-    int          _haveSig;
-    int          _haveSat;
-    int          _haveGpsTow;
-    int          _haveGpsWeek;
-    int          _haveRelPos;
-    bool         _relPosValid;
-    int          _haveDiffAge;
+    bool                haveUptime;
+    double              uptime;
 
-    uint32_t     _detectTow;
-    bool         _detectHaveTow;
-    int          _detectNmeaMs;
-    bool         _detectHaveNmeaMs;
+    // Private states for epoch detection and collection
+    uint64_t            _detect[3];
+    uint64_t            _collect[8];
+
 } EPOCH_t;
 
 #define EPOCH_NUM_GPS        32
@@ -312,7 +298,6 @@ typedef struct EPOCH_s
 #define EPOCH_FIRST_BDS       1
 #define EPOCH_FIRST_QZSS      1
 #define EPOCH_FIRST_GLO       1
-
 
 void epochInit(EPOCH_t *coll);
 

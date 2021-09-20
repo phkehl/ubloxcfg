@@ -255,7 +255,6 @@ typedef struct MSGINFO_s
 
 static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, const uint8_t msgId)
 {
-
     const MSGINFO_t msgInfo[] =
     {
         UBX_MESSAGES(_P_MSGINFO)
@@ -298,18 +297,12 @@ const char *ubxGnssStr(const uint8_t gnssId)
 {
     switch (gnssId)
     {
-        case UBX_GNSSID_GPS:
-            return "GPS";
-        case UBX_GNSSID_SBAS:
-            return "SBAS";
-        case UBX_GNSSID_GAL:
-            return "GAL";
-        case UBX_GNSSID_BDS:
-            return "BDS";
-        case UBX_GNSSID_QZSS:
-            return "QZSS";
-        case UBX_GNSSID_GLO:
-            return "GLO";
+        case UBX_GNSSID_GPS:  return "GPS";
+        case UBX_GNSSID_SBAS: return "SBAS";
+        case UBX_GNSSID_GAL:  return "GAL";
+        case UBX_GNSSID_BDS:  return "BDS";
+        case UBX_GNSSID_QZSS: return "QZSS";
+        case UBX_GNSSID_GLO:  return "GLO";
     }
     return "?";
 }
@@ -443,68 +436,50 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
         case UBX_GNSSID_GPS:
             switch (sigId)
             {
-                case UBX_SIGID_GPS_L1CA:
-                    return "L1CA";
-                case UBX_SIGID_GPS_L2CL:
-                    return "L2CL";
-                case UBX_SIGID_GPS_L2CM:
-                    return "L2CM";
+                case UBX_SIGID_GPS_L1CA: return "L1CA";
+                case UBX_SIGID_GPS_L2CL: return "L2CL";
+                case UBX_SIGID_GPS_L2CM: return "L2CM";
             }
             break;
         case UBX_GNSSID_SBAS:
             switch (sigId)
             {
-                case UBX_SIGID_SBAS_L1CA:
-                    return "L1CA";
+                case UBX_SIGID_SBAS_L1CA: return "L1CA";
             }
             break;
         case UBX_GNSSID_GAL:
             switch (sigId)
             {
                 // E1 ~ L1, E5 ~ L2
-                case UBX_SIGID_GAL_E1C:
-                    return "E1C";
-                case UBX_SIGID_GAL_E1B:
-                    return "E1B";
-                case UBX_SIGID_GAL_E5BI:
-                    return "E5BI";
-                case UBX_SIGID_GAL_E5BQ:
-                    return "E5BQ";
+                case UBX_SIGID_GAL_E1C:  return "E1C";
+                case UBX_SIGID_GAL_E1B:  return "E1B";
+                case UBX_SIGID_GAL_E5BI: return "E5BI";
+                case UBX_SIGID_GAL_E5BQ: return "E5BQ";
             }
             break;
         case UBX_GNSSID_BDS:
             switch (sigId)
             {
-                case UBX_SIGID_BDS_B1ID1:
-                    return "B1ID1";
-                case UBX_SIGID_BDS_B1ID2:
-                    return "B1ID2";
-                case UBX_SIGID_BDS_B2ID1:
-                    return "B2ID1";
-                case UBX_SIGID_BDS_B2ID2:
-                    return "B2ID2";
+                case UBX_SIGID_BDS_B1ID1: return "B1ID1";
+                case UBX_SIGID_BDS_B1ID2: return "B1ID2";
+                case UBX_SIGID_BDS_B2ID1: return "B2ID1";
+                case UBX_SIGID_BDS_B2ID2: return "B2ID2";
             }
             break;
         case UBX_GNSSID_QZSS:
             switch (sigId)
             {
-                case UBX_SIGID_QZSS_L1CA:
-                    return "L1CA";
-                case UBX_SIGID_QZSS_L1S:
-                    return "L1S";
-                case UBX_SIGID_QZSS_L2CM:
-                    return "L2CM";
-                case UBX_SIGID_QZSS_L2CL:
-                    return "L2CL";
+                case UBX_SIGID_QZSS_L1CA: return "L1CA";
+                case UBX_SIGID_QZSS_L1S:  return "L1S";
+                case UBX_SIGID_QZSS_L2CM: return "L2CM";
+                case UBX_SIGID_QZSS_L2CL: return "L2CL";
             }
             break;
         case UBX_GNSSID_GLO:
             switch (sigId)
             {
-                case UBX_SIGID_GLO_L1OF:
-                    return "L1OF";
-                case UBX_SIGID_GLO_L2OF:
-                    return "L2OF";
+                case UBX_SIGID_GLO_L1OF: return "L1OF";
+                case UBX_SIGID_GLO_L2OF: return "L2OF";
             }
             break;
     }
@@ -856,7 +831,7 @@ static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, cons
     }
     UBX_NAV_STATUS_V0_GROUP0_t sta;
     memcpy(&sta, &msg[UBX_HEAD_SIZE], sizeof(sta));
-    return snprintf(info, size, "%010.3f %.3f %.3f",
+    return snprintf(info, size, "%010.3f ttff=%.3f sss=%.3f",
         (double)sta.iTow * 1e-3, (double)sta.ttff * 1e-3, (double)sta.msss * 1e-3);
 }
 

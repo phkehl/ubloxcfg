@@ -85,6 +85,18 @@ uint32_t timeOfDay(void);
 
 #define CLIP(x, a, b) ((x) <= (a) ? (a) : ((x) >= (b) ? (b) : (x))) //!< Clip value in range [a:b] \hideinitializer
 
+#ifdef __cplusplus
+#  ifndef _Static_assert
+#    define _Static_assert static_assert // static_assert only in c++11 and later
+#  endif
+#endif
+
+//! Static (compile-time) assertion
+#define STATIC_ASSERT(expr) _Static_assert((expr), #expr)
+
+//! Size of struct member
+#define SIZEOF_MEMBER(_type, _member) sizeof((((_type *)NULL)->_member))
+
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }

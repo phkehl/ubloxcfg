@@ -76,8 +76,10 @@ class GuiWinReceiver : public GuiWin
         bool                 _focusPortInput;
 
         std::shared_ptr<Ff::Epoch> _epoch;
-        double _epochTs;
-        double _epochAge;
+        double               _epochTs;
+        double               _epochAge;
+        const char          *_fixStr;
+        double               _fixTime;
 
         std::unique_ptr<std::ofstream> _recordHandle;
         uint32_t             _recordSize;

@@ -96,7 +96,7 @@ int parseRun(const bool extraInfo, const bool doEpoch)
         parserAdd(&parser, buf, num);
 
         PARSER_MSG_t msg;
-        while (parserProcess(&parser, &msg))
+        while (parserProcess(&parser, &msg, true))
         {
             nMsgs++;
             sMsgs += msg.size;

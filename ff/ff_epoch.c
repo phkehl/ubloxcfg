@@ -45,13 +45,46 @@ void epochInit(EPOCH_t *coll)
     memset(coll, 0, sizeof(*coll));
 }
 
-static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg);
-static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea);
+// Private epoch collector state
+typedef struct EPOCH_COLLECT_s
+{
+    int          haveFix;
+    int          haveTime;
+    int          haveDate;
+    int          haveLlh;
+    int          haveHacc;
+    int          haveVacc;
+    int          havePacc;
+    int          haveXyz;
+    int          haveSig;
+    int          haveSat;
+    int          haveGpsTow;
+    int          haveGpsWeek;
+    int          haveRelPos;
+    bool         relPosValid;
+    int          haveDiffAge;
+} EPOCH_COLLECT_t;
 
-static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg);
-static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea);
+STATIC_ASSERT(SIZEOF_MEMBER(EPOCH_t, _collect) >= sizeof(EPOCH_COLLECT_t));
 
-static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch);
+typedef struct EPOCH_DETECT_s
+{
+    uint32_t     seq;
+    uint32_t     ubxItow;
+    bool         haveUbxItow;
+    int          nmeaMs;
+    bool         haveNmeaMs;
+} EPOCH_DETECT_t;
+
+STATIC_ASSERT(SIZEOF_MEMBER(EPOCH_t, _detect) >= sizeof(EPOCH_DETECT_t));
+
+static bool _detectUbx(EPOCH_DETECT_t *detect, const PARSER_MSG_t *msg);
+static bool _detectNmea(EPOCH_DETECT_t *detect, const NMEA_MSG_t *nmea);
+
+static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MSG_t *msg);
+static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG_t *nmea);
+
+static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch);
 
 bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
 {
@@ -59,6 +92,8 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     {
         return false;
     }
+    EPOCH_COLLECT_t *collect = (EPOCH_COLLECT_t *)coll->_collect;
+    EPOCH_DETECT_t  *detect  = (EPOCH_DETECT_t *)coll->_detect;
 
     // Decode NMEA here, as this is quite expensive
     NMEA_MSG_t nmea;
@@ -69,23 +104,23 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     }
 
     // Detect end of epoch / start of next epoch
-    bool detect = false;
+    bool complete = false;
     switch (msg->type)
     {
         case PARSER_MSGTYPE_UBX:
-            detect = _detectUbx(coll, msg);
-            if (detect)
+            complete = _detectUbx(detect, msg);
+            if (complete)
             {
-                coll->_detectHaveNmeaMs = false;
+                detect->haveNmeaMs = false;
             }
             break;
         case PARSER_MSGTYPE_NMEA:
             if (haveNmea)
             {
-                detect = _detectNmea(coll, &nmea);
-                if (detect)
+                complete = _detectNmea(detect, &nmea);
+                if (complete)
                 {
-                    coll->_detectHaveTow = false;
+                    detect->haveUbxItow = false;
                 }
             }
             break;
@@ -94,24 +129,21 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     }
 
     // Output epoch
-    if (detect)
+    if (complete)
     {
-        coll->seq++;
+        detect->seq++;
         if (epoch != NULL)
         {
-            _epochComplete(coll, epoch);
+            memcpy(epoch, coll, sizeof(*epoch));
+            epoch->seq = detect->seq;
+            _epochComplete(collect, epoch);
         }
-        const uint32_t seq = coll->seq;
-        const uint32_t tow = coll->_detectTow;
-        const bool detectHaveTow = coll->_detectHaveTow;
-        const int ms = coll->_detectNmeaMs;
-        const bool detectHaveMs = coll->_detectHaveNmeaMs;
+
+        // Initialise collector
+        const EPOCH_DETECT_t saveDetect = *detect;
         memset(coll, 0, sizeof(*coll));
-        coll->seq = seq;
-        coll->_detectTow = tow;
-        coll->_detectHaveTow = detectHaveTow;
-        coll->_detectNmeaMs = ms;
-        coll->_detectHaveNmeaMs = detectHaveMs;
+        *detect = saveDetect;
+
         //DEBUG("epoch %u ubx %u %d nmea %d %d", seq, tow, detectHaveTow, ms, detectHaveMs);
     }
 
@@ -119,22 +151,22 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
     switch (msg->type)
     {
         case PARSER_MSGTYPE_UBX:
-            _collectUbx(coll, msg);
+            _collectUbx(coll, collect, msg);
             break;
         case PARSER_MSGTYPE_NMEA:
             if (haveNmea)
             {
-                _collectNmea(coll, &nmea);
+                _collectNmea(coll, collect, &nmea);
             }
             break;
         default:
             break;
     }
 
-    return detect;
+    return complete;
 }
 
-static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
+static bool _detectUbx(EPOCH_DETECT_t *detect, const PARSER_MSG_t *msg)
 {
     const uint8_t clsId = UBX_CLSID(msg->data);
     if (clsId != UBX_NAV_CLSID)
@@ -142,12 +174,12 @@ static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
         return false;
     }
     const uint8_t msgId = UBX_MSGID(msg->data);
-    bool detect = false;
+    bool complete = false;
     switch (msgId)
     {
         case UBX_NAV_EOE_MSGID:
-            coll->_detectHaveTow = false;
-            detect = true;
+            detect->haveUbxItow = false;
+            complete = true;
             break;
         case UBX_NAV_PVT_MSGID:
         case UBX_NAV_SAT_MSGID:
@@ -171,12 +203,12 @@ static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
             {
                 uint32_t iTow;
                 memcpy(&iTow, &msg->data[UBX_HEAD_SIZE], sizeof(iTow));
-                if (coll->_detectHaveTow && (coll->_detectTow != iTow))
+                if (detect->haveUbxItow && (detect->ubxItow != iTow))
                 {
-                    detect = true;
+                    complete = true;
                 }
-                coll->_detectTow = iTow;
-                coll->_detectHaveTow = true;
+                detect->ubxItow = iTow;
+                detect->haveUbxItow = true;
             }
             break;
         case UBX_NAV_SVIN_MSGID:
@@ -188,22 +220,22 @@ static bool _detectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
             {
                 uint32_t iTow;
                 memcpy(&iTow, &msg->data[UBX_HEAD_SIZE + 4], sizeof(iTow));
-                if (coll->_detectHaveTow && (coll->_detectTow != iTow))
+                if (detect->haveUbxItow && (detect->ubxItow != iTow))
                 {
-                    detect = true;
+                    complete = true;
                 }
-                coll->_detectTow = iTow;
-                coll->_detectHaveTow = true;
+                detect->ubxItow = iTow;
+                detect->haveUbxItow = true;
             }
             break;
     }
 
-    return detect;
+    return complete;
 }
 
-static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
+static bool _detectNmea(EPOCH_DETECT_t *detect, const NMEA_MSG_t *nmea)
 {
-    bool detect = false;
+    bool complete = false;
     int ms = -1;
     switch (nmea->type)
     {
@@ -223,15 +255,15 @@ static bool _detectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
     }
     if (ms >= 0)
     {
-        if ( coll->_detectHaveNmeaMs && (ms != coll->_detectNmeaMs) )
+        if ( detect->haveNmeaMs && (ms != detect->nmeaMs) )
         {
-            detect = true;
+            complete = true;
         }
-        coll->_detectNmeaMs = ms;
-        coll->_detectHaveNmeaMs = true;
+        detect->nmeaMs = ms;
+        detect->haveNmeaMs = true;
     }
 
-    return detect;
+    return complete;
 }
 
 #define FLAG(field, flag) ( ((field) & (flag)) == (flag) )
@@ -661,7 +693,7 @@ static int _epochSatInfoSort(const void *a, const void *b)
 // "Quality" (precision) if information: UBX better than NMEA, UBX high-precision messages better than normal UBX
 enum { HAVE_NOTHING = 0, HAVE_NMEA = 1, HAVE_BETTER_NMEA = 2, HAVE_UBX = 3, HAVE_UBX_HP = 4 };
 
-static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
+static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MSG_t *msg)
 {
     const uint8_t clsId = UBX_CLSID(msg->data);
     if (clsId != UBX_NAV_CLSID)
@@ -679,9 +711,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 memcpy(&pvt, &msg->data[UBX_HEAD_SIZE], sizeof(pvt));
 
                 // Fix info
-                if (coll->_haveFix < HAVE_UBX)
+                if (collect->haveFix < HAVE_UBX)
                 {
-                    coll->_haveFix = HAVE_UBX;
+                    collect->haveFix = HAVE_UBX;
                     switch (pvt.fixType)
                     {
                         case UBX_NAV_PVT_V1_FIXTYPE_NOFIX:  coll->fix = EPOCH_FIX_NOFIX;  break;
@@ -708,9 +740,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 }
 
                 // Time
-                if (coll->_haveTime < HAVE_UBX)
+                if (collect->haveTime < HAVE_UBX)
                 {
-                    coll->_haveTime = HAVE_UBX;
+                    collect->haveTime = HAVE_UBX;
                     coll->hour        = pvt.hour;
                     coll->minute      = pvt.min;
                     coll->second      = (double)pvt.sec + ((double)pvt.nano * 1e-9);
@@ -721,9 +753,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 }
 
                 // Date
-                if (coll->_haveDate < HAVE_UBX)
+                if (collect->haveDate < HAVE_UBX)
                 {
-                    coll->_haveDate = HAVE_UBX;
+                    collect->haveDate = HAVE_UBX;
                     coll->year        = pvt.year;
                     coll->month       = pvt.month;
                     coll->day         = pvt.day;
@@ -732,9 +764,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 }
 
                 // Geodetic coordinates
-                if (coll->_haveLlh < HAVE_UBX)
+                if (collect->haveLlh < HAVE_UBX)
                 {
-                    coll->_haveLlh = HAVE_UBX;
+                    collect->haveLlh = HAVE_UBX;
                     coll->llh[0]      = deg2rad((double)pvt.lat * UBX_NAV_PVT_V1_LAT_SCALE);
                     coll->llh[1]      = deg2rad((double)pvt.lon * UBX_NAV_PVT_V1_LON_SCALE);
                     coll->llh[2]      = (double)pvt.height * UBX_NAV_PVT_V1_HEIGHT_SCALE;
@@ -745,14 +777,14 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 // Position accuracy estimate
                 if (pvt.fixType > UBX_NAV_PVT_V1_FIXTYPE_NOFIX)
                 {
-                    if (coll->_haveHacc < HAVE_UBX)
+                    if (collect->haveHacc < HAVE_UBX)
                     {
-                        coll->_haveHacc = HAVE_UBX;
+                        collect->haveHacc = HAVE_UBX;
                         coll->horizAcc = (double)pvt.hAcc * UBX_NAV_PVT_V1_HACC_SCALE;
                     }
-                    if (coll->_haveVacc < HAVE_UBX)
+                    if (collect->haveVacc < HAVE_UBX)
                     {
-                        coll->_haveVacc = HAVE_UBX;
+                        collect->haveVacc = HAVE_UBX;
                         coll->vertAcc     = (double)pvt.vAcc * UBX_NAV_PVT_V1_VACC_SCALE;
                     }
                 }
@@ -763,9 +795,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 coll->numSv       = pvt.numSV;
                 coll->haveNumSv   = true;
 
-                if (coll->_haveGpsTow < HAVE_UBX)
+                if (collect->haveGpsTow < HAVE_UBX)
                 {
-                    coll->_haveGpsTow = HAVE_UBX;
+                    collect->haveGpsTow = HAVE_UBX;
                     coll->gpsTow      = pvt.iTOW * UBX_NAV_PVT_V1_ITOW_SCALE;
                     coll->gpsTowAcc   = coll->timeAcc > 1e-3 ? coll->timeAcc : 1e-3; // 1ms at best
                     coll->haveGpsTow  = coll->haveTime;
@@ -778,16 +810,16 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 EPOCH_DEBUG("collect %s", msg->name);
                 UBX_NAV_POSECEF_V0_GROUP0_t pos;
                 memcpy(&pos, &msg->data[UBX_HEAD_SIZE], sizeof(pos));
-                if (coll->_haveXyz < HAVE_UBX)
+                if (collect->haveXyz < HAVE_UBX)
                 {
-                    coll->_haveXyz = HAVE_UBX;
+                    collect->haveXyz = HAVE_UBX;
                     coll->xyz[0] = (double)pos.ecefX * UBX_NAV_POSECEF_V0_ECEF_XYZ_SCALE;
                     coll->xyz[1] = (double)pos.ecefY * UBX_NAV_POSECEF_V0_ECEF_XYZ_SCALE;
                     coll->xyz[2] = (double)pos.ecefZ * UBX_NAV_POSECEF_V0_ECEF_XYZ_SCALE;
                 }
-                if (coll->_havePacc < HAVE_UBX)
+                if (collect->havePacc < HAVE_UBX)
                 {
-                    coll->_havePacc = HAVE_UBX;
+                    collect->havePacc = HAVE_UBX;
                     coll->posAcc = (double)pos.pAcc  * UBX_NAV_POSECEF_V0_PACC_SCALE;
                 }
             }
@@ -804,17 +836,17 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                     coll->haveGpsWeek = true;
                 }
 
-                if (coll->_haveGpsTow < HAVE_UBX_HP)
+                if (collect->haveGpsTow < HAVE_UBX_HP)
                 {
-                    coll->_haveGpsTow = HAVE_UBX_HP;
+                    collect->haveGpsTow = HAVE_UBX_HP;
                     coll->gpsTow      = (time.iTow * UBX_NAV_TIMEGPS_V0_ITOW_SCALE) + (time.fTOW * UBX_NAV_TIMEGPS_V0_FTOW_SCALE);
                     coll->gpsTowAcc   = time.tAcc * UBX_NAV_TIMEGPS_V0_TACC_SCALE;
                     coll->haveGpsTow  = FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_TOWVALID);
                 }
 
-                if (coll->_haveGpsWeek < HAVE_UBX)
+                if (collect->haveGpsWeek < HAVE_UBX)
                 {
-                    coll->_haveGpsWeek = HAVE_UBX;
+                    collect->haveGpsWeek = HAVE_UBX;
                     coll->gpsWeek      = time.week;
                     coll->haveGpsWeek  = FLAG(time.valid, UBX_NAV_TIMEGPS_V0_VALID_WEEKVALID);
                 }
@@ -834,16 +866,16 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 memcpy(&pos, &msg->data[UBX_HEAD_SIZE], sizeof(pos));
                 if (!FLAG(pos.flags, UBX_NAV_HPPOSECEF_V0_FLAGS_INVALIDECEF))
                 {
-                    if (coll->_haveXyz < HAVE_UBX_HP)
+                    if (collect->haveXyz < HAVE_UBX_HP)
                     {
-                        coll->_haveXyz = HAVE_UBX_HP;
+                        collect->haveXyz = HAVE_UBX_HP;
                         coll->xyz[0] = ((double)pos.ecefX * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_SCALE) + ((double)pos.ecefXHp * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_HP_SCALE);
                         coll->xyz[1] = ((double)pos.ecefY * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_SCALE) + ((double)pos.ecefYHp * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_HP_SCALE);
                         coll->xyz[2] = ((double)pos.ecefZ * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_SCALE) + ((double)pos.ecefZHp * UBX_NAV_HPPOSECEF_V0_ECEF_XYZ_HP_SCALE);
                     }
-                    if (coll->_havePacc < HAVE_UBX_HP)
+                    if (collect->havePacc < HAVE_UBX_HP)
                     {
-                        coll->_havePacc = HAVE_UBX_HP;
+                        collect->havePacc = HAVE_UBX_HP;
                         coll->posAcc = (double)pos.pAcc * UBX_NAV_HPPOSECEF_V0_PACC_SCALE;
                     }
                 }
@@ -864,8 +896,8 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                     coll->relAcc[1] = rel.accE * UBX_NAV_RELPOSNED_V1_ACCN_E_D_SCALE;
                     coll->relAcc[2] = rel.accD * UBX_NAV_RELPOSNED_V1_ACCN_E_D_SCALE;
                     coll->relLen    = (rel.relPosLength * UBX_NAV_RELPOSNED_V1_RELPOSLENGTH_SCALE) + (rel.relPosHPLength * UBX_NAV_RELPOSNED_V1_RELPOSHPLENGTH_SCALE);
-                    coll->_haveRelPos = HAVE_UBX_HP;
-                    coll->_relPosValid = FLAG(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSVALID);
+                    collect->haveRelPos = HAVE_UBX_HP;
+                    collect->relPosValid = FLAG(rel.flags, UBX_NAV_RELPOSNED_V1_FLAGS_RELPOSVALID);
                 }
             }
             break;
@@ -873,9 +905,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
             if ( (msg->size >= (int)UBX_NAV_SIG_V0_MIN_SIZE) && (UBX_NAV_SIG_VERSION_GET(msg->data) == UBX_NAV_SIG_V0_VERSION) )
             {
                 EPOCH_DEBUG("collect %s", msg->name);
-                if (coll->_haveSig < HAVE_UBX)
+                if (collect->haveSig < HAVE_UBX)
                 {
-                    coll->_haveSig = HAVE_UBX;
+                    collect->haveSig = HAVE_UBX;
                     UBX_NAV_SIG_V0_GROUP0_t head;
                     memcpy(&head, &msg->data[UBX_HEAD_SIZE], sizeof(head));
                     int ix;
@@ -908,9 +940,9 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
             if ( (msg->size >= (int)UBX_NAV_SAT_V1_MIN_SIZE) && (UBX_NAV_SAT_VERSION_GET(msg->data) == UBX_NAV_SAT_V1_VERSION) )
             {
                 EPOCH_DEBUG("collect %s", msg->name);
-                if (coll->_haveSat < HAVE_UBX)
+                if (collect->haveSat < HAVE_UBX)
                 {
-                    coll->_haveSat = HAVE_UBX;
+                    collect->haveSat = HAVE_UBX;
                     UBX_NAV_SAT_V1_GROUP0_t head;
                     memcpy(&head, &msg->data[UBX_HEAD_SIZE], sizeof(head));
                     int ix;
@@ -966,26 +998,39 @@ static void _collectUbx(EPOCH_t *coll, const PARSER_MSG_t *msg)
                 }
             }
             break;
+        case UBX_NAV_STATUS_MSGID:
+            if (msg->size == UBX_NAV_STATUS_V0_SIZE)
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_STATUS_V0_GROUP0_t status;
+                memcpy(&status, &msg->data[UBX_HEAD_SIZE], sizeof(status));
+                if (!coll->haveUptime)
+                {
+                    coll->haveUptime = true;
+                    coll->uptime = (double)status.msss * UBX_NAV_STATUS_V0_MSSS_SCALE;
+                }
+            }
+            break;
     }
 }
 
-static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
+static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG_t *nmea)
 {
     switch (nmea->type)
     {
         case NMEA_TYPE_GGA:
             EPOCH_DEBUG("collect %s", msg->name);
-            if (coll->_haveTime < HAVE_NMEA)
+            if (collect->haveTime < HAVE_NMEA)
             {
-                coll->_haveTime = HAVE_NMEA;
+                collect->haveTime = HAVE_NMEA;
                 coll->hour      = nmea->gga.time.hour;
                 coll->minute    = nmea->gga.time.minute;
                 coll->second    = nmea->gga.time.second;
                 coll->haveTime  = nmea->gga.time.valid;
             }
-            if (coll->_haveFix < HAVE_NMEA)
+            if (collect->haveFix < HAVE_NMEA)
             {
-                coll->_haveFix = HAVE_NMEA;
+                collect->haveFix = HAVE_NMEA;
                 switch (nmea->gga.fix)
                 {
                     case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
@@ -999,18 +1044,18 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
                 }
                 coll->fixOk = true;
             }
-            if ( (nmea->gga.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_BETTER_NMEA) )
+            if ( (nmea->gga.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_BETTER_NMEA) )
             {
-                coll->_haveLlh = HAVE_BETTER_NMEA;
+                collect->haveLlh = HAVE_BETTER_NMEA;
                 coll->llh[0]      = deg2rad(nmea->gga.lat);
                 coll->llh[1]      = deg2rad(nmea->gga.lon);
                 coll->llh[2]      = nmea->gga.height;
                 coll->heightMsl   = nmea->gga.heightMsl;
                 coll->haveMsl     = true;
             }
-            if ( (nmea->gga.diffAge > -DBL_EPSILON) && (coll->_haveDiffAge < HAVE_NMEA) )
+            if ( (nmea->gga.diffAge > -DBL_EPSILON) && (collect->haveDiffAge < HAVE_NMEA) )
             {
-                coll->_haveDiffAge = HAVE_NMEA;
+                collect->haveDiffAge = HAVE_NMEA;
                 coll->diffAge = nmea->gga.diffAge;
                 coll->haveDiffAge = true;
             }
@@ -1024,25 +1069,25 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
             break;
         case NMEA_TYPE_RMC:
             EPOCH_DEBUG("collect %s", msg->name);
-            if (coll->_haveTime < HAVE_NMEA)
+            if (collect->haveTime < HAVE_NMEA)
             {
-                coll->_haveTime = HAVE_NMEA;
+                collect->haveTime = HAVE_NMEA;
                 coll->hour      = nmea->rmc.time.hour;
                 coll->minute    = nmea->rmc.time.minute;
                 coll->second    = nmea->rmc.time.second;
                 coll->haveTime  = nmea->rmc.time.valid;
             }
-            if (coll->_haveDate < HAVE_NMEA)
+            if (collect->haveDate < HAVE_NMEA)
             {
-                coll->_haveDate = HAVE_NMEA;
+                collect->haveDate = HAVE_NMEA;
                 coll->day       = nmea->rmc.date.day;
                 coll->month     = nmea->rmc.date.month;
                 coll->year      = nmea->rmc.date.year;
                 coll->haveDate  = nmea->rmc.date.valid;
             }
-            if (coll->_haveFix < HAVE_BETTER_NMEA)
+            if (collect->haveFix < HAVE_BETTER_NMEA)
             {
-                coll->_haveFix = HAVE_BETTER_NMEA;
+                collect->haveFix = HAVE_BETTER_NMEA;
                 switch (nmea->rmc.fix)
                 {
                     case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
@@ -1056,9 +1101,9 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
                 }
                 coll->fixOk = nmea->rmc.valid;
             }
-            if ( (nmea->rmc.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_NMEA) )
+            if ( (nmea->rmc.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_NMEA) )
             {
-                coll->_haveLlh = HAVE_BETTER_NMEA;
+                collect->haveLlh = HAVE_BETTER_NMEA;
                 coll->llh[0]      = deg2rad(nmea->rmc.lat);
                 coll->llh[1]      = deg2rad(nmea->rmc.lon);
                 coll->llh[2]      = 0.0;
@@ -1068,17 +1113,17 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
             break;
         case NMEA_TYPE_GLL:
             EPOCH_DEBUG("collect %s", msg->name);
-            if (coll->_haveTime < HAVE_NMEA)
+            if (collect->haveTime < HAVE_NMEA)
             {
-                coll->_haveTime = HAVE_NMEA;
+                collect->haveTime = HAVE_NMEA;
                 coll->hour      = nmea->gll.time.hour;
                 coll->minute    = nmea->gll.time.minute;
                 coll->second    = nmea->gll.time.second;
                 coll->haveTime  = nmea->gll.time.valid;
             }
-            if (coll->_haveFix < HAVE_BETTER_NMEA)
+            if (collect->haveFix < HAVE_BETTER_NMEA)
             {
-                coll->_haveFix = HAVE_BETTER_NMEA;
+                collect->haveFix = HAVE_BETTER_NMEA;
                 switch (nmea->gll.fix)
                 {
                     case NMEA_FIX_UNKNOWN:   coll->fix = EPOCH_FIX_UNKNOWN;   break;
@@ -1092,9 +1137,9 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
                 }
                 coll->fixOk = nmea->gll.valid;
             }
-            if ( (nmea->gll.fix > NMEA_FIX_NOFIX) && (coll->_haveLlh < HAVE_NMEA) )
+            if ( (nmea->gll.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_NMEA) )
             {
-                coll->_haveLlh = HAVE_BETTER_NMEA;
+                collect->haveLlh = HAVE_BETTER_NMEA;
                 coll->llh[0]      = deg2rad(nmea->gll.lat);
                 coll->llh[1]      = deg2rad(nmea->gll.lon);
                 coll->llh[2]      = 0.0;
@@ -1104,9 +1149,9 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
             break;
         case NMEA_TYPE_GSV:
             EPOCH_DEBUG("collect %s", msg->name);
-            if (coll->_haveSat <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
+            if (collect->haveSat <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
             {
-                coll->_haveSat = HAVE_NMEA;
+                collect->haveSat = HAVE_NMEA;
                 for (int ix = 0; (ix < nmea->gsv.nSvs) && (coll->numSatellites < (int)NUMOF(coll->satellites)); ix++)
                 {
                     EPOCH_SATINFO_t *sat = &coll->satellites[coll->numSatellites];
@@ -1119,9 +1164,9 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
                     coll->numSatellites++;
                 }
             }
-            if (coll->_haveSig <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
+            if (collect->haveSig <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
             {
-                coll->_haveSig = HAVE_NMEA;
+                collect->haveSig = HAVE_NMEA;
                 for (int ix = 0; (ix < nmea->gsv.nSvs) && (coll->numSignals < (int)NUMOF(coll->signals)); ix++)
                 {
                     EPOCH_SIGINFO_t *sig = &coll->signals[coll->numSignals];
@@ -1154,22 +1199,20 @@ static void _collectNmea(EPOCH_t *coll, const NMEA_MSG_t *nmea)
     }
 }
 
-static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch)
+static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
 {
-    memcpy(epoch, coll, sizeof(*epoch));
     epoch->valid = true;
     epoch->ts = TIME();
-    coll = NULL; // must work on epoch, not coll
 
     // Convert stuff, prefer better quality, FIXME: this assumes WGS84...
 
-    if (epoch->_haveLlh > epoch->_haveXyz)
+    if (collect->haveLlh > collect->haveXyz)
     {
         EPOCH_DEBUG("complete: llh (%d) -> xyz (%d)", epoch->_haveLlh, epoch->_haveXyz);
         llh2xyz_vec(epoch->llh, epoch->xyz);
         epoch->havePos = epoch->fix > EPOCH_FIX_NOFIX;
     }
-    else if (epoch->_haveXyz > epoch->_haveLlh)
+    else if (collect->haveXyz > collect->haveLlh)
     {
         EPOCH_DEBUG("complete: xyz (%d) -> llh (%d)", epoch->_haveXyz, epoch->_haveLlh);
         xyz2llh_vec(epoch->xyz, epoch->llh);
@@ -1180,12 +1223,86 @@ static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch)
         EPOCH_DEBUG("complete: llh (%d) = xyz (%d)", epoch->_haveLlh, epoch->_haveXyz);
     }
 
-    if ( (epoch->_haveHacc > HAVE_NOTHING) && (epoch->_haveVacc > HAVE_NOTHING) && (epoch->_havePacc < HAVE_UBX) )
+    if ( (collect->haveHacc > HAVE_NOTHING) && (collect->haveVacc > HAVE_NOTHING) && (collect->havePacc < HAVE_UBX) )
     {
         epoch->posAcc = sqrt( (epoch->horizAcc * epoch->horizAcc) + (epoch->vertAcc * epoch->vertAcc) );
-        epoch->_havePacc = MIN(epoch->_haveHacc, epoch->_haveVacc);
+        //collect->havePacc = MIN(collect->haveHacc, collect->haveVacc);
     }
 
+    if (collect->haveRelPos > HAVE_NOTHING)
+    {
+        epoch->haveRelPos = true;
+        // Sometimes fix is still RTK_FIXED/FLOAT but UBX-NAV-RELPOSNED.relPosValid indicates that the
+        // relative (RTK) position is no longer available. Don't trust that fix.
+        if ( (epoch->fix >= EPOCH_FIX_RTK_FLOAT) && !collect->relPosValid )
+        {
+            epoch->fixOk = false;
+        }
+    }
+
+    // Stringify and sort list of satellites
+    for (int ix = 0; ix < epoch->numSatellites; ix++)
+    {
+        EPOCH_SATINFO_t *sat = &epoch->satellites[ix];
+        sat->gnssStr    = sat->gnss    < NUMOF(kEpochGnssStrs) ? kEpochGnssStrs[sat->gnss]   : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+        sat->orbUsedStr = sat->orbUsed < NUMOF(kEpochOrbStrs)  ? kEpochOrbStrs[sat->orbUsed] : kEpochOrbStrs[EPOCH_SATORB_NONE];
+        sat->svStr      = _epochSvStr(sat->gnss, sat->sv);
+        sat->_order     = ((sat->gnss & 0xff) << 24) | ((sat->sv & 0xff) << 16);
+    }
+    qsort(epoch->satellites, epoch->numSatellites, sizeof(*epoch->satellites), _epochSatInfoSort);
+
+    // Stringify and sort list of signals
+    for (int ix = 0; ix < epoch->numSignals; ix++)
+    {
+        EPOCH_SIGINFO_t *sig = &epoch->signals[ix];
+        switch (sig->signal)
+        {
+            case EPOCH_SIGNAL_UNKNOWN:    sig->band = EPOCH_BAND_UNKNOWN; break;
+            case EPOCH_SIGNAL_GPS_L1CA:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GPS_L2C:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_SBAS_L1CA:  sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GAL_E1:     sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GAL_E5B:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_BDS_B1I:    sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_BDS_B2I:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_QZSS_L1CA:  sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_QZSS_L1S:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_QZSS_L2C:   sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
+        }
+        sig->gnssStr     = sig->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[sig->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
+        sig->svStr       = _epochSvStr(sig->gnss, sig->sv);
+        sig->signalStr   = sig->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[sig->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
+        sig->bandStr     = sig->band   < NUMOF(kEpochBandStrs)      ? kEpochBandStrs[sig->band]        : kEpochBandStrs[EPOCH_BAND_UNKNOWN];
+        sig->useStr      = sig->use    < NUMOF(kEpochSiqUseStrs)    ? kEpochSiqUseStrs[sig->use]       : kEpochSiqUseStrs[EPOCH_SIGUSE_UNKNOWN];
+        sig->corrStr     = sig->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[sig->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
+        sig->ionoStr     = sig->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[sig->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
+        sig->healthStr   = sig->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[sig->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
+        sig->_order = ((sig->gnss & 0xff) << 24) | ((sig->sv & 0xffff) << 8) | ((sig->signal & 0xff) << 0);
+    }
+    qsort(&epoch->signals, epoch->numSignals, sizeof(*epoch->signals), _epochSigInfoSort);
+
+    // TODO: time/date <--(leapSec)--> wno/tow
+
+    // Stringify fix type
+    epoch->fixStr = epoch->fixOk ? "UNKN" : "(UNKN)";
+    switch (epoch->fix)
+    {
+        case EPOCH_FIX_UNKNOWN: break;
+        case EPOCH_FIX_NOFIX:        epoch->fixStr = epoch->fixOk ? "NOFIX"        : "(NOFIX)";        break;
+        case EPOCH_FIX_DRONLY:       epoch->fixStr = epoch->fixOk ? "DR"           : "(DR)";           break;
+        case EPOCH_FIX_TIME:         epoch->fixStr = epoch->fixOk ? "TIME"         : "(TIME)";         break;
+        case EPOCH_FIX_S2D:          epoch->fixStr = epoch->fixOk ? "S2D"          : "(2D)";           break;
+        case EPOCH_FIX_S3D:          epoch->fixStr = epoch->fixOk ? "S3D"          : "(3D)";           break;
+        case EPOCH_FIX_S3D_DR:       epoch->fixStr = epoch->fixOk ? "S3D+DR"       : "(3D+DR)";        break;
+        case EPOCH_FIX_RTK_FLOAT:    epoch->fixStr = epoch->fixOk ? "RTK_FLOAT"    : "(RTK_FLOAT)";    break;
+        case EPOCH_FIX_RTK_FIXED:    epoch->fixStr = epoch->fixOk ? "RTK_FIXED"    : "(RTK_FIXED)";    break;
+        case EPOCH_FIX_RTK_FLOAT_DR: epoch->fixStr = epoch->fixOk ? "RTK_FLOAT_DR" : "(RTK_FLOAT_DR)"; break;
+        case EPOCH_FIX_RTK_FIXED_DR: epoch->fixStr = epoch->fixOk ? "RTK_FIXED_DR" : "(RTK_FIXED_DR)"; break;
+    }
+
+    // Count number of signals (and satellites) used, calculate CN0 histogram
     if (epoch->numSignals > 0)
     {
         epoch->haveNumSig = true;
@@ -1237,77 +1354,7 @@ static void _epochComplete(const EPOCH_t *coll, EPOCH_t *epoch)
         }
     }
 
-    if (epoch->_haveRelPos > HAVE_NOTHING)
-    {
-        epoch->haveRelPos = true;
-        // Somethimes fix is still RTK_FIXED/FLOAT but UBX-NAV-RELPOSNED.relPosValid indicates that the
-        // relative (RTK) position is no longer available. Don't trust that fix.
-        if ( (epoch->fix >= EPOCH_FIX_RTK_FLOAT) && !epoch->_relPosValid )
-        {
-            epoch->fixOk = false;
-        }
-    }
-
-    for (int ix = 0; ix < epoch->numSatellites; ix++)
-    {
-        EPOCH_SATINFO_t *sat = &epoch->satellites[ix];
-        sat->gnssStr    = sat->gnss    < NUMOF(kEpochGnssStrs) ? kEpochGnssStrs[sat->gnss]   : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
-        sat->orbUsedStr = sat->orbUsed < NUMOF(kEpochOrbStrs)  ? kEpochOrbStrs[sat->orbUsed] : kEpochOrbStrs[EPOCH_SATORB_NONE];
-        sat->svStr      = _epochSvStr(sat->gnss, sat->sv);
-        sat->_order     = ((sat->gnss & 0xff) << 24) | ((sat->sv & 0xff) << 16);
-    }
-    qsort(epoch->satellites, epoch->numSatellites, sizeof(*epoch->satellites), _epochSatInfoSort);
-
-    for (int ix = 0; ix < epoch->numSignals; ix++)
-    {
-        EPOCH_SIGINFO_t *sig = &epoch->signals[ix];
-        switch (sig->signal)
-        {
-            case EPOCH_SIGNAL_UNKNOWN:    sig->band = EPOCH_BAND_UNKNOWN; break;
-            case EPOCH_SIGNAL_GPS_L1CA:   sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_GPS_L2C:    sig->band = EPOCH_BAND_L2; break;
-            case EPOCH_SIGNAL_SBAS_L1CA:  sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_GAL_E1:     sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_GAL_E5B:    sig->band = EPOCH_BAND_L2; break;
-            case EPOCH_SIGNAL_BDS_B1I:    sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_BDS_B2I:    sig->band = EPOCH_BAND_L2; break;
-            case EPOCH_SIGNAL_QZSS_L1CA:  sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_QZSS_L1S:   sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_QZSS_L2C:   sig->band = EPOCH_BAND_L2; break;
-            case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
-            case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
-        }
-        sig->gnssStr     = sig->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[sig->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
-        sig->svStr       = _epochSvStr(sig->gnss, sig->sv);
-        sig->signalStr   = sig->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[sig->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];
-        sig->bandStr     = sig->band   < NUMOF(kEpochBandStrs)      ? kEpochBandStrs[sig->band]        : kEpochBandStrs[EPOCH_BAND_UNKNOWN];
-        sig->useStr      = sig->use    < NUMOF(kEpochSiqUseStrs)    ? kEpochSiqUseStrs[sig->use]       : kEpochSiqUseStrs[EPOCH_SIGUSE_UNKNOWN];
-        sig->corrStr     = sig->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[sig->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
-        sig->ionoStr     = sig->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[sig->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
-        sig->healthStr   = sig->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[sig->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
-        sig->_order = ((sig->gnss & 0xff) << 24) | ((sig->sv & 0xffff) << 8) | ((sig->signal & 0xff) << 0);
-    }
-    qsort(&epoch->signals, epoch->numSignals, sizeof(*epoch->signals), _epochSigInfoSort);
-
-    // TODO: time/date <--(leapSec)--> wno/tow
-
-    // Stringify
-    epoch->fixStr = epoch->fixOk ? "UNKN" : "(UNKN)";
-    switch (epoch->fix)
-    {
-        case EPOCH_FIX_UNKNOWN: break;
-        case EPOCH_FIX_NOFIX:        epoch->fixStr = epoch->fixOk ? "NOFIX"        : "(NOFIX)";     break;
-        case EPOCH_FIX_DRONLY:       epoch->fixStr = epoch->fixOk ? "DR"           : "(DR)";        break;
-        case EPOCH_FIX_TIME:         epoch->fixStr = epoch->fixOk ? "TIME"         : "(TIME)";      break;
-        case EPOCH_FIX_S2D:          epoch->fixStr = epoch->fixOk ? "S2D"          : "(2D)";        break;
-        case EPOCH_FIX_S3D:          epoch->fixStr = epoch->fixOk ? "S3D"          : "(3D)";        break;
-        case EPOCH_FIX_S3D_DR:       epoch->fixStr = epoch->fixOk ? "S3D+DR"       : "(3D+DR)";     break;
-        case EPOCH_FIX_RTK_FLOAT:    epoch->fixStr = epoch->fixOk ? "RTK_FLOAT"    : "(RTK_FLOAT)"; break;
-        case EPOCH_FIX_RTK_FIXED:    epoch->fixStr = epoch->fixOk ? "RTK_FIXED"    : "(RTK_FIXED)"; break;
-        case EPOCH_FIX_RTK_FLOAT_DR: epoch->fixStr = epoch->fixOk ? "RTK_FLOAT_DR" : "(RTK_FLOAT_DR)"; break;
-        case EPOCH_FIX_RTK_FIXED_DR: epoch->fixStr = epoch->fixOk ? "RTK_FIXED_DR" : "(RTK_FIXED_DR)"; break;
-    }
-
+    // Epoch info stringification
     snprintf(epoch->str, sizeof(epoch->str),
         "%-12s %2d %04d-%02d-%02d (%c) %02d:%02d:%06.3f (%c) %+11.7f %+12.7f (%5.1f) %+5.0f (%5.1f) %4.1f",
         epoch->fixStr, epoch->numSv,

@@ -305,7 +305,7 @@
                     "stopAtEntry": false,
                     "preLaunchTask" : "make cfgtool-debug",
                     "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-p", "/dev/ttyACM0", "dump" ],
+                    "args": [ "-v", "-p", "tcp://fry:20001", "dump" ],
                     "cwd": "${workspaceFolder}"
                 },
                 {
