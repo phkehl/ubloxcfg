@@ -1,0 +1,118 @@
+/* ************************************************************************************************/ // clang-format off
+// flipflip's cfggui
+//
+// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// https://oinkzwurgl.org/hacking/ubloxcfg
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with this program.
+// If not, see <https://www.gnu.org/licenses/>.
+
+#include "gui_app.hpp"
+#include "gui_settings.hpp"
+#include "gui_msg.hpp"
+#include "gui_msg_ubx_esf_meas.hpp"
+#include "gui_msg_ubx_esf_status.hpp"
+#include "gui_msg_ubx_mon_comms.hpp"
+#include "gui_msg_ubx_mon_hw.hpp"
+#include "gui_msg_ubx_mon_hw2.hpp"
+#include "gui_msg_ubx_mon_hw3.hpp"
+#include "gui_msg_ubx_mon_rf.hpp"
+#include "gui_msg_ubx_mon_span.hpp"
+#include "gui_msg_ubx_mon_ver.hpp"
+#include "gui_msg_ubx_nav_cov.hpp"
+#include "gui_msg_ubx_rxm_rawx.hpp"
+#include "gui_msg_ubx_rxm_rtcm.hpp"
+#include "gui_msg_ubx_rxm_sfrbx.hpp"
+
+/* ****************************************************************************************************************** */
+
+GuiMsg::GuiMsg(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+    _winSettings  { GuiApp::GetInstance().GetSettings() },
+    _receiver     { receiver },
+    _logfile      { logfile }
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsg::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
+{
+    UNUSED(msg);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiMsg::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+{
+    UNUSED(msg);
+    UNUSED(sizeAvail);
+    return false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsg::Buttons()
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsg::Clear()
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int value, const char *label, const float offs)
+{
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine(offs);
+
+    for (const auto &f: flags)
+    {
+        if (value == f.value)
+        {
+            const bool colour = (f.colour != GUI_COLOUR(C_NONE));
+            if (colour) { ImGui::PushStyleColor(ImGuiCol_Text, f.colour); }
+            ImGui::TextUnformatted(f.text);
+            if (colour) { ImGui::PopStyleColor(); }
+            return;
+        }
+    }
+
+    char str[100];
+    snprintf(str, sizeof(str), "? (%d)", value);
+    ImGui::TextUnformatted(str);
+}
+
+
+/* ****************************************************************************************************************** */
+
+/* static */ std::unique_ptr<GuiMsg> GuiMsg::GetRenderer(const std::string &msgName,
+    std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile)
+{
+    if      (msgName == "UBX-ESF-MEAS")      { return std::make_unique<GuiMsgUbxEsfMeas>(receiver, logfile);     }
+    else if (msgName == "UBX-ESF-STATUS")    { return std::make_unique<GuiMsgUbxEsfStatus>(receiver, logfile);   }
+    else if (msgName == "UBX-MON-COMMS")     { return std::make_unique<GuiMsgUbxMonComms>(receiver, logfile);    }
+    else if (msgName == "UBX-MON-HW")        { return std::make_unique<GuiMsgUbxMonHw>(receiver, logfile);       }
+    else if (msgName == "UBX-MON-HW2")       { return std::make_unique<GuiMsgUbxMonHw2>(receiver, logfile);      }
+    else if (msgName == "UBX-MON-HW3")       { return std::make_unique<GuiMsgUbxMonHw3>(receiver, logfile);      }
+    else if (msgName == "UBX-MON-RF")        { return std::make_unique<GuiMsgUbxMonRf>(receiver, logfile);       }
+    else if (msgName == "UBX-MON-SPAN")      { return std::make_unique<GuiMsgUbxMonSpan>(receiver, logfile);     }
+    else if (msgName == "UBX-MON-VER")       { return std::make_unique<GuiMsgUbxMonVer>(receiver, logfile);      }
+    else if (msgName == "UBX-NAV-COV")       { return std::make_unique<GuiMsgUbxNavCov>(receiver, logfile);      }
+    else if (msgName == "UBX-RXM-RAWX")      { return std::make_unique<GuiMsgUbxRxmRawx>(receiver, logfile);     }
+    else if (msgName == "UBX-RXM-RTCM")      { return std::make_unique<GuiMsgUbxRxmRtcm>(receiver, logfile);     }
+    else if (msgName == "UBX-RXM-SFRBX")     { return std::make_unique<GuiMsgUbxRxmSfrbx>(receiver, logfile);    }
+    else                                     { return std::make_unique<GuiMsg>(receiver, logfile);               }
+}
+
+/* ****************************************************************************************************************** */

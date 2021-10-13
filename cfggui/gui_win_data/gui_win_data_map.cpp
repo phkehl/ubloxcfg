@@ -436,7 +436,7 @@ void GuiWinDataMap::DrawWindow()
             }
             const float len = val * m2px;
             const ImVec2 offs = cursor + ImVec2(_winSettings->charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
-            draw->AddLine(offs, offs + ImVec2(len, 0), Gui::Black, 4.0f);
+            draw->AddLine(offs, offs + ImVec2(len, 0), GUI_COLOUR(C_BLACK), 4.0f);
             //DEBUG("lenM=%f log=%f val=%f len=%f", scaleLenM, n, val, len);
         }
     }

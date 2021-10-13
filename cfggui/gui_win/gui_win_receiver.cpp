@@ -46,8 +46,6 @@
 #include "gui_win_data_satellites.hpp"
 #include "gui_win_data_stats.hpp"
 
-#include "gui_stuff.hpp"
-
 #include "gui_win_receiver.hpp"
 
 /* ****************************************************************************************************************** */
@@ -56,7 +54,9 @@ GuiWinReceiver::GuiWinReceiver(const std::string &name, std::shared_ptr<Receiver
     _rxVerStr{}, _receiver{receiver}, _database{database}, _dataWinButtonsCb{nullptr}, _titleChangeCb{nullptr},
     _port{}, _baudrate{0}, _log{1000, false},
     _stopSent{false}, _triggerConnect{false}, _focusPortInput{false},
-    _recordHandle{nullptr}, _recordSize{0}, _recordFileName{""}, _recordDialogTo{-1.0}, _recordError{""}, _recordMessage{""}
+    _recordFileDialog{ std::make_unique<GuiWinFileDialog>(_winName + "RecordFileDialog") },
+    _recordFileName{ std::make_shared<std::string>() },
+    _recordHandle{nullptr}, _recordSize{0}, _recordMessage{""}
 {
     _winName       = name;
     _winIniPos     = POS_NW;
@@ -198,7 +198,7 @@ void GuiWinReceiver::_DrawConnectionWidget()
         // Ready (i.e. conncted and ready to receive commands)
         else if (_receiver->IsReady())
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen);
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN));
             if (ImGui::Button(ICON_FK_STOP "###StartStop", _winSettings->iconButtonSize))
             {
                 _receiver->Stop();
@@ -209,7 +209,7 @@ void GuiWinReceiver::_DrawConnectionWidget()
         // Busy (i.e. connected and busy doing something)
         else if (_receiver->IsBusy())
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, Gui::Green);
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREEN));
             if (ImGui::Button(ICON_FK_EJECT "###StartStop", _winSettings->iconButtonSize))
             {
                 _receiver->Stop(true);
@@ -284,6 +284,7 @@ void GuiWinReceiver::_DrawConnectionWidget()
         {
             _triggerConnect = false;
         }
+        ImGui::PopItemWidth();
         //ImGui::SetItemDefaultFocus();
         Gui::ItemTooltip("Port, e.g.:\n[ser://]<device>\ntcp://<addr>:<port>\ntelnet://<addr>:<port>");
         if (disabled) { Gui::EndDisabled(); }
@@ -456,7 +457,17 @@ void GuiWinReceiver::_DrawRecordButton()
     {
         if (ImGui::Button(ICON_FK_CIRCLE "###Record", _winSettings->iconButtonSize))
         {
-            ImGui::OpenPopup("RecordLog");
+            if (!_recordFileDialog->IsInit())
+            {
+                _recordFileDialog->InitDialog(GuiWinFileDialog::FILE_SAVE, _recordFileName);
+                const std::string filename = Ff::Strftime(0, "log_%Y%m%d_%H%M.ubx");
+                _recordFileDialog->SetFilename(filename);
+                _recordFileDialog->SetTitle(_winTitle + " - Record logfile...");
+            }
+            else
+            {
+                _recordFileDialog->Focus();
+            }
         }
         Gui::ItemTooltip("Record logfile");
     }
@@ -466,7 +477,7 @@ void GuiWinReceiver::_DrawRecordButton()
         if (ImGui::Button(ICON_FK_STOP "###Record", _winSettings->iconButtonSize))
         {
             _recordHandle = nullptr;
-            _log.AddLine("Recording stopped", Gui::White);
+            _log.AddLine("Recording stopped", GUI_COLOUR(C_WHITE));
         }
         if (_recordButtonColor != 0) { ImGui::PopStyleColor(); }
         Gui::ItemTooltip(_recordMessage.c_str());
@@ -474,6 +485,31 @@ void GuiWinReceiver::_DrawRecordButton()
 
     if (disable) { Gui::EndDisabled(); }
 
+
+    if (_recordFileDialog->IsInit())
+    {
+        if (_recordFileDialog->DrawDialog() && !_recordFileName->empty())
+        {
+            _recordSize = 0;
+            _recordLastSize = 0;
+            _recordLastMsgTime = 0.0;
+            _recordLastSizeTime = 0.0;
+            _recordKiBs = 0.0;
+            try
+            {
+                _recordHandle = std::make_unique<std::ofstream>();
+                _recordHandle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
+                _recordHandle->open(*_recordFileName, std::ofstream::binary);
+                _log.AddLine(Ff::Sprintf("Recording to %s", _recordFileName->c_str()), GUI_COLOUR(DEBUG_NOTICE));
+                ImGui::CloseCurrentPopup();
+            }
+            catch (...)
+            {
+                _log.AddLine(Ff::Sprintf("Recording to %s", _recordFileName->c_str()), GUI_COLOUR(DEBUG_ERROR));
+            }
+        }
+    }
+#if 0
     if (ImGui::BeginPopup("RecordLog"))
     {
         const bool showMessage = (_recordDialogTo > 0.0f) && (ImGui::GetTime() < _recordDialogTo);
@@ -499,7 +535,7 @@ void GuiWinReceiver::_DrawRecordButton()
                     _recordHandle = std::make_unique<std::ofstream>();
                     _recordHandle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
                     _recordHandle->open(_recordFileName, std::ofstream::binary);
-                    _log.AddLine(Ff::Sprintf("Recording to %s", _recordFileName.c_str()), Gui::White);
+                    _log.AddLine(Ff::Sprintf("Recording to %s", _recordFileName.c_str()), GUI_COLOUR(C_WHITE));
                     ImGui::CloseCurrentPopup();
                 }
                 catch (...)
@@ -519,7 +555,7 @@ void GuiWinReceiver::_DrawRecordButton()
         else
         {
             ImGui::AlignTextToFramePadding();
-            ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightRed);
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTRED));
             ImGui::TextUnformatted(_recordError.c_str());
             ImGui::PopStyleColor();
             if (!showMessage)
@@ -527,9 +563,9 @@ void GuiWinReceiver::_DrawRecordButton()
                 _recordDialogTo = -1.0;
             }
         }
-
         ImGui::EndPopup();
     }
+#endif
 
 }
 
@@ -891,10 +927,10 @@ void GuiWinReceiver::Loop(const uint32_t &frame, const double &now)
 
         if ( (now - _recordLastMsgTime) > msgDeltaTime)
         {
-            _recordMessage = Ff::Sprintf("Stop recording\n(%.3f MiB, %.2f KiB/s)",
-                (double)_recordSize * (1.0 / 1024.0 / 1024.0), _recordKiBs);
+            _recordMessage = Ff::Sprintf("Stop recording\n(%s,\n%.3f MiB, %.2f KiB/s)",
+                _recordFileName->c_str(), (double)_recordSize * (1.0 / 1024.0 / 1024.0), _recordKiBs);
             _recordLastMsgTime = now;
-            _recordButtonColor = _recordButtonColor == 0 ? (ImU32)Gui::Red : 0;
+            _recordButtonColor = _recordButtonColor == 0 ? (ImU32)GUI_COLOUR(C_RED) : 0;
         }
         if ( (now - _recordLastSizeTime) > sizeDeltaTime)
         {
@@ -934,20 +970,20 @@ void GuiWinReceiver::ProcessData(const Data &data)
                 }
                 catch (...)
                 {
-                    _log.AddLine(Ff::Sprintf("Failed writing %s: %s", _recordFileName.c_str(), std::strerror(errno)), Gui::BrightRed);
+                    _log.AddLine(Ff::Sprintf("Failed writing %s: %s", _recordFileName->c_str(), std::strerror(errno)), GUI_COLOUR(DEBUG_ERROR));
                     _recordHandle = nullptr;
                 }
             }
 
             break;
         case Data::Type::INFO_NOTICE:
-            _log.AddLine(data.info->c_str(), Gui::BrightWhite);
+            _log.AddLine(data.info->c_str(), GUI_COLOUR(C_BRIGHTWHITE));
             break;
         case Data::Type::INFO_WARN:
-            _log.AddLine(data.info->c_str(), Gui::Yellow);
+            _log.AddLine(data.info->c_str(), GUI_COLOUR(C_YELLOW));
             break;
         case Data::Type::INFO_ERROR:
-            _log.AddLine(data.info->c_str(), Gui::BrightRed);
+            _log.AddLine(data.info->c_str(), GUI_COLOUR(C_BRIGHTRED));
             break;
         case Data::Type::EVENT_STOP:
             _rxVerStr = "";

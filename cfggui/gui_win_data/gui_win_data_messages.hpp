@@ -24,6 +24,8 @@
 #include <memory>
 #include <cstdint>
 
+#include "gui_msg.hpp"
+
 #include "gui_win_data.hpp"
 
 /* ***** Receiver messages ****************************************************************************************** */
@@ -33,6 +35,7 @@ class GuiWinDataMessages : public GuiWinData
     public:
         GuiWinDataMessages(const std::string &name,
             std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
+        ~GuiWinDataMessages();
 
       //void                 Loop(const uint32_t &frame, const double &now) override;
         void                 ProcessData(const Data &data) override;
@@ -43,18 +46,21 @@ class GuiWinDataMessages : public GuiWinData
         bool                 _showSubSec;
         struct MsgInfo
         {
-            MsgInfo(const std::shared_ptr<Ff::ParserMsg> &_msg) : msg{_msg}, count{1}, dt{}, dtIx{0}, rate{0.0} {}
+            MsgInfo(const std::shared_ptr<Ff::ParserMsg> &_msg, std::unique_ptr<GuiMsg> _renderer);
             void Update(const std::shared_ptr<Ff::ParserMsg> &_msg);
             std::shared_ptr<Ff::ParserMsg> msg;
             uint32_t count;
-            uint32_t dt[10];
+            uint32_t dt[30];
             int      dtIx;
             float    rate;
+            float    age;
+            std::unique_ptr<GuiMsg> renderer;
         };
         std::map< std::string, MsgInfo > _messages;
         std::map< std::string, MsgInfo >::iterator _selectedEntry;
+        std::string                      _selectedName;
         std::map< std::string, MsgInfo >::iterator _displayedEntry;
-        std::string                      _hexDump;
+        std::vector<std::string>         _hexDump;
         void                             _UpdateHexdump();
         std::vector<std::string>         _classNames;
         void                             _SetRate(const UBLOXCFG_MSGRATE_t *def, const uint8_t rate);

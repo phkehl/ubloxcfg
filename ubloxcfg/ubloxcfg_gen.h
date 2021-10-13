@@ -32,6 +32,7 @@ extern "C" {
     - u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG
     - u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG
     - u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG
+    - u-center 20.01, copyright (c) 2020 u-blox AG
 
     @{
 */
@@ -2857,6 +2858,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 #define UBLOXCFG_CFG_MSGOUT_UBX_MON_SPAN_USB_ID            0x2091038e                               //!< ID of CFG-MSGOUT-UBX_MON_SPAN_USB
 #define UBLOXCFG_CFG_MSGOUT_UBX_MON_SPAN_USB_STR           "CFG-MSGOUT-UBX_MON_SPAN_USB"            //!< Name of CFG-MSGOUT-UBX_MON_SPAN_USB
 #define UBLOXCFG_CFG_MSGOUT_UBX_MON_SPAN_USB_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_MON_SPAN_USB
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1 CFG-MSGOUT-UBX_MON_TEMP_UART1 (Output rate of the UBX-MON-TEMP message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_ID          0x20910332                               //!< ID of CFG-MSGOUT-UBX_MON_TEMP_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_STR         "CFG-MSGOUT-UBX_MON_TEMP_UART1"          //!< Name of CFG-MSGOUT-UBX_MON_TEMP_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_MON_TEMP_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2 CFG-MSGOUT-UBX_MON_TEMP_UART2 (Output rate of the UBX-MON-TEMP message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_ID          0x20910333                               //!< ID of CFG-MSGOUT-UBX_MON_TEMP_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_STR         "CFG-MSGOUT-UBX_MON_TEMP_UART2"          //!< Name of CFG-MSGOUT-UBX_MON_TEMP_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_MON_TEMP_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI CFG-MSGOUT-UBX_MON_TEMP_SPI (Output rate of the UBX-MON-TEMP message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_ID            0x20910335                               //!< ID of CFG-MSGOUT-UBX_MON_TEMP_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_STR           "CFG-MSGOUT-UBX_MON_TEMP_SPI"            //!< Name of CFG-MSGOUT-UBX_MON_TEMP_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_MON_TEMP_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C CFG-MSGOUT-UBX_MON_TEMP_I2C (Output rate of the UBX-MON-TEMP message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_ID            0x20910331                               //!< ID of CFG-MSGOUT-UBX_MON_TEMP_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_STR           "CFG-MSGOUT-UBX_MON_TEMP_I2C"            //!< Name of CFG-MSGOUT-UBX_MON_TEMP_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_MON_TEMP_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB CFG-MSGOUT-UBX_MON_TEMP_USB (Output rate of the UBX-MON-TEMP message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_ID            0x20910334                               //!< ID of CFG-MSGOUT-UBX_MON_TEMP_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_STR           "CFG-MSGOUT-UBX_MON_TEMP_USB"            //!< Name of CFG-MSGOUT-UBX_MON_TEMP_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_MON_TEMP_USB
 ///@}
 
 /*!
@@ -8552,6 +8598,28 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_MON_TEMP UBX-MON-TEMP
+    @{
+*/
+#define UBLOXCFG_UBX_MON_TEMP_STR                          "UBX-MON-TEMP"                                     //!< Message UBX-MON-TEMP name
+#define UBLOXCFG_UBX_MON_TEMP_UART1_ID                     UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_ID          //!< Config item ID for UBX-MON-TEMP rate on port UART1
+#define UBLOXCFG_UBX_MON_TEMP_UART1_STR                    UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_STR         //!< Config item name for UBX-MON-TEMP rate on port UART1
+#define UBLOXCFG_UBX_MON_TEMP_UART1_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART1_TYPE        //!< Config item type for UBX-MON-TEMP rate on port UART1
+#define UBLOXCFG_UBX_MON_TEMP_UART2_ID                     UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_ID          //!< Config item ID for UBX-MON-TEMP rate on port UART2
+#define UBLOXCFG_UBX_MON_TEMP_UART2_STR                    UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_STR         //!< Config item name for UBX-MON-TEMP rate on port UART2
+#define UBLOXCFG_UBX_MON_TEMP_UART2_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_UART2_TYPE        //!< Config item type for UBX-MON-TEMP rate on port UART2
+#define UBLOXCFG_UBX_MON_TEMP_SPI_ID                       UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_ID            //!< Config item ID for UBX-MON-TEMP rate on port SPI
+#define UBLOXCFG_UBX_MON_TEMP_SPI_STR                      UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_STR           //!< Config item name for UBX-MON-TEMP rate on port SPI
+#define UBLOXCFG_UBX_MON_TEMP_SPI_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_SPI_TYPE          //!< Config item type for UBX-MON-TEMP rate on port SPI
+#define UBLOXCFG_UBX_MON_TEMP_I2C_ID                       UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_ID            //!< Config item ID for UBX-MON-TEMP rate on port I2C
+#define UBLOXCFG_UBX_MON_TEMP_I2C_STR                      UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_STR           //!< Config item name for UBX-MON-TEMP rate on port I2C
+#define UBLOXCFG_UBX_MON_TEMP_I2C_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_I2C_TYPE          //!< Config item type for UBX-MON-TEMP rate on port I2C
+#define UBLOXCFG_UBX_MON_TEMP_USB_ID                       UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_ID            //!< Config item ID for UBX-MON-TEMP rate on port USB
+#define UBLOXCFG_UBX_MON_TEMP_USB_STR                      UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_STR           //!< Config item name for UBX-MON-TEMP rate on port USB
+#define UBLOXCFG_UBX_MON_TEMP_USB_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_MON_TEMP_USB_TYPE          //!< Config item type for UBX-MON-TEMP rate on port USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_MSGOUT_UBX_MON_TXBUF UBX-MON-TXBUF
     @{
 */
@@ -9433,12 +9501,14 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 746
+#define _UBLOXCFG_NUM_ITEMS 751
 const void **_ubloxcfg_allItems(void);
-#define _UBLOXCFG_NUM_RATES 85
+#define _UBLOXCFG_NUM_RATES 86
 const void **_ubloxcfg_allRates(void);
 #define _UBLOXCFG_MAX_ITEM_LEN 35
 #define _UBLOXCFG_MAX_CONSTS_LEN 449
+#define _UBLOXCFG_NUM_SOURCES 4
+const char **_ubloxcfg_allSources(void);
 #endif
 
 #ifdef __cplusplus

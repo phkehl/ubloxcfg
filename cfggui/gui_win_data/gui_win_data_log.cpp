@@ -63,19 +63,19 @@ void GuiWinDataLog::ProcessData(const Data &data)
             switch (data.msg->type)
             {
                 case Ff::ParserMsg::UBX:
-                    _log.AddLine(tmp, Gui::MsgUbx);
+                    _log.AddLine(tmp, GUI_COLOUR(LOG_MSGUBX));
                     _nUbx++;
                     break;
                 case Ff::ParserMsg::NMEA:
-                    _log.AddLine(tmp, Gui::MsgNmea);
+                    _log.AddLine(tmp, GUI_COLOUR(LOG_MSGNMEA));
                     _nNmea++;
                     break;
                 case Ff::ParserMsg::RTCM3:
-                _log.AddLine(tmp, Gui::MsgRtcm3);
+                _log.AddLine(tmp, GUI_COLOUR(LOG_MSGRTCM3));
                 _nRtcm3++;
                     break;
                 case Ff::ParserMsg::GARBAGE:
-                    _log.AddLine(tmp, Gui::MsgGarbage);
+                    _log.AddLine(tmp, GUI_COLOUR(LOG_MSGGARBAGE));
                     _nGarbage++;
                     break;
             }
@@ -87,7 +87,7 @@ void GuiWinDataLog::ProcessData(const Data &data)
         {
             char tmp[320];
             std::snprintf(tmp, sizeof(tmp), "@ %4u %s", data.epoch->seq, data.epoch->str.c_str());
-            _log.AddLine(tmp, Gui::Epoch);
+            _log.AddLine(tmp, GUI_COLOUR(GUI_COLOUR(LOG_EPOCH)));
             _nEpoch++;
             break;
         }
@@ -122,65 +122,65 @@ void GuiWinDataLog::DrawWindow()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted("Msg: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightWhite);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTWHITE));
         ImGui::Text("%u", _nMsg);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", UBX: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::MsgUbx);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGUBX));
         ImGui::Text("%u", _nUbx);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", NMEA: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::MsgNmea);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGNMEA));
         ImGui::Text("%u", _nNmea);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", RTCM3: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::MsgRtcm3);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGRTCM3));
         ImGui::Text("%u", _nRtcm3);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", GARBAGE: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::MsgGarbage);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGGARBAGE));
         ImGui::Text("%u", _nGarbage);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", rx: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightWhite);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTWHITE));
         ImGui::Text("%u", _sizeRx);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Epoch: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::Epoch);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(GUI_COLOUR(LOG_EPOCH)));
         ImGui::Text("%u", _nEpoch);
         ImGui::PopStyleColor();
         //ImGui::SameLine();

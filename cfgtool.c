@@ -228,8 +228,8 @@ const char * const kLicenseHelp =
     "\n"
     "Third-party data:\n"
     "\n"
-    "    This program includes data (identifiers, constants and descriptions of\n"
-    "    configuration items) from public u-blox documentation. Copyright u-blox AG.\n"
+    "    This program includes data, such as identifiers, constants and descriptions\n"
+    "    of configuration items, from public sources. Namely:\n"
     "\n";
 
 const char * const kPortHelp =
@@ -353,6 +353,14 @@ void printVersion(void)
     fputs("Copyright:\n\n", stdout);
     fputs(kCopyrightStr, stdout);
     fputs(kLicenseHelp, stdout);
+    int nSources = 0;
+    const char **sources = ubloxcfg_getSources(&nSources);
+    for (int ix = 0; ix < nSources; ix++)
+    {
+        fprintf(stdout, "    - %s\n", sources[ix]);
+    }
+    fputs("\n", stdout);
+
     fputs(kGreeting, stdout);
 }
 

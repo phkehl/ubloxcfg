@@ -78,8 +78,8 @@ Third-party code:
 
 Third-party data:
 
-    This program includes data (identifiers, constants and descriptions of
-    configuration items) from public u-blox documentation. Copyright u-blox AG.
+    This program includes data, such as identifiers, constants and descriptions
+    of configuration items, from public sources. Namely:
 
 Serial ports:
 

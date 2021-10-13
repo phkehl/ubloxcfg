@@ -29,7 +29,7 @@
 
 #include "gui_win.hpp"
 
-/* ***** About ********************************************************************************** */
+/* ***** About ****************************************************************************************************** */
 
 class GuiWinAbout : public GuiWin
 {
@@ -41,7 +41,7 @@ class GuiWinAbout : public GuiWin
     protected:
 };
 
-/* ***** ImGui Demos **************************************************************************** */
+/* ***** ImGui Demos ************************************************************************************************ */
 
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
 
@@ -111,7 +111,7 @@ class GuiWinImguiAbout : public GuiWin
     protected:
 };
 
-/* ***** Settings ******************************************************************************* */
+/* ***** Settings *************************************************************************************************** */
 
 class GuiWinSettings : public GuiWin
 {
@@ -123,7 +123,7 @@ class GuiWinSettings : public GuiWin
     protected:
 };
 
-/* ***** Help *********************************************************************************** */
+/* ***** Help ******************************************************************************************************* */
 
 class GuiWinHelp : public GuiWin
 {
@@ -135,7 +135,7 @@ class GuiWinHelp : public GuiWin
     protected:
 };
 
-/* ***** Debug log ****************************************************************************** */
+/* ***** Debug log ************************************************************************************************** */
 
 class GuiWinDebug : public GuiWin
 {
@@ -143,7 +143,7 @@ class GuiWinDebug : public GuiWin
         GuiWinDebug();
 
         void DrawWindow() override;
-        void AddLog(const char *line, const ImU32 colour = Gui::White);
+        void AddLog(const char *line, const ImU32 colour = GUI_COLOUR(C_WHITE));
 
     protected:
         GuiWidgetLog _log;

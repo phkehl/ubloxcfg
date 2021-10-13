@@ -135,7 +135,7 @@ Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 
 ## GUI
 
-A *very experimental* GUI is available. Say `make cfggui`. Linux only. YMMV.
+A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. YMMV.
 
 ## Licenses
 

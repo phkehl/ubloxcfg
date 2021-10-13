@@ -47,7 +47,8 @@ GuiWin::GuiWin() :
 }
 
 GuiWin::GuiWin(const std::string &name) :
-    _winSettings { GuiApp::GetInstance().GetSettings() }
+    GuiWin()
+    /*_winSettings { GuiApp::GetInstance().GetSettings() }*/
 {
     _winName = name;
     SetTitle(_winTitle);
@@ -105,10 +106,9 @@ void GuiWin::SetTitle(const std::string &title)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-
 void GuiWin::Focus()
 {
-    ImGui::SetWindowFocus(_winTitle.c_str());
+    ImGui::SetWindowFocus(_winImguiName.c_str());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -318,7 +318,7 @@ bool GuiWin::ToggleButton(const char *labelOn, const char *labelOff, bool *toggl
     const bool enabled = *toggle;
     if (labelOff == NULL)
     {
-        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::Gray); }
+        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY)); }
         if (ImGui::Button(labelOn, _winSettings->iconButtonSize))
         {
             *toggle = !*toggle;

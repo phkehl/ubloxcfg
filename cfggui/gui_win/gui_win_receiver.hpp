@@ -32,6 +32,7 @@
 #include "gui_win_data.hpp"
 #include "receiver.hpp"
 #include "gui_widget.hpp"
+#include "gui_win_filedialog.hpp"
 
 /* ***** Receiver ******************************************************************************* */
 
@@ -81,11 +82,10 @@ class GuiWinReceiver : public GuiWin
         const char          *_fixStr;
         double               _fixTime;
 
+        std::unique_ptr<GuiWinFileDialog> _recordFileDialog;
+        std::shared_ptr<std::string> _recordFileName;
         std::unique_ptr<std::ofstream> _recordHandle;
         uint32_t             _recordSize;
-        std::string          _recordFileName;
-        double               _recordDialogTo;
-        std::string          _recordError;
         std::string          _recordMessage;
         uint32_t             _recordLastSize;
         double               _recordLastMsgTime;

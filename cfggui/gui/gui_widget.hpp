@@ -30,46 +30,6 @@
 
 namespace Gui
 {
-    // Some colours (based on https://github.com/leiradel/ImGuiAl/blob/master/term/imguial_term.h)
-    enum : ImU32
-    {
-        Black           = IM_COL32(0x00, 0x00, 0x00, 0xff),
-        Blue            = IM_COL32(0x00, 0x00, 0xaa, 0xff),
-        Green           = IM_COL32(0x00, 0xaa, 0x00, 0xff),
-        Cyan            = IM_COL32(0x00, 0xaa, 0xaa, 0xff),
-        Red             = IM_COL32(0xaa, 0x00, 0x00, 0xff),
-        Magenta         = IM_COL32(0xaa, 0x00, 0xaa, 0xff),
-        Brown           = IM_COL32(0xaa, 0x55, 0x00, 0xff),
-        White           = IM_COL32(0xaa, 0xaa, 0xaa, 0xff),
-        Gray            = IM_COL32(0x55, 0x55, 0x55, 0xff),
-        BrightBlue      = IM_COL32(0x55, 0x55, 0xff, 0xff),
-        BrightGreen     = IM_COL32(0x55, 0xff, 0x55, 0xff),
-        BrightCyan      = IM_COL32(0x55, 0xff, 0xff, 0xff),
-        BrightRed       = IM_COL32(0xff, 0x55, 0x55, 0xff),
-        BrightMagenta   = IM_COL32(0xff, 0x55, 0xff, 0xff),
-        Yellow          = IM_COL32(0xff, 0xff, 0x55, 0xff),
-        BrightWhite     = IM_COL32(0xff, 0xff, 0xff, 0xff),
-        Orange          = IM_COL32(0xa8, 0x65, 0x00, 0xff),
-        BrightOrange    = IM_COL32(0xff, 0xa1, 0x14, 0xff),
-
-        // Log window
-        MsgUbx          = IM_COL32(0xff, 0x80, 0x80, 0xff),
-        MsgNmea         = IM_COL32(0xab, 0xff, 0x80, 0xff),
-        MsgRtcm3        = IM_COL32(0xaf, 0x80, 0xff, 0xff),
-        MsgGarbage      = IM_COL32(0x80, 0xce, 0xff, 0xff),
-        Epoch           = IM_COL32(0xff, 0xfe, 0x80, 0xff),
-
-        // Inf window
-        InfDebug        = IM_COL32(0x00, 0xaa, 0xaa, 0xff),
-        InfNotice       = IM_COL32(0xff, 0xff, 0xff, 0xff),
-        InfWarning      = IM_COL32(0xff, 0xff, 0x55, 0xff),
-        InfError        = IM_COL32(0xff, 0x55, 0x55, 0xff),
-        InfTest         = IM_COL32(0xff, 0x55, 0xff, 0xff),
-        InfOther        = IM_COL32(0xaa, 0x55, 0x00, 0xff),
-
-        None            = IM_COL32(0x00, 0x00, 0x00, 0x00),
-    };
-
     void BeginDisabled();
     void EndDisabled();
     ImU32 ColourHSV(const float h, const float s, const float v, const float a = 1.0f);
@@ -88,6 +48,7 @@ namespace Gui
     void EndMenuPersist();
 
     void TextLink(const char *url, const char *text = nullptr);
+    bool ClickableText(const char *text);
 };
 
 /* ****************************************************************************************************************** */

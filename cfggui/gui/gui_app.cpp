@@ -41,7 +41,6 @@
 #include "gui_win_data_signals.hpp"
 #include "gui_win_data_satellites.hpp"
 #include "gui_win_data_stats.hpp"
-#include "gui_win_data_spectrum.hpp"
 
 #include "platform.hpp"
 
@@ -136,6 +135,9 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppInitialLog &ini
 
     _winImguiStyles  = std::make_unique<GuiWinImguiStyles>();
     _appWindows.push_back(_winImguiStyles.get());
+
+    _winExperiment   = std::make_unique<GuiWinExperiment>();
+    _appWindows.push_back(_winExperiment.get());
 
     //_winImguiAbout   = std::make_unique<GuiWinImguiAbout>();
     //_appWindows.push_back(_winImguiAbout.get());
@@ -239,12 +241,12 @@ void GuiApp::DebugLog(const DEBUG_LEVEL_t level, const char *str)
     ImU32 colour = 0;
     switch (level)
     {
-        case DEBUG_LEVEL_TRACE:   prefix = "T: "; colour = Gui::Magenta;     break;
-        case DEBUG_LEVEL_DEBUG:   prefix = "D: "; colour = Gui::Cyan;        break;
-        case DEBUG_LEVEL_PRINT:   prefix = "P: "; colour = Gui::White;       break;
-        case DEBUG_LEVEL_NOTICE:  prefix = "N: "; colour = Gui::BrightWhite; break;
-        case DEBUG_LEVEL_WARNING: prefix = "W: "; colour = Gui::Yellow;      break;
-        case DEBUG_LEVEL_ERROR:   prefix = "E: "; colour = Gui::BrightRed;   break;
+        case DEBUG_LEVEL_TRACE:   prefix = "T: "; colour = GUI_COLOUR(DEBUG_TRACE);   break;
+        case DEBUG_LEVEL_DEBUG:   prefix = "D: "; colour = GUI_COLOUR(DEBUG_DEBUG);   break;
+        case DEBUG_LEVEL_PRINT:   prefix = "P: "; colour = GUI_COLOUR(DEBUG_PRINT);   break;
+        case DEBUG_LEVEL_NOTICE:  prefix = "N: "; colour = GUI_COLOUR(DEBUG_NOTICE);  break;
+        case DEBUG_LEVEL_WARNING: prefix = "W: "; colour = GUI_COLOUR(DEBUG_WARNING); break;
+        case DEBUG_LEVEL_ERROR:   prefix = "E: "; colour = GUI_COLOUR(DEBUG_ERROR);   break;
     }
 
     // Copy and add prefix
@@ -487,10 +489,6 @@ static const DataWindow kDataWindows[] =
     {
         .name   = "Fwupdate",  .title  = "Firmware update" ,  .button = ICON_FK_DOWNLOAD "##Fwupdate",    .receiver = true, .logfile = false,
         .create = [](_CREATE_ARGS) -> _CREATE_RET { return std::make_unique<GuiWinDataFwupdate>(name, receiver, nullptr, database); }
-    },
-    {
-        .name   = "Spectrum",  .title  = "Spectrum" ,         .button = ICON_FK_AREA_CHART "##Spectrum",  .receiver = true, .logfile = false,
-        .create = [](_CREATE_ARGS) -> _CREATE_RET { return std::make_unique<GuiWinDataSpectrum>(name, receiver, nullptr, database); }
     },
 };
 
@@ -756,7 +754,7 @@ void GuiApp::_MainMenu()
             _statsRss, _statsCpu);
         const float w = ImGui::CalcTextSize(text).x + ImGui::GetStyle().WindowPadding.x;
         ImGui::SameLine(ImGui::GetWindowWidth() - w);
-        ImGui::PushStyleColor(ImGuiCol_Text, io.DeltaTime < 99e-3 ? Gui::BrightWhite : Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, io.DeltaTime < 99e-3 ? GUI_COLOUR(C_BRIGHTWHITE) : GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(text);
         ImGui::PopStyleColor();
         if (ImGui::IsItemHovered())
@@ -768,6 +766,10 @@ void GuiApp::_MainMenu()
                 ICON_FK_FILM             " = frames, "
                 ICON_FK_THERMOMETER_HALF " = RSS [MB] / CPU [%]");
             ImGui::EndTooltip();
+        }
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        {
+            _winExperiment->Open();
         }
         ImGui::EndMainMenuBar();
     }

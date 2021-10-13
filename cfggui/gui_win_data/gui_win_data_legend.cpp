@@ -41,7 +41,7 @@ void GuiWinDataLegend::DrawWindow()
         return;
     }
 
-    ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightCyan);
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
     ImGui::TextUnformatted("Fix colours");
     ImGui::PopStyleColor();
     _DrawFixColourLegend(EPOCH_FIX_NOFIX,        GUI_COLOUR(FIX_INVALID),      "Invalid");

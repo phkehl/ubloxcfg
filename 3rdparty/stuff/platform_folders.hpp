@@ -48,6 +48,8 @@ std::string win32_utf16_to_utf8(const wchar_t* wstr);
 }
 #endif  //DOXYGEN_SHOULD_SKIP_THIS
 
+std::string getUserHome();
+
 /**
  * Retrives the base folder for storing data files.
  * You must add the program name yourself like this:

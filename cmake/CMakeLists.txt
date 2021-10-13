@@ -47,7 +47,7 @@ add_library(${PROJECT_NAME} SHARED
 set_target_properties(${PROJECT_NAME} PROPERTIES
     VERSION              ${PROJECT_VERSION}
     SOVERSION            ${PROJECT_VERSION_MAJOR}
-    C_STANDARD           99 # apparently that does mean gnu99, which what we want
+    C_STANDARD           99 # apparently that does mean gnu99, which is what we want
     C_STANDARD_REQUIRED  TRUE
 )
 

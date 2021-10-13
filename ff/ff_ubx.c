@@ -574,6 +574,7 @@ static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const i
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack);
@@ -639,6 +640,7 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                 case UBX_NAV_TIMEGLO_MSGID:
                 case UBX_NAV_TIMEBDS_MSGID:
                 case UBX_NAV_TIMEGAL_MSGID:
+                case UBX_NAV_COV_MSGID:
                     len = _strUbxNav(info, size, msg, msgSize, 0);
                     break;
                 case UBX_NAV_SVIN_MSGID:
@@ -666,6 +668,9 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
             {
                 case UBX_MON_VER_MSGID:
                     len = _strUbxMonVer(info, size, msg, msgSize);
+                    break;
+                case UBX_MON_TEMP_MSGID:
+                    len = _strUbxMonTemp(info, size, msg, msgSize);
                     break;
             }
             break;
@@ -837,7 +842,7 @@ static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, cons
 
 static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize < (int)UBX_NAV_SIG_V0_MIN_SIZE) || (UBX_NAV_SIG_VERSION_GET(msg) != UBX_NAV_SIG_V0_VERSION) )
+    if ( (msgSize < UBX_NAV_SIG_V0_MIN_SIZE) || (UBX_NAV_SIG_VERSION_GET(msg) != UBX_NAV_SIG_V0_VERSION) )
     {
         return 0;
     }
@@ -848,7 +853,7 @@ static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const i
 
 static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize < (int)UBX_NAV_SAT_V1_MIN_SIZE) || (UBX_NAV_SAT_VERSION_GET(msg) != UBX_NAV_SAT_V1_VERSION) )
+    if ( (msgSize < UBX_NAV_SAT_V1_MIN_SIZE) || (UBX_NAV_SAT_VERSION_GET(msg) != UBX_NAV_SAT_V1_VERSION) )
     {
         return 0;
     }
@@ -890,7 +895,7 @@ static int _svListSort(const void *a, const void *b);
 
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if ( (msgSize < (int)UBX_RXM_RAWX_V1_MIN_SIZE) || (UBX_RXM_RAWX_VERSION_GET(msg) != UBX_RXM_RAWX_V1_VERSION) )
+    if ( (UBX_RXM_RAWX_VERSION_GET(msg) != UBX_RXM_RAWX_V1_VERSION) || (msgSize != UBX_RXM_RAWX_V1_SIZE(msg)) )
     {
         return 0;
     }
@@ -969,6 +974,17 @@ static int _svListSort(const void *a, const void *b)
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
     return ubxMonVerToVerStr(info, size, msg, msgSize);
+}
+
+static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (UBX_MON_TEMP_VERSION_GET(msg) != UBX_MON_TEMP_V0_VERSION) || (msgSize != UBX_MON_TEMP_V0_SIZE) )
+    {
+        return 0;
+    }
+    UBX_MON_TEMP_V0_GROUP0_t temp;
+    memcpy(&temp, &msg[UBX_HEAD_SIZE], sizeof(temp));
+    return snprintf(info, size, "%d C, %d", temp.temperature, temp.unknown);
 }
 
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize)

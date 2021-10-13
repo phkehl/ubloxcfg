@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <vector>
 #include <algorithm>
+#include <time.h>
 
 #include "ff_cpp.hpp"
 #include "ff_debug.h"
@@ -47,6 +48,21 @@ std::string Ff::Sprintf(const char * const zcFormat, ...)
     std::vsnprintf(zc.data(), zc.size(), zcFormat, vaArgs);
     va_end(vaArgs);
     return std::string(zc.data(), iLen);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::string Ff::Strftime(const int64_t ts, const char * const fmt)
+{
+    std::vector<char> str(1000);
+    struct tm now;
+    int len = 0;
+    const time_t t = (ts <= 0 ? time(NULL) : ts);
+    if (localtime_r(&t, &now) == &now)
+    {
+        len = strftime(str.data(), str.size(), fmt, &now);
+    }
+    return std::string(str.data(), len);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

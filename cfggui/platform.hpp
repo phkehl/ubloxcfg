@@ -29,9 +29,11 @@ bool Init();
 
 const std::string &ConfigBaseDir();
 const std::string &CacheBaseDir();
+const std::string &HomeDir();
 
 std::string ConfigFile(const std::string &name);
 std::string CacheDir(const std::string &name);
+
 
 bool FileExists(const std::string &file);
 

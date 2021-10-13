@@ -1137,7 +1137,7 @@ bool GuiWinDataConfig::_DrawControls()
         char str[100];
         int count = _cfgChangedKv.size();
         std::snprintf(str, sizeof(str), "Config changes: %d", count);
-        if (count > 0) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightMagenta); }
+        if (count > 0) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); }
         ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), str);
         if (count > 0) { ImGui::PopStyleColor(); }
     }
@@ -1187,7 +1187,7 @@ bool GuiWinDataConfig::_DrawControls()
         else
         {
             ImGui::AlignTextToFramePadding();
-            ImGui::PushStyleColor(ImGuiCol_Text, _cfgFileSaveError.size() > 0 ? Gui::BrightRed : Gui::BrightGreen);
+            ImGui::PushStyleColor(ImGuiCol_Text, _cfgFileSaveError.size() > 0 ? GUI_COLOUR(C_BRIGHTRED) : GUI_COLOUR(C_BRIGHTGREEN));
             ImGui::TextUnformatted(_cfgFileSaveError.size() > 0 ? _cfgFileSaveError.c_str() : "Configuration saved to file");
             ImGui::PopStyleColor();
             if (!showMessage)
@@ -1239,7 +1239,7 @@ void GuiWinDataConfig::_DrawDb()
         }
 
         // Title
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightCyan);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
         ImGui::TextUnformatted("Item");
         ImGui::NextColumn();
         ImGui::TextUnformatted("ID");
@@ -1256,7 +1256,7 @@ void GuiWinDataConfig::_DrawDb()
             if (_dbPollDataAvail)
             {
                 ImGui::SameLine();
-                    ImGui::PushStyleColor(ImGuiCol_Text, Gui::Cyan);
+                    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_CYAN));
                 ImGui::Text("(%u items)", _dbItemDispCount[layer]);
                 ImGui::PopStyleColor();
             }
@@ -1271,7 +1271,7 @@ void GuiWinDataConfig::_DrawDb()
     // No items available
     if (_dbItems.size() == 0)
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted("No receiver configuration data available...");
         ImGui::PopStyleColor();
         ImGui::EndChild(); // Table
@@ -1319,7 +1319,7 @@ void GuiWinDataConfig::_DrawDb()
                 }
 
                 // Item name with tooltip
-                if (dbitem.valueChanged) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen); }
+                if (dbitem.valueChanged) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN)); }
                 ImGui::Selectable(dbitem.name.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
                 if (dbitem.valueChanged) { ImGui::PopStyleColor(); }
                 Gui::ItemTooltip(dbitem.title.size() > 0 ? dbitem.title.c_str() : "Unknown item");
@@ -1347,7 +1347,7 @@ void GuiWinDataConfig::_DrawDb()
                     if (dbitem.values[layer].valid)
                     {
                         const bool changed = dbitem.values[layer].changed;
-                        if (changed) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen); }
+                        if (changed) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN)); }
                         ImGui::TextWrapped("%s", dbitem.values[layer].str.c_str());
                         if (changed) { ImGui::PopStyleColor(); }
                         _dbItemDispCount[layer]++;
@@ -1396,7 +1396,7 @@ bool GuiWinDataConfig::_DrawPorts()
         ImGui::SetColumnWidth(2, wProt);
         ImGui::SetColumnWidth(3, wProt);
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightCyan);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
         ImGui::TextUnformatted("Port");
         ImGui::NextColumn();
         ImGui::TextUnformatted("Baudrate");
@@ -1505,7 +1505,7 @@ bool GuiWinDataConfig::_DrawPorts()
             {
                 // Revert to current/default
                 const bool dirty = baudDbitem->chDirty;
-                if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightMagenta); } else { Gui::BeginDisabled(); };
+                if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
                 if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
                 {
                     baudDbitem->chValue._raw = baudDbitem->chReference._raw;
@@ -1557,7 +1557,7 @@ bool GuiWinDataConfig::_DrawPorts()
                     {
                         // Revert to current/default
                         const bool dirty = dbitem->chDirty;
-                        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightMagenta); } else { Gui::BeginDisabled(); };
+                        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
                         if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
                         {
                             dbitem->chValue._raw = dbitem->chReference._raw;
@@ -1631,7 +1631,7 @@ bool GuiWinDataConfig::_DrawMsgRates()
         }
 
         // Titles
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightCyan);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
 
         ImGui::TextUnformatted("Message");
         ImGui::NextColumn();
@@ -1828,7 +1828,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
     // Message name (and hover highlight / tooltip for the entire row)
     {
         ImGui::AlignTextToFramePadding();
-        if (anyPortEnabled) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen); }
+        if (anyPortEnabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN)); }
         ImGui::Selectable(msgName.c_str());
         if (anyPortEnabled) { ImGui::PopStyleColor(); }
         if (Gui::ItemTooltipBegin())
@@ -1889,7 +1889,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 
         // Revert to current/default
         const bool dirty = port < 0 ? anyPortDirty : (item ? item->chDirty : false);
-        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightMagenta); } else { Gui::BeginDisabled(); };
+        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
         if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
         {
             somethingChanged = true;
@@ -1945,7 +1945,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
         {
             const bool hl = anyPortEnabled;
             uint8_t rate = anyPortRate;
-            if (hl) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen); }
+            if (hl) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN)); }
             ImGui::PushItemWidth(inputWidth);
             ImGui::DragScalar("##val", ImGuiDataType_U8, &rate, dragSpeed);
             ImGui::PopItemWidth();
@@ -1966,7 +1966,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
         else
         {
             const bool hl = item->chValue.U1 > 0;
-            if (hl) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen); }
+            if (hl) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN)); }
             ImGui::PushItemWidth(inputWidth);
             if (ImGui::DragScalar("##val", ImGuiDataType_U8, &item->chValue.U1, dragSpeed))
             {
@@ -2093,7 +2093,7 @@ bool GuiWinDataConfig::_DrawItems()
         ImGui::SetColumnWidth(4, wValue);
 
         // Title
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightCyan);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
         ImGui::TextUnformatted("Item");
         ImGui::NextColumn();
         ImGui::TextUnformatted("Type");
@@ -2230,7 +2230,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 
     // Revert to current/default value
     const bool dirty = dbitem.chDirty;
-    if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightMagenta); } else { Gui::BeginDisabled(); };
+    if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
     if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
     {
         dbitem.chValue._raw = dbitem.chReference._raw;
@@ -2659,7 +2659,7 @@ void GuiWinDataConfig::_DrawChanges()
 {
     if (_cfgChangedStrs.empty())
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted("No configuration changes...");
         ImGui::PopStyleColor();
         return;

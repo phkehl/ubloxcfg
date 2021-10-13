@@ -1179,6 +1179,12 @@ uint16_t ubloxcfg_getVersion(void)
 #endif
 }
 
+const char **ubloxcfg_getSources(int *numSources)
+{
+    *numSources = _UBLOXCFG_NUM_SOURCES;
+    return _ubloxcfg_allSources();
+}
+
 /* ****************************************************************************************************************** */
 
 // eof

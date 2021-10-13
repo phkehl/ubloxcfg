@@ -136,6 +136,9 @@ namespace Ff
     // sprintf()
     std::string Sprintf(const char * const zcFormat, ...) PRINTF_ATTR(1);
 
+    // strftime()
+    std::string Strftime(const int64_t ts, const char * const fmt);
+
     // String search & replace
     int StrReplace(std::string &str, const std::string &search, const std::string &replace);
 

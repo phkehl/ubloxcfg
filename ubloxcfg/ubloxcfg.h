@@ -550,6 +550,14 @@ bool ubloxcfg_valueFromString(const char *str, const UBLOXCFG_TYPE_t type, const
 */
 uint16_t ubloxcfg_getVersion(void);
 
+
+//! Get strings describing the data sources
+/*
+    \param[out] numSources  Number of sources strings returned
+    \returns a list of strings that each name a source of the data
+*/
+const char **ubloxcfg_getSources(int *numSources);
+
 ///@}
 
 /* ****************************************************************************************************************** */

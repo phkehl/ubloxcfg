@@ -57,21 +57,28 @@ void GuiWinAbout::DrawWindow()
     ImGui::TextUnformatted("- 'cfggui' application, under GPL");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted( "Third-party code (see source code and the links for details):");
-    ImGui::Text(            "- Dear ImGui %s by Omar Cornut and all Dear ImGui contributors, under a\n"
-                            "  MIT license", ImGui::GetVersion());
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://github.com/ocornut/imgui");
+    ImGui::Text(            "- Dear ImGui %s by Omar Cornut and all Dear ImGui contributors, under a MIT license", ImGui::GetVersion());
+    ImGui::SameLine(); Gui::TextLink("https://github.com/ocornut/imgui");
     ImGui::TextUnformatted( "- ImPlot " IMPLOT_VERSION " by Evan Pezent, under a MIT license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://github.com/epezent/implot");
+    ImGui::SameLine(); Gui::TextLink("https://github.com/epezent/implot");
     ImGui::TextUnformatted( "- CRC24Q routines from the GPSD project, under a BSD-2-Clause license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://gitlab.com/gpsd");
+    ImGui::SameLine(); Gui::TextLink("https://gitlab.com/gpsd");
     ImGui::TextUnformatted( "- PlatformFolders by Poul Sander, under a MIT license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://github.com/sago007/PlatformFolders");
+    ImGui::SameLine(); Gui::TextLink("https://github.com/sago007/PlatformFolders");
     ImGui::TextUnformatted( "- DejaVu fonts, under a unnamed license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://dejavu-fonts.github.io");
+    ImGui::SameLine(); Gui::TextLink("https://dejavu-fonts.github.io");
     ImGui::TextUnformatted( "- ProggyClean font by Tristan Grimmer, under a unnamed license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://proggyfonts.net");
+    ImGui::SameLine(); Gui::TextLink("https://proggyfonts.net");
     ImGui::TextUnformatted( "- ForkAwesome font, under a MIT license");
-    ImGui::TextUnformatted( "  "); ImGui::SameLine(0,0); Gui::TextLink("https://forkaweso.me");
+    ImGui::SameLine(); Gui::TextLink("https://forkaweso.me");
+    ImGui::Separator();  // -----------------------------------------------------------------------------
+    ImGui::TextUnformatted("Third-party data from the following public sources:");
+    int nSources = 0;
+    const char **sources = ubloxcfg_getSources(&nSources);
+    for (int ix = 0; ix < nSources; ix++)
+    {
+        ImGui::TextUnformatted(sources[ix]);
+    }
     ImGui::Separator();  // -----------------------------------------------------------------------------
 
     ImGuiIO &io = ImGui::GetIO();

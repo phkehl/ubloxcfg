@@ -484,6 +484,17 @@ sub genCodeC
     $hh .= "#define _UBLOXCFG_MAX_ITEM_LEN $maxItemNameLen\n";
     $hh .= "#define _UBLOXCFG_MAX_CONSTS_LEN $maxConstNamesLen\n";
 
+
+    my $numSources = $#{$sources} + 1;
+    $c .= "static const char * const ubloxcfg_allSources[$numSources] =\n";
+    $c .= "{\n";
+    $c .= "    \"$_\",\n" for (@{$sources});
+    #substr($c, -2, 1, '');
+    $c .= "};\n";
+    $hh .= "#define _UBLOXCFG_NUM_SOURCES $numSources\n";
+    $hh .= "const char **_ubloxcfg_allSources(void);\n";
+    $cc .= "const char **_ubloxcfg_allSources(void) { return (const char **)ubloxcfg_allSources; }\n";
+
     # add accessors for api
     $h .= "\n";
     $h .= "#ifndef _DOXYGEN_\n";

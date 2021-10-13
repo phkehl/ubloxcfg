@@ -107,6 +107,16 @@ const std::string &CacheBaseDir()
     return cacheDir;
 }
 
+const std::string &HomeDir()
+{
+    static std::string homeDir = "";
+    if (homeDir.empty())
+    {
+        homeDir = sago::getUserHome();
+    }
+    return homeDir;
+}
+
 std::string ConfigFile(const std::string &name)
 {
     std::filesystem::path path( ConfigBaseDir() );

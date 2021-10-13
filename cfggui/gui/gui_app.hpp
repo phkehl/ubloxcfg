@@ -34,6 +34,7 @@
 #include "gui_win_app.hpp"
 #include "gui_win_receiver.hpp"
 #include "gui_win_data.hpp"
+#include "gui_win_experiment.hpp"
 
 struct GuiAppInitialLog
 {
@@ -90,6 +91,7 @@ class GuiApp
         std::unique_ptr<GuiWinImplotMetrics> _winImplotMetrics;
         std::unique_ptr<GuiWinImguiStyles>   _winImguiStyles;
         //std::unique_ptr<GuiWinImguiAbout>   _winImguiAbout;
+        std::unique_ptr<GuiWinExperiment>    _winExperiment;
         std::vector<GuiWin *> _appWindows;
 
         // Receivers

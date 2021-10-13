@@ -49,15 +49,15 @@ void GuiWinDataInf::ProcessData(const Data &data)
         {
             if ( (data.msg->type == Ff::ParserMsg::UBX) && (UBX_CLSID(data.msg->data) == UBX_INF_CLSID) )
             {
-                ImU32 colour = Gui::InfOther;
+                ImU32 colour = GUI_COLOUR(INF_OTHER);
                 std::string prefix;
                 switch (UBX_MSGID(data.msg->data))
                 {
-                    case UBX_INF_DEBUG_MSGID:    colour = Gui::InfDebug;   prefix = "Debug:   "; _nDebug++;   break;
-                    case UBX_INF_NOTICE_MSGID:   colour = Gui::InfNotice;  prefix = "Notice:  "; _nNotice++;  break;
-                    case UBX_INF_WARNING_MSGID:  colour = Gui::InfWarning; prefix = "Warning: "; _nWarning++; break;
-                    case UBX_INF_ERROR_MSGID:    colour = Gui::InfError;   prefix = "Error:   "; _nError++;   break;
-                    case UBX_INF_TEST_MSGID:     colour = Gui::InfTest;    prefix = "Test:    "; _nTest++;    break;
+                    case UBX_INF_DEBUG_MSGID:    colour = GUI_COLOUR(INF_DEBUG);   prefix = "Debug:   "; _nDebug++;   break;
+                    case UBX_INF_NOTICE_MSGID:   colour = GUI_COLOUR(INF_NOTICE);  prefix = "Notice:  "; _nNotice++;  break;
+                    case UBX_INF_WARNING_MSGID:  colour = GUI_COLOUR(INF_WARNING); prefix = "Warning: "; _nWarning++; break;
+                    case UBX_INF_ERROR_MSGID:    colour = GUI_COLOUR(INF_ERROR);   prefix = "Error:   "; _nError++;   break;
+                    case UBX_INF_TEST_MSGID:     colour = GUI_COLOUR(INF_TEST);    prefix = "Test:    "; _nTest++;    break;
                     default:                                               prefix = "Other:   "; _nOther++;   break;
                 }
                 _log.AddLine(prefix + data.msg->info, colour);
@@ -67,37 +67,37 @@ void GuiWinDataInf::ProcessData(const Data &data)
             {
                 if (data.msg->info.substr(6, 2) == "04")
                 {
-                    _log.AddLine(std::string("Debug:   ") + data.msg->info.substr(9), Gui::InfDebug);
+                    _log.AddLine(std::string("Debug:   ") + data.msg->info.substr(9), GUI_COLOUR(INF_DEBUG));
                     _nDebug++;
                     _nInf++;
                 }
                 else if (data.msg->info.substr(6, 2) == "02")
                 {
-                    _log.AddLine(std::string("Notice:  ") + data.msg->info.substr(9), Gui::InfNotice);
+                    _log.AddLine(std::string("Notice:  ") + data.msg->info.substr(9), GUI_COLOUR(INF_NOTICE));
                     _nNotice++;
                     _nInf++;
                 }
                 else if (data.msg->info.substr(6, 2) == "01")
                 {
-                    _log.AddLine(std::string("Warning: ") + data.msg->info.substr(9), Gui::InfWarning);
+                    _log.AddLine(std::string("Warning: ") + data.msg->info.substr(9), GUI_COLOUR(INF_WARNING));
                     _nWarning++;
                     _nInf++;
                 }
                 else if (data.msg->info.substr(6, 2) == "00")
                 {
-                    _log.AddLine(std::string("Error:   ") + data.msg->info.substr(9), Gui::InfError);
+                    _log.AddLine(std::string("Error:   ") + data.msg->info.substr(9), GUI_COLOUR(INF_ERROR));
                     _nError++;
                     _nInf++;
                 }
                 else if (data.msg->info.substr(6, 2) == "03")
                 {
-                    _log.AddLine(std::string("Test:    ") + data.msg->info.substr(9), Gui::InfTest);
+                    _log.AddLine(std::string("Test:    ") + data.msg->info.substr(9), GUI_COLOUR(INF_TEST));
                     _nTest++;
                     _nInf++;
                 }
                 else
                 {
-                    _log.AddLine(std::string("Other:   ") + data.msg->info, Gui::InfOther);
+                    _log.AddLine(std::string("Other:   ") + data.msg->info, GUI_COLOUR(INF_OTHER));
                     _nOther++;
                     _nInf++;
                 }
@@ -136,65 +136,65 @@ void GuiWinDataInf::DrawWindow()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted("Msg: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightBlue);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTBLUE));
         ImGui::Text("%u", _nInf);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Debug: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfDebug);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_DEBUG));
         ImGui::Text("%u", _nDebug);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Notice: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfNotice);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_NOTICE));
         ImGui::Text("%u", _nNotice);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Warning: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfWarning);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_WARNING));
         ImGui::Text("%u", _nWarning);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Error: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfError);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_ERROR));
         ImGui::Text("%u", _nError);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Test: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfTest);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_TEST));
         ImGui::Text("%u", _nTest);
         ImGui::PopStyleColor();
         ImGui::SameLine();
 
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(", Other: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::InfOther);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(INF_OTHER));
         ImGui::Text("%u", _nOther);
         ImGui::PopStyleColor();
         //ImGui::SameLine();

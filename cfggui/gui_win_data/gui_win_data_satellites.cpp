@@ -404,7 +404,7 @@ void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
 
         if (L1used || L2used)
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightGreen);
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN));
         }
 
         const uint32_t uid = (sat.satInfo->gnss << 8) | sat.satInfo->sv;
@@ -439,7 +439,7 @@ void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
             const ImVec2 offs = ImGui::GetCursorScreenPos() + barOffs;
             const int colIx = L1->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (L1->cno > 0 ? (L1->cno / 5) : 0 );
             draw->AddRectFilled(offs, offs + ImVec2(L1->cno * 2, -lineHeight), L1used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), Gui::Gray);
+            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
             ImGui::NextColumn();
         }
         else
@@ -454,7 +454,7 @@ void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
             const ImVec2 offs = ImGui::GetCursorScreenPos() + barOffs;
             const int colIx = L2->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (L2->cno > 0 ? (L2->cno / 5) : 0 );
             draw->AddRectFilled(offs, offs + ImVec2(L2->cno * 2, -lineHeight), L2used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), Gui::Gray);
+            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
             ImGui::NextColumn();
         }
         else

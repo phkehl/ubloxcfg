@@ -207,6 +207,15 @@ void appendExtraFoldersTokenizer(const char* envName, const char* envValue, std:
 }
 #endif
 
+std::string getUserHome()
+{
+#ifdef _WIN32
+	return GetKnownWindowsFolder(FOLDERID_Profile, "Failed to find user home folder");
+#else
+	return getHome();
+#endif
+}
+
 std::string getDataHome() {
 #ifdef _WIN32
 	return GetAppData();

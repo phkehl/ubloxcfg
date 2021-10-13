@@ -91,7 +91,7 @@ bool GuiWidgetFilter::DrawWidget(const float width)
     // Filter input
     if (_filterState == FILTER_BAD)
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, Gui::BrightRed);
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTRED));
     }
     ImGui::PushItemWidth(width);
     if (ImGui::InputTextWithHint("##Filter", "Filter (regex)", &_filterStr))
@@ -401,7 +401,7 @@ void GuiWidgetLog::_DrawLogLines()
     ImVec2 spacing = ImGui::GetStyle().ItemInnerSpacing;
     spacing.y *= 0.5;
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, spacing);
-    //ImGui::PushStyleColor(ImGuiCol_Text, Gui::White);
+    //ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
 
     const bool haveFilter = _filterWidget.IsActive();
     const bool highlight = haveFilter && _filterWidget.IsHighlight();
@@ -419,7 +419,7 @@ void GuiWidgetLog::_DrawLogLines()
                 auto &line = _lines[ix];
                 if (_logTimestamps)
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Text, Gui::Gray);
+                    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY));
                     ImGui::Text("%09.3f", line.time);
                     ImGui::PopStyleColor();
                     ImGui::SameLine();
@@ -467,7 +467,7 @@ void GuiWidgetLog::_DrawLogLines()
                     auto &line = _lines[linesIx];
                     if (_logTimestamps)
                     {
-                        ImGui::PushStyleColor(ImGuiCol_Text, Gui::Gray);
+                        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY));
                         ImGui::Text("%09.3f", line.time);
                         ImGui::PopStyleColor();
                         ImGui::SameLine();
@@ -719,6 +719,34 @@ void Gui::TextLink(const char *url, const char *text)
     if (isHovered) { ImGui::PopStyleColor(); }
     ImGui::PopID();
     id++;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool Gui::ClickableText(const char *text)
+{
+    bool res = false;
+    static uint32_t id;
+    id++;
+    ImGui::PushID(id);
+    ImVec2 size = ImGui::CalcTextSize(text);
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::InvisibleButton("dummy", size, ImGuiButtonFlags_MouseButtonLeft);
+    if (ImGui::IsItemClicked())
+    {
+        res = true;
+    }
+    const bool isHovered = ImGui::IsItemHovered();
+    if (isHovered)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_HIGHLIGHT));
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    }
+    ImGui::SetCursorPos(cursor);
+    ImGui::TextUnformatted(text);
+    if (isHovered) { ImGui::PopStyleColor(); }
+    ImGui::PopID();
+    return res;
 }
 
 /* ****************************************************************************************************************** */

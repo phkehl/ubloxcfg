@@ -291,7 +291,7 @@ void GuiWinDataSignals::_DrawSignals(const EPOCH_GNSS_t filter)
         }
         else if (sigUsed)
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_HIGHLIGHT));
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_OK));
         }
         else
         {

@@ -902,7 +902,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
             }
             break;
         case UBX_NAV_SIG_MSGID:
-            if ( (msg->size >= (int)UBX_NAV_SIG_V0_MIN_SIZE) && (UBX_NAV_SIG_VERSION_GET(msg->data) == UBX_NAV_SIG_V0_VERSION) )
+            if ( (msg->size >= UBX_NAV_SIG_V0_MIN_SIZE) && (UBX_NAV_SIG_VERSION_GET(msg->data) == UBX_NAV_SIG_V0_VERSION) )
             {
                 EPOCH_DEBUG("collect %s", msg->name);
                 if (collect->haveSig < HAVE_UBX)
@@ -937,7 +937,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
             }
             break;
         case UBX_NAV_SAT_MSGID:
-            if ( (msg->size >= (int)UBX_NAV_SAT_V1_MIN_SIZE) && (UBX_NAV_SAT_VERSION_GET(msg->data) == UBX_NAV_SAT_V1_VERSION) )
+            if ( (msg->size >= UBX_NAV_SAT_V1_MIN_SIZE) && (UBX_NAV_SAT_VERSION_GET(msg->data) == UBX_NAV_SAT_V1_VERSION) )
             {
                 EPOCH_DEBUG("collect %s", msg->name);
                 if (collect->haveSat < HAVE_UBX)

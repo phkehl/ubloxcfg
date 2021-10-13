@@ -5,7 +5,8 @@
     // Contents extracted from:
     "u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG",
     "u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG",
-    "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG"
+    "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG",
+    "u-center 20.01, copyright (c) 2020 u-blox AG"
     // (Which may or may not have worked fully and may or may not be fully correct... YMMV)
 
     ], "items": [
@@ -422,6 +423,13 @@
     { "id" : "0x2091038f", "name" : "CFG-MSGOUT-UBX_MON_SPAN_SPI",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-SPAN message on port SPI" },
     { "id" : "0x2091038b", "name" : "CFG-MSGOUT-UBX_MON_SPAN_I2C",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-SPAN message on port I2C" },
     { "id" : "0x2091038e", "name" : "CFG-MSGOUT-UBX_MON_SPAN_USB",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-SPAN message on port USB" },
+    // ......................................................................................................................................................................................................................
+    // Says u-center...
+    { "id" : "0x20910332", "name" : "CFG-MSGOUT-UBX_MON_TEMP_UART1",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TEMP message on port UART1" },
+    { "id" : "0x20910333", "name" : "CFG-MSGOUT-UBX_MON_TEMP_UART2",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TEMP message on port UART2" },
+    { "id" : "0x20910335", "name" : "CFG-MSGOUT-UBX_MON_TEMP_SPI",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TEMP message on port SPI" },
+    { "id" : "0x20910331", "name" : "CFG-MSGOUT-UBX_MON_TEMP_I2C",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TEMP message on port I2C" },
+    { "id" : "0x20910334", "name" : "CFG-MSGOUT-UBX_MON_TEMP_USB",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TEMP message on port USB" },
     // ......................................................................................................................................................................................................................
     { "id" : "0x2091019c", "name" : "CFG-MSGOUT-UBX_MON_TXBUF_UART1",       "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TXBUF message on port UART1" },
     { "id" : "0x2091019d", "name" : "CFG-MSGOUT-UBX_MON_TXBUF_UART2",       "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-MON-TXBUF message on port UART2" },

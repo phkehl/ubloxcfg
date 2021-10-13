@@ -45,7 +45,6 @@ GuiWinDataScatter::GuiWinDataScatter(const std::string &name,
         _sigmaEnabled[ix] = ena;
     }
 
-
     ClearData();
 }
 
