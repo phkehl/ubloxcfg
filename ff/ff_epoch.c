@@ -128,6 +128,22 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
             break;
     }
 
+    // Collect data
+    switch (msg->type)
+    {
+        case PARSER_MSGTYPE_UBX:
+            _collectUbx(coll, collect, msg);
+            break;
+        case PARSER_MSGTYPE_NMEA:
+            if (haveNmea)
+            {
+                _collectNmea(coll, collect, &nmea);
+            }
+            break;
+        default:
+            break;
+    }
+
     // Output epoch
     if (complete)
     {
@@ -145,22 +161,6 @@ bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
         *detect = saveDetect;
 
         //DEBUG("epoch %u ubx %u %d nmea %d %d", seq, tow, detectHaveTow, ms, detectHaveMs);
-    }
-
-    // Collect data
-    switch (msg->type)
-    {
-        case PARSER_MSGTYPE_UBX:
-            _collectUbx(coll, collect, msg);
-            break;
-        case PARSER_MSGTYPE_NMEA:
-            if (haveNmea)
-            {
-                _collectNmea(coll, collect, &nmea);
-            }
-            break;
-        default:
-            break;
     }
 
     return complete;
