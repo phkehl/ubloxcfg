@@ -78,6 +78,32 @@ void GuiMsgUbxMonRf::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_aStatusFlags =
+{
+    { UBX_MON_RF_V0_ANTSTATUS_INIT,     "init",           GUI_COLOUR(C_NONE) },
+    { UBX_MON_RF_V0_ANTSTATUS_DONTKNOW, "unknown",        GUI_COLOUR(C_NONE) },
+    { UBX_MON_RF_V0_ANTSTATUS_OK,       "OK",             GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_RF_V0_ANTSTATUS_SHORT,    "short",          GUI_COLOUR(TEXT_WARNING) },
+    { UBX_MON_RF_V0_ANTSTATUS_OPEN,     "open",           GUI_COLOUR(TEXT_WARNING)  },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_aPowerFlags =
+{
+    { UBX_MON_HW_V0_APOWER_OFF,       "off",            GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_APOWER_ON,        "on",             GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_HW_V0_APOWER_UNKNOWN,   "unknown",        GUI_COLOUR(C_NONE) },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_jammingFlags =
+{
+    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_UNKN,   "unknown",   GUI_COLOUR(C_NONE) },
+    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_OK,     "ok",        GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_WARN,   "warning",   GUI_COLOUR(TEXT_WARNING) },
+    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_CRIT,   "critical",  GUI_COLOUR(TEXT_ERROR) },
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
     if ( (UBX_MON_RF_VERSION_GET(msg->data) != UBX_MON_RF_V0_VERSION) || (UBX_MON_RF_V0_SIZE(msg->data) != msg->size) )
@@ -99,61 +125,23 @@ bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
         UBX_MON_RF_V0_GROUP1_t block;
         std::memcpy(&block, &msg->data[offs], sizeof(block));
 
-        ImGui::BeginChild(offs, blockSize);
+        if (!ImGui::BeginChild(offs, blockSize))
+        {
+            continue;
+        }
 
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
         ImGui::Text("RF block #%u", blockIx);
         ImGui::PopStyleColor();
 
-        ImGui::TextUnformatted("Antenna status");
-        ImGui::SameLine(dataOffs);
-        const char * const aStatusStr[] = { "init", "unknown", "OK", "short", "open" };
-        const bool aStatusWarn = (block.antStatus == UBX_MON_RF_V0_ANTSTATUS_SHORT) || (block.antStatus == UBX_MON_RF_V0_ANTSTATUS_OPEN);
-        const bool aStatusOk   = (block.antStatus == UBX_MON_RF_V0_ANTSTATUS_OK);
-        if (aStatusWarn || aStatusOk)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, aStatusWarn ? GUI_COLOUR(TEXT_WARNING) : GUI_COLOUR(TEXT_OK));
-        }
-        ImGui::TextUnformatted(block.antStatus < NUMOF(aStatusStr) ? aStatusStr[block.antStatus] : "???");
-        if (aStatusWarn || aStatusOk)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Antenna power");
-        ImGui::SameLine(dataOffs);
-        const char * const aPowerStr[]  = { "off", "on", "unknown" };
-        if (block.antPower == UBX_MON_RF_V0_ANTPOWER_ON)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_OK));
-        }
-        ImGui::TextUnformatted(block.antPower < NUMOF(aPowerStr) ? aPowerStr[block.antPower] : "???");
-        if (block.antPower == UBX_MON_RF_V0_ANTPOWER_ON)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Jamming status");
-        ImGui::SameLine(dataOffs);
-        const char * const jammingStr[] = { "unknown", "OK", "warning", "critical" };
-        const uint8_t jamming = UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_GET(block.flags);
-        const bool jammingWarning  = (jamming == UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_WARN);
-        const bool jammingCritical = (jamming == UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_CRIT);
-        if (jammingWarning || jammingCritical)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, jammingCritical ? GUI_COLOUR(TEXT_ERROR) : GUI_COLOUR(TEXT_WARNING));
-        }
-        ImGui::TextUnformatted(jamming < NUMOF(jammingStr) ? jammingStr[jamming] : "???");
-        if (jammingWarning || jammingCritical)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("POST status");
-        ImGui::SameLine(dataOffs);
-        ImGui::Text("0x%08x", block.postStatus);
+        _RenderStatusFlag(_aStatusFlags,  block.antStatus,                                   "Antenna status", dataOffs);
+        _RenderStatusFlag(_aPowerFlags,   block.antPower,                                    "Antenna power",  dataOffs);
+        _RenderStatusFlag(_jammingFlags,  UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_GET(block.flags), "Jamming status", dataOffs);
 
         char str[100];
+
+        snprintf(str, sizeof(str), "0x%08x", block.postStatus);
+        _RenderStatusText("POST status", str, dataOffs);
 
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted("Noise level");

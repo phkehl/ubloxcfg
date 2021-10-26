@@ -37,6 +37,51 @@ GuiMsgUbxMonHw::GuiMsgUbxMonHw(std::shared_ptr<Receiver> receiver, std::shared_p
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_rtcFlags =
+{
+    { true,      "calibrated",         GUI_COLOUR(TEXT_OK)      },
+    { false,     "uncalibrated",       GUI_COLOUR(TEXT_WARNING) },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_xtalFlags =
+{
+    { true,      "absent",             GUI_COLOUR(TEXT_OK) },
+    { false,     "ok",                 GUI_COLOUR(C_NONE)  },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_aStatusFlags =
+{
+    { UBX_MON_HW_V0_ASTATUS_INIT,     "init",           GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_ASTATUS_UNKNOWN,  "unknown",        GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_ASTATUS_OK,       "OK",             GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_HW_V0_ASTATUS_SHORT,    "short",          GUI_COLOUR(TEXT_WARNING) },
+    { UBX_MON_HW_V0_ASTATUS_OPEN,     "open",           GUI_COLOUR(TEXT_WARNING)  },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_aPowerFlags =
+{
+    { UBX_MON_HW_V0_APOWER_OFF,       "off",            GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_APOWER_ON,        "on",             GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_HW_V0_APOWER_UNKNOWN,   "unknown",        GUI_COLOUR(C_NONE) },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_safebootFlags =
+{
+    { true,                           "active",         GUI_COLOUR(TEXT_WARNING) },
+    { false,                          "inactive",       GUI_COLOUR(C_NONE) },
+
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw::_jammingFlags =
+{
+    { UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_UNKNOWN,   "unknown",   GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_OK,        "ok",        GUI_COLOUR(TEXT_OK) },
+    { UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_WARNING,   "warning",   GUI_COLOUR(TEXT_WARNING) },
+    { UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_CRITICAL,  "critical",  GUI_COLOUR(TEXT_ERROR) },
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
     if (msg->size != UBX_MON_HW_V0_SIZE)
@@ -46,92 +91,25 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
     UBX_MON_HW_V0_GROUP0_t hw;
     std::memcpy(&hw, &msg->data[UBX_HEAD_SIZE], sizeof(hw));
 
-    const float topHeight = 6 * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
-    const float topWidth = 0.5 * (sizeAvail.x - (2 * _winSettings->style.ItemSpacing.x));
-    const ImVec2 topSize { topWidth, topHeight };
-    const ImVec2 bottomSize { sizeAvail.x, sizeAvail.y - topSize.y -_winSettings->style.ItemSpacing.y };
-    const float dataOffs = _winSettings->charSize.x * 16;
+    const ImVec2 topSize = _CalcTopSize(6);
+    const ImVec2 topSize2 = ImVec2(0.5 * (sizeAvail.x - _winSettings->style.ItemSpacing.x), topSize.y);
+    const float dataOffs = 16 * _winSettings->charSize.x;
 
-    ImGui::BeginChild("##Status", topSize);
+    if (ImGui::BeginChild("##Status", topSize2))
     {
-        ImGui::TextUnformatted("RTC");
-        ImGui::SameLine(dataOffs);
-        const bool rtcCalibrated = CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_RTCCALIB);
-        ImGui::PushStyleColor(ImGuiCol_Text, rtcCalibrated ? GUI_COLOUR(TEXT_OK) : GUI_COLOUR(TEXT_WARNING));
-        ImGui::TextUnformatted(rtcCalibrated ? "calibrated" : "uncalibrated");
-        ImGui::PopStyleColor();
-
-        ImGui::TextUnformatted("RTC XTAL");
-        ImGui::SameLine(dataOffs);
-        const bool rtcXtalAbsent = CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_XTALABSENT);
-        if (rtcXtalAbsent) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING)); }
-        ImGui::TextUnformatted(rtcXtalAbsent ? "absent" : "ok");
-        if (rtcXtalAbsent) { ImGui::PopStyleColor(); }
-
-        ImGui::TextUnformatted("Antenna status");
-        ImGui::SameLine(dataOffs);
-        const char * const aStatusStr[] = { "init", "unknown", "OK", "short", "open" };
-        const bool aStatusWarn = (hw.aStatus == UBX_MON_HW_V0_ASTATUS_SHORT) || (hw.aStatus == UBX_MON_HW_V0_ASTATUS_OPEN);
-        const bool aStatusOk   = (hw.aStatus == UBX_MON_HW_V0_ASTATUS_OK);
-        if (aStatusWarn || aStatusOk)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, aStatusWarn ? GUI_COLOUR(TEXT_WARNING) : GUI_COLOUR(TEXT_OK));
-        }
-        ImGui::TextUnformatted(hw.aStatus < NUMOF(aStatusStr) ? aStatusStr[hw.aStatus] : "???");
-        if (aStatusWarn || aStatusOk)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Antenna power");
-        ImGui::SameLine(dataOffs);
-        const char * const aPowerStr[]  = { "off", "on", "unknown" };
-        if (hw.aPower == UBX_MON_HW_V0_APOWER_ON)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_OK));
-        }
-        ImGui::TextUnformatted(hw.aPower < NUMOF(aPowerStr) ? aPowerStr[hw.aPower] : "???");
-        if (hw.aPower == UBX_MON_HW_V0_APOWER_ON)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Safeboot mode");
-        ImGui::SameLine(dataOffs);
-        const bool safeBootMode = CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_SAFEBOOT);
-        if (safeBootMode)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
-        }
-        ImGui::TextUnformatted(safeBootMode ? "active" : "inactive");
-        if (safeBootMode)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Jamming status");
-        ImGui::SameLine(dataOffs);
-        const char * const jammingStr[] = { "unknown", "OK", "warning", "critical" };
-        const uint8_t jamming = UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_GET(hw.flags);
-        const bool jammingWarning  = (jamming == UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_WARNING);
-        const bool jammingCritical = (jamming == UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_CRITICAL);
-        if (jammingWarning || jammingCritical)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, jammingCritical ? GUI_COLOUR(TEXT_ERROR) : GUI_COLOUR(TEXT_WARNING));
-        }
-        ImGui::TextUnformatted(jamming < NUMOF(jammingStr) ? jammingStr[jamming] : "???");
-        if (jammingWarning || jammingCritical)
-        {
-            ImGui::PopStyleColor();
-        }
-
+        _RenderStatusFlag(_rtcFlags,      CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_RTCCALIB),   "RTC mode",       dataOffs);
+        _RenderStatusFlag(_xtalFlags,     CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_XTALABSENT), "RTC XTAL",       dataOffs);
+        _RenderStatusFlag(_aStatusFlags,  hw.aStatus,                                        "Antenna status", dataOffs);
+        _RenderStatusFlag(_aPowerFlags,   hw.aPower,                                         "Antenna power",  dataOffs);
+        _RenderStatusFlag(_safebootFlags, CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_SAFEBOOT),   "Safeboot mode",  dataOffs);
+        _RenderStatusFlag(_jammingFlags,  UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_GET(hw.flags),    "Jamming status", dataOffs);
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
 
     //Gui::VerticalSeparator();
     ImGui::SameLine();
 
-    ImGui::BeginChild("##Gauges", topSize);
+    if (ImGui::BeginChild("##Gauges", topSize2))
     {
         char str[100];
 
@@ -155,14 +133,9 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
         const float jam = (float)hw.jamInd / (float)UBX_MON_HW_V0_JAMIND_MAX;
         snprintf(str, sizeof(str), "%.1f%%", jam * 1e2f);
         ImGui::ProgressBar(jam, ImVec2(-1.0f,0.0f), str);
+
+        ImGui::EndChild();
     }
-
-    ImGui::EndChild();
-
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
@@ -175,7 +148,7 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
         { .label = "Virtual",  .flags = 0 },
     };
 
-    if (ImGui::BeginTable("pins", NUMOF(columns), tableFlags, bottomSize))
+    if (ImGui::BeginTable("pins", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
     {
         ImGui::TableSetupScrollFreeze(1, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)
@@ -190,17 +163,17 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
             int colIx = 0;
 
             ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Selectable(pinNames[pinIx], false, ImGuiSelectableFlags_SpanAllColumns);
+            ImGui::Selectable(_pinNames[pinIx], false, ImGuiSelectableFlags_SpanAllColumns);
 
             ImGui::TableSetColumnIndex(colIx++);
             const uint8_t vPinIx = hw.VP[pinIx];
             if (CHKBITS(hw.pinSel, pinMask))
             {
-                ImGui::TextUnformatted(pioNames[pinIx]);
+                ImGui::TextUnformatted(_pioNames[pinIx]);
             }
             else
             {
-                ImGui::TextUnformatted(CHKBITS(hw.pinBank, pinMask) ? periphBfuncs[pinIx] : periphAfuncs[pinIx]);
+                ImGui::TextUnformatted(CHKBITS(hw.pinBank, pinMask) ? _periphBfuncs[pinIx] : _periphAfuncs[pinIx]);
             }
 
             ImGui::TableSetColumnIndex(colIx++);
@@ -232,7 +205,7 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
             ImGui::TableSetColumnIndex(colIx++);
             if (CHKBITS(hw.usedMask, pinMask))
             {
-                ImGui::Text("%u - %s", vPinIx, (vPinIx < NUMOF(virtFuncs)) && virtFuncs[vPinIx] ? virtFuncs[vPinIx] : "?");
+                ImGui::Text("%u - %s", vPinIx, (vPinIx < NUMOF(_virtFuncs)) && _virtFuncs[vPinIx] ? _virtFuncs[vPinIx] : "?");
             }
         }
         ImGui::EndTable();

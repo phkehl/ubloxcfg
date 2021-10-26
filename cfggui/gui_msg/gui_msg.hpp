@@ -61,8 +61,12 @@ class GuiMsg
             ImU32       colour;
         };
 
+        ImVec2 _CalcTopSize(const int nLinesOfTopText);
+        void _RenderStatusText(const std::string &label, const std::string &text, const float dataOffs);
+        void _RenderStatusText(const std::string &label, const char        *text, const float dataOffs);
+        void _RenderStatusText(const char        *label, const std::string &text, const float dataOffs);
+        void _RenderStatusText(const char        *label, const char        *text, const float dataOffs);
         void _RenderStatusFlag(const std::vector<StatusFlags> &flags, const int value, const char *label, const float offs);
-
 
     private:
 };

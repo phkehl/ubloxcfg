@@ -712,14 +712,24 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
             payload.navBbrMask = UBX_CFG_RST_V0_NAVBBR_NONE;
             payload.resetMode  = UBX_CFG_RST_V0_RESETMODE_GNSS;
             break;
+        case RX_RESET_SAFEBOOT:
+            break;
     }
     uint8_t msg[UBX_CFG_RST_V0_SIZE];
-    memcpy(&msg[0], &payload, sizeof(payload));
-    const int payloadSize = sizeof(payload);
-    const int msgSize = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_RST_MSGID, msg, payloadSize, msg);
-    RX_DEBUG("Sending UBX-CFG-RST, size %d, bbrMask=0x%04x, resetMode=0x%02x",
-        msgSize, payload.navBbrMask, payload.resetMode);
-
+    int msgSize = 0;
+    if (reset == RX_RESET_SAFEBOOT)
+    {
+        msgSize = ubxMakeMessage(UBX_UPD_CLSID, UBX_UPD_SAFEBOOT_MSGID, NULL, 0, msg);
+        RX_DEBUG("Sending UBX-UPD-SAFEBOOT, size %d", msgSize);
+    }
+    else
+    {
+        memcpy(&msg[0], &payload, sizeof(payload));
+        const int payloadSize = sizeof(payload);
+        msgSize = ubxMakeMessage(UBX_CFG_CLSID, UBX_CFG_RST_MSGID, msg, payloadSize, msg);
+        RX_DEBUG("Sending UBX-CFG-RST, size %d, bbrMask=0x%04x, resetMode=0x%02x",
+            msgSize, payload.navBbrMask, payload.resetMode);
+    }
     // Send the reset command...
     if (!rxSend(rx, msg, msgSize))
     {
@@ -808,6 +818,7 @@ const char *rxResetStr(const RX_RESET_t reset)
         case RX_RESET_GNSS_STOP:    return "Stop GNSS";
         case RX_RESET_GNSS_START:   return "Start GNSS";
         case RX_RESET_GNSS_RESTART: return "Restart GNSS";
+        case RX_RESET_SAFEBOOT:     return "Safeboot";
     }
     return "?";
 }

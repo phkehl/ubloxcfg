@@ -38,6 +38,27 @@ GuiMsgUbxMonHw3::GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver, std::shared
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw3::_rtcFlags =
+{
+    { true,      "calibrated",         GUI_COLOUR(TEXT_OK)      },
+    { false,     "uncalibrated",       GUI_COLOUR(TEXT_WARNING) },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw3::_xtalFlags =
+{
+    { true,      "absent",             GUI_COLOUR(TEXT_OK) },
+    { false,     "ok",                 GUI_COLOUR(C_NONE)  },
+};
+
+/*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw3::_safebootFlags =
+{
+    { true,      "active",             GUI_COLOUR(TEXT_WARNING) },
+    { false,     "inactive",           GUI_COLOUR(C_NONE) },
+
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
     if ( (UBX_MON_HW3_VERSION_GET(msg->data) != UBX_MON_HW3_V0_VERSION) || (UBX_MON_HW3_V0_SIZE(msg->data) != msg->size) )
@@ -47,52 +68,20 @@ bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Im
     UBX_MON_HW3_V0_GROUP0_t hw;
     std::memcpy(&hw, &msg->data[UBX_HEAD_SIZE], sizeof(hw));
 
-    const float topHeight = 4 * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
-    const ImVec2 topSize { 0.0f, topHeight };
-    const ImVec2 bottomSize { sizeAvail.x, sizeAvail.y - topSize.y -_winSettings->style.ItemSpacing.y };
+    const ImVec2 topSize = _CalcTopSize(4);
+    const float dataOffs = 20 * _winSettings->charSize.x;
 
     ImGui::BeginChild("##Status", topSize);
     {
-        ImGui::TextUnformatted("RTC:             ");
-        ImGui::SameLine();
-        const bool rtcCalibrated = CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_RTCCALIB);
-        ImGui::PushStyleColor(ImGuiCol_Text, rtcCalibrated ? GUI_COLOUR(TEXT_OK) : GUI_COLOUR(TEXT_WARNING));
-        ImGui::TextUnformatted(rtcCalibrated ? "calibrated" : "uncalibrated");
-        ImGui::PopStyleColor();
-
-        ImGui::TextUnformatted("RTC XTAL:        ");
-        ImGui::SameLine();
-        const bool rtcXtalAbsent = CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_XTALABSENT);
-        if (rtcXtalAbsent) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING)); }
-        ImGui::TextUnformatted(rtcXtalAbsent ? "absent" : "ok");
-        if (rtcXtalAbsent) { ImGui::PopStyleColor(); }
-
-        ImGui::TextUnformatted("Safeboot mode:   ");
-        ImGui::SameLine();
-        const bool safeBootMode = CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_SAFEBOOT);
-        if (safeBootMode)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
-        }
-        ImGui::TextUnformatted(safeBootMode ? "active" : "inactive");
-        if (safeBootMode)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::TextUnformatted("Hardware version:");
-        ImGui::SameLine();
+        _RenderStatusFlag(_rtcFlags,       CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_RTCCALIB),   "RTC mode",      dataOffs);
+        _RenderStatusFlag(_xtalFlags,      CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_XTALABSENT), "RTC XTAL",      dataOffs);
+        _RenderStatusFlag(_safebootFlags,  CHKBITS(hw.flags, UBX_MON_HW3_V0_FLAGS_SAFEBOOT),   "Safeboot mode", dataOffs);
         char str[sizeof(hw.hwVersion) + 1];
         std::memcpy(str, hw.hwVersion, sizeof(hw.hwVersion));
         str[sizeof(str) - 1] = '\0';
-        ImGui::TextUnformatted(str);
+        _RenderStatusText("Hardware version", str, dataOffs);
     }
     ImGui::EndChild();
-
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
@@ -105,7 +94,7 @@ bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Im
         { .label = "Virtual",     .flags = 0 },
     };
 
-    if (ImGui::BeginTable("pins", NUMOF(columns), tableFlags, bottomSize))
+    if (ImGui::BeginTable("pins", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
     {
         ImGui::TableSetupScrollFreeze(1, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)
@@ -163,8 +152,8 @@ bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Im
             if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_VPMANAGER))
             {
                 ImGui::Text("%u - %s", pin.VP,
-                    (pin.VP < NUMOF(GuiMsgUbxMonHw::virtFuncs)) && GuiMsgUbxMonHw::virtFuncs[pin.VP] ?
-                    GuiMsgUbxMonHw::virtFuncs[pin.VP] : "?");
+                    (pin.VP < NUMOF(GuiMsgUbxMonHw::_virtFuncs)) && GuiMsgUbxMonHw::_virtFuncs[pin.VP] ?
+                    GuiMsgUbxMonHw::_virtFuncs[pin.VP] : "?");
             }
         }
 

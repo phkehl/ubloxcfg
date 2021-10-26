@@ -41,7 +41,7 @@ class GuiMsgUbxEsfStatus : public GuiMsg
 
         struct Sensor
         {
-            Sensor(uint8_t *groupData);
+            Sensor(const uint8_t *groupData);
             std::string type;
             std::string used;
             std::string ready;
@@ -51,7 +51,7 @@ class GuiMsgUbxEsfStatus : public GuiMsg
             std::string faults;
         };
         bool                _valid;
-        double              _iTow;
+        std::string         _iTow;
         int                 _wtInitStatus;
         int                 _mntAlgStatus;
         int                 _insInitStatus;

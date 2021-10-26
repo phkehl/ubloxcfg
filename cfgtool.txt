@@ -328,6 +328,7 @@ Command 'reset':
         stop      -            -               -
         start     -            -               -
         gnss      -            -               -
+        safeboot  -            -               Safeboot
 
     Notes:
 
@@ -348,6 +349,9 @@ Command 'reset':
 
         The stop, start and gnss resets do not actually reset anything but
         instead stop, start and restart the GNSS operation.
+
+        The safeboot reset makes the receiver restart into safeboot mode.
+        Use a 'soft' reset to reboot into normal operation.
 
 Command 'status':
 

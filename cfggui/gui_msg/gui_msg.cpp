@@ -71,6 +71,44 @@ void GuiMsg::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+ImVec2 GuiMsg::_CalcTopSize(const int nLinesOfTopText)
+{
+    const float topHeight = nLinesOfTopText * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
+    return ImVec2(0.0f, topHeight);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsg::_RenderStatusText(const std::string &label, const std::string &text, const float dataOffs)
+{
+    ImGui::TextUnformatted(label.c_str());
+    ImGui::SameLine(dataOffs);
+    ImGui::TextUnformatted(text.c_str());
+}
+
+void GuiMsg::_RenderStatusText(const std::string &label, const char        *text, const float dataOffs)
+{
+    ImGui::TextUnformatted(label.c_str());
+    ImGui::SameLine(dataOffs);
+    ImGui::TextUnformatted(text);
+}
+
+void GuiMsg::_RenderStatusText(const char        *label, const std::string &text, const float dataOffs)
+{
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine(dataOffs);
+    ImGui::TextUnformatted(text.c_str());
+}
+
+void GuiMsg::_RenderStatusText(const char        *label, const char        *text, const float dataOffs)
+{
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine(dataOffs);
+    ImGui::TextUnformatted(text);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int value, const char *label, const float offs)
 {
     ImGui::TextUnformatted(label);

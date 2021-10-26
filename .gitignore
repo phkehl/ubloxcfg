@@ -20,3 +20,8 @@ core
 /*.cfg
 imgui.ini
 
+/*.ubx
+/tools/make_fake_ubxmonhw
+/tools/make_fake_ubxesfstatus
+/tools/make_fake_ubxesfmeas
+

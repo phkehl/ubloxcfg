@@ -104,11 +104,6 @@ bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
     UNUSED(msg);
     const uint32_t now = TIME();
 
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
         { .label = "SV  ",    .flags = ImGuiTableColumnFlags_NoReorder },
@@ -118,7 +113,7 @@ bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
         { .label = "Words",   .flags = ImGuiTableColumnFlags_NoHeaderWidth },
     };
 
-    if (ImGui::BeginTable("stats", NUMOF(columns), tableFlags, sizeAvail))
+    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail))
     {
         ImGui::TableSetupScrollFreeze(4, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)

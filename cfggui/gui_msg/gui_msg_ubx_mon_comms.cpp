@@ -48,37 +48,34 @@ bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
     UBX_MON_COMMS_V0_GROUP0_t comms;
     std::memcpy(&comms, &msg->data[UBX_HEAD_SIZE], sizeof(comms));
 
+    const ImVec2 topSize = _CalcTopSize(1);
 
-    const float topHeight = 1 * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
-    const ImVec2 tableSize { sizeAvail.x, sizeAvail.y - topHeight -_winSettings->style.ItemSpacing.y };
-
-    const bool memError   = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
-    const bool allocError = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
-    if (memError || allocError)
+    if (ImGui::BeginChild("##Status", topSize))
     {
-        ImGui::TextUnformatted("Errors:");
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
-        if (memError)
+        const bool memError   = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
+        const bool allocError = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
+        if (memError || allocError)
         {
-            ImGui::SameLine();
-            ImGui::TextUnformatted("memory");
+            ImGui::TextUnformatted("Errors:");
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
+            if (memError)
+            {
+                ImGui::SameLine();
+                ImGui::TextUnformatted("memory");
+            }
+            if (allocError)
+            {
+                ImGui::SameLine();
+                ImGui::TextUnformatted("txbuf");
+            }
+            ImGui::PopStyleColor();
         }
-        if (allocError)
+        else
         {
-            ImGui::SameLine();
-            ImGui::TextUnformatted("txbuf");
+            ImGui::TextUnformatted("Errors: none");
         }
-        ImGui::PopStyleColor();
+        ImGui::EndChild();
     }
-    else
-    {
-        ImGui::TextUnformatted("Errors: none");
-    }
-
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
 
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
@@ -114,7 +111,7 @@ bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
         }
     }
 
-    if (ImGui::BeginTable("ports", NUMOF(columns), tableFlags, tableSize))
+    if (ImGui::BeginTable("ports", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
     {
         ImGui::TableSetupScrollFreeze(1, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)

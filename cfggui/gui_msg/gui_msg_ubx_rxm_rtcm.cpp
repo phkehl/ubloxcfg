@@ -50,8 +50,6 @@ void GuiMsgUbxRxmRtcm::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define _UID(t, s, r)
-
 void GuiMsgUbxRxmRtcm::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 {
     if ( (msg->size == UBX_RXM_RTCM_V2_SIZE) && (UBX_RXM_RTCM_VERSION_GET(msg->data) == UBX_RXM_RTCM_V2_VERSION) )
@@ -105,11 +103,6 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
 
     const uint32_t now = TIME();
 
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
-
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
         { .label = "Message",   .flags = ImGuiTableColumnFlags_NoReorder },
@@ -121,7 +114,7 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
         { .label = "Age",       .flags = 0 },
     };
 
-    if (ImGui::BeginTable("stats", NUMOF(columns), tableFlags, sizeAvail))
+    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail))
     {
         ImGui::TableSetupScrollFreeze(0, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)

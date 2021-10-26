@@ -76,10 +76,13 @@ bool GuiMsgUbxMonHw2::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Im
 
 /* static */ void GuiMsgUbxMonHw2::DrawIQ(const ImVec2 &size, const std::deque<GuiMsgUbxMonHw2::IQ> &iqs)
 {
+    if (!ImGui::BeginChild("##iqplot", size))
+    {
+        return;
+    }
+
     // Measurement
     const IQ &iqLatest = iqs[iqs.size() - 1];
-
-    ImGui::BeginChild("##iqplot", size);
 
     // Canvas
     const ImVec2 offs = ImGui::GetCursorScreenPos();

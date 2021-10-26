@@ -33,7 +33,7 @@ class GuiMsgUbxMonHw : public GuiMsg
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
 
         // As seen in u-center... (by feeding it fake UBX-MON-HW messages...)
-        static constexpr const char * const virtFuncs[] =
+        static constexpr const char * const _virtFuncs[] =
         {
             "UART1_RX", "UART1_TX", "DDC_PER_SCL", "DDC_PER_SDA", "DDC_MEM_SCL", "DDC_MEM_SDA", "SPI_MOSI", "SPI_MISO", // 0-7
             "SPI_SCK", "SPI_SS", "DSPI2_MOSI", "DSPI2_MISO", nullptr, nullptr, "DSPI2_SCK", "DSPI2_CS", // 8-15
@@ -45,27 +45,34 @@ class GuiMsgUbxMonHw : public GuiMsg
             "SINGLE_WT", "DRIVE_DIR", "GEOFENCE", nullptr, nullptr, nullptr, "NAV_STATUS" // 64-70
         };
 
-    protected:
+    private:
 
-        static constexpr const char * const pinNames[] =
+        static const std::vector<StatusFlags> _rtcFlags;
+        static const std::vector<StatusFlags> _xtalFlags;
+        static const std::vector<StatusFlags> _aStatusFlags;
+        static const std::vector<StatusFlags> _aPowerFlags;
+        static const std::vector<StatusFlags> _safebootFlags;
+        static const std::vector<StatusFlags> _jammingFlags;
+
+        static constexpr const char * const _pinNames[] =
         {
             " 0", " 1", " 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9", "10", "11", "12", "13", "14", "15", "16", "17"
         };
 
-        static constexpr const char * const pioNames[] =
+        static constexpr const char * const _pioNames[] =
         {
             "PIO00", "PIO01", "PIO02", "PIO03", "PIO04", "PIO05", "PIO06", "PIO07", "PIO08", "PIO09", "PIO10", "PIO11",
             "PIO12", "PIO13", "PIO14", "PIO15", "PIO16"
         };
 
         // As seen in u-center... (see above)
-        static constexpr const char * const periphAfuncs[] =
+        static constexpr const char * const _periphAfuncs[] =
         {
             "N/A", "UART_H_RX", "UART_H_TX", "I2C_SDA", "I2C_SCK", "TIMEPULSE1", "TIMEPULSE2", "N/A",
             "DIGIO_CS", "UART_S_RX", "UART_S_TX", "SPI_M_CLK", "SPI_M_MOSI", "SPI_M_MISO", "SPI_M_CS", "DIGIO_CLK",
             "DIGIO_CS"
         };
-        static constexpr const char * const periphBfuncs[] =
+        static constexpr const char * const _periphBfuncs[] =
         {
             "PWM", "SPI_D_MOSI", "SPI_D_MISO", "SPI_D_CS", "SPI_D_CLK", "I2C_S_CLK", "UART_H_TX", "UART_H_RX",
             "I2C_S_SDA", "I2C_S_SCL", "I2C_S_SDA", "I2C_S_SCL", "I2C_S_SDA", "N/A", "UART_S_TX", "UART_S_RX",

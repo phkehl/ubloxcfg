@@ -416,37 +416,39 @@ bool GuiWinFileDialog::_DrawWindow()
         }
         else
         {
-            ImGui::BeginChild("currentDirParts", ImVec2(-1, _winSettings->iconButtonSize.y), false, ImGuiWindowFlags_NoScrollbar);
-            for (int ix = 0; ix < (int)_currentDirParts.size(); ix++)
+            if (ImGui::BeginChild("currentDirParts", ImVec2(-1, _winSettings->iconButtonSize.y), false, ImGuiWindowFlags_NoScrollbar))
             {
-                const auto &part = _currentDirParts[ix];
-                if (ix > 0)
+                for (int ix = 0; ix < (int)_currentDirParts.size(); ix++)
                 {
-                    ImGui::SameLine();
-                }
-                ImGui::PushID(ix + 1);
-                if (ImGui::Button(part.c_str()))
-                {
-                    std::filesystem::path newPath { _currentDirParts[0] };
-                    for (int iix = 1; iix <= ix; iix++)
+                    const auto &part = _currentDirParts[ix];
+                    if (ix > 0)
                     {
-                        newPath /= _currentDirParts[iix];
+                        ImGui::SameLine();
                     }
-                    _ChangeDir(newPath);
-                    _Check();
+                    ImGui::PushID(ix + 1);
+                    if (ImGui::Button(part.c_str()))
+                    {
+                        std::filesystem::path newPath { _currentDirParts[0] };
+                        for (int iix = 1; iix <= ix; iix++)
+                        {
+                            newPath /= _currentDirParts[iix];
+                        }
+                        _ChangeDir(newPath);
+                        _Check();
+                    }
+                    ImGui::PopID();
                 }
-                ImGui::PopID();
+                if (_currentDirParts.empty())
+                {
+                    ImGui::NewLine();
+                }
+                if (_updatePathScroll)
+                {
+                    ImGui::SetScrollHereX(1.0);
+                    _updatePathScroll = false;
+                }
+                ImGui::EndChild();
             }
-            if (_currentDirParts.empty())
-            {
-                ImGui::NewLine();
-            }
-            if (_updatePathScroll)
-            {
-                ImGui::SetScrollHereX(1.0);
-                _updatePathScroll = false;
-            }
-            ImGui::EndChild();
         }
     }
 

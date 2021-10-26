@@ -81,7 +81,7 @@ void GuiMsgUbxEsfStatus::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
     std::memcpy(&status, &msg->data[UBX_HEAD_SIZE], sizeof(status));
 
     _valid         = true;
-    _iTow          = (double)status.iTOW * UBX_ESF_STATUS_V2_ITOW_SCALE;
+    _iTow          = Ff::Sprintf("%10.3f", (double)status.iTOW * UBX_ESF_STATUS_V2_ITOW_SCALE);
     _wtInitStatus  = UBX_ESF_STATUS_V2_INITSTATUS1_WTINITSTATUS_GET(status.initStatus1);
     _mntAlgStatus  = UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_GET(status.initStatus1);
     _insInitStatus = UBX_ESF_STATUS_V2_INITSTATUS1_INSINITSTATUS_GET(status.initStatus1);
@@ -99,7 +99,7 @@ void GuiMsgUbxEsfStatus::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiMsgUbxEsfStatus::Sensor::Sensor(uint8_t *groupData)
+GuiMsgUbxEsfStatus::Sensor::Sensor(const uint8_t *groupData)
 {
     UBX_ESF_STATUS_V2_GROUP1_t sensor;
     std::memcpy(&sensor, groupData, sizeof(sensor));
@@ -165,23 +165,19 @@ bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const
     UBX_ESF_STATUS_V2_GROUP0_t status;
     std::memcpy(&status, &msg->data[UBX_HEAD_SIZE], sizeof(status));
 
-    const float topHeight = 6 * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
-    const ImVec2 topSize { 0.0f, topHeight };
-    const ImVec2 bottomSize { sizeAvail.x, sizeAvail.y - topSize.y -_winSettings->style.ItemSpacing.y };
+    const ImVec2 topSize = _CalcTopSize(6);
     const float dataOffs = 25 * _winSettings->charSize.x;
 
-    ImGui::BeginChild("##Status", topSize);
+    if (ImGui::BeginChild("##Status", topSize))
     {
-        ImGui::TextUnformatted("GPS time");
-        ImGui::SameLine(dataOffs);
-        ImGui::Text("%10.3f", _iTow);
+        _RenderStatusText("GPS time", _iTow, dataOffs);
         _RenderStatusFlag(_fusionModeFlags, _fusionMode ,   "Fusion mode",        dataOffs);
         _RenderStatusFlag(_statusFlags0123, _imuInitStatus, "IMU status",         dataOffs);
         _RenderStatusFlag(_statusFlags012,  _wtInitStatus,  "Wheel-ticks status", dataOffs);
         _RenderStatusFlag(_statusFlags0123, _insInitStatus, "INS status",         dataOffs);
         _RenderStatusFlag(_statusFlags0123, _mntAlgStatus,  "Mount align status", dataOffs);
+        ImGui::EndChild();
     }
-    ImGui::EndChild();
 
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
@@ -194,7 +190,7 @@ bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const
         { .label = "Faults",        .flags = 0 },
     };
 
-    if (ImGui::BeginTable("Sensors", NUMOF(columns), TABLE_FLAGS, bottomSize))
+    if (ImGui::BeginTable("Sensors", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
     {
         ImGui::TableSetupScrollFreeze(1, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)

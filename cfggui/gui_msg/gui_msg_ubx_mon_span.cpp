@@ -124,7 +124,10 @@ void GuiMsgUbxMonSpan::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
     UNUSED(msg);
-    ImGui::BeginChild("##spectra", sizeAvail);
+    if (!ImGui::BeginChild("##spectra", sizeAvail))
+    {
+        return true;
+    }
 
     // Controls
     {

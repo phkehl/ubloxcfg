@@ -32,9 +32,12 @@ class GuiMsgUbxMonHw3 : public GuiMsg
 
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
 
-    protected:
-
     private:
+
+        static const std::vector<StatusFlags> _rtcFlags;
+        static const std::vector<StatusFlags> _xtalFlags;
+        static const std::vector<StatusFlags> _safebootFlags;
+
 };
 
 /* ****************************************************************************************************************** */

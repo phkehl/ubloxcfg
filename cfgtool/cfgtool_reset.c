@@ -51,6 +51,7 @@ const char *resetHelp(void)
 "        stop      -            -               -\n"
 "        start     -            -               -\n"
 "        gnss      -            -               -\n"
+"        safeboot  -            -               Safeboot\n"
 "\n"
 "    Notes:\n"
 "\n"
@@ -71,6 +72,9 @@ const char *resetHelp(void)
 "\n"
 "        The stop, start and gnss resets do not actually reset anything but\n"
 "        instead stop, start and restart the GNSS operation.\n"
+"\n"
+"        The safeboot reset makes the receiver restart into safeboot mode.\n"
+"        Use a 'soft' reset to reboot into normal operation.\n"
 "\n";
 }
 
@@ -117,6 +121,10 @@ bool resetTypeFromStr(const char *resetType, RX_RESET_t *reset)
     else if (strcasecmp("gnss", resetType) == 0)
     {
         *reset = RX_RESET_GNSS_RESTART;
+    }
+    else if (strcasecmp("safeboot", resetType) == 0)
+    {
+        *reset = RX_RESET_SAFEBOOT;
     }
     else
     {

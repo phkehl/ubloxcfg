@@ -868,7 +868,7 @@ void Receiver::_SendEvent(std::unique_ptr<ReceiverEvent> event)
 
     // Detect if we're sending more events than the consumer (main thread) can handle
     auto size = _eventQueue.size();
-    if (size > 100)
+    if (size > 1000)
     {
         if (!_eventQueueSaturation)
         {

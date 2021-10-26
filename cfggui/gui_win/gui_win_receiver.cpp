@@ -386,7 +386,9 @@ void GuiWinReceiver::_DrawCommandButtons()
         { NULL, RX_RESET_NONE, NULL },
         { NULL,                      RX_RESET_GNSS_STOP,     "Stop navigation" },
         { NULL,                      RX_RESET_GNSS_START,    "Start navigation" },
-        { NULL,                      RX_RESET_GNSS_RESTART,  "Restart navigation" }
+        { NULL,                      RX_RESET_GNSS_RESTART,  "Restart navigation" },
+        { NULL, RX_RESET_NONE, NULL },
+        { NULL,                      RX_RESET_SAFEBOOT,      "Safeboot" },
     };
 
     //ImGui::PushID(_winUid);

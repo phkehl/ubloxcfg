@@ -87,7 +87,7 @@ void GuiWinDataLog::ProcessData(const Data &data)
         {
             char tmp[320];
             std::snprintf(tmp, sizeof(tmp), "@ %4u %s", data.epoch->seq, data.epoch->str.c_str());
-            _log.AddLine(tmp, GUI_COLOUR(GUI_COLOUR(LOG_EPOCH)));
+            _log.AddLine(tmp, GUI_COLOUR(LOG_EPOCH));
             _nEpoch++;
             break;
         }
@@ -121,7 +121,6 @@ void GuiWinDataLog::DrawWindow()
 
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
-
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted("Msg: ");
         ImGui::PopStyleColor();
@@ -180,13 +179,14 @@ void GuiWinDataLog::DrawWindow()
         ImGui::TextUnformatted(", Epoch: ");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(GUI_COLOUR(LOG_EPOCH)));
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_EPOCH));
         ImGui::Text("%u", _nEpoch);
         ImGui::PopStyleColor();
         //ImGui::SameLine();
 
         ImGui::PopStyleVar(); // ImGuiStyleVar_ItemSpacing
     }
+
     ImGui::Separator();
 
     _log.DrawWidget();

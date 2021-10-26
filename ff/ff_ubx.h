@@ -132,6 +132,7 @@ extern "C" {
 #define UBX_NAV_TIMELS_MSGID         0x26
 #define UBX_NAV_COV_MSGID            0x36
 #define UBX_NAV_EELL_MSGID           0x3d
+#define UBX_NAV_ATT_MSGID            0x05
 
 #define UBX_RXM_CLSID                0x02
 #define UBX_RXM_MEASX_MSGID          0x14
@@ -152,6 +153,7 @@ extern "C" {
 #define UBX_UPD_CLSID                0x09
 #define UBX_UPD_SOS_MSGID            0x14
 #define UBX_UPD_POS_MSGID            0x15 // says u-center...
+#define UBX_UPD_SAFEBOOT_MSGID       0x07 // says ubxfwupdate.exe that comes with u-center...
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -247,6 +249,7 @@ extern "C" {
     _P_(UBX_NAV_CLSID, UBX_NAV_TIMEGAL_MSGID,     "UBX-NAV-TIMEGAL") \
     _P_(UBX_NAV_CLSID, UBX_NAV_COV_MSGID,         "UBX-NAV-COV") \
     _P_(UBX_NAV_CLSID, UBX_NAV_EELL_MSGID,        "UBX-NAV-EELL") \
+    _P_(UBX_NAV_CLSID, UBX_NAV_ATT_MSGID,         "UBX-NAV-ATT") \
     _P_(UBX_RXM_CLSID, UBX_RXM_MEASX_MSGID,       "UBX-RXM-MEASX") \
     _P_(UBX_RXM_CLSID, UBX_RXM_RAWX_MSGID,        "UBX-RXM-RAWX") \
     _P_(UBX_RXM_CLSID, UBX_RXM_SFRBX_MSGID,       "UBX-RXM-SFRBX") \
@@ -258,7 +261,8 @@ extern "C" {
     _P_(UBX_TIM_CLSID, UBX_TIM_TP_MSGID,          "UBX-TIM-TP") \
     _P_(UBX_TIM_CLSID, UBX_TIM_VRFY_MSGID,        "UBX-TIM-VRFY") \
     _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS") \
-    _P_(UBX_UPD_CLSID, UBX_UPD_POS_MSGID,         "UBX-UPD-POS")
+    _P_(UBX_UPD_CLSID, UBX_UPD_POS_MSGID,         "UBX-UPD-POS") \
+    _P_(UBX_UPD_CLSID, UBX_UPD_SAFEBOOT_MSGID,    "UBX-UPD-SAFEBOOT")
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -1195,17 +1199,19 @@ typedef struct UBX_RXM_RAWX_V1_GROUP1_s
 } UBX_RXM_RAWX_V1_GROUP1_t;
 
 #define UBX_RXM_RAWX_V1_VERSION                       0x01
-#define UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(f)        ((f) & 0x0f)
-#define UBX_RXM_RAWX_V1_PRSTD_SCALE(s)              (0.01 * exp2(s))
-#define UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(f)        ((f) & 0x0f)
-#define UBX_RXM_RAWX_V1_CPSTD_SCALE(c)              (0.004 * (double)(c))
-#define UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(f)        ((f) & 0x0f)
-#define UBX_RXM_RAWX_V1_DOSTD_SCALE(s)              (0.002 * exp2(s))
-#define UBX_RXM_RAWX_V1_LOCKTIME_SCALE              1e-3
-#define UBX_RXM_RAWX_V1_TRKSTAT_PRVALID             0x01
-#define UBX_RXM_RAWX_V1_TRKSTAT_CPVALID             0x02
-#define UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC             0x04
-#define UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC          0x08
+#define UBX_RXM_RAWX_V1_RECSTAT_LEAPSEC               0x01
+#define UBX_RXM_RAWX_V1_RECSTAT_CLKRESET              0x02
+#define UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(f)          ((f) & 0x0f)
+#define UBX_RXM_RAWX_V1_PRSTD_SCALE(s)                (0.01 * exp2(s))
+#define UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(f)          ((f) & 0x0f)
+#define UBX_RXM_RAWX_V1_CPSTD_SCALE(c)                (0.004 * (double)(c))
+#define UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(f)          ((f) & 0x0f)
+#define UBX_RXM_RAWX_V1_DOSTD_SCALE(s)                (0.002 * exp2(s))
+#define UBX_RXM_RAWX_V1_LOCKTIME_SCALE                1e-3
+#define UBX_RXM_RAWX_V1_TRKSTAT_PRVALID               0x01
+#define UBX_RXM_RAWX_V1_TRKSTAT_CPVALID               0x02
+#define UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC               0x04
+#define UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC            0x08
 
 #define UBX_RXM_RAWX_V1_MIN_SIZE    ((int)(sizeof(UBX_RXM_RAWX_V1_GROUP0_t) + UBX_FRAME_SIZE))
 #define UBX_RXM_RAWX_V1_SIZE(msg) \

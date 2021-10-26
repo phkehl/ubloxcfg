@@ -32,9 +32,36 @@ class GuiMsgUbxRxmRawx : public GuiMsg
     public:
         GuiMsgUbxRxmRawx(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
+        void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        void Clear() final;
 
     protected:
+
+        struct RawInfo
+        {
+            RawInfo(const uint8_t *groupData);
+            uint32_t    uid;
+            std::string sv;
+            std::string signal;
+            std::string cno;
+            std::string pseudoRange;
+            std::string carrierPhase;
+            std::string doppler;
+            std::string lockTime;
+            bool        prValid;
+            bool        cpValid;
+            bool        halfCyc;
+            bool        subHalfCyc;
+        };
+
+        bool   _valid;
+        int    _week;
+        double _rcvTow;
+        int    _leapSec;
+        bool   _leapSecValid;
+        bool   _clkReset;
+        std::vector<RawInfo> _rawInfos;
 
         uint32_t _selected;
 

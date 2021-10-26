@@ -38,13 +38,14 @@ class GuiMsgUbxMonRf : public GuiMsg
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
         void Clear();
 
-    protected:
+    private:
 
         static constexpr int NUM_IQS = 50;
+        static const std::vector<StatusFlags> _aStatusFlags;
+        static const std::vector<StatusFlags> _aPowerFlags;
+        static const std::vector<StatusFlags> _jammingFlags;
 
         std::vector< std::deque<GuiMsgUbxMonHw2::IQ> > _blockIqs;
-
-    private:
 };
 
 /* ****************************************************************************************************************** */

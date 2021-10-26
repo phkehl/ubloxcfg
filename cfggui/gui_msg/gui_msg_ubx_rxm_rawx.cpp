@@ -35,19 +35,103 @@ GuiMsgUbxRxmRawx::GuiMsgUbxRxmRawx(std::shared_ptr<Receiver> receiver, std::shar
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+void GuiMsgUbxRxmRawx::Clear()
+{
+    _rawInfos.clear();
+    _valid = false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiMsgUbxRxmRawx::RawInfo::RawInfo(const uint8_t *groupData)
+{
+    UBX_RXM_RAWX_V1_GROUP1_t meas;
+    std::memcpy(&meas, groupData, sizeof(meas));
+
+    uid = ((uint32_t)meas.gnssId << 24) |
+          ((uint32_t)meas.svId   << 16) |
+          ((uint32_t)meas.freqId <<  8) |
+           (uint32_t)meas.sigId;
+
+    prValid    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_PRVALID);
+    cpValid    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_CPVALID);
+    halfCyc    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC);
+    subHalfCyc = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC);
+
+    sv = Ff::Sprintf("%s##%p", ubxSvStr(meas.gnssId, meas.svId), groupData);
+
+    if (meas.gnssId == UBX_GNSSID_GLO)
+    {
+        signal = Ff::Sprintf("%s (%+d)", ubxSigStr(meas.gnssId, meas.sigId), (int)meas.freqId - 7);
+    }
+    else
+    {
+        signal = ubxSigStr(meas.gnssId, meas.sigId);
+    }
+
+    cno = Ff::Sprintf("%2u", meas.cno);
+    pseudoRange = Ff::Sprintf("%11.2f %6.2f", meas.prMeas, UBX_RXM_RAWX_V1_PRSTD_SCALE(UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(meas.prStdev)));
+    carrierPhase = Ff::Sprintf("%12.2f %5.3f", meas.cpMeas, UBX_RXM_RAWX_V1_CPSTD_SCALE(UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(meas.cpStdev)));
+    doppler = Ff::Sprintf("%7.1f %5.3f", meas.doMeas, UBX_RXM_RAWX_V1_DOSTD_SCALE(UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(meas.doStdev)));
+    lockTime = Ff::Sprintf("%.3f", (double)meas.locktime * UBX_RXM_RAWX_V1_LOCKTIME_SCALE);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxRxmRawx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
+{
+    Clear();
+    if ( (UBX_RXM_RAWX_VERSION_GET(msg->data) != UBX_RXM_RAWX_V1_VERSION) || (UBX_RXM_RAWX_V1_SIZE(msg->data) != msg->size) )
+    {
+        return;
+    }
+
+    UBX_RXM_RAWX_V1_GROUP0_t rawx;
+    std::memcpy(&rawx, &msg->data[UBX_HEAD_SIZE], sizeof(rawx));
+
+    _valid  = true;
+
+    _week         = rawx.week;
+    _rcvTow       = rawx.rcvTow;
+    _leapSec      = rawx.leapS;
+    _leapSecValid = CHKBITS(rawx.recStat, UBX_RXM_RAWX_V1_RECSTAT_LEAPSEC);
+    _clkReset     = CHKBITS(rawx.recStat, UBX_RXM_RAWX_V1_RECSTAT_CLKRESET);
+
+    for (int measIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_RXM_RAWX_V1_GROUP0_t); measIx < (int)rawx.numMeas;
+            measIx++, offs += (int)sizeof(UBX_RXM_RAWX_V1_GROUP1_t))
+    {
+        _rawInfos.emplace_back(RawInfo(&msg->data[offs]));
+    }
+
+    std::sort(_rawInfos.begin(), _rawInfos.end(), [](const RawInfo &a, const RawInfo &b) { return a.uid < b.uid; });
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
-    if ( (UBX_RXM_RAWX_VERSION_GET(msg->data) != UBX_RXM_RAWX_V1_VERSION) || (UBX_RXM_RAWX_V1_SIZE(msg->data) != msg->size) )
+    UNUSED(msg);
+    if (!_valid)
     {
         return false;
     }
 
-    // TODO: local time, leap seconds clock reset
+    const ImVec2 topSize = _CalcTopSize(3);
+    const float dataOffs = 25 * _winSettings->charSize.x;
 
-    constexpr ImGuiTableFlags tableFlags =
-        ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit
-        | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY;
+    if (ImGui::BeginChild("##Status", topSize))
+    {
+        ImGui::TextUnformatted("Receiver local time");
+        ImGui::SameLine(dataOffs);
+        ImGui::Text("%04d:%010.3f %s", _week, _rcvTow, _clkReset ? "clock reset" : "");
+        ImGui::TextUnformatted("Leap second:");
+        ImGui::SameLine(dataOffs);
+        ImGui::Text("%d (%s)", _leapSec, _leapSecValid ? "valid" : " invalid");
+        ImGui::TextUnformatted("Measurements:");
+        ImGui::SameLine(dataOffs);
+        ImGui::Text("%d", (int)_rawInfos.size());
+        ImGui::EndChild();
+    }
 
     const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
     {
@@ -60,8 +144,7 @@ bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
         { .label = "Lock time [s]",           .flags = 0 },
     };
 
-    // TODO: table sorting...
-    if (ImGui::BeginTable("stats", NUMOF(columns), tableFlags, sizeAvail))
+    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
     {
         ImGui::TableSetupScrollFreeze(0, 1);
         for (int ix = 0; ix < NUMOF(columns); ix++)
@@ -70,68 +153,40 @@ bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
         }
         ImGui::TableHeadersRow();
 
-        UBX_RXM_RAWX_V1_GROUP0_t rawx;
-        std::memcpy(&rawx, &msg->data[UBX_HEAD_SIZE], sizeof(rawx));
-
-        for (int measIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_RXM_RAWX_V1_GROUP0_t); measIx < (int)rawx.numMeas;
-                measIx++, offs += (int)sizeof(UBX_RXM_RAWX_V1_GROUP1_t))
+        for (const auto &info: _rawInfos)
         {
-            UBX_RXM_RAWX_V1_GROUP1_t meas;
-            std::memcpy(&meas, &msg->data[offs], sizeof(meas));
-            const bool prValid    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_PRVALID);
-            const bool cpValid    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_CPVALID);
-            const bool halfCyc    = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC);
-            const bool subHalfCyc = CHKBITS(meas.trkStat, UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC);
-            const uint32_t uid =
-                ((uint32_t)meas.gnssId  << 24) |
-                ((uint32_t)meas.svId    << 16) |
-                ((uint32_t)meas.freqId  <<  8) |
-                 (uint32_t)meas.sigId;
-
             ImGui::TableNextRow();
             int colIx = 0;
-            char str[100];
 
             ImGui::TableSetColumnIndex(colIx++);
-            snprintf(str, sizeof(str), "%s##%d", ubxSvStr(meas.gnssId, meas.svId), offs);
-            if (ImGui::Selectable(str, _selected == uid, ImGuiSelectableFlags_SpanAllColumns))
+            if (ImGui::Selectable(info.sv.c_str(), _selected == info.uid, ImGuiSelectableFlags_SpanAllColumns))
             {
-                _selected = (_selected == uid) ? 0 : uid;
+                _selected = (_selected == info.uid) ? 0 : info.uid;
             }
 
             ImGui::TableSetColumnIndex(colIx++);
-            if (meas.gnssId == UBX_GNSSID_GLO)
-            {
-                ImGui::Text("%s (%+d)", ubxSigStr(meas.gnssId, meas.sigId), (int)meas.freqId - 7);
-            }
-            else
-            {
-                ImGui::TextUnformatted(ubxSigStr(meas.gnssId, meas.sigId));
-            }
+            ImGui::TextUnformatted(info.signal.c_str());
 
             ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%2u", meas.cno);
+            ImGui::TextUnformatted(info.cno.c_str());
 
             ImGui::TableSetColumnIndex(colIx++);
-            if (!prValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
-            ImGui::Text("%11.2f %6.2f", meas.prMeas, UBX_RXM_RAWX_V1_PRSTD_SCALE(UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(meas.prStdev)));
-            if (!prValid) { ImGui::PopStyleColor(); }
+            if (!info.prValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+            ImGui::TextUnformatted(info.pseudoRange.c_str());
+            if (!info.prValid) { ImGui::PopStyleColor(); }
 
             ImGui::TableSetColumnIndex(colIx++);
-            if (!cpValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
-            ImGui::Text("%12.2f %5.3f", meas.cpMeas, UBX_RXM_RAWX_V1_CPSTD_SCALE(UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(meas.cpStdev)));
-            if (!cpValid) { ImGui::PopStyleColor(); }
+            if (!info.cpValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+            ImGui::TextUnformatted(info.carrierPhase.c_str());
+            if (!info.cpValid) { ImGui::PopStyleColor(); }
 
             ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%7.1f %5.3f", meas.doMeas, UBX_RXM_RAWX_V1_DOSTD_SCALE(UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(meas.doStdev)));
+            ImGui::TextUnformatted(info.doppler.c_str());
 
             ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%.3f", (double)meas.locktime * UBX_RXM_RAWX_V1_LOCKTIME_SCALE);
+            ImGui::TextUnformatted(info.lockTime.c_str());
 
-            // TODO
-            UNUSED(halfCyc);
-            UNUSED(subHalfCyc);
-
+            // TODO: info.halfCyc, info.subHalfCyc
         }
 
         ImGui::EndTable();
