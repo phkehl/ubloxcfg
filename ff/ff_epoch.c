@@ -86,7 +86,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
 
 static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch);
 
-bool epochCollect(EPOCH_t *coll, PARSER_MSG_t *msg, EPOCH_t *epoch)
+bool epochCollect(EPOCH_t *coll, const PARSER_MSG_t *msg, EPOCH_t *epoch)
 {
     if ( (coll == NULL) || (msg == NULL) )
     {
