@@ -25,13 +25,13 @@
 class GuiWinDataLog : public GuiWinData
 {
     public:
-        GuiWinDataLog(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
+        GuiWinDataLog(const std::string &name, std::shared_ptr<Database> database);
+       ~GuiWinDataLog();
 
-      //void                 Loop(const uint32_t &frame, const double &now) override;
-        void                 ProcessData(const Data &data) override;
-        void                 ClearData() override;
-        void                 DrawWindow() override;
+      //void                 Loop(const uint32_t &frame, const double &now) final;
+        void                 ProcessData(const Data &data) final;
+        void                 ClearData() final;
+        void                 DrawWindow() final;
 
     protected:
         GuiWidgetLog         _log;

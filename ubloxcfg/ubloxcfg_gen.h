@@ -32,6 +32,7 @@ extern "C" {
     - u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG
     - u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG
     - u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG
+    - u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG
     - u-center 20.01, copyright (c) 2020 u-blox AG
 
     @{
@@ -45,7 +46,7 @@ extern "C" {
 #define UBLOXCFG_CFG_BDS_ID  0x00340000 //!< Group ID of the CFG-BDS-* items
 
 /*!
-    \defgroup UBLOXCFG_CFG_BDS_USE_PRN_1_TO_5 CFG-BDS-USE_PRN_1_TO_5 (Use BeiDou geostationary satellites (PRN 1-5))
+    \defgroup UBLOXCFG_CFG_BDS_USE_PRN_1_TO_5 CFG-BDS-USE_PRN_1_TO_5 (Use BeiDou geostationary satellites (PRN 1-5), a.k.a. CFG-BDS-USE_GEO_PRN)
     @{
 */
 #define UBLOXCFG_CFG_BDS_USE_PRN_1_TO_5_ID                 0x10340014                               //!< ID of CFG-BDS-USE_PRN_1_TO_5
@@ -469,6 +470,15 @@ typedef enum UBLOXCFG_CFG_HW_ANT_SUP_ENGINE_e
 #define UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID                   0x10710004                               //!< ID of CFG-I2CINPROT-RTCM3X
 #define UBLOXCFG_CFG_I2CINPROT_RTCM3X_STR                  "CFG-I2CINPROT-RTCM3X"                   //!< Name of CFG-I2CINPROT-RTCM3X
 #define UBLOXCFG_CFG_I2CINPROT_RTCM3X_TYPE                 L                                        //!< Type of CFG-I2CINPROT-RTCM3X
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_I2CINPROT_SPARTN CFG-I2CINPROT-SPARTN (Flag to indicate if SPARTN should be an input protocol on I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_I2CINPROT_SPARTN_ID                   0x10710005                               //!< ID of CFG-I2CINPROT-SPARTN
+#define UBLOXCFG_CFG_I2CINPROT_SPARTN_STR                  "CFG-I2CINPROT-SPARTN"                   //!< Name of CFG-I2CINPROT-SPARTN
+#define UBLOXCFG_CFG_I2CINPROT_SPARTN_TYPE                 L                                        //!< Type of CFG-I2CINPROT-SPARTN
 ///@}
 
 ///@}
@@ -1328,6 +1338,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 #define UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_ID             0x209100ae                               //!< ID of CFG-MSGOUT-NMEA_ID_RMC_USB
 #define UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_STR            "CFG-MSGOUT-NMEA_ID_RMC_USB"             //!< Name of CFG-MSGOUT-NMEA_ID_RMC_USB
 #define UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_TYPE           U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_RMC_USB
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1 CFG-MSGOUT-NMEA_ID_THS_UART1 (Output rate of the NMEA-STANDARD-THS message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_ID           0x209100e3                               //!< ID of CFG-MSGOUT-NMEA_ID_THS_UART1
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_STR          "CFG-MSGOUT-NMEA_ID_THS_UART1"           //!< Name of CFG-MSGOUT-NMEA_ID_THS_UART1
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_TYPE         U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_THS_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2 CFG-MSGOUT-NMEA_ID_THS_UART2 (Output rate of the NMEA-STANDARD-THS message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_ID           0x209100e4                               //!< ID of CFG-MSGOUT-NMEA_ID_THS_UART2
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_STR          "CFG-MSGOUT-NMEA_ID_THS_UART2"           //!< Name of CFG-MSGOUT-NMEA_ID_THS_UART2
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_TYPE         U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_THS_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI CFG-MSGOUT-NMEA_ID_THS_SPI (Output rate of the NMEA-STANDARD-THS message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_ID             0x209100e6                               //!< ID of CFG-MSGOUT-NMEA_ID_THS_SPI
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_STR            "CFG-MSGOUT-NMEA_ID_THS_SPI"             //!< Name of CFG-MSGOUT-NMEA_ID_THS_SPI
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_TYPE           U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_THS_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C CFG-MSGOUT-NMEA_ID_THS_I2C (Output rate of the NMEA-STANDARD-THS message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_ID             0x209100e2                               //!< ID of CFG-MSGOUT-NMEA_ID_THS_I2C
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_STR            "CFG-MSGOUT-NMEA_ID_THS_I2C"             //!< Name of CFG-MSGOUT-NMEA_ID_THS_I2C
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_TYPE           U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_THS_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB CFG-MSGOUT-NMEA_ID_THS_USB (Output rate of the NMEA-STANDARD-THS message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_ID             0x209100e5                               //!< ID of CFG-MSGOUT-NMEA_ID_THS_USB
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_STR            "CFG-MSGOUT-NMEA_ID_THS_USB"             //!< Name of CFG-MSGOUT-NMEA_ID_THS_USB
+#define UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_TYPE           U1                                       //!< Type of CFG-MSGOUT-NMEA_ID_THS_USB
 ///@}
 
 /*!
@@ -3626,6 +3681,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1 CFG-MSGOUT-UBX_NAV_PVAT_UART1 (Output rate of the UBX-NAV-PVAT message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_ID          0x2091062b                               //!< ID of CFG-MSGOUT-UBX_NAV_PVAT_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_STR         "CFG-MSGOUT-UBX_NAV_PVAT_UART1"          //!< Name of CFG-MSGOUT-UBX_NAV_PVAT_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_PVAT_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2 CFG-MSGOUT-UBX_NAV_PVAT_UART2 (Output rate of the UBX-NAV-PVAT message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_ID          0x2091062c                               //!< ID of CFG-MSGOUT-UBX_NAV_PVAT_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_STR         "CFG-MSGOUT-UBX_NAV_PVAT_UART2"          //!< Name of CFG-MSGOUT-UBX_NAV_PVAT_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_PVAT_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI CFG-MSGOUT-UBX_NAV_PVAT_SPI (Output rate of the UBX-NAV-PVAT message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_ID            0x2091062e                               //!< ID of CFG-MSGOUT-UBX_NAV_PVAT_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_STR           "CFG-MSGOUT-UBX_NAV_PVAT_SPI"            //!< Name of CFG-MSGOUT-UBX_NAV_PVAT_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_PVAT_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C CFG-MSGOUT-UBX_NAV_PVAT_I2C (Output rate of the UBX-NAV-PVAT message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_ID            0x2091062a                               //!< ID of CFG-MSGOUT-UBX_NAV_PVAT_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_STR           "CFG-MSGOUT-UBX_NAV_PVAT_I2C"            //!< Name of CFG-MSGOUT-UBX_NAV_PVAT_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_PVAT_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB CFG-MSGOUT-UBX_NAV_PVAT_USB (Output rate of the UBX-NAV-PVAT message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_ID            0x2091062d                               //!< ID of CFG-MSGOUT-UBX_NAV_PVAT_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_STR           "CFG-MSGOUT-UBX_NAV_PVAT_USB"            //!< Name of CFG-MSGOUT-UBX_NAV_PVAT_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_PVAT_USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_RELPOSNED_UART1 CFG-MSGOUT-UBX_NAV_RELPOSNED_UART1 (Output rate of the UBX-NAV-RELPOSNED message on port UART1)
     @{
 */
@@ -4571,6 +4671,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1 CFG-MSGOUT-UBX_RXM_SPARTN_UART1 (Output rate of the UBX-RXM-SPARTN message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_ID        0x20910606                               //!< ID of CFG-MSGOUT-UBX_RXM_SPARTN_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_STR       "CFG-MSGOUT-UBX_RXM_SPARTN_UART1"        //!< Name of CFG-MSGOUT-UBX_RXM_SPARTN_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_TYPE      U1                                       //!< Type of CFG-MSGOUT-UBX_RXM_SPARTN_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2 CFG-MSGOUT-UBX_RXM_SPARTN_UART2 (Output rate of the UBX-RXM-SPARTN message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_ID        0x20910607                               //!< ID of CFG-MSGOUT-UBX_RXM_SPARTN_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_STR       "CFG-MSGOUT-UBX_RXM_SPARTN_UART2"        //!< Name of CFG-MSGOUT-UBX_RXM_SPARTN_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_TYPE      U1                                       //!< Type of CFG-MSGOUT-UBX_RXM_SPARTN_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI CFG-MSGOUT-UBX_RXM_SPARTN_SPI (Output rate of the UBX-RXM-SPARTN message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_ID          0x20910609                               //!< ID of CFG-MSGOUT-UBX_RXM_SPARTN_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_STR         "CFG-MSGOUT-UBX_RXM_SPARTN_SPI"          //!< Name of CFG-MSGOUT-UBX_RXM_SPARTN_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_RXM_SPARTN_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C CFG-MSGOUT-UBX_RXM_SPARTN_I2C (Output rate of the UBX-RXM-SPARTN message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_ID          0x20910605                               //!< ID of CFG-MSGOUT-UBX_RXM_SPARTN_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_STR         "CFG-MSGOUT-UBX_RXM_SPARTN_I2C"          //!< Name of CFG-MSGOUT-UBX_RXM_SPARTN_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_RXM_SPARTN_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB CFG-MSGOUT-UBX_RXM_SPARTN_USB (Output rate of the UBX-RXM-SPARTN message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_ID          0x20910608                               //!< ID of CFG-MSGOUT-UBX_RXM_SPARTN_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_STR         "CFG-MSGOUT-UBX_RXM_SPARTN_USB"          //!< Name of CFG-MSGOUT-UBX_RXM_SPARTN_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_RXM_SPARTN_USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_TM2_UART1 CFG-MSGOUT-UBX_TIM_TM2_UART1 (Output rate of the UBX-TIM-TM2 message on port UART1)
     @{
 */
@@ -4705,6 +4850,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 #define UBLOXCFG_CFG_MSGOUT_UBX_TIM_VRFY_USB_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_VRFY_USB
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1 CFG-MSGOUT-UBX_SEC_SIG_UART1 (Output rate of the UBX-SEC-SIG message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_ID           0x20910635                               //!< ID of CFG-MSGOUT-UBX_SEC_SIG_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_STR          "CFG-MSGOUT-UBX_SEC_SIG_UART1"           //!< Name of CFG-MSGOUT-UBX_SEC_SIG_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_TYPE         U1                                       //!< Type of CFG-MSGOUT-UBX_SEC_SIG_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2 CFG-MSGOUT-UBX_SEC_SIG_UART2 (Output rate of the UBX-SEC-SIG message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_ID           0x20910636                               //!< ID of CFG-MSGOUT-UBX_SEC_SIG_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_STR          "CFG-MSGOUT-UBX_SEC_SIG_UART2"           //!< Name of CFG-MSGOUT-UBX_SEC_SIG_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_TYPE         U1                                       //!< Type of CFG-MSGOUT-UBX_SEC_SIG_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI CFG-MSGOUT-UBX_SEC_SIG_SPI (Output rate of the UBX-SEC-SIG message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_ID             0x20910638                               //!< ID of CFG-MSGOUT-UBX_SEC_SIG_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_STR            "CFG-MSGOUT-UBX_SEC_SIG_SPI"             //!< Name of CFG-MSGOUT-UBX_SEC_SIG_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_SEC_SIG_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C CFG-MSGOUT-UBX_SEC_SIG_I2C (Output rate of the UBX-SEC-SIG message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_ID             0x20910634                               //!< ID of CFG-MSGOUT-UBX_SEC_SIG_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_STR            "CFG-MSGOUT-UBX_SEC_SIG_I2C"             //!< Name of CFG-MSGOUT-UBX_SEC_SIG_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_SEC_SIG_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB CFG-MSGOUT-UBX_SEC_SIG_USB (Output rate of the UBX-SEC-SIG message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_ID             0x20910637                               //!< ID of CFG-MSGOUT-UBX_SEC_SIG_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_STR            "CFG-MSGOUT-UBX_SEC_SIG_USB"             //!< Name of CFG-MSGOUT-UBX_SEC_SIG_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_SEC_SIG_USB
+///@}
+
 ///@}
 
 /*!
@@ -4817,7 +5007,9 @@ typedef enum UBLOXCFG_CFG_NAVSPG_DYNMODEL_e
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_AIR1                    = 6,                                       //!< Airborne with <1g acceleration
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_AIR2                    = 7,                                       //!< Airborne with <2g acceleration
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_AIR4                    = 8,                                       //!< Airborne with <4g acceleration
-    UBLOXCFG_CFG_NAVSPG_DYNMODEL_WRIST                   = 9                                        //!< Wrist-worn watch (not available in all products)
+    UBLOXCFG_CFG_NAVSPG_DYNMODEL_WRIST                   = 9,                                       //!< Wrist-worn watch (not available in all products)
+    UBLOXCFG_CFG_NAVSPG_DYNMODEL_LAWNMOWER               = 11,                                      //!< Lawn mower (not available in all products)
+    UBLOXCFG_CFG_NAVSPG_DYNMODEL_SCOOTER                 = 12                                       //!< Scooters (hyper hyper) (not available in all products)
 } UBLOXCFG_CFG_NAVSPG_DYNMODEL_t;
 ///@}
 
@@ -6386,6 +6578,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 #define UBLOXCFG_CFG_SPIINPROT_RTCM3X_TYPE                 L                                        //!< Type of CFG-SPIINPROT-RTCM3X
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_SPIINPROT_SPARTN CFG-SPIINPROT-SPARTN (Flag to indicate if SPARTN should be an input protocol on SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_SPIINPROT_SPARTN_ID                   0x10790005                               //!< ID of CFG-SPIINPROT-SPARTN
+#define UBLOXCFG_CFG_SPIINPROT_SPARTN_STR                  "CFG-SPIINPROT-SPARTN"                   //!< Name of CFG-SPIINPROT-SPARTN
+#define UBLOXCFG_CFG_SPIINPROT_SPARTN_TYPE                 L                                        //!< Type of CFG-SPIINPROT-SPARTN
+///@}
+
 ///@}
 
 /*!
@@ -6789,6 +6990,23 @@ typedef enum UBLOXCFG_CFG_TP_TIMEGRID_TP1_e
 } UBLOXCFG_CFG_TP_TIMEGRID_TP1_t;
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_TP_DRSTR_TP1 CFG-TP-DRSTR_TP1 (Drive strength (TP1))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_DRSTR_TP1_ID                       0x20050035                               //!< ID of CFG-TP-DRSTR_TP1
+#define UBLOXCFG_CFG_TP_DRSTR_TP1_STR                      "CFG-TP-DRSTR_TP1"                       //!< Name of CFG-TP-DRSTR_TP1
+#define UBLOXCFG_CFG_TP_DRSTR_TP1_TYPE                     E1                                       //!< Type of CFG-TP-DRSTR_TP1
+//! constants for CFG-TP-DRSTR_TP1
+typedef enum UBLOXCFG_CFG_TP_DRSTR_TP1_e
+{
+    UBLOXCFG_CFG_TP_DRSTR_TP1_2MA                        = 0,                                       //!< 2 mA drive strength
+    UBLOXCFG_CFG_TP_DRSTR_TP1_4MA                        = 1,                                       //!< 4 mA drive strength
+    UBLOXCFG_CFG_TP_DRSTR_TP1_8MA                        = 2,                                       //!< 8 mA drive strength
+    UBLOXCFG_CFG_TP_DRSTR_TP1_12MA                       = 3                                        //!< 12 mA drive strength
+} UBLOXCFG_CFG_TP_DRSTR_TP1_t;
+///@}
+
 ///@}
 
 /*!
@@ -6960,6 +7178,15 @@ typedef enum UBLOXCFG_CFG_UART1_PARITY_e
 #define UBLOXCFG_CFG_UART1INPROT_RTCM3X_TYPE               L                                        //!< Type of CFG-UART1INPROT-RTCM3X
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_UART1INPROT_SPARTN CFG-UART1INPROT-SPARTN (Flag to indicate if SPARTN should be an input protocol on UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_UART1INPROT_SPARTN_ID                 0x10730005                               //!< ID of CFG-UART1INPROT-SPARTN
+#define UBLOXCFG_CFG_UART1INPROT_SPARTN_STR                "CFG-UART1INPROT-SPARTN"                 //!< Name of CFG-UART1INPROT-SPARTN
+#define UBLOXCFG_CFG_UART1INPROT_SPARTN_TYPE               L                                        //!< Type of CFG-UART1INPROT-SPARTN
+///@}
+
 ///@}
 
 /*!
@@ -7114,6 +7341,15 @@ typedef enum UBLOXCFG_CFG_UART2_PARITY_e
 #define UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID                 0x10750004                               //!< ID of CFG-UART2INPROT-RTCM3X
 #define UBLOXCFG_CFG_UART2INPROT_RTCM3X_STR                "CFG-UART2INPROT-RTCM3X"                 //!< Name of CFG-UART2INPROT-RTCM3X
 #define UBLOXCFG_CFG_UART2INPROT_RTCM3X_TYPE               L                                        //!< Type of CFG-UART2INPROT-RTCM3X
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_UART2INPROT_SPARTN CFG-UART2INPROT-SPARTN (Flag to indicate if SPARTN should be an input protocol on UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_UART2INPROT_SPARTN_ID                 0x10750005                               //!< ID of CFG-UART2INPROT-SPARTN
+#define UBLOXCFG_CFG_UART2INPROT_SPARTN_STR                "CFG-UART2INPROT-SPARTN"                 //!< Name of CFG-UART2INPROT-SPARTN
+#define UBLOXCFG_CFG_UART2INPROT_SPARTN_TYPE               L                                        //!< Type of CFG-UART2INPROT-SPARTN
 ///@}
 
 ///@}
@@ -7348,6 +7584,15 @@ typedef enum UBLOXCFG_CFG_UART2_PARITY_e
 #define UBLOXCFG_CFG_USBINPROT_RTCM3X_ID                   0x10770004                               //!< ID of CFG-USBINPROT-RTCM3X
 #define UBLOXCFG_CFG_USBINPROT_RTCM3X_STR                  "CFG-USBINPROT-RTCM3X"                   //!< Name of CFG-USBINPROT-RTCM3X
 #define UBLOXCFG_CFG_USBINPROT_RTCM3X_TYPE                 L                                        //!< Type of CFG-USBINPROT-RTCM3X
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_USBINPROT_SPARTN CFG-USBINPROT-SPARTN (Flag to indicate if SPARTN should be an input protocol on USB)
+    @{
+*/
+#define UBLOXCFG_CFG_USBINPROT_SPARTN_ID                   0x10770005                               //!< ID of CFG-USBINPROT-SPARTN
+#define UBLOXCFG_CFG_USBINPROT_SPARTN_STR                  "CFG-USBINPROT-SPARTN"                   //!< Name of CFG-USBINPROT-SPARTN
+#define UBLOXCFG_CFG_USBINPROT_SPARTN_TYPE                 L                                        //!< Type of CFG-USBINPROT-SPARTN
 ///@}
 
 ///@}
@@ -7913,6 +8158,28 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 #define UBLOXCFG_NMEA_STANDARD_RMC_USB_ID                  UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_ID             //!< Config item ID for NMEA-STANDARD-RMC rate on port USB
 #define UBLOXCFG_NMEA_STANDARD_RMC_USB_STR                 UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_STR            //!< Config item name for NMEA-STANDARD-RMC rate on port USB
 #define UBLOXCFG_NMEA_STANDARD_RMC_USB_TYPE                UBLOXCFG_CFG_MSGOUT_NMEA_ID_RMC_USB_TYPE           //!< Config item type for NMEA-STANDARD-RMC rate on port USB
+///@}
+
+/*!
+    \defgroup UBLOXCFG_MSGOUT_NMEA_STANDARD_THS NMEA-STANDARD-THS
+    @{
+*/
+#define UBLOXCFG_NMEA_STANDARD_THS_STR                     "NMEA-STANDARD-THS"                                //!< Message NMEA-STANDARD-THS name
+#define UBLOXCFG_NMEA_STANDARD_THS_UART1_ID                UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_ID           //!< Config item ID for NMEA-STANDARD-THS rate on port UART1
+#define UBLOXCFG_NMEA_STANDARD_THS_UART1_STR               UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_STR          //!< Config item name for NMEA-STANDARD-THS rate on port UART1
+#define UBLOXCFG_NMEA_STANDARD_THS_UART1_TYPE              UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART1_TYPE         //!< Config item type for NMEA-STANDARD-THS rate on port UART1
+#define UBLOXCFG_NMEA_STANDARD_THS_UART2_ID                UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_ID           //!< Config item ID for NMEA-STANDARD-THS rate on port UART2
+#define UBLOXCFG_NMEA_STANDARD_THS_UART2_STR               UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_STR          //!< Config item name for NMEA-STANDARD-THS rate on port UART2
+#define UBLOXCFG_NMEA_STANDARD_THS_UART2_TYPE              UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_UART2_TYPE         //!< Config item type for NMEA-STANDARD-THS rate on port UART2
+#define UBLOXCFG_NMEA_STANDARD_THS_SPI_ID                  UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_ID             //!< Config item ID for NMEA-STANDARD-THS rate on port SPI
+#define UBLOXCFG_NMEA_STANDARD_THS_SPI_STR                 UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_STR            //!< Config item name for NMEA-STANDARD-THS rate on port SPI
+#define UBLOXCFG_NMEA_STANDARD_THS_SPI_TYPE                UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_SPI_TYPE           //!< Config item type for NMEA-STANDARD-THS rate on port SPI
+#define UBLOXCFG_NMEA_STANDARD_THS_I2C_ID                  UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_ID             //!< Config item ID for NMEA-STANDARD-THS rate on port I2C
+#define UBLOXCFG_NMEA_STANDARD_THS_I2C_STR                 UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_STR            //!< Config item name for NMEA-STANDARD-THS rate on port I2C
+#define UBLOXCFG_NMEA_STANDARD_THS_I2C_TYPE                UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_I2C_TYPE           //!< Config item type for NMEA-STANDARD-THS rate on port I2C
+#define UBLOXCFG_NMEA_STANDARD_THS_USB_ID                  UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_ID             //!< Config item ID for NMEA-STANDARD-THS rate on port USB
+#define UBLOXCFG_NMEA_STANDARD_THS_USB_STR                 UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_STR            //!< Config item name for NMEA-STANDARD-THS rate on port USB
+#define UBLOXCFG_NMEA_STANDARD_THS_USB_TYPE                UBLOXCFG_CFG_MSGOUT_NMEA_ID_THS_USB_TYPE           //!< Config item type for NMEA-STANDARD-THS rate on port USB
 ///@}
 
 /*!
@@ -8950,6 +9217,28 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_NAV_PVAT UBX-NAV-PVAT
+    @{
+*/
+#define UBLOXCFG_UBX_NAV_PVAT_STR                          "UBX-NAV-PVAT"                                     //!< Message UBX-NAV-PVAT name
+#define UBLOXCFG_UBX_NAV_PVAT_UART1_ID                     UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_ID          //!< Config item ID for UBX-NAV-PVAT rate on port UART1
+#define UBLOXCFG_UBX_NAV_PVAT_UART1_STR                    UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_STR         //!< Config item name for UBX-NAV-PVAT rate on port UART1
+#define UBLOXCFG_UBX_NAV_PVAT_UART1_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART1_TYPE        //!< Config item type for UBX-NAV-PVAT rate on port UART1
+#define UBLOXCFG_UBX_NAV_PVAT_UART2_ID                     UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_ID          //!< Config item ID for UBX-NAV-PVAT rate on port UART2
+#define UBLOXCFG_UBX_NAV_PVAT_UART2_STR                    UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_STR         //!< Config item name for UBX-NAV-PVAT rate on port UART2
+#define UBLOXCFG_UBX_NAV_PVAT_UART2_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_UART2_TYPE        //!< Config item type for UBX-NAV-PVAT rate on port UART2
+#define UBLOXCFG_UBX_NAV_PVAT_SPI_ID                       UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_ID            //!< Config item ID for UBX-NAV-PVAT rate on port SPI
+#define UBLOXCFG_UBX_NAV_PVAT_SPI_STR                      UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_STR           //!< Config item name for UBX-NAV-PVAT rate on port SPI
+#define UBLOXCFG_UBX_NAV_PVAT_SPI_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_SPI_TYPE          //!< Config item type for UBX-NAV-PVAT rate on port SPI
+#define UBLOXCFG_UBX_NAV_PVAT_I2C_ID                       UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_ID            //!< Config item ID for UBX-NAV-PVAT rate on port I2C
+#define UBLOXCFG_UBX_NAV_PVAT_I2C_STR                      UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_STR           //!< Config item name for UBX-NAV-PVAT rate on port I2C
+#define UBLOXCFG_UBX_NAV_PVAT_I2C_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_I2C_TYPE          //!< Config item type for UBX-NAV-PVAT rate on port I2C
+#define UBLOXCFG_UBX_NAV_PVAT_USB_ID                       UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_ID            //!< Config item ID for UBX-NAV-PVAT rate on port USB
+#define UBLOXCFG_UBX_NAV_PVAT_USB_STR                      UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_STR           //!< Config item name for UBX-NAV-PVAT rate on port USB
+#define UBLOXCFG_UBX_NAV_PVAT_USB_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_NAV_PVAT_USB_TYPE          //!< Config item type for UBX-NAV-PVAT rate on port USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_MSGOUT_UBX_NAV_PVT UBX-NAV-PVT
     @{
 */
@@ -9434,6 +9723,50 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_RXM_SPARTN UBX-RXM-SPARTN
+    @{
+*/
+#define UBLOXCFG_UBX_RXM_SPARTN_STR                        "UBX-RXM-SPARTN"                                   //!< Message UBX-RXM-SPARTN name
+#define UBLOXCFG_UBX_RXM_SPARTN_UART1_ID                   UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_ID        //!< Config item ID for UBX-RXM-SPARTN rate on port UART1
+#define UBLOXCFG_UBX_RXM_SPARTN_UART1_STR                  UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_STR       //!< Config item name for UBX-RXM-SPARTN rate on port UART1
+#define UBLOXCFG_UBX_RXM_SPARTN_UART1_TYPE                 UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART1_TYPE      //!< Config item type for UBX-RXM-SPARTN rate on port UART1
+#define UBLOXCFG_UBX_RXM_SPARTN_UART2_ID                   UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_ID        //!< Config item ID for UBX-RXM-SPARTN rate on port UART2
+#define UBLOXCFG_UBX_RXM_SPARTN_UART2_STR                  UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_STR       //!< Config item name for UBX-RXM-SPARTN rate on port UART2
+#define UBLOXCFG_UBX_RXM_SPARTN_UART2_TYPE                 UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_UART2_TYPE      //!< Config item type for UBX-RXM-SPARTN rate on port UART2
+#define UBLOXCFG_UBX_RXM_SPARTN_SPI_ID                     UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_ID          //!< Config item ID for UBX-RXM-SPARTN rate on port SPI
+#define UBLOXCFG_UBX_RXM_SPARTN_SPI_STR                    UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_STR         //!< Config item name for UBX-RXM-SPARTN rate on port SPI
+#define UBLOXCFG_UBX_RXM_SPARTN_SPI_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_SPI_TYPE        //!< Config item type for UBX-RXM-SPARTN rate on port SPI
+#define UBLOXCFG_UBX_RXM_SPARTN_I2C_ID                     UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_ID          //!< Config item ID for UBX-RXM-SPARTN rate on port I2C
+#define UBLOXCFG_UBX_RXM_SPARTN_I2C_STR                    UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_STR         //!< Config item name for UBX-RXM-SPARTN rate on port I2C
+#define UBLOXCFG_UBX_RXM_SPARTN_I2C_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_I2C_TYPE        //!< Config item type for UBX-RXM-SPARTN rate on port I2C
+#define UBLOXCFG_UBX_RXM_SPARTN_USB_ID                     UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_ID          //!< Config item ID for UBX-RXM-SPARTN rate on port USB
+#define UBLOXCFG_UBX_RXM_SPARTN_USB_STR                    UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_STR         //!< Config item name for UBX-RXM-SPARTN rate on port USB
+#define UBLOXCFG_UBX_RXM_SPARTN_USB_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_RXM_SPARTN_USB_TYPE        //!< Config item type for UBX-RXM-SPARTN rate on port USB
+///@}
+
+/*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_SEC_SIG UBX-SEC-SIG
+    @{
+*/
+#define UBLOXCFG_UBX_SEC_SIG_STR                           "UBX-SEC-SIG"                                      //!< Message UBX-SEC-SIG name
+#define UBLOXCFG_UBX_SEC_SIG_UART1_ID                      UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_ID           //!< Config item ID for UBX-SEC-SIG rate on port UART1
+#define UBLOXCFG_UBX_SEC_SIG_UART1_STR                     UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_STR          //!< Config item name for UBX-SEC-SIG rate on port UART1
+#define UBLOXCFG_UBX_SEC_SIG_UART1_TYPE                    UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART1_TYPE         //!< Config item type for UBX-SEC-SIG rate on port UART1
+#define UBLOXCFG_UBX_SEC_SIG_UART2_ID                      UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_ID           //!< Config item ID for UBX-SEC-SIG rate on port UART2
+#define UBLOXCFG_UBX_SEC_SIG_UART2_STR                     UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_STR          //!< Config item name for UBX-SEC-SIG rate on port UART2
+#define UBLOXCFG_UBX_SEC_SIG_UART2_TYPE                    UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_UART2_TYPE         //!< Config item type for UBX-SEC-SIG rate on port UART2
+#define UBLOXCFG_UBX_SEC_SIG_SPI_ID                        UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_ID             //!< Config item ID for UBX-SEC-SIG rate on port SPI
+#define UBLOXCFG_UBX_SEC_SIG_SPI_STR                       UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_STR            //!< Config item name for UBX-SEC-SIG rate on port SPI
+#define UBLOXCFG_UBX_SEC_SIG_SPI_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_SPI_TYPE           //!< Config item type for UBX-SEC-SIG rate on port SPI
+#define UBLOXCFG_UBX_SEC_SIG_I2C_ID                        UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_ID             //!< Config item ID for UBX-SEC-SIG rate on port I2C
+#define UBLOXCFG_UBX_SEC_SIG_I2C_STR                       UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_STR            //!< Config item name for UBX-SEC-SIG rate on port I2C
+#define UBLOXCFG_UBX_SEC_SIG_I2C_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_I2C_TYPE           //!< Config item type for UBX-SEC-SIG rate on port I2C
+#define UBLOXCFG_UBX_SEC_SIG_USB_ID                        UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_ID             //!< Config item ID for UBX-SEC-SIG rate on port USB
+#define UBLOXCFG_UBX_SEC_SIG_USB_STR                       UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_STR            //!< Config item name for UBX-SEC-SIG rate on port USB
+#define UBLOXCFG_UBX_SEC_SIG_USB_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_SEC_SIG_USB_TYPE           //!< Config item type for UBX-SEC-SIG rate on port USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_MSGOUT_UBX_TIM_TM2 UBX-TIM-TM2
     @{
 */
@@ -9501,13 +9834,13 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 751
+#define _UBLOXCFG_NUM_ITEMS 777
 const void **_ubloxcfg_allItems(void);
-#define _UBLOXCFG_NUM_RATES 86
+#define _UBLOXCFG_NUM_RATES 90
 const void **_ubloxcfg_allRates(void);
 #define _UBLOXCFG_MAX_ITEM_LEN 35
 #define _UBLOXCFG_MAX_CONSTS_LEN 449
-#define _UBLOXCFG_NUM_SOURCES 4
+#define _UBLOXCFG_NUM_SOURCES 5
 const char **_ubloxcfg_allSources(void);
 #endif
 

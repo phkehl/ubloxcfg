@@ -25,17 +25,12 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataMap::GuiWinDataMap(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _debugLayout{false}, _showInfo{true}, _map{nullptr}, _tiles{nullptr}
 {
-    _winSize  = { 80, 25 };
+    _winSize   = { 80, 25 };
     _winFlags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
 
     ClearData();
 

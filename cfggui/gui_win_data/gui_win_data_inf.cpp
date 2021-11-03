@@ -21,15 +21,10 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataInf::GuiWinDataInf(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database)
+GuiWinDataInf::GuiWinDataInf(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database)
 {
-    _winSize  = { 80, 25 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 80, 25 };
     ClearData();
 }
 

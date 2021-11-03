@@ -15,40 +15,28 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_messages.hpp"
+#include "ff_ubx.h"
+#include "ff_nmea.h"
+#include "ff_rtcm3.h"
 
 #include "gui_win_data_inc.hpp"
 
+#include "gui_win_data_messages.hpp"
+
 /* ****************************************************************************************************************** */
 
-GuiWinDataMessages::GuiWinDataMessages(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
-    _showSubSec{false}, _selectedEntry{_messages.end()}, _displayedEntry{_messages.end()}, _hexDump{}, _classNames{}
+GuiWinDataMessages::GuiWinDataMessages(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
+    _showList{true}, _showSubSec{false}, _showHexDump{true},
+    _selectedEntry{_messages.end()}, _displayedEntry{_messages.end()}, _classNames{}
 {
-    _winSize  = { 130, 25 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
-
-    int numMsgrates = 0;
-    const UBLOXCFG_MSGRATE_t **msgrates = ubloxcfg_getAllMsgRateCfgs(&numMsgrates);
-    std::string prevName = "";
-    for (int ix = 0; ix < numMsgrates; ix++)
-    {
-        const UBLOXCFG_MSGRATE_t *rate = msgrates[ix];
-        std::string msgName = rate->msgName;
-        const std::string className = msgName.substr(0, msgName.rfind('-'));
-        if (!className.empty() && (className != prevName))
-        {
-            _classNames.push_back(className);
-            prevName = className;
-        }
-    }
+    _winSize = { 130, 25 };
 
     _selectedName = _winSettings->GetValue(_winName + ".selectedMessage");
+    _winSettings->GetValue(_winName + ".showHexDump", _showHexDump, false);
+    _winSettings->GetValue(_winName + ".showList",    _showList,    false);
 
+    _InitMsgRates();
     ClearData();
 }
 
@@ -56,6 +44,62 @@ GuiWinDataMessages::~GuiWinDataMessages()
 {
     const std::string selName = _selectedEntry != _messages.end() ? _selectedEntry->second.msg->name : "";
     _winSettings->SetValue(_winName + ".selectedMessage", selName);
+    _winSettings->SetValue(_winName + ".showHexDump", _showHexDump);
+    _winSettings->SetValue(_winName + ".showList", _showList);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiWinDataMessages::MsgRate::MsgRate(const UBLOXCFG_MSGRATE_t *_rate) :
+    msgName{_rate->msgName}, rate{_rate}
+{
+    haveIds = ubxMessageClsId(rate->msgName, &clsId, &msgId) /* ||
+              nmea3MessageClsId(rate->msgName, &clsId, &msgId) ||   // FIXME: poll NMEA or RTCM
+              rtcm3MessageClsId(rate->msgName, &clsId, &msgId)*/;   //        doesn't work this way.. :-(
+
+    // They use "RTCM-3X-TYPE1234", we use "RTCM3-TYPE1234"
+    if (msgName.substr(0, 8) == "RTCM-3X-")
+    {
+        msgName = "RTCM3-" + msgName.substr(8);
+    }
+
+    // "(#) UBX-CLASS-MESSAGE##UBX-CLASS-MESSAGE"
+    menuNameEnabled = ICON_FK_CIRCLE " ";
+    menuNameEnabled += msgName + "##" + msgName;
+    // "( ) UBX-CLASS-MESSAGE##UBX-CLASS-MESSAGE"
+    menuNameDisabled = ICON_FK_CIRCLE_THIN " ";
+    menuNameDisabled += msgName + "##" + msgName;
+}
+
+void GuiWinDataMessages::_InitMsgRates()
+{
+    if (!_msgRates.empty())
+    {
+        return;
+    }
+
+    int numMsgrates = 0;
+    const UBLOXCFG_MSGRATE_t **msgrates = ubloxcfg_getAllMsgRateCfgs(&numMsgrates);
+    std::string prevName = "";
+    std::vector<MsgRate> *rates = nullptr;
+    for (int ix = 0; ix < numMsgrates; ix++)
+    {
+        const UBLOXCFG_MSGRATE_t *rate = msgrates[ix];
+        std::string msgName = rate->msgName;
+
+        // Create a list of rates and other info per message class
+        const std::string className = msgName.substr(0, msgName.rfind('-'));
+        if (!className.empty() && (className != prevName))
+        {
+            auto foo = _msgRates.insert({ className, std::vector<MsgRate>() });
+            rates = &foo.first->second;
+            _classNames.push_back(className);
+            prevName = className;
+        }
+
+        // Add rate info
+        rates->emplace_back(rate);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -74,18 +118,25 @@ void GuiWinDataMessages::ProcessData(const Data &data)
     {
         case Data::Type::DATA_MSG:
         {
+            // Get message info entry, create new as necessary
+            MsgInfo *info = nullptr;
             auto entry = _messages.find(data.msg->name);
-            if (entry != _messages.end())
+            if (entry == _messages.end())
             {
-                auto &info = entry->second;
-                info.Update(data.msg);
+                auto foo = _messages.insert(
+                    { data.msg->name, GuiMsg::GetRenderer(data.msg->name, _receiver, _logfile) });
+                info = &foo.first->second;
             }
             else
             {
-                _messages.insert({ data.msg->name, MsgInfo(data.msg,
-                    GuiMsg::GetRenderer(data.msg->name, _receiver, _logfile) ) });
+                info = &entry->second;
             }
-            _displayedEntry = _messages.end();
+
+            if (info)
+            {
+                info->Update(data.msg);
+            }
+
             break;
         }
         default:
@@ -93,18 +144,41 @@ void GuiWinDataMessages::ProcessData(const Data &data)
     }
 }
 
-GuiWinDataMessages::MsgInfo::MsgInfo(const std::shared_ptr<Ff::ParserMsg> &_msg, std::unique_ptr<GuiMsg> _renderer) :
-    msg{_msg}, count{1}, dt{}, dtIx{0}, rate{0.0}, age{0.0}, renderer{std::move(_renderer)}
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::Loop(const uint32_t &frame, const double &now)
 {
-    renderer->Update(_msg);
+    UNUSED(frame);
+    _nowIm = now;
+    _nowTs = TIME();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiWinDataMessages::MsgInfo::MsgInfo(std::unique_ptr<GuiMsg> _renderer) :
+    msg{nullptr}, count{0}, dt{}, dtIx{0}, rate{0.0}, age{0.0}, flag{false},
+    hexdump{}, renderer{std::move(_renderer)}
+{
+}
+
+void GuiWinDataMessages::MsgInfo::Clear()
+{
+    count = 0;
+    msg   = nullptr;
+    rate  = 0.0;
+    hexdump.clear();
+    renderer->Clear();
 }
 
 void GuiWinDataMessages::MsgInfo::Update(const std::shared_ptr<Ff::ParserMsg> &_msg)
 {
     // Store time since last message [ms]
-    dt[dtIx] = _msg->ts - msg->ts;
-    dtIx++;
-    dtIx %= NUMOF(dt);
+    if (msg)
+    {
+        dt[dtIx] = _msg->ts - msg->ts;
+        dtIx++;
+        dtIx %= NUMOF(dt);
+    }
 
     // Store new message
     count++;
@@ -123,354 +197,11 @@ void GuiWinDataMessages::MsgInfo::Update(const std::shared_ptr<Ff::ParserMsg> &_
     }
     rate = 1e3f / ((float)sum / (float)num);
 
-    renderer->Update(_msg);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMessages::ClearData()
-{
-    _messages.clear();
-
-    if (_selectedEntry != _messages.end())
-    {
-        _selectedName = _selectedEntry->first;
-    }
-
-    _selectedEntry  = _messages.end();
-    _displayedEntry = _messages.end();
-    _UpdateHexdump();
-    for (const auto &entry: _messages)
-    {
-        entry.second.renderer->Clear();
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMessages::DrawWindow()
-{
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    uint32_t now = TIME();
-
-    const bool ctrlEnabled = _receiver && _receiver->IsReady();
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
-    const float listWidth = 40 * _winSettings->charSize.x;
-    const float dumpWidthMin = 40 * _winSettings->charSize.x;
-    const float dumpWidth = (currWidth < (listWidth + dumpWidthMin)) ? dumpWidthMin : (currWidth - listWidth);
-    const float scrollWidth = listWidth + dumpWidth;
-    ImGui::SetNextWindowContentSize(ImVec2(scrollWidth, 0.0f));
-    ImGui::BeginChild("##MessagesAndPayload", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_HorizontalScrollbar);
-
-    auto dispEntry = _selectedEntry;
-
-    // Messages (left side of window)
-    {
-        ImGui::BeginChild("##Messages", ImVec2(listWidth, 0.0f));
-
-        // Controls
-        {
-            // Show sub-second dt?
-            if (_showSubSec)
-            {
-                if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###ShowSubSecDt", _winSettings->iconButtonSize))
-                {
-                    _showSubSec = false;
-                }
-                Gui::ItemTooltip("Showing sub-second delta times");
-            }
-            else
-            {
-                if (ImGui::Button(ICON_FK_CIRCLE_O "###ShowSubSecDt", _winSettings->iconButtonSize))
-                {
-                    _showSubSec = true;
-                }
-                Gui::ItemTooltip("Not showing sub-second delta times");
-            }
-
-            ImGui::SameLine();
-
-            // Quick message enable/disable
-            if (!ctrlEnabled) { Gui::BeginDisabled(); }
-            if (ImGui::Button(ICON_FK_BARS "##Quick", _winSettings->iconButtonSize))
-            {
-                ImGui::OpenPopup("Quick");
-            }
-            Gui::ItemTooltip("Enable/disable output messages");
-            if (ImGui::BeginPopup("Quick"))
-            {
-                Gui::BeginMenuPersist();
-                for (const auto &className: _classNames)
-                {
-                    if (ImGui::BeginMenu(className.c_str()))
-                    {
-                        int numMsgrates = 0;
-                        const UBLOXCFG_MSGRATE_t **msgrates = ubloxcfg_getAllMsgRateCfgs(&numMsgrates);
-                        for (int ix = 0; ix < numMsgrates; ix++)
-                        {
-                            const UBLOXCFG_MSGRATE_t *rate = msgrates[ix];
-                            if (std::strncmp(className.c_str(), rate->msgName, className.size()) == 0)
-                            {
-                                bool enabled = false;
-
-                                // NMEA 0183 messages are named NMEA-<talker>-<formatter>, but in the configuration
-                                // library we use NMEA-STANDARD-<formatter>. Look for formatter
-                                if ( (rate->msgName[5] == 'S') && (rate->msgName[12] == 'D') )
-                                {
-                                    const std::string search = &rate->msgName[14];
-                                    for (const auto &entry: _messages)
-                                    {
-                                        if (entry.first.substr(8) == search)
-                                        {
-                                            if ( (now - entry.second.msg->ts) < 1500 )
-                                            {
-                                                enabled = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                                // Otherwise we can just look for the name
-                                else
-                                {
-                                    const auto entry = _messages.find(rate->msgName);
-                                    enabled = !( (entry == _messages.end()) || ((now - entry->second.msg->ts) > 1500) );
-                                }
-                                if (ImGui::MenuItem(rate->msgName, NULL, enabled))
-                                {
-                                    _SetRate(rate, enabled ? 0 : 1);
-                                }
-                            }
-                        }
-                        ImGui::EndMenu();
-                    }
-                }
-                Gui::EndMenuPersist();
-                ImGui::EndPopup();
-            }
-            if (!ctrlEnabled) { Gui::EndDisabled(); }
-
-            ImGui::SameLine();
-
-            // Clear
-            if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
-            {
-                ClearData();
-            }
-            Gui::ItemTooltip("Clear all data");
-        }
-
-        ImGui::Separator();
-
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTCYAN));
-        ImGui::TextUnformatted("Messages");
-        ImGui::PopStyleColor();
-
-        ImGui::Separator();
-
-        const bool showDeltaTime = _receiver && !_receiver->IsIdle();
-
-        for (auto entry = _messages.begin(); entry != _messages.end(); entry++)
-        {
-            auto &name = entry->first;
-            auto &info = entry->second;
-            char str[100];
-            info.age = (float)(now - info.msg->ts) * 1e-3f;
-            const char flag = info.age < 0.2f ? '*' : ' ';
-
-            // Stop displaying rate?
-            if ( (info.age > 10.0f) || (info.rate < 0.05f) || (info.rate > 99.5f) )
-            {
-                info.rate = 0.0;
-            }
-
-            // Select message from saved config, once it appears
-            if (!_selectedName.empty())
-            {
-                // User meanwhile selected another message
-                if (_selectedEntry != _messages.end())
-                {
-                    _selectedName.clear();
-                }
-                else if (_selectedName == name)
-                {
-                    _selectedEntry = entry;
-                }
-            }
-
-
-            if (showDeltaTime)
-            {
-                char dtStr[10];
-                if (info.age < 99.9)
-                {
-                    std::snprintf(dtStr, sizeof(dtStr), _showSubSec ? "%4.1f" : "%4.0f", info.age);
-                }
-                else
-                {
-                    std::strcpy(dtStr, "   -");
-                }
-                char rateStr[10];
-                if (info.rate > 0.0)
-                {
-                    std::snprintf(rateStr, sizeof(rateStr), "%4.1f", info.rate);
-                }
-                else
-                {
-                    std::strcpy(rateStr, "   ?");
-                }
-                std::snprintf(str, sizeof(str), "%c%8d %s %s %s###%s",
-                    flag, info.count, dtStr, rateStr, name.c_str(), name.c_str());
-            }
-            else
-            {
-                std::snprintf(str, sizeof(str), "%c%8d    -    - %s###%s",
-                    flag, info.count, name.c_str(), name.c_str());
-            }
-
-            const bool selected = _selectedEntry == entry;
-            // Click on message
-            if (ImGui::Selectable(str, selected))
-            {
-                // Unselect currently selected message
-                if (selected)
-                {
-                    _selectedEntry = _messages.end();
-                }
-                // Select new message
-                else
-                {
-                    _selectedEntry = entry;
-                }
-            }
-            // Hover message
-            if ( (_selectedEntry == _messages.end()) && (ImGui::IsItemActive() || ImGui::IsItemHovered()) )
-            {
-                dispEntry = entry;
-            }
-        }
-
-        ImGui::EndChild();
-    }
-
-    if (_displayedEntry != dispEntry)
-    {
-        _displayedEntry = dispEntry;
-        _UpdateHexdump();
-    }
-
-    //ImGui::SameLine();
-    Gui::VerticalSeparator();
-
-    // Payload (right side of window)
-    {
-        ImGui::BeginChild("##Payload", ImVec2(0.0f, 0.0f));
-
-        const bool haveDispEntry = (dispEntry != _messages.end());
-
-        // Clear
-        if (!haveDispEntry) { Gui::BeginDisabled(); }
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
-        {
-            dispEntry->second.renderer->Clear();
-            //dispEntry->second.msg = nullptr; // TODO
-        }
-        Gui::ItemTooltip("Clear data");
-        if (!haveDispEntry) { Gui::EndDisabled(); }
-
-        if (haveDispEntry)
-        {
-            dispEntry->second.renderer->Buttons();
-        }
-
-        ImGui::Separator();
-
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-        ImGui::TextUnformatted("Payload");
-        ImGui::PopStyleColor();
-
-        ImGui::Separator();
-
-        if (haveDispEntry)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-            //                      12345678901234567890 12345678 12345678 12345 12345 12345 12345 12345
-            ImGui::TextUnformatted("Name:                Type:    Source:  Seq:  Cnt:  Age:  Rate: Size:");
-            ImGui::PopStyleColor();
-
-            const auto &info = dispEntry->second;
-            const auto &msg = dispEntry->second.msg;
-            ImGui::Text("%-20s %-8s %-8s %5u %5u %5.1f %5.1f %5d",
-                msg->name.c_str(), msg->typeStr.c_str(), msg->srcStr.c_str(), msg->seq, info.count, info.age, info.rate, msg->size);
-            if (!msg->info.empty())
-            {
-                ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-                ImGui::TextUnformatted("Info:");
-                ImGui::PopStyleColor();
-                ImGui::SameLine();
-                ImGui::TextWrapped("%s", msg->info.c_str());
-            }
-
-            ImGui::Separator();
-
-            const float numLines = MIN(_hexDump.size(), 10);
-            const ImVec2 sizeAvail = ImGui::GetContentRegionAvail() -
-                ImVec2(0, (numLines * _winSettings->charSize.y) + (2 * _winSettings->style.ItemSpacing.y) + 1);
-            if (info.renderer->Render(msg, sizeAvail))
-            {
-                ImGui::Separator();
-            }
-
-            ImGui::BeginChild("##hexdump");
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-            for (const auto &line: _hexDump)
-            {
-                ImGui::TextUnformatted(line.c_str());
-            }
-            ImGui::PopStyleVar();
-            ImGui::EndChild();
-        }
-
-        ImGui::EndChild();
-    }
-
-    ImGui::EndChild(); // MessagesAndPayload
-
-    _DrawWindowEnd();
-}
-
-void GuiWinDataMessages::_SetRate(const UBLOXCFG_MSGRATE_t *def, const uint8_t rate)
-{
-    std::vector<UBLOXCFG_KEYVAL_t> keyVal;
-    if (def->itemUart1 != NULL) { keyVal.push_back({ .id = def->itemUart1->id, .val = { .U1 = rate } }); }
-    if (def->itemUart2 != NULL) { keyVal.push_back({ .id = def->itemUart2->id, .val = { .U1 = rate } }); }
-    if (def->itemSpi   != NULL) { keyVal.push_back({ .id = def->itemSpi->id,   .val = { .U1 = rate } }); }
-    if (def->itemI2c   != NULL) { keyVal.push_back({ .id = def->itemI2c->id,   .val = { .U1 = rate } }); }
-    if (def->itemUsb   != NULL) { keyVal.push_back({ .id = def->itemUsb->id,   .val = { .U1 = rate } }); }
-    if (!keyVal.empty())
-    {
-        _receiver->SetConfig(true, false, false, false, keyVal, _winUid);
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMessages::_UpdateHexdump()
-{
-    _hexDump.clear();
-    if (_displayedEntry == _messages.end())
-    {
-        return;
-    }
-    const auto &msg = _displayedEntry->second.msg;
-
+    // Update hexdump
     const uint8_t *data = msg->data;
     const int size = msg->size;
 
+    hexdump.clear();
     const char i2hex[] = "0123456789abcdef";
     const uint8_t *pData = data;
     for (int ix = 0; ix < size; )
@@ -500,8 +231,465 @@ void GuiWinDataMessages::_UpdateHexdump()
         }
         char buf[1024];
         std::snprintf(buf, sizeof(buf), "0x%04" PRIx8 " %05d  %s", ix, ix, str);
-        _hexDump.push_back(buf);
+        hexdump.push_back(buf);
         ix += 16;
+    }
+
+    // Update renderer
+    if (msg)
+    {
+        renderer->Update(msg);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::ClearData()
+{
+    _messages.clear();
+
+    if (_selectedEntry != _messages.end())
+    {
+        _selectedName = _selectedEntry->first;
+    }
+
+    _selectedEntry  = _messages.end();
+    _displayedEntry = _messages.end();
+    for (auto &entry: _messages)
+    {
+        entry.second.Clear();
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_UpdateInfo()
+{
+    for (auto entry = _messages.begin(); entry != _messages.end(); entry++)
+    {
+        auto &info = entry->second;
+
+        if (info.msg)
+        {
+            info.age = (float)(_nowTs - info.msg->ts) * 1e-3f;
+        }
+        else
+        {
+            info.age = 9999;
+        }
+
+        // Stop displaying rate?
+        if ( (info.age > 10.0f) || (info.rate < 0.05f) || (info.rate > 99.5f) )
+        {
+            info.rate = 0.0;
+        }
+
+        info.flag = info.age < 0.2f;
+
+        // Select message from saved config, once it appears
+        if (!_selectedName.empty())
+        {
+            // User meanwhile selected another message
+            if (_selectedEntry != _messages.end())
+            {
+                _selectedName.clear();
+            }
+            else if (_selectedName == entry->first)
+            {
+                _selectedEntry = entry;
+                _displayedEntry = _selectedEntry;
+                _selectedName.clear();
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::DrawWindow()
+{
+    if (!_DrawWindowBegin())
+    {
+        return;
+    }
+
+    _UpdateInfo();
+
+    const float listWidth = 40 * _winSettings->charSize.x;
+
+    // Controls
+    _DrawListButtons();
+    Gui::VerticalSeparator(_showList ? listWidth + (2 * _winSettings->style.ItemSpacing.x) : 0);
+    _DrawMessageButtons();
+
+    ImGui::Separator();
+
+    // Messsages list (left side of window)
+    if (_showList)
+    {
+        if (ImGui::BeginChild("##List", ImVec2(listWidth, 0.0f)))
+        {
+            _DrawList();
+        }
+        ImGui::EndChild(); // ##List
+
+        Gui::VerticalSeparator();
+    }
+
+    // Message (right side of window)
+    if (_displayedEntry != _messages.end())
+    {
+        if (ImGui::BeginChild("##Message", ImVec2(0.0f, 0.0f)))
+        {
+            _DrawMessage();
+        }
+        ImGui::EndChild(); // ##Message
+    }
+
+    _DrawWindowEnd();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_DrawListButtons()
+{
+    ToggleButton(ICON_FK_LIST "###ShowList", NULL, &_showList,
+        "Showing message list", "Not showing message list");
+
+    if (!_showList)
+    {
+        return;
+    }
+
+    ImGui::SameLine();
+
+    ToggleButton(ICON_FK_DOT_CIRCLE_O "###ShowSubSec", ICON_FK_CIRCLE_O " ###ShowSubSec", &_showSubSec,
+        "Showing sub-second delta times", "Not showing sub-second delta times");
+
+    ImGui::SameLine();
+
+    const bool ctrlEnabled = _receiver && _receiver->IsReady();
+
+    // Quick message enable/disable
+    if (!ctrlEnabled) { Gui::BeginDisabled(); }
+    if (ImGui::Button(ICON_FK_BARS "##Quick", _winSettings->iconButtonSize))
+    {
+        ImGui::OpenPopup("Quick");
+    }
+
+    if (ImGui::IsPopupOpen("Quick"))
+    {
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, _winSettings->style.Colors[ImGuiCol_MenuBarBg]);
+        if (ImGui::BeginPopup("Quick"))
+        {
+            _DrawMessagesMenu();
+            ImGui::EndPopup();
+        }
+        ImGui::PopStyleColor();
+    }
+
+    Gui::ItemTooltip("Enable/disable output messages");
+    if (!ctrlEnabled) { Gui::EndDisabled(); }
+
+    ImGui::SameLine();
+
+    // Clear
+    if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+    {
+        ClearData();
+    }
+    Gui::ItemTooltip("Clear all data");
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_DrawMessagesMenu()
+{
+    Gui::BeginMenuPersist();
+
+    for (const auto &classEntry: _msgRates)
+    {
+        // UBX-CLASS menu entry
+        if (ImGui::BeginMenu(classEntry.first.c_str()))
+        {
+            for (auto &rate: classEntry.second)
+            {
+                // Check if message is enabled  FIXME: this could be nicer...
+                bool enabled = false;
+
+                // NMEA 0183 messages are named NMEA-<talker>-<formatter>, but in the configuration
+                // library we use NMEA-*S*TANDAR*D*-<formatter>. Look for formatter
+                if ( (rate.msgName[5] == 'S') && (rate.msgName[12] == 'D') ) //
+                {
+                    const std::string search = rate.msgName.substr(14);
+                    for (const auto &entry: _messages)
+                    {
+                        if ( (entry.first.size() > 8) && (entry.first.substr(8) == search) )
+                        {
+                            if ( (_nowTs - entry.second.msg->ts) < 1500 )
+                            {
+                                enabled = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    const auto entry = _messages.find(rate.msgName);
+                    enabled = !( (entry == _messages.end()) || ((_nowTs - entry->second.msg->ts) > 1500) );
+                }
+
+                // UBX-CLASS-MESSAGE menu entry
+                if (ImGui::BeginMenu(enabled ? rate.menuNameEnabled.c_str() : rate.menuNameDisabled.c_str()))
+                {
+                    if (enabled) { Gui::BeginDisabled(); }
+                    if (ImGui::MenuItem("Enable"))
+                    {
+                        _SetRate(rate, 1);
+                    }
+                    if (enabled) { Gui::EndDisabled(); }
+                    if (!enabled) { Gui::BeginDisabled(); }
+                    if (ImGui::MenuItem("Disable"))
+                    {
+                        _SetRate(rate, 0);
+                    }
+                    if (!enabled) { Gui::EndDisabled(); }
+                    if (enabled || !rate.haveIds) { Gui::BeginDisabled(); }
+                    if (ImGui::MenuItem("Poll"))
+                    {
+                        _SetRate(rate, -1);
+                    }
+                    if (enabled || !rate.haveIds) { Gui::EndDisabled(); }
+
+                    ImGui::EndMenu();
+                }
+            }
+
+            ImGui::EndMenu();
+        }
+    }
+    Gui::EndMenuPersist();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_SetRate(const GuiWinDataMessages::MsgRate &def, const int rate)
+{
+    // Poll
+    if (rate < 0)
+    {
+        uint8_t poll[UBX_FRAME_SIZE];
+        const int size = ubxMakeMessage(def.clsId, def.msgId, poll, 0, poll);
+        if (size > 0)
+        {
+            _receiver->Send(poll, size, _winUid);
+        }
+    }
+    // Enable/disable
+    else
+    {
+        std::vector<UBLOXCFG_KEYVAL_t> keyVal;
+        if (def.rate->itemUart1 != NULL) { keyVal.push_back({ .id = def.rate->itemUart1->id, .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
+        if (def.rate->itemUart2 != NULL) { keyVal.push_back({ .id = def.rate->itemUart2->id, .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
+        if (def.rate->itemSpi   != NULL) { keyVal.push_back({ .id = def.rate->itemSpi->id,   .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
+        if (def.rate->itemI2c   != NULL) { keyVal.push_back({ .id = def.rate->itemI2c->id,   .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
+        if (def.rate->itemUsb   != NULL) { keyVal.push_back({ .id = def.rate->itemUsb->id,   .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
+        if (!keyVal.empty())
+        {
+            _receiver->SetConfig(true, false, false, false, keyVal, _winUid);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_DrawMessageButtons()
+{
+    const bool haveDispEntry = (_displayedEntry != _messages.end());
+
+    ToggleButton(ICON_FK_FILE_CODE_O "###ShowHexdump", NULL, &_showHexDump,
+        "Showing hexdump", "Not showing hexdump");
+
+    ImGui::SameLine();
+
+    // Clear
+    if (!haveDispEntry) { Gui::BeginDisabled(); }
+    if (ImGui::Button(ICON_FK_ERASER "##ClearMsg", _winSettings->iconButtonSize))
+    {
+        _displayedEntry->second.Clear();
+    }
+    Gui::ItemTooltip("Clear message data");
+    if (!haveDispEntry) { Gui::EndDisabled(); }
+
+    if (haveDispEntry)
+    {
+        _displayedEntry->second.renderer->Buttons();
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_DrawList()
+{
+    const bool showDeltaTime = _receiver && !_receiver->IsIdle();
+
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+    ImGui::TextUnformatted("  Count: Age: Rate: Name:");
+    ImGui::PopStyleColor();
+
+    _displayedEntry = _selectedEntry;
+    for (auto entry = _messages.begin(); entry != _messages.end(); entry++)
+    {
+        auto &name = entry->first;
+        auto &info = entry->second;
+        char str[100];
+
+        if (showDeltaTime)
+        {
+            char dtStr[10];
+            if (info.age < 99.9)
+            {
+                std::snprintf(dtStr, sizeof(dtStr), _showSubSec ? "%4.1f" : "%4.0f", info.age);
+            }
+            else
+            {
+                std::strcpy(dtStr, "   -");
+            }
+            char rateStr[10];
+            if (info.rate > 0.0)
+            {
+                std::snprintf(rateStr, sizeof(rateStr), "%4.1f", info.rate);
+            }
+            else
+            {
+                std::strcpy(rateStr, "   ?");
+            }
+            std::snprintf(str, sizeof(str), "%c%8d %s %s %s###%s",
+                info.flag ? '*' : ' ', info.count, dtStr, rateStr, name.c_str(), name.c_str());
+        }
+        else
+        {
+            std::snprintf(str, sizeof(str), "%c%8d    -    - %s###%s",
+                info.flag ? '*' : ' ', info.count, name.c_str(), name.c_str());
+        }
+
+        const bool selected = _selectedEntry == entry;
+        // Click on message
+        if (ImGui::Selectable(str, selected))
+        {
+            // Unselect currently selected message
+            if (selected)
+            {
+                _selectedEntry = _messages.end();
+            }
+            // Select new message
+            else
+            {
+                _selectedEntry = entry;
+                _displayedEntry = _selectedEntry;
+            }
+        }
+        // Hover message
+        if ( (_selectedEntry == _messages.end()) && (ImGui::IsItemActive() || ImGui::IsItemHovered()) )
+        {
+            _displayedEntry = entry;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataMessages::_DrawMessage()
+{
+    if (!_displayedEntry->second.msg)
+    {
+        return;
+    }
+
+    const auto &info = _displayedEntry->second;
+    const auto &msg  = _displayedEntry->second.msg;
+
+    const float sepPadding     = (2 * _winSettings->style.ItemSpacing.y) + 1;
+    const ImVec2 sizeAvail     = ImGui::GetContentRegionAvail();
+    const ImVec2 msgInfoSize   { 0, (2 * _winSettings->charSize.y) + (1 * _winSettings->style.ItemSpacing.y) };
+    const ImVec2 hexDumpSize   { 0, _showHexDump ? (info.hexdump.size(), 10) * _winSettings->charSize.y : 0 };
+    const float remHeight      = sizeAvail.y - msgInfoSize.y - hexDumpSize.y - sepPadding - (_showHexDump ? sepPadding : 0);
+    const float minHeight      = 10 * _winSettings->charSize.y;
+    const ImVec2 msgDetailSize { 0, MAX(remHeight, minHeight) };
+
+    // Message info
+    if (ImGui::BeginChild("##MsgInfo", msgInfoSize))
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+        //                      12345678901234567890 12345678 12345678 12345 12345 12345 12345 12345
+        ImGui::TextUnformatted("Name:                  Type:    Source:  Seq:  Cnt:  Age:  Rate: Size:");
+        ImGui::PopStyleColor();
+        ImGui::Text("%-20s %c %-8s %-8s %5u %5u %5.1f %5.1f %5d",
+            msg->name.c_str(), info.flag ? '*' : ' ', msg->typeStr.c_str(), msg->srcStr.c_str(),
+            msg->seq, info.count, info.age, info.rate, msg->size);
+    }
+    ImGui::EndChild();
+
+    ImGui::Separator();
+
+    // Message details
+    if (ImGui::BeginChild("##MsgDetails", msgDetailSize, false, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollWithMouse))
+    {
+        if (!info.renderer->Render(msg, ImGui::GetContentRegionAvail()))
+        {
+            if (!msg->info.empty())
+            {
+                ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+                ImGui::TextUnformatted("Info:");
+                ImGui::PopStyleColor();
+                ImGui::SameLine();
+                ImGui::TextWrapped("%s", msg->info.c_str());
+            }
+        }
+    }
+    ImGui::EndChild();
+
+    // Hexdump
+    if (_showHexDump)
+    {
+        ImGui::Separator();
+        if (ImGui::BeginChild("##HexDump", hexDumpSize))
+        {
+            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+            for (const auto &line: info.hexdump)
+            {
+                ImGui::TextUnformatted(line.c_str());
+            }
+            ImGui::PopStyleVar();
+        }
+        ImGui::EndChild();
+        if (ImGui::BeginPopupContextItem("Constants"))
+        {
+            std::string text = "";
+            if (ImGui::MenuItem("Copy (all)"))
+            {
+                for (const auto &line: info.hexdump)
+                {
+                    text += line;
+                    text += "\n";
+                }
+            }
+            if (ImGui::MenuItem("Copy (data)"))
+            {
+                for (const auto &line: info.hexdump)
+                {
+                    text += line.substr(14, 48);
+                    text += "\n";
+                }
+            }
+            if (!text.empty())
+            {
+                ImGui::SetClipboardText(text.c_str());
+            }
+            ImGui::EndPopup();
+        }
     }
 }
 

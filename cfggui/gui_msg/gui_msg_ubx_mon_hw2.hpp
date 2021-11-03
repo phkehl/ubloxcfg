@@ -33,7 +33,7 @@ class GuiMsgUbxMonHw2 : public GuiMsg
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
-        void Clear();
+        void Clear() final;
 
         struct IQ
         {

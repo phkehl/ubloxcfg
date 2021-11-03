@@ -411,5 +411,64 @@ bool rtcm3GetAnt(const uint8_t *msg, RTCM3_ANT_t *ant)
     return res;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+
+bool rtcm3MessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId)
+{
+    if ( (name == NULL) || (name[0] == '\0') )
+    {
+        return false;
+    }
+
+    const struct { const char *name; uint8_t clsId; uint8_t msgId; } kMsgInfo[] =
+    {
+        { .name = "RTCM-3X-TYPE1001",   .clsId = 0xf5, .msgId = 0x01 },
+        { .name = "RTCM-3X-TYPE1002",   .clsId = 0xf5, .msgId = 0x02 },
+        { .name = "RTCM-3X-TYPE1003",   .clsId = 0xf5, .msgId = 0x03 },
+        { .name = "RTCM-3X-TYPE1004",   .clsId = 0xf5, .msgId = 0x04 },
+        { .name = "RTCM-3X-TYPE1005",   .clsId = 0xf5, .msgId = 0x05 },
+        { .name = "RTCM-3X-TYPE1006",   .clsId = 0xf5, .msgId = 0x06 },
+        { .name = "RTCM-3X-TYPE1007",   .clsId = 0xf5, .msgId = 0x07 },
+        { .name = "RTCM-3X-TYPE1009",   .clsId = 0xf5, .msgId = 0x09 },
+        { .name = "RTCM-3X-TYPE1010",   .clsId = 0xf5, .msgId = 0x0a },
+        { .name = "RTCM-3X-TYPE1011",   .clsId = 0xf5, .msgId = 0xa1 },
+        { .name = "RTCM-3X-TYPE1012",   .clsId = 0xf5, .msgId = 0xa2 },
+        { .name = "RTCM-3X-TYPE1033",   .clsId = 0xf5, .msgId = 0x21 },
+        { .name = "RTCM-3X-TYPE1074",   .clsId = 0xf5, .msgId = 0x4a },
+        { .name = "RTCM-3X-TYPE1075",   .clsId = 0xf5, .msgId = 0x4b },
+        { .name = "RTCM-3X-TYPE1077",   .clsId = 0xf5, .msgId = 0x4d },
+        { .name = "RTCM-3X-TYPE1084",   .clsId = 0xf5, .msgId = 0x54 },
+        { .name = "RTCM-3X-TYPE1085",   .clsId = 0xf5, .msgId = 0x55 },
+        { .name = "RTCM-3X-TYPE1087",   .clsId = 0xf5, .msgId = 0x57 },
+        { .name = "RTCM-3X-TYPE1094",   .clsId = 0xf5, .msgId = 0x5e },
+        { .name = "RTCM-3X-TYPE1095",   .clsId = 0xf5, .msgId = 0x5f },
+        { .name = "RTCM-3X-TYPE1097",   .clsId = 0xf5, .msgId = 0x61 },
+        { .name = "RTCM-3X-TYPE1124",   .clsId = 0xf5, .msgId = 0x7c },
+        { .name = "RTCM-3X-TYPE1125",   .clsId = 0xf5, .msgId = 0x7d },
+        { .name = "RTCM-3X-TYPE1127",   .clsId = 0xf5, .msgId = 0x7f },
+        { .name = "RTCM-3X-TYPE1230",   .clsId = 0xf5, .msgId = 0xe6 },
+        { .name = "RTCM-3X-TYPE4072_0", .clsId = 0xf5, .msgId = 0xfe },
+        { .name = "RTCM-3X-TYPE4072_1", .clsId = 0xf5, .msgId = 0xfd },
+    };
+    for (int ix = 0; ix < NUMOF(kMsgInfo); ix++)
+    {
+        if (strcmp(kMsgInfo[ix].name, name) == 0)
+        {
+            if (clsId != NULL)
+            {
+                *clsId = kMsgInfo[ix].clsId;
+            }
+            if (msgId != NULL)
+            {
+                *msgId = kMsgInfo[ix].msgId;
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /* ****************************************************************************************************************** */
 // eof

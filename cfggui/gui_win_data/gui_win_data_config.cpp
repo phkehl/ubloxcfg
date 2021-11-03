@@ -35,8 +35,8 @@ static const char * const kDbItemsFilterHelp =
     "The filter also matches message names as shown in the Message rates tab. Matches\n"
     "on message names will also match the corresponding CFG-OUTMSG items in the\n"
     "Receiver DB tab.\n";
-GuiWinDataConfig::GuiWinDataConfig(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataConfig::GuiWinDataConfig(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _dbPollState{POLL_IDLE}, _dbPollDataAvail{false},
     _dbSetState{SET_IDLE}, _dbSetNumValset{0},
     _dbSetRam{false}, _dbSetBbr{true}, _dbSetFlash{true}, _dbSetApply{true},
@@ -46,12 +46,7 @@ GuiWinDataConfig::GuiWinDataConfig(const std::string &name,
     _dbFilterWidget{kDbItemsFilterHelp}, _dbFilterUpdate{false},
     _cfgFileName{}, _cfgFileSaveResultTo{-1.0}, _cfgFileSaveError{}
 {
-    _winSize  = { 155, 40 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 155, 40 };
     _DbInit();
 }
 

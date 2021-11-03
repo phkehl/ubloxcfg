@@ -37,7 +37,7 @@ class GuiWinExperiment : public GuiWin
     public:
         GuiWinExperiment();
 
-        void DrawWindow() override;
+        void DrawWindow() final;
 
     protected:
 

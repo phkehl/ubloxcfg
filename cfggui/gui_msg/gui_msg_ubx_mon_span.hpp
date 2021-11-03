@@ -32,7 +32,7 @@ class GuiMsgUbxMonSpan : public GuiMsg
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
-        virtual void Clear();
+        void Clear() final;
 
     protected:
 

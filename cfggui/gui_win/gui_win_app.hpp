@@ -18,15 +18,6 @@
 #ifndef __GUI_WIN_APP_H__
 #define __GUI_WIN_APP_H__
 
-#include <cinttypes>
-#include <memory>
-#include <map>
-#include <string>
-
-#include "imgui.h"
-
-#include "ff_cpp.hpp"
-
 #include "gui_win.hpp"
 
 /* ***** About ****************************************************************************************************** */
@@ -35,13 +26,28 @@ class GuiWinAbout : public GuiWin
 {
     public:
         GuiWinAbout();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
-/* ***** ImGui Demos ************************************************************************************************ */
+/* ***** Settings *************************************************************************************************** */
+
+class GuiWinSettings : public GuiWin
+{
+    public:
+        GuiWinSettings();
+        void DrawWindow() final;
+};
+
+/* ***** Help ******************************************************************************************************* */
+
+class GuiWinHelp : public GuiWin
+{
+    public:
+        GuiWinHelp();
+        void DrawWindow() final;
+};
+
+/* ***** ImGui/ImPlot demos and debugging *************************************************************************** */
 
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
 
@@ -49,20 +55,14 @@ class GuiWinImguiDemo : public GuiWin
 {
     public:
         GuiWinImguiDemo();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
 class GuiWinImplotDemo : public GuiWin
 {
     public:
         GuiWinImplotDemo();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
 #endif
@@ -73,10 +73,7 @@ class GuiWinImguiMetrics : public GuiWin
 {
     public:
         GuiWinImguiMetrics();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
 #endif
@@ -85,68 +82,21 @@ class GuiWinImplotMetrics : public GuiWin
 {
     public:
         GuiWinImplotMetrics();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
 class GuiWinImguiStyles : public GuiWin
 {
     public:
         GuiWinImguiStyles();
-
-        void DrawWindow() override;
-
-    protected:
+        void DrawWindow() final;
 };
 
-class GuiWinImguiAbout : public GuiWin
+class GuiWinImplotStyles : public GuiWin
 {
     public:
-        GuiWinImguiAbout();
-
-        void DrawWindow() override;
-
-    protected:
-};
-
-/* ***** Settings *************************************************************************************************** */
-
-class GuiWinSettings : public GuiWin
-{
-    public:
-        GuiWinSettings();
-
-        void                 DrawWindow() override;
-
-    protected:
-};
-
-/* ***** Help ******************************************************************************************************* */
-
-class GuiWinHelp : public GuiWin
-{
-    public:
-        GuiWinHelp();
-
-        void                 DrawWindow() override;
-
-    protected:
-};
-
-/* ***** Debug log ************************************************************************************************** */
-
-class GuiWinDebug : public GuiWin
-{
-    public:
-        GuiWinDebug();
-
-        void DrawWindow() override;
-        void AddLog(const char *line, const ImU32 colour = GUI_COLOUR(C_WHITE));
-
-    protected:
-        GuiWidgetLog _log;
+        GuiWinImplotStyles();
+        void DrawWindow() final;
 };
 
 /* ****************************************************************************************************************** */

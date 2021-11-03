@@ -15,57 +15,38 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_RECEIVER_H__
-#define __GUI_WIN_RECEIVER_H__
+#ifndef __GUI_WIN_INPUT_RECEIVER_H__
+#define __GUI_WIN_INPUT_RECEIVER_H__
 
 #include <memory>
 #include <map>
-#include <string>
-#include <functional>
 #include <vector>
 
 #include "imgui.h"
 
 #include "ff_cpp.hpp"
 
-#include "gui_win.hpp"
-#include "gui_win_data.hpp"
 #include "receiver.hpp"
-#include "gui_widget.hpp"
-#include "gui_win_filedialog.hpp"
+#include "gui_win_input.hpp"
 
-/* ***** Receiver ******************************************************************************* */
+/* ***** Receiver data input **************************************************************************************** */
 
-class GuiWinData;
-
-class GuiWinReceiver : public GuiWin
+class GuiWinInputReceiver : public GuiWinInput
 {
     public:
-        GuiWinReceiver(const std::string &name, std::shared_ptr<Receiver> receiver, std::shared_ptr<Database> database);
-       ~GuiWinReceiver();
+        GuiWinInputReceiver(const std::string &name);
+       ~GuiWinInputReceiver();
 
-        void                 DrawWindow() override;
-        bool                 IsOpen() override;
+        void Loop(const uint32_t &frame, const double &now) final;
 
-        void                 Loop(const uint32_t &frame, const double &now);
-
-        void                 ProcessData(const Data &data);
-
-        void                 SetCallbacks(std::function<void()> dataWinButtonCb, std::function<void()> titleChangeCb,
-                                 std::function<void()> clearCb);
+        bool IsOpen() final;
 
     protected:
-        std::string          _rxVerStr;
 
         std::shared_ptr<Receiver> _receiver;
-        std::shared_ptr<Database> _database;
-        std::function<void()> _dataWinButtonsCb;
-        std::function<void()> _titleChangeCb;
-        std::function<void()> _clearCb;
 
         std::string          _port;
         int                  _baudrate;
-        GuiWidgetLog         _log;
 
         // Detected and recent ports
         static std::vector<std::string> _recentPorts;
@@ -76,11 +57,7 @@ class GuiWinReceiver : public GuiWin
         bool                 _triggerConnect;
         bool                 _focusPortInput;
 
-        std::shared_ptr<Ff::Epoch> _epoch;
         double               _epochTs;
-        double               _epochAge;
-        const char          *_fixStr;
-        double               _fixTime;
 
         std::unique_ptr<GuiWinFileDialog> _recordFileDialog;
         std::shared_ptr<std::string> _recordFileName;
@@ -93,15 +70,12 @@ class GuiWinReceiver : public GuiWin
         double               _recordKiBs;
         ImU32                _recordButtonColor;
 
-
-        void                 _DrawConnectionWidget();
-        void                 _DrawCommandButtons();
-        void                 _DrawRecordButton();
-        void                 _DrawRxStatus();
-        void                 _DrawSvLevelHist(const EPOCH_t *epoch);
-        void                 _UpdateTitle();
-        void                 _ClearData();
+        void _DrawActionButtons() final;
+        void _DrawControls() final;
+        void _ProcessData(const Data &data) final;
+        void _ClearData() final;
+        void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_RECEIVER_H__
+#endif // __GUI_WIN_INPUT_RECEIVER_H__

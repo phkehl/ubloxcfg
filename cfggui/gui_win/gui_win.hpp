@@ -38,11 +38,6 @@
 class GuiWin
 {
     public:
-        enum POS_e : int
-        {
-            POS_NONE, POS_USER, POS_N, POS_NE, POS_E, POS_SE, POS_S, POS_SW, POS_W, POS_NW
-        };
-        GuiWin();
         GuiWin(const std::string &name);
         virtual ~GuiWin() {};
 
@@ -51,9 +46,10 @@ class GuiWin
         virtual bool         IsOpen();
         bool                *GetOpenFlag();
         const std::string   &GetName();
-        const std::string   &GetTitle();
+        const std::string   &GetTitle(); // Title with ID ("title###id")
         void                 SetTitle(const std::string &title);
         void                 Focus();
+        const std::string   &GetUidStr(); // Run-time (!) UID
 
         virtual void         Loop(const uint32_t &frame, const double &now);
 
@@ -62,6 +58,11 @@ class GuiWin
         bool                 ToggleButton(const char *label, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff);
 
     protected:
+        enum POS_e : int
+        {
+            POS_NONE, POS_USER, POS_N, POS_NE, POS_E, POS_SE, POS_S, POS_SW, POS_W, POS_NW
+        };
+
         std::string          _winTitle;
         std::string          _winName;
         std::string          _winImguiName;
@@ -73,6 +74,7 @@ class GuiWin
         ImVec2               _winSize;
         ImVec2               _winSizeMin;
         uint64_t             _winUid;
+        std::string          _winUidStr;
         std::shared_ptr<GuiSettings> _winSettings;
 
         bool                 _DrawWindowBegin();

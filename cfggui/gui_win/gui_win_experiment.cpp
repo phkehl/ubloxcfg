@@ -29,15 +29,13 @@
 /* ****************************************************************************************************************** */
 
 GuiWinExperiment::GuiWinExperiment() :
+    GuiWin("Experiments"),
     _openFileDialog    { std::make_unique<GuiWinFileDialog>("ExperimentOpenFile") },
     _openFilePath      { std::make_shared<std::string>("nope") },
     _saveFileDialog    { std::make_unique<GuiWinFileDialog>("ExperimentSaveFile") },
     _saveFilePath      { std::make_shared<std::string>("nope") }
 {
-    _winName     = "Experiments";
-    _winSize     = { 100, 50 };
-    SetTitle("Experiments");
-
+    _winSize = { 100, 50 };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -26,17 +26,13 @@
 
 #define _PLOT_ID "##Plot"
 
-GuiWinDataPlot::GuiWinDataPlot(const std::string &name,
-    std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataPlot::GuiWinDataPlot(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _plotVars{}, _plotVarX{nullptr}, _dndHovered{false},
     _plotFlags{ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs}, _yLabels{"", "", ""}
 {
-    _winSize  = { 80, 25 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 80, 25 };
+
     std::snprintf(_dndType, sizeof(_dndType), "PlotVar_%016" PRIx64, _winUid & 0xffffffffffffffff);
     _InitPlotVars();
     ClearData();

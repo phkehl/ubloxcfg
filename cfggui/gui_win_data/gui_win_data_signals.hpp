@@ -25,13 +25,12 @@
 class GuiWinDataSignals : public GuiWinData
 {
     public:
-        GuiWinDataSignals(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
+        GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database);
 
-        void                 Loop(const uint32_t &frame, const double &now) override;
-        void                 ProcessData(const Data &data) override;
-        void                 ClearData() override;
-        void                 DrawWindow() override;
+        void                 Loop(const uint32_t &frame, const double &now) final;
+        void                 ProcessData(const Data &data) final;
+        void                 ClearData() final;
+        void                 DrawWindow() final;
 
     protected:
         std::shared_ptr<Ff::Epoch> _epoch;

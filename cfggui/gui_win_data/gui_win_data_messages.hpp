@@ -33,20 +33,23 @@
 class GuiWinDataMessages : public GuiWinData
 {
     public:
-        GuiWinDataMessages(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
+        GuiWinDataMessages(const std::string &name, std::shared_ptr<Database> database);
         ~GuiWinDataMessages();
 
-      //void                 Loop(const uint32_t &frame, const double &now) override;
-        void                 ProcessData(const Data &data) override;
-        void                 ClearData() override;
-        void                 DrawWindow() override;
+        void Loop(const uint32_t &frame, const double &now) final;
+        void ProcessData(const Data &data) final;
+        void ClearData() final;
+        void DrawWindow() final;
 
     protected:
-        bool                 _showSubSec;
+        bool _showList;
+        bool _showSubSec;
+        bool _showHexDump;
+
         struct MsgInfo
         {
-            MsgInfo(const std::shared_ptr<Ff::ParserMsg> &_msg, std::unique_ptr<GuiMsg> _renderer);
+            MsgInfo(std::unique_ptr<GuiMsg> _renderer);
+            void Clear();
             void Update(const std::shared_ptr<Ff::ParserMsg> &_msg);
             std::shared_ptr<Ff::ParserMsg> msg;
             uint32_t count;
@@ -54,16 +57,43 @@ class GuiWinDataMessages : public GuiWinData
             int      dtIx;
             float    rate;
             float    age;
+            bool     flag;
+            std::vector<std::string> hexdump;
             std::unique_ptr<GuiMsg> renderer;
         };
-        std::map< std::string, MsgInfo > _messages;
-        std::map< std::string, MsgInfo >::iterator _selectedEntry;
-        std::string                      _selectedName;
-        std::map< std::string, MsgInfo >::iterator _displayedEntry;
-        std::vector<std::string>         _hexDump;
-        void                             _UpdateHexdump();
-        std::vector<std::string>         _classNames;
-        void                             _SetRate(const UBLOXCFG_MSGRATE_t *def, const uint8_t rate);
+
+        using msgsMap_t = std::map< std::string, MsgInfo >;
+
+        msgsMap_t           _messages;
+        msgsMap_t::iterator _selectedEntry;
+        std::string         _selectedName;
+        msgsMap_t::iterator _displayedEntry;
+        double   _nowIm;
+        uint32_t _nowTs;
+        std::vector<std::string> _classNames;
+
+        struct MsgRate
+        {
+            MsgRate(const UBLOXCFG_MSGRATE_t *_rate);
+            std::string               msgName;
+            std::string               menuNameEnabled;
+            std::string               menuNameDisabled;
+            const UBLOXCFG_MSGRATE_t *rate;
+            bool                      haveIds;
+            uint8_t                   clsId;
+            uint8_t                   msgId;
+        };
+        std::map<std::string, std::vector<MsgRate>> _msgRates; // FIXME: make static?
+        void _InitMsgRates();
+        void _SetRate(const MsgRate &def, const int rate);
+
+        void _UpdateInfo();
+        void _DrawMessagesMenu();
+        void _DrawList();
+        void _DrawListButtons();
+        void _DrawMessage();
+        void _DrawMessageButtons();
+
 };
 
 /* ****************************************************************************************************************** */

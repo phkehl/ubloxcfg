@@ -21,15 +21,11 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataStats::GuiWinDataStats(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database)
+GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database)
 {
-    _winSize  = { 80, 25 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 80, 25 };
+
     ClearData();
 
     _rows.push_back(Row("Latitude [deg]", [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },

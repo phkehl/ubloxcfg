@@ -253,32 +253,34 @@ typedef struct MSGINFO_s
 #define _P_MSGINFO(_clsId_, _msgId_, _msgName_) { .clsId = (_clsId_), .msgId = (_msgId_), .msgName = (_msgName_) },
 #define _P_MSGINFO_UNKN(_clsId_, _clsName_) { .clsId = (_clsId_), .msgName = (_clsName_) },
 
+const MSGINFO_t kMsgInfo[] =
+{
+    UBX_MESSAGES(_P_MSGINFO)
+};
+
+const MSGINFO_t kUnknInfo[] =
+{
+    UBX_CLASSES(_P_MSGINFO_UNKN)
+};
+
 static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, const uint8_t msgId)
 {
-    const MSGINFO_t msgInfo[] =
-    {
-        UBX_MESSAGES(_P_MSGINFO)
-    };
-    const MSGINFO_t unknInfo[] =
-    {
-        UBX_CLASSES(_P_MSGINFO_UNKN)
-    };
     int res = 0;
-    for (int ix = 0; ix < NUMOF(msgInfo); ix++)
+    for (int ix = 0; ix < NUMOF(kMsgInfo); ix++)
     {
-        if ( (msgInfo[ix].clsId == clsId) && (msgInfo[ix].msgId == msgId) )
+        if ( (kMsgInfo[ix].clsId == clsId) && (kMsgInfo[ix].msgId == msgId) )
         {
-            res = snprintf(name, size, "%s", msgInfo[ix].msgName);
+            res = snprintf(name, size, "%s", kMsgInfo[ix].msgName);
             break;
         }
     }
     if (res == 0)
     {
-        for (int ix = 0; ix < NUMOF(unknInfo); ix++)
+        for (int ix = 0; ix < NUMOF(kUnknInfo); ix++)
         {
-            if (unknInfo[ix].clsId == clsId)
+            if (kUnknInfo[ix].clsId == clsId)
             {
-                res = snprintf(name, size, "%s-%02"PRIX8, unknInfo[ix].msgName, msgId);
+                res = snprintf(name, size, "%s-%02"PRIX8, kUnknInfo[ix].msgName, msgId);
                 break;
             }
         }
@@ -289,6 +291,32 @@ static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, con
     }
 
     return res < size;
+}
+
+bool ubxMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId)
+{
+    if ( (name == NULL) || (name[0] == '\0') )
+    {
+        return false;
+    }
+
+    for (int ix = 0; ix < NUMOF(kMsgInfo); ix++)
+    {
+        if (strcmp(kMsgInfo[ix].msgName, name) == 0)
+        {
+            if (clsId != NULL)
+            {
+                *clsId = kMsgInfo[ix].clsId;
+            }
+            if (msgId != NULL)
+            {
+                *msgId = kMsgInfo[ix].msgId;
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /* ****************************************************************************************************************** */

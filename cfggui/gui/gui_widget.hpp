@@ -57,11 +57,13 @@ struct GuiWidgetFilter
 {
     GuiWidgetFilter(const std::string help = "");
 
-    bool DrawWidget(const float width = -1.0f);
-    bool Match(const std::string &str);
-    bool IsActive();
-    bool IsHighlight();
-    void SetUserMsg(const std::string &msg);
+    bool        DrawWidget(const float width = -1.0f);
+    bool        Match(const std::string &str);
+    bool        IsActive();
+    bool        IsHighlight();
+    void        SetUserMsg(const std::string &msg);
+    std::string GetFilterStr();
+    void        SetFilterStr(const std::string &str);
 
     protected:
         enum FILTER_e { FILTER_NONE, FILTER_BAD, FILTER_OK };
@@ -85,11 +87,14 @@ struct GuiWidgetLog
 {
     GuiWidgetLog(const int maxLines = 10000, const bool controls = true);
 
-    void                     Clear();
-    void                     AddLine(const char *line, const ImU32 colour);
-    void                     AddLine(const std::string &line, const ImU32 colour);
+    void        Clear();
+    void        AddLine(const char *line, const ImU32 colour);
+    void        AddLine(const std::string &line, const ImU32 colour);
 
-    void                     DrawWidget();
+    void        DrawWidget();
+
+    std::string GetFilterStr();
+    void        SetFilterStr(const std::string &str);
 
     protected:
         struct LogLine

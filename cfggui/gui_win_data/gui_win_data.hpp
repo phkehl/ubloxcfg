@@ -22,6 +22,7 @@
 
 #include "gui_win.hpp"
 
+#include "data.hpp"
 #include "receiver.hpp"
 #include "logfile.hpp"
 #include "database.hpp"
@@ -31,15 +32,16 @@
 class GuiWinData : public GuiWin
 {
     public:
-        GuiWinData() {}
-        GuiWinData(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
-        virtual ~GuiWinData() {}
+        GuiWinData(const std::string &name, std::shared_ptr<Database> database);
+        virtual ~GuiWinData();
 
-        virtual void         Loop(const uint32_t &frame, const double &now);
-        virtual void         ProcessData(const Data &data);
-        virtual void         ClearData();
-        virtual void         DrawWindow();
+        virtual void Loop(const uint32_t &frame, const double &now);
+        virtual void ProcessData(const Data &data);
+        virtual void ClearData();
+        virtual void DrawWindow();
+
+        void SetReceiver(std::shared_ptr<Receiver> receiver);
+        void SetLogfile(std::shared_ptr<Logfile> logfile);
 
     protected:
 

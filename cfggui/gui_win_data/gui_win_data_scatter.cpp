@@ -21,18 +21,13 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataScatter::GuiWinDataScatter(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataScatter::GuiWinDataScatter(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _havePoints{false}
 {
-    _winSize  = { 75.0, 0.0 };
+    _winSize    = { 75.0, 0.0 };
     _winSizeMin = { 40.0, 0.0 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winFlags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    _winTitle = name;
-    _winName  = name;
+    _winFlags  |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
     _winSettings->GetValue(_winName + ".showStats",     _showStats,     false);
     _winSettings->GetValue(_winName + ".plotRadius",    _plotRadius,    10.0);

@@ -181,6 +181,16 @@ bool nmeaMessageInfo(char *info, const int size, const uint8_t *msg, const int m
 
 bool nmeaDecode(NMEA_MSG_t *nmea, const uint8_t *msg, const int msgSize);
 
+//! Get NMEA message IDs ("fake" UBX class and message IDs)
+/*!
+    \param[in]   name   Message name (e.g. "NMEA-STANDARD-GGA", "NMEA-PUBX-POSITION")
+    \param[out]  clsId  Class ID, or NULL
+    \param[out]  msgId  Message ID, or NULL
+
+    \returns true if \c name was found and \c clsId and \c msgId are valid
+*/
+bool nmeaMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
+
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }

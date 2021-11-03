@@ -91,23 +91,26 @@ bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
         { .label = "UBX",      .flags = 0 },
         { .label = "NMEA",     .flags = 0 },
         { .label = "RTCM3",    .flags = 0 },
+        { .label = "SPARTN",   .flags = 0 },
         { .label = "Other",    .flags = 0 },
     };
 
-    int msgsIxUbx   = -1;
-    int msgsIxNmea  = -1;
+    int msgsIxUbx    = -1;
+    int msgsIxNmea   = -1;
     //int msgsIxRtcm2 = -1;
-    int msgsIxRtcm3 = -1;
-    int msgsIxOther = -1;
+    int msgsIxRtcm3  = -1;
+    int msgsIxSpartn = -1;
+    int msgsIxOther  = -1;
     for (int ix = 0; ix < NUMOF(comms.protIds); ix++)
     {
         switch (comms.protIds[ix])
         {
-            case UBX_MON_COMMS_V0_PROTIDS_UBX:   msgsIxUbx   = ix; break;
-            case UBX_MON_COMMS_V0_PROTIDS_NMEA:  msgsIxNmea  = ix; break;
+            case UBX_MON_COMMS_V0_PROTIDS_UBX:    msgsIxUbx    = ix; break;
+            case UBX_MON_COMMS_V0_PROTIDS_NMEA:   msgsIxNmea   = ix; break;
             //case UBX_MON_COMMS_V0_PROTIDS_RTCM2: msgsIxRtcm2 = ix; break;
-            case UBX_MON_COMMS_V0_PROTIDS_RTCM3: msgsIxRtcm3 = ix; break;
-            case UBX_MON_COMMS_V0_PROTIDS_OTHER: msgsIxOther = ix; break;
+            case UBX_MON_COMMS_V0_PROTIDS_RTCM3:  msgsIxRtcm3  = ix; break;
+            case UBX_MON_COMMS_V0_PROTIDS_SPARTN: msgsIxSpartn = ix; break;
+            case UBX_MON_COMMS_V0_PROTIDS_OTHER:  msgsIxOther  = ix; break;
         }
     }
 
@@ -200,22 +203,16 @@ bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
             {
                 ImGui::Text("%u", port.msgs[msgsIxOther]);
             }
-/*
-    uint16_t portId;
-    uint16_t txPending;
-    uint32_t txBytes;
-    uint8_t  txUsage;
-    uint8_t  txPeakUsage;
-    uint16_t rxPending;
-    uint32_t rxBytes;
-    uint8_t  rxUsage;
-    uint8_t  rxPeakUsage;
-    uint16_t overrunErrors;
-    uint16_t msgs[4];
-    uint8_t  reserved1[8];
-    uint32_t skipped;
-*/
 
+            ImGui::TableSetColumnIndex(colIx++);
+            if (msgsIxSpartn < 0)
+            {
+                ImGui::TextUnformatted("?");
+            }
+            else
+            {
+                ImGui::Text("%u", port.msgs[msgsIxSpartn]);
+            }
         }
         ImGui::EndTable();
     }

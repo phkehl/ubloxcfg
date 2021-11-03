@@ -200,6 +200,7 @@ typedef enum EPOCH_SIGCORR_e
     EPOCH_SIGCORR_RTCM3_OSR,     //!< RTCM v3.x OSR type RTK corrections available
     EPOCH_SIGCORR_RTCM3_SSR,     //!< RTCM v3.x SSR type RTK corrections available
     EPOCH_SIGCORR_QZSS_SLAS,     //!< QZSS SLAS corrections available
+    EPOCH_SIGCORR_SPARTN,        //!< SPARTN corrections available
     // Keep in sync with kEpochSigCorrStrs!
 } EPOCH_SIGCORR_t;
 

@@ -6,13 +6,14 @@
     "u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG",
     "u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG",
     "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG",
+    "u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG",
     "u-center 20.01, copyright (c) 2020 u-blox AG"
     // (Which may or may not have worked fully and may or may not be fully correct... YMMV)
 
     ], "items": [
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    { "id" : "0x10340014", "name" : "CFG-BDS-USE_PRN_1_TO_5",               "size" : 0, "type" : "L",                                          "title" : "Use BeiDou geostationary satellites (PRN 1-5)" },
+    { "id" : "0x10340014", "name" : "CFG-BDS-USE_PRN_1_TO_5",               "size" : 0, "type" : "L",                                          "title" : "Use BeiDou geostationary satellites (PRN 1-5), a.k.a. CFG-BDS-USE_GEO_PRN" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20240011", "name" : "CFG-GEOFENCE-CONFLVL",                 "size" : 1, "type" : "E1",                                         "title" : "Required confidence level for state evaluation",
             "consts" : [ { "name" : "L000",                                 "value" : "0",                                                     "title" : "No confidence" },
@@ -67,6 +68,7 @@
     { "id" : "0x10710001", "name" : "CFG-I2CINPROT-UBX",                    "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an input protocol on I2C" },
     { "id" : "0x10710002", "name" : "CFG-I2CINPROT-NMEA",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an input protocol on I2C" },
     { "id" : "0x10710004", "name" : "CFG-I2CINPROT-RTCM3X",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an input protocol on I2C" },
+    { "id" : "0x10710005", "name" : "CFG-I2CINPROT-SPARTN",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if SPARTN should be an input protocol on I2C" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10720001", "name" : "CFG-I2COUTPROT-UBX",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on I2C" },
     { "id" : "0x10720002", "name" : "CFG-I2COUTPROT-NMEA",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on I2C" },
@@ -219,6 +221,12 @@
     { "id" : "0x209100af", "name" : "CFG-MSGOUT-NMEA_ID_RMC_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-RMC message on port SPI" },
     { "id" : "0x209100ab", "name" : "CFG-MSGOUT-NMEA_ID_RMC_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-RMC message on port I2C" },
     { "id" : "0x209100ae", "name" : "CFG-MSGOUT-NMEA_ID_RMC_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-RMC message on port USB" },
+    // ......................................................................................................................................................................................................................
+    { "id" : "0x209100e3", "name" : "CFG-MSGOUT-NMEA_ID_THS_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-THS message on port UART1" },
+    { "id" : "0x209100e4", "name" : "CFG-MSGOUT-NMEA_ID_THS_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-THS message on port UART2" },
+    { "id" : "0x209100e6", "name" : "CFG-MSGOUT-NMEA_ID_THS_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-THS message on port SPI" },
+    { "id" : "0x209100e2", "name" : "CFG-MSGOUT-NMEA_ID_THS_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-THS message on port I2C" },
+    { "id" : "0x209100e5", "name" : "CFG-MSGOUT-NMEA_ID_THS_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-THS message on port USB" },
     // ......................................................................................................................................................................................................................
     { "id" : "0x209100e8", "name" : "CFG-MSGOUT-NMEA_ID_VLW_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-VLW message on port UART1" },
     { "id" : "0x209100e9", "name" : "CFG-MSGOUT-NMEA_ID_VLW_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the NMEA-STANDARD-VLW message on port UART2" },
@@ -527,6 +535,12 @@
     { "id" : "0x20910006", "name" : "CFG-MSGOUT-UBX_NAV_PVT_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVT message on port I2C" },
     { "id" : "0x20910009", "name" : "CFG-MSGOUT-UBX_NAV_PVT_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVT message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x2091062b", "name" : "CFG-MSGOUT-UBX_NAV_PVAT_UART1",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVAT message on port UART1" },
+    { "id" : "0x2091062c", "name" : "CFG-MSGOUT-UBX_NAV_PVAT_UART2",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVAT message on port UART2" },
+    { "id" : "0x2091062e", "name" : "CFG-MSGOUT-UBX_NAV_PVAT_SPI",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVAT message on port SPI" },
+    { "id" : "0x2091062a", "name" : "CFG-MSGOUT-UBX_NAV_PVAT_I2C",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVAT message on port I2C" },
+    { "id" : "0x2091062d", "name" : "CFG-MSGOUT-UBX_NAV_PVAT_USB",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-PVAT message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x2091008e", "name" : "CFG-MSGOUT-UBX_NAV_RELPOSNED_UART1",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-RELPOSNED message on port UART1" },
     { "id" : "0x2091008f", "name" : "CFG-MSGOUT-UBX_NAV_RELPOSNED_UART2",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-RELPOSNED message on port UART2" },
     { "id" : "0x20910091", "name" : "CFG-MSGOUT-UBX_NAV_RELPOSNED_SPI",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-RELPOSNED message on port SPI" },
@@ -653,6 +667,12 @@
     { "id" : "0x20910231", "name" : "CFG-MSGOUT-UBX_RXM_SFRBX_I2C",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SFRBX message on port I2C" },
     { "id" : "0x20910234", "name" : "CFG-MSGOUT-UBX_RXM_SFRBX_USB",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SFRBX message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x20910606", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_UART1",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port UART1" },
+    { "id" : "0x20910607", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_UART2",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port UART2" },
+    { "id" : "0x20910609", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_SPI",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port SPI" },
+    { "id" : "0x20910605", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_I2C",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port I2C" },
+    { "id" : "0x20910608", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_USB",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x20910179", "name" : "CFG-MSGOUT-UBX_TIM_TM2_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port UART1" },
     { "id" : "0x2091017a", "name" : "CFG-MSGOUT-UBX_TIM_TM2_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port UART2" },
     { "id" : "0x2091017c", "name" : "CFG-MSGOUT-UBX_TIM_TM2_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port SPI" },
@@ -670,6 +690,12 @@
     { "id" : "0x20910096", "name" : "CFG-MSGOUT-UBX_TIM_VRFY_SPI",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-VRFY message on port SPI" },
     { "id" : "0x20910092", "name" : "CFG-MSGOUT-UBX_TIM_VRFY_I2C",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-VRFY message on port I2C" },
     { "id" : "0x20910095", "name" : "CFG-MSGOUT-UBX_TIM_VRFY_USB",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-VRFY message on port USB" },
+    // ......................................................................................................................................................................................................................
+    { "id" : "0x20910635", "name" : "CFG-MSGOUT-UBX_SEC_SIG_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port UART1" },
+    { "id" : "0x20910636", "name" : "CFG-MSGOUT-UBX_SEC_SIG_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port UART2" },
+    { "id" : "0x20910638", "name" : "CFG-MSGOUT-UBX_SEC_SIG_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port SPI" },
+    { "id" : "0x20910634", "name" : "CFG-MSGOUT-UBX_SEC_SIG_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port I2C" },
+    { "id" : "0x20910637", "name" : "CFG-MSGOUT-UBX_SEC_SIG_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port USB" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20140011", "name" : "CFG-NAVHPG-DGNSSMODE",                 "size" : 1, "type" : "E1",                                         "title" : "Differential corrections mode",
             "consts" : [ { "name" : "RTK_FLOAT",                            "value" : "2",                                                     "title" : "No attempts made to fix ambiguities" },
@@ -697,7 +723,9 @@
                          { "name" : "AIR1",                                 "value" : "6",                                                     "title" : "Airborne with <1g acceleration" },
                          { "name" : "AIR2",                                 "value" : "7",                                                     "title" : "Airborne with <2g acceleration" },
                          { "name" : "AIR4",                                 "value" : "8",                                                     "title" : "Airborne with <4g acceleration" },
-                         { "name" : "WRIST",                                "value" : "9",                                                     "title" : "Wrist-worn watch (not available in all products)" } ] },
+                         { "name" : "WRIST",                                "value" : "9",                                                     "title" : "Wrist-worn watch (not available in all products)" },
+                         { "name" : "LAWNMOWER",                            "value" : "11",                                                    "title" : "Lawn mower (not available in all products)" },
+                         { "name" : "SCOOTER",                              "value" : "12",                                                    "title" : "Scooters (hyper hyper) (not available in all products)" } ] },
     { "id" : "0x10110025", "name" : "CFG-NAVSPG-ACKAIDING",                 "size" : 0, "type" : "L",                                          "title" : "Acknowledge assistance input messages" },
     { "id" : "0x10110061", "name" : "CFG-NAVSPG-USE_USRDAT",                "size" : 0, "type" : "L",                                          "title" : "Use user geodetic datum parameters" },
     { "id" : "0x50110062", "name" : "CFG-NAVSPG-USRDAT_MAJA",               "size" : 8, "type" : "R8", "unit" : "m",                           "title" : "Geodetic datum semi-major axis" },
@@ -995,6 +1023,7 @@
     { "id" : "0x10790001", "name" : "CFG-SPIINPROT-UBX",                    "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an input protocol on SPI" },
     { "id" : "0x10790002", "name" : "CFG-SPIINPROT-NMEA",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an input protocol on SPI" },
     { "id" : "0x10790004", "name" : "CFG-SPIINPROT-RTCM3X",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an input protocol on SPI" },
+    { "id" : "0x10790005", "name" : "CFG-SPIINPROT-SPARTN",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if SPARTN should be an input protocol on SPI" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x107a0001", "name" : "CFG-SPIOUTPROT-UBX",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on SPI" },
     { "id" : "0x107a0002", "name" : "CFG-SPIOUTPROT-NMEA",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on SPI" },
@@ -1045,11 +1074,16 @@
     { "id" : "0x1005000a", "name" : "CFG-TP-ALIGN_TO_TOW_TP1",              "size" : 0, "type" : "L",                                          "title" : "Align time pulse to top of second (TP1)" },
     { "id" : "0x1005000b", "name" : "CFG-TP-POL_TP1",                       "size" : 0, "type" : "L",                                          "title" : "Set time pulse polarity (TP1)" },
     { "id" : "0x2005000c", "name" : "CFG-TP-TIMEGRID_TP1",                  "size" : 1, "type" : "E1",                                         "title" : "Time grid to use (TP1)",
-            "consts" : [ { "name" : "UTC",                                  "value" : "0",                                                     "title" : "UTC time reference" },
-                         { "name" : "GPS",                                  "value" : "1",                                                     "title" : "GPS time reference" },
-                         { "name" : "GLO",                                  "value" : "2",                                                     "title" : "GLONASS time reference" },
-                         { "name" : "BDS",                                  "value" : "3",                                                     "title" : "BeiDou time reference" },
-                         { "name" : "GAL",                                  "value" : "4",                                                     "title" : "Galileo time reference" } ] },
+        "consts" : [ { "name" : "UTC",                                      "value" : "0",                                                     "title" : "UTC time reference" },
+                     { "name" : "GPS",                                      "value" : "1",                                                     "title" : "GPS time reference" },
+                     { "name" : "GLO",                                      "value" : "2",                                                     "title" : "GLONASS time reference" },
+                     { "name" : "BDS",                                      "value" : "3",                                                     "title" : "BeiDou time reference" },
+                     { "name" : "GAL",                                      "value" : "4",                                                     "title" : "Galileo time reference" } ] },
+    { "id" : "0x20050035", "name" : "CFG-TP-DRSTR_TP1",                     "size" : 1, "type" : "E1",                                         "title" : "Drive strength (TP1)",
+        "consts" : [ { "name" : "2MA",                                      "value" : "0",                                                     "title" : "2 mA drive strength" },
+                     { "name" : "4MA",                                      "value" : "1",                                                     "title" : "4 mA drive strength" },
+                     { "name" : "8MA",                                      "value" : "2",                                                     "title" : "8 mA drive strength" },
+                     { "name" : "12MA",                                     "value" : "3",                                                     "title" : "12 mA drive strength" } ] },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10a20001", "name" : "CFG-TXREADY-ENABLED",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if TX ready pin mechanism should be enabled" },
     { "id" : "0x10a20002", "name" : "CFG-TXREADY-POLARITY",                 "size" : 0, "type" : "L",                                          "title" : "The polarity of the TX ready pin: false:high-active, true:low-active" },
@@ -1077,6 +1111,7 @@
     { "id" : "0x10730001", "name" : "CFG-UART1INPROT-UBX",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an input protocol on UART1" },
     { "id" : "0x10730002", "name" : "CFG-UART1INPROT-NMEA",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an input protocol on UART1" },
     { "id" : "0x10730004", "name" : "CFG-UART1INPROT-RTCM3X",               "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an input protocol on UART1" },
+    { "id" : "0x10730005", "name" : "CFG-UART1INPROT-SPARTN",               "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if SPARTN should be an input protocol on UART1" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10740001", "name" : "CFG-UART1OUTPROT-UBX",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on UART1" },
     { "id" : "0x10740002", "name" : "CFG-UART1OUTPROT-NMEA",                "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on UART1" },
@@ -1101,6 +1136,7 @@
     { "id" : "0x10750001", "name" : "CFG-UART2INPROT-UBX",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an input protocol on UART2" },
     { "id" : "0x10750002", "name" : "CFG-UART2INPROT-NMEA",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an input protocol on UART2" },
     { "id" : "0x10750004", "name" : "CFG-UART2INPROT-RTCM3X",               "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an input protocol on UART2" },
+    { "id" : "0x10750005", "name" : "CFG-UART2INPROT-SPARTN",               "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if SPARTN should be an input protocol on UART2" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10760001", "name" : "CFG-UART2OUTPROT-UBX",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on UART2" },
     { "id" : "0x10760002", "name" : "CFG-UART2OUTPROT-NMEA",                "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on UART2" },
@@ -1127,6 +1163,7 @@
     { "id" : "0x10770001", "name" : "CFG-USBINPROT-UBX",                    "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an input protocol on USB" },
     { "id" : "0x10770002", "name" : "CFG-USBINPROT-NMEA",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an input protocol on USB" },
     { "id" : "0x10770004", "name" : "CFG-USBINPROT-RTCM3X",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an input protocol on USB" },
+    { "id" : "0x10770005", "name" : "CFG-USBINPROT-SPARTN",                 "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if SPARTN should be an input protocol on USB" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10780001", "name" : "CFG-USBOUTPROT-UBX",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on USB" },
     { "id" : "0x10780002", "name" : "CFG-USBOUTPROT-NMEA",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on USB" },

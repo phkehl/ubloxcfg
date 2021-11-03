@@ -265,6 +265,9 @@ Receiver::~Receiver()
 {
     DEBUG("~Receiver(%s)", _name.c_str());
 
+    // Stop calling subscribers with data
+    _dataCb = nullptr;
+
     // Abort if still connected
     if (_state != IDLE)
     {
@@ -445,7 +448,7 @@ std::unique_ptr<ReceiverEvent> Receiver::_GetEvent()
 void Receiver::Loop(const double &now)
 {
     (void)now;
-    // TODO: limit max. number of events handled in main thread?
+    // TODO: limit max. number of events handled in main thread? Though there is a check for that in Receivers...
     while (true)
     {
         auto event = _GetEvent();

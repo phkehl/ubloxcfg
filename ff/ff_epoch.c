@@ -610,6 +610,7 @@ static EPOCH_SIGCORR_t _ubxSigCorrSource(const uint8_t corrSource)
         case UBX_NAV_SIG_V0_CORRUSED_RTCM3_OSR: return EPOCH_SIGCORR_RTCM3_OSR;
         case UBX_NAV_SIG_V0_CORRUSED_RTCM3_SSR: return EPOCH_SIGCORR_RTCM3_SSR;
         case UBX_NAV_SIG_V0_CORRUSED_QZSS_SLAS: return EPOCH_SIGCORR_QZSS_SLAS;
+        case UBX_NAV_SIG_V0_CORRUSED_SPARTN:    return EPOCH_SIGCORR_SPARTN;
         default:                                return EPOCH_SIGCORR_UNKNOWN;
     }
 }
@@ -624,6 +625,7 @@ static const char * const kEpochSigCorrStrs[] =
     [EPOCH_SIGCORR_RTCM3_OSR] = "RTCM3-OSR",
     [EPOCH_SIGCORR_RTCM3_SSR] = "RTCM3-SSR",
     [EPOCH_SIGCORR_QZSS_SLAS] = "QZSS-SLAS",
+    [EPOCH_SIGCORR_SPARTN]    = "SPARTN",
 };
 
 static EPOCH_SIGIONO_t _ubxIonoModel(const uint8_t ionoModel)

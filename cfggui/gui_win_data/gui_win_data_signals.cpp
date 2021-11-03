@@ -21,17 +21,13 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataSignals::GuiWinDataSignals(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataSignals::GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _countAll{"All"}, _countGps{"GPS"}, _countGlo{"GLO"}, _countBds{"BDS"}, _countGal{"GAL"}, _countSbas{"SBAS"}, _countQzss{"QZSS"},
     _minSigUse{EPOCH_SIGUSE_ACQUIRED}, _selSigs{}
 {
-    _winSize  = { 115, 40 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 115, 40 };
+
     ClearData();
 
     _table.AddColumn("SV", 40.0f);

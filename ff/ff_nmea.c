@@ -699,7 +699,6 @@ static bool sNmeaDecodeGll(NMEA_GLL_t *gll, char *payload, const char *talker)
     return res;
 }
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 
 static bool sNmeaDecodeGsv(NMEA_GSV_t *gsv, char *payload, const char *talker)
@@ -810,6 +809,63 @@ static bool sNmeaDecodeGsv(NMEA_GSV_t *gsv, char *payload, const char *talker)
     }
 
     return true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool nmeaMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId)
+{
+    if ( (name == NULL) || (name[0] == '\0') )
+    {
+        return false;
+    }
+
+    const struct { const char *name; uint8_t clsId; uint8_t msgId; } kMsgInfo[] =
+    {
+        { .name = "NMEA-STANDARD-DTM",  .clsId = 0xf0, .msgId = 0x0a },
+        { .name = "NMEA-STANDARD-GAQ",  .clsId = 0xf0, .msgId = 0x45 },
+        { .name = "NMEA-STANDARD-GBQ",  .clsId = 0xf0, .msgId = 0x44 },
+        { .name = "NMEA-STANDARD-GBS",  .clsId = 0xf0, .msgId = 0x09 },
+        { .name = "NMEA-STANDARD-GGA",  .clsId = 0xf0, .msgId = 0x00 },
+        { .name = "NMEA-STANDARD-GLL",  .clsId = 0xf0, .msgId = 0x01 },
+        { .name = "NMEA-STANDARD-GLQ",  .clsId = 0xf0, .msgId = 0x43 },
+        { .name = "NMEA-STANDARD-GNQ",  .clsId = 0xf0, .msgId = 0x42 },
+        { .name = "NMEA-STANDARD-GNS",  .clsId = 0xf0, .msgId = 0x0d },
+        { .name = "NMEA-STANDARD-GPQ",  .clsId = 0xf0, .msgId = 0x40 },
+        { .name = "NMEA-STANDARD-GQQ",  .clsId = 0xf0, .msgId = 0x47 },
+        { .name = "NMEA-STANDARD-GRS",  .clsId = 0xf0, .msgId = 0x06 },
+        { .name = "NMEA-STANDARD-GSA",  .clsId = 0xf0, .msgId = 0x02 },
+        { .name = "NMEA-STANDARD-GST",  .clsId = 0xf0, .msgId = 0x07 },
+        { .name = "NMEA-STANDARD-GSV",  .clsId = 0xf0, .msgId = 0x03 },
+        { .name = "NMEA-STANDARD-RLM",  .clsId = 0xf0, .msgId = 0x0b },
+        { .name = "NMEA-STANDARD-RMC",  .clsId = 0xf0, .msgId = 0x04 },
+        { .name = "NMEA-STANDARD-TXT",  .clsId = 0xf0, .msgId = 0x41 },
+        { .name = "NMEA-STANDARD-VLW",  .clsId = 0xf0, .msgId = 0x0f },
+        { .name = "NMEA-STANDARD-VTG",  .clsId = 0xf0, .msgId = 0x05 },
+        { .name = "NMEA-STANDARD-ZDA",  .clsId = 0xf0, .msgId = 0x08 },
+        { .name = "NMEA-PUBX-CONFIG",   .clsId = 0xf1, .msgId = 0x41 },
+        { .name = "NMEA-PUBX-POSITION", .clsId = 0xf1, .msgId = 0x00 },
+        { .name = "NMEA-PUBX-RATE",     .clsId = 0xf1, .msgId = 0x40 },
+        { .name = "NMEA-PUBX-SVSTATUS", .clsId = 0xf1, .msgId = 0x03 },
+        { .name = "NMEA-PUBX-TIME",     .clsId = 0xf1, .msgId = 0x04 },
+    };
+    for (int ix = 0; ix < NUMOF(kMsgInfo); ix++)
+    {
+        if (strcmp(kMsgInfo[ix].name, name) == 0)
+        {
+            if (clsId != NULL)
+            {
+                *clsId = kMsgInfo[ix].clsId;
+            }
+            if (msgId != NULL)
+            {
+                *msgId = kMsgInfo[ix].msgId;
+            }
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /* ****************************************************************************************************************** */

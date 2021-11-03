@@ -133,6 +133,7 @@ extern "C" {
 #define UBX_NAV_COV_MSGID            0x36
 #define UBX_NAV_EELL_MSGID           0x3d
 #define UBX_NAV_ATT_MSGID            0x05
+#define UBX_NAV_PVAT_MSGID           0x17
 
 #define UBX_RXM_CLSID                0x02
 #define UBX_RXM_MEASX_MSGID          0x14
@@ -141,6 +142,7 @@ extern "C" {
 #define UBX_RXM_PMREQ_MSGID          0x41
 #define UBX_RXM_RLM_MSGID            0x59
 #define UBX_RXM_RTCM_MSGID           0x32
+#define UBX_RXM_SPARTN_MSGID         0x33
 
 #define UBX_SEC_CLSID                0x27
 #define UBX_SEC_UNIQUEID_MSGID       0x03
@@ -154,6 +156,10 @@ extern "C" {
 #define UBX_UPD_SOS_MSGID            0x14
 #define UBX_UPD_POS_MSGID            0x15 // says u-center...
 #define UBX_UPD_SAFEBOOT_MSGID       0x07 // says ubxfwupdate.exe that comes with u-center...
+
+#define UBX_SEC_CLSID                0x27
+#define UBX_SEC_SIG_MSGID            0x09
+#define UBX_SEC_UNIQID_MSGID         0x03
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -250,19 +256,23 @@ extern "C" {
     _P_(UBX_NAV_CLSID, UBX_NAV_COV_MSGID,         "UBX-NAV-COV") \
     _P_(UBX_NAV_CLSID, UBX_NAV_EELL_MSGID,        "UBX-NAV-EELL") \
     _P_(UBX_NAV_CLSID, UBX_NAV_ATT_MSGID,         "UBX-NAV-ATT") \
+    _P_(UBX_NAV_CLSID, UBX_NAV_PVAT_MSGID,        "UBX-NAV-PVAT") \
     _P_(UBX_RXM_CLSID, UBX_RXM_MEASX_MSGID,       "UBX-RXM-MEASX") \
     _P_(UBX_RXM_CLSID, UBX_RXM_RAWX_MSGID,        "UBX-RXM-RAWX") \
     _P_(UBX_RXM_CLSID, UBX_RXM_SFRBX_MSGID,       "UBX-RXM-SFRBX") \
     _P_(UBX_RXM_CLSID, UBX_RXM_PMREQ_MSGID,       "UBX-RXM-PMREQ") \
     _P_(UBX_RXM_CLSID, UBX_RXM_RLM_MSGID,         "UBX-RXM-RLM") \
     _P_(UBX_RXM_CLSID, UBX_RXM_RTCM_MSGID,        "UBX-RXM-RTCM") \
+    _P_(UBX_RXM_CLSID, UBX_RXM_SPARTN_MSGID,      "UBX-RXM-SPARTN") \
     _P_(UBX_SEC_CLSID, UBX_SEC_UNIQUEID_MSGID,    "UBX-SEC-UNIQUEID") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TM2_MSGID,         "UBX-TIM-TM2") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TP_MSGID,          "UBX-TIM-TP") \
     _P_(UBX_TIM_CLSID, UBX_TIM_VRFY_MSGID,        "UBX-TIM-VRFY") \
     _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS") \
     _P_(UBX_UPD_CLSID, UBX_UPD_POS_MSGID,         "UBX-UPD-POS") \
-    _P_(UBX_UPD_CLSID, UBX_UPD_SAFEBOOT_MSGID,    "UBX-UPD-SAFEBOOT")
+    _P_(UBX_UPD_CLSID, UBX_UPD_SAFEBOOT_MSGID,    "UBX-UPD-SAFEBOOT") \
+    _P_(UBX_SEC_CLSID, UBX_SEC_SIG_MSGID,         "UBX-SEC-SIG") \
+    _P_(UBX_SEC_CLSID, UBX_SEC_UNIQID_MSGID,      "UBX-SEC-UNIQID")
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -884,6 +894,30 @@ typedef struct UBX_NAV_PVT_V1_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+#define UBX_NAV_ATT_VERSION_GET(msg)    (((uint8_t *)(msg))[UBX_HEAD_SIZE + sizeof(uint32_t)])
+
+//! UBX-NAV-ATT (version 0, output) payload
+typedef struct UBX_NAV_ATT_V0_GROUP0_s
+{
+    uint32_t iTOW;
+    uint8_t  version;
+    uint8_t  reserved0[3];
+    int32_t  roll;
+    int32_t  pitch;
+    int32_t  heading;
+    uint32_t accRoll;
+    uint32_t accPitch;
+    uint32_t accHeading;
+} UBX_NAV_ATT_V0_GROUP0_t;
+
+#define UBX_NAV_ATT_V0_VERSION                        0x00
+#define UBX_NAV_ATT_V0_ITOW_SCALE                     1e-3
+#define UBX_NAV_ATT_V0_RPH_SCALING                    1e-5
+
+#define UBX_NAV_ATT_V0_SIZE    ((int)(sizeof(UBX_NAV_ATT_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 #define UBX_NAV_RELPOSNED_VERSION_GET(msg)    (((uint8_t *)(msg))[UBX_HEAD_SIZE + 0])
 
 //! UBX-NAV-RELPOSNED (version 1, output) payload
@@ -1141,6 +1175,7 @@ typedef struct UBX_NAV_SIG_V0_GROUP1_s
 #define UBX_NAV_SIG_V0_CORRUSED_RTCM3_OSR             4
 #define UBX_NAV_SIG_V0_CORRUSED_RTCM3_SSR             5
 #define UBX_NAV_SIG_V0_CORRUSED_QZSS_SLAS             6
+#define UBX_NAV_SIG_V0_CORRUSED_SPARTN                7
 #define UBX_NAV_SIG_V0_PRRES_SCALE                    1e-1
 
 #define UBX_NAV_SIG_V0_MIN_SIZE    ((int)(sizeof(UBX_NAV_SIG_V0_GROUP0_t) + UBX_FRAME_SIZE))
@@ -1364,7 +1399,7 @@ typedef struct UBX_MON_COMMS_V0_GROUP1_s
 #define UBX_MON_COMMS_V0_PROTIDS_RAW         0x03 // probably.. see UBX-MON-MSGPP
 #define UBX_MON_COMMS_V0_PROTIDS_RTCM2       0x02
 #define UBX_MON_COMMS_V0_PROTIDS_RTCM3       0x05
-#define UBX_MON_COMMS_V0_PROTIDS_SAPA1X      0x06 // probably.. see UBX-MON-MSGPP
+#define UBX_MON_COMMS_V0_PROTIDS_SPARTN      0x06
 #define UBX_MON_COMMS_V0_PROTIDS_OTHER       0xff
 
 #define UBX_MON_COMMS_V0_MIN_SIZE    ((int)(sizeof(UBX_MON_COMMS_V0_GROUP0_t) + UBX_FRAME_SIZE))
@@ -1565,6 +1600,17 @@ bool ubxMessageName(char *name, const int size, const uint8_t *msg, const int ms
 */
 bool ubxMessageNameIds(char *name, const int size, const uint8_t clsId, const uint8_t msgId);
 
+//! Get UBX message IDs
+/*!
+    \param[in]   name   Message name
+    \param[out]  clsId  Class ID, or NULL
+    \param[out]  msgId  Message ID, or NULL
+
+    \returns true if \c name was found and \c clsId and \c msgId are valid
+*/
+bool ubxMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
+
+//! Render message info string
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 
 //! Stringify UBX gnssId

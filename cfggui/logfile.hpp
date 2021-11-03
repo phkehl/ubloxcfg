@@ -33,13 +33,15 @@ class Logfile
         Logfile(const std::string &name, std::shared_ptr<Database> database);
        ~Logfile();
 
-        void                 SetDataCb(std::function<void(const Data &)> cb);
+        void SetDataCb(std::function<void(const Data &)> cb);
 
     protected:
 
     private:
-        std::string          _name;
+        std::string _name;
         std::shared_ptr<Database> _database;
+
+        std::function<void(const Data &)> _dataCb;
 };
 
 /* ****************************************************************************************************************** */

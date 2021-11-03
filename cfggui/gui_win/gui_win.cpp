@@ -30,7 +30,7 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWin::GuiWin() :
+GuiWin::GuiWin(const std::string &name) :
     _winTitle        { "Default" },
     _winName         { "Default" },
     _winImguiName    { "Default###Default" },
@@ -44,14 +44,9 @@ GuiWin::GuiWin() :
     _winUid          { reinterpret_cast<std::uintptr_t>(this) },
     _winSettings     { GuiApp::GetInstance().GetSettings() }
 {
-}
-
-GuiWin::GuiWin(const std::string &name) :
-    GuiWin()
-    /*_winSettings { GuiApp::GetInstance().GetSettings() }*/
-{
+    _winUidStr = Ff::Sprintf("%016lx", _winUid);
     _winName = name;
-    SetTitle(_winTitle);
+    SetTitle(name); // by default the (internal) name (= ID) is also the displayed title
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -109,6 +104,13 @@ void GuiWin::SetTitle(const std::string &title)
 void GuiWin::Focus()
 {
     ImGui::SetWindowFocus(_winImguiName.c_str());
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+const std::string &GuiWin::GetUidStr()
+{
+    return _winUidStr;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

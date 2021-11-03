@@ -25,10 +25,9 @@
 class GuiWinDataLegend : public GuiWinData
 {
     public:
-        GuiWinDataLegend(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database);
+        GuiWinDataLegend(const std::string &name, std::shared_ptr<Database> database);
 
-        void                 DrawWindow() override;
+        void                 DrawWindow() final;
 
     protected:
         void                 _DrawFixColourLegend(const int value, const ImU32 colour, const char *label);

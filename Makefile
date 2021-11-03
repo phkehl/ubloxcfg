@@ -97,7 +97,7 @@ LDFLAGS_cfgtool       += -lws2_32 -static
 endif
 
 # cfggui
-CXXFILES_cfggui       := cfggui.cpp $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
+CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
 CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) 3rdparty/stuff/platform_folders.cpp
 CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef

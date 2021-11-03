@@ -132,6 +132,16 @@ typedef struct RTCM3_ANT_s
 //! Get (some) antenna info from  message type 1007, 1008 or 1033
 bool rtcm3GetAnt(const uint8_t *msg, RTCM3_ANT_t *ant);
 
+//! Get RTCM3 message IDs ("fake" UBX class and message IDs)
+/*!
+    \param[in]   name   Message name (e.g. "NMEA-STANDARD-GGA", "NMEA-PUBX-POSITION")
+    \param[out]  clsId  Class ID, or NULL
+    \param[out]  msgId  Message ID, or NULL
+
+    \returns true if \c name was found and \c clsId and \c msgId are valid
+*/
+bool rtcm3MessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
+
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus
 }

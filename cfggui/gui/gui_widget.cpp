@@ -214,6 +214,21 @@ void GuiWidgetFilter::SetUserMsg(const std::string &msg)
     _filterUserMsg = msg;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::string GuiWidgetFilter::GetFilterStr()
+{
+    return _filterStr;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetFilter::SetFilterStr(const std::string &str)
+{
+    _filterStr = str;
+    _UpdateFilter();
+}
+
 /* ****************************************************************************************************************** */
 
 GuiWidgetLog::LogLine::LogLine(const char *_str, const ImU32 _colour) :
@@ -309,6 +324,20 @@ void GuiWidgetLog::DrawWidget()
     //ImGui::Text("Lines: %d/%d, %d match", (int)_lines.size(), _maxLines, _filterNumMatch);
 
     _DrawLogLines();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::string GuiWidgetLog::GetFilterStr()
+{
+    return _filterWidget.GetFilterStr();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetLog::SetFilterStr(const std::string &str)
+{
+    _filterWidget.SetFilterStr(str);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

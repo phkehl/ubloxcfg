@@ -31,11 +31,10 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinAbout::GuiWinAbout()
+GuiWinAbout::GuiWinAbout() :
+    GuiWin("About")
 {
-    _winName     = "About";
-    SetTitle("About");
-    _winFlags    = ImGuiWindowFlags_AlwaysAutoResize;
+    _winFlags = ImGuiWindowFlags_AlwaysAutoResize;
 }
 
 void GuiWinAbout::DrawWindow()
@@ -93,104 +92,10 @@ void GuiWinAbout::DrawWindow()
 
 /* ****************************************************************************************************************** */
 
-#ifndef IMGUI_DISABLE_DEMO_WINDOWS
-
-GuiWinImguiDemo::GuiWinImguiDemo()
+GuiWinSettings::GuiWinSettings() :
+    GuiWin("Settings")
 {
-    _winTitle    = "Dear ImGui demo"; // not used, ImGui sets it
-    _winName     = "DearImGuiDemo";
-}
-
-void GuiWinImguiDemo::DrawWindow()
-{
-    ImGui::ShowDemoWindow(GetOpenFlag());
-}
-
-GuiWinImplotDemo::GuiWinImplotDemo()
-{
-    _winTitle    = "ImPlot demo"; // not used, ImPlot sets it
-    _winName     = "ImPlotDemo";
-};
-
-void GuiWinImplotDemo::DrawWindow()
-{
-    ImPlot::ShowDemoWindow(GetOpenFlag());
-}
-
-#endif
-
-/* ****************************************************************************************************************** */
-
-#ifndef IMGUI_DISABLE_METRICS_WINDOW
-
-GuiWinImguiMetrics::GuiWinImguiMetrics()
-{
-    _winSize     = { 70, 40 };
-    _winTitle    = "Dear ImGui metrics"; // not used, ImGui sets it
-    _winName     = "DearImGuiMetrics";
-}
-
-void GuiWinImguiMetrics::DrawWindow()
-{
-    ImGui::ShowMetricsWindow(GetOpenFlag());
-}
-#endif
-
-/* ****************************************************************************************************************** */
-
-GuiWinImplotMetrics::GuiWinImplotMetrics()
-{
-    _winSize     = { 70, 40 };
-    _winTitle    = "ImPlot metrics"; // not used, ImPlot sets it
-    _winName     = "ImPlotMetrics";
-}
-
-void GuiWinImplotMetrics::DrawWindow()
-{
-    ImPlot::ShowMetricsWindow(GetOpenFlag());
-}
-
-/* ****************************************************************************************************************** */
-
-GuiWinImguiStyles::GuiWinImguiStyles()
-{
-    _winSize     = { 70, 40 };
-    _winName     = "DearImGuiStyles";
-    SetTitle("Dear ImGui styles");
-}
-
-void GuiWinImguiStyles::DrawWindow()
-{
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    ImGui::ShowStyleEditor();
-
-    _DrawWindowEnd();
-}
-
-/* ****************************************************************************************************************** */
-
-GuiWinImguiAbout::GuiWinImguiAbout()
-{
-    _winName     = "DearImGuiAbout";
-    SetTitle("Dear ImGui about");
-}
-
-void GuiWinImguiAbout::DrawWindow()
-{
-    ImGui::ShowAboutWindow(GetOpenFlag());
-}
-
-/* ****************************************************************************************************************** */
-
-GuiWinSettings::GuiWinSettings()
-{
-    _winName     = "Settings";
-    _winSize     = { 75, 20 };
-    SetTitle("Settings");
+    _winSize = { 75, 20 };
 }
 
 void GuiWinSettings::DrawWindow()
@@ -208,11 +113,10 @@ void GuiWinSettings::DrawWindow()
 
 /* ****************************************************************************************************************** */
 
-GuiWinHelp::GuiWinHelp()
+GuiWinHelp::GuiWinHelp() :
+    GuiWin("Help")
 {
-    _winName     = "Help";
-    _winSize     = { 70, 35 };
-    SetTitle("Help");
+    _winSize = { 70, 35 };
 }
 
 void GuiWinHelp::DrawWindow()
@@ -222,40 +126,126 @@ void GuiWinHelp::DrawWindow()
         return;
     }
 
-    ImGui::ShowUserGuide();
-    ImGui::Separator();
-    ImPlot::ShowUserGuide();
+    if (ImGui::BeginTabBar("Help", ImGuiTabBarFlags_FittingPolicyScroll))
+    {
+        if (ImGui::BeginTabItem("cfggui"))
+        {
+            ImGui::TextUnformatted("Yeah, right, ...");
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("ImGui"))
+        {
+            ImGui::ShowUserGuide();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("ImPlot"))
+        {
+            ImPlot::ShowUserGuide();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
 
     _DrawWindowEnd();
 }
 
 /* ****************************************************************************************************************** */
 
-GuiWinDebug::GuiWinDebug() :
-    _log{}
+#ifndef IMGUI_DISABLE_DEMO_WINDOWS
+
+GuiWinImguiDemo::GuiWinImguiDemo() :
+    GuiWin("DearImGuiDemo")
 {
-    _winName       = "DebugLog";
-    _winOpen       = true;
-    _winIniPos     = POS_SE;
-    _winSize       = { 100, 15 };
-    SetTitle("Debug log");
+    //SetTitle("Dear ImGui demo"); // not used, ImGui sets it
 }
 
-void GuiWinDebug::AddLog(const char *line, const ImU32 colour)
+void GuiWinImguiDemo::DrawWindow()
 {
-    _log.AddLine(line, colour);
+    ImGui::ShowDemoWindow(GetOpenFlag());
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+GuiWinImplotDemo::GuiWinImplotDemo() :
+    GuiWin("ImPlotDemo")
+{
+    //SetTitle("ImPlot demo"); // not used, ImPlot sets it
+};
 
-void GuiWinDebug::DrawWindow()
+void GuiWinImplotDemo::DrawWindow()
+{
+    ImPlot::ShowDemoWindow(GetOpenFlag());
+}
+
+#endif
+
+/* ****************************************************************************************************************** */
+
+#ifndef IMGUI_DISABLE_METRICS_WINDOW
+
+GuiWinImguiMetrics::GuiWinImguiMetrics() :
+    GuiWin("DearImGuiMetrics")
+{
+    _winSize = { 70, 40 };
+    //SetTitle("Dear ImGui metrics"); // not used, ImGui sets it
+}
+
+void GuiWinImguiMetrics::DrawWindow()
+{
+    ImGui::ShowMetricsWindow(GetOpenFlag());
+}
+#endif
+
+/* ****************************************************************************************************************** */
+
+GuiWinImplotMetrics::GuiWinImplotMetrics() :
+    GuiWin("ImPlotMetrics")
+{
+    _winSize = { 70, 40 };
+    //SetTitle("ImPlot metrics"); // not used, ImPlot sets it
+}
+
+void GuiWinImplotMetrics::DrawWindow()
+{
+    ImPlot::ShowMetricsWindow(GetOpenFlag());
+}
+
+/* ****************************************************************************************************************** */
+
+GuiWinImguiStyles::GuiWinImguiStyles() :
+    GuiWin("DearImGuiStyles")
+{
+    _winSize = { 70, 40 };
+    SetTitle("Dear ImGui styles");
+}
+
+void GuiWinImguiStyles::DrawWindow()
 {
     if (!_DrawWindowBegin())
     {
         return;
     }
 
-    _log.DrawWidget();
+    ImGui::ShowStyleEditor();
+
+    _DrawWindowEnd();
+}
+
+/* ****************************************************************************************************************** */
+
+GuiWinImplotStyles::GuiWinImplotStyles() :
+    GuiWin("ImPlotStyles")
+{
+    _winSize = { 70, 40 };
+    SetTitle("ImPlot styles");
+}
+
+void GuiWinImplotStyles::DrawWindow()
+{
+    if (!_DrawWindowBegin())
+    {
+        return;
+    }
+
+    ImPlot::ShowStyleEditor();
 
     _DrawWindowEnd();
 }

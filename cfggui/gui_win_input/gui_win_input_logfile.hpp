@@ -15,38 +15,42 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_MON_RF_H__
-#define __GUI_MSG_UBX_MON_RF_H__
+#ifndef __GUI_WIN_INPUT_LOGFILE_H__
+#define __GUI_WIN_INPUT_LOGFILE_H__
 
 #include <memory>
+#include <map>
 #include <vector>
-#include <deque>
 
-#include "imgui.h"
-#include "gui_msg.hpp"
+#include "logfile.hpp"
+#include "gui_win_input.hpp"
 
-#include "gui_msg_ubx_mon_hw2.hpp"
+/* ***** Logfile input ********************************************************************************************** */
 
-/* ***** UBX-MON-RF renderer **************************************************************************************** */
-
-class GuiMsgUbxMonRf : public GuiMsg
+class GuiWinInputLogfile : public GuiWinInput
 {
     public:
-        GuiMsgUbxMonRf(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiWinInputLogfile(const std::string &name);
+       ~GuiWinInputLogfile();
 
-        void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
-        void Clear() final;
+        void Loop(const uint32_t &frame, const double &now);
 
-    private:
+        void ProcessData(const Data &data);
 
-        static constexpr int NUM_IQS = 50;
-        static const std::vector<StatusFlags> _aStatusFlags;
-        static const std::vector<StatusFlags> _aPowerFlags;
-        static const std::vector<StatusFlags> _jammingFlags;
+    protected:
 
-        std::vector< std::deque<GuiMsgUbxMonHw2::IQ> > _blockIqs;
+        std::shared_ptr<Logfile> _logfile;
+        std::shared_ptr<Database> _database;
+
+        std::unique_ptr<GuiWinFileDialog> _logfileFileDialog;
+        std::shared_ptr<std::string> _logfileName;
+
+        void _DrawActionButtons() final;
+        void _DrawControls() final;
+        void _ProcessData(const Data &data) final;
+        void _ClearData() final;
+        void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_MON_RF_H__
+#endif // __GUI_WIN_INPUT_LOGFILE_H__

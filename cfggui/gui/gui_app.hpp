@@ -32,13 +32,14 @@
 #include "logfile.hpp"
 #include "gui_settings.hpp"
 #include "gui_win_app.hpp"
-#include "gui_win_receiver.hpp"
+#include "gui_win_input_receiver.hpp"
+#include "gui_win_input_logfile.hpp"
 #include "gui_win_data.hpp"
 #include "gui_win_experiment.hpp"
 
-struct GuiAppInitialLog
+struct GuiAppEarlyLog
 {
-    GuiAppInitialLog();
+    GuiAppEarlyLog();
     void Add(DEBUG_LEVEL_t level, std::string line);
     void Clear();
     std::vector< std::pair<DEBUG_LEVEL_t, std::string> > log;
@@ -47,7 +48,7 @@ struct GuiAppInitialLog
 class GuiApp
 {
     public:
-        GuiApp(const std::vector<std::string> &argv, const GuiAppInitialLog &initLog);
+        GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog);
        ~GuiApp();
 
         static GuiApp &GetInstance();
@@ -56,72 +57,57 @@ class GuiApp
         void Loop();
 
         // Called in between ImGui::Render() and ImGui::NewFrame()
-        bool                 PrepFrame();
+        bool PrepFrame();
         // Called just after ImGui::NewFrame();
-        void                 NewFrame();
+        void NewFrame();
 
         // Draw one app frame, call all windows drawing methods
-        void                 DrawFrame();
+        void DrawFrame();
 
-        // Callback for ff_debug
-        void                 DebugLog(const DEBUG_LEVEL_t level, const char *str);
+        void ConfirmClose(bool &display, bool &done);
+        ImVec4 BackgroundColour();
 
-        void                 ConfirmClose(bool &display, bool &done);
-        ImVec4               BackgroundColour();
-
+        // Get settings instance
         std::shared_ptr<GuiSettings> GetSettings();
-
-        // void                 DrawDataWinButtons(const Receiver &receiver);
 
     private:
 
-        void                 _MainMenu();
+        void _MainMenu();
 
-        std::string          _settingsFile;
-        std::shared_ptr<GuiSettings>        _settings;
+        std::string                          _settingsFile;
+        std::shared_ptr<GuiSettings>         _settings;
 
         // Application windows
-        std::unique_ptr<GuiWinDebug>         _winDebug;
-        std::unique_ptr<GuiWinAbout>         _winAbout;
-        std::unique_ptr<GuiWinSettings>      _winSettings;
-        std::unique_ptr<GuiWinHelp>          _winHelp;
-        std::unique_ptr<GuiWinImguiDemo>     _winImguiDemo;
-        std::unique_ptr<GuiWinImplotDemo>    _winImplotDemo;
-        std::unique_ptr<GuiWinImguiMetrics>  _winImguiMetrics;
-        std::unique_ptr<GuiWinImplotMetrics> _winImplotMetrics;
-        std::unique_ptr<GuiWinImguiStyles>   _winImguiStyles;
-        //std::unique_ptr<GuiWinImguiAbout>   _winImguiAbout;
-        std::unique_ptr<GuiWinExperiment>    _winExperiment;
-        std::vector<GuiWin *> _appWindows;
-
-        // Receivers
-        struct AppReceiver
+        enum
         {
-            AppReceiver(std::shared_ptr<Database> _database, std::shared_ptr<Receiver> _receiver, std::unique_ptr<GuiWinReceiver> _rxWin) :
-                database{_database}, receiver{_receiver}, rxWin{std::move(_rxWin)}, dataWin{}
-            {}
-            std::shared_ptr<Database>                  database;
-            std::shared_ptr<Receiver>                  receiver;
-            std::unique_ptr<GuiWinReceiver>            rxWin;
-            std::vector< std::unique_ptr<GuiWinData> > dataWin;
+            APP_WIN_ABOUT = 0, APP_WIN_SETTINGS, APP_WIN_HELP, APP_WIN_IMGUI_DEMO, APP_WIN_IMPLOT_DEMO,
+            APP_WIN_IMGUI_METRICS, APP_WIN_IMPLOT_METRICS, APP_WIN_IMGUI_STYLES, APP_WIN_IMPLOT_STYLES,
+            APP_WIN_EXPERIMENT,
+            _NUM_APP_WIN
         };
-        std::vector< std::unique_ptr<AppReceiver> > _receivers;
-        void                 _CreateReceiver();
-        void                 _ProcessDataReceiverCb(const AppReceiver *appReceiver, const Data &data);
-        void                 _DataWinButtonsReceiverCb(AppReceiver *appReceiver);
-        void                 _TitleChangeReceiverCb(AppReceiver *appReceiver);
-        void                 _ClearReceiverCb(AppReceiver *appReceiver);
-        void                 _StoreRxWinSettings(std::unique_ptr<AppReceiver> &appReceiver);
-        void                 _OpenPreviousDataWin(std::unique_ptr<AppReceiver> &appReceiver);
+        std::vector< std::unique_ptr<GuiWin> > _appWindows;
 
+        // Receiver and logfile windows
+        std::vector< std::unique_ptr<GuiWinInputReceiver> > _receiverWindows;
+        std::vector< std::unique_ptr<GuiWinInputLogfile>  > _logfileWindows;
+        void _CreateReceiverWindow();
+        void _CreateLogfileWindow();
+        int _FindUnusedWindowNumber(const std::string &baseName, const std::vector<std::string> existingNames);
+
+        // Debugging
         std::mutex           _debugMutex;
         DEBUG_CFG_t          _debugCfg;
         DEBUG_CFG_t          _debugCfgOrig;
-
         double               _statsLast;
         struct timespec      _statsTime;
         float                _statsCpu;
         float                _statsRss;
+        bool                 _debugWinOpen;
+        bool                 _debugWinDim;
+        GuiWidgetLog         _debugLog;
+        void _DrawDebugWin();
+        static void _DebugLogCb(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG_t *cfg);
+        static void _DebugLogAdd(const DEBUG_LEVEL_t level, const char *str, GuiWidgetLog *logWidget);
 };
 
 /* ****************************************************************************************************************** */

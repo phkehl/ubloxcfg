@@ -125,47 +125,44 @@ bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImV
         UBX_MON_RF_V0_GROUP1_t block;
         std::memcpy(&block, &msg->data[offs], sizeof(block));
 
-        if (!ImGui::BeginChild(offs, blockSize))
+        if (ImGui::BeginChild(offs, blockSize))
         {
-            continue;
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
+            ImGui::Text("RF block #%u", blockIx);
+            ImGui::PopStyleColor();
+
+            _RenderStatusFlag(_aStatusFlags,  block.antStatus,                                   "Antenna status", dataOffs);
+            _RenderStatusFlag(_aPowerFlags,   block.antPower,                                    "Antenna power",  dataOffs);
+            _RenderStatusFlag(_jammingFlags,  UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_GET(block.flags), "Jamming status", dataOffs);
+
+            char str[100];
+
+            snprintf(str, sizeof(str), "0x%08x", block.postStatus);
+            _RenderStatusText("POST status", str, dataOffs);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Noise level");
+            ImGui::SameLine(dataOffs);
+            const float noise = (float)block.noisePerMS / (float)UBX_MON_RF_V0_NOISEPERMS_MAX;
+            snprintf(str, sizeof(str), "%u", block.noisePerMS);
+            ImGui::ProgressBar(noise, ImVec2(-1.0f,0.0f), str);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("AGC monitor");
+            ImGui::SameLine(dataOffs);
+            const float agc = (float)block.agcCnt / (float)UBX_MON_RF_V0_AGCCNT_MAX;
+            snprintf(str, sizeof(str), "%.1f%%", agc * 1e2f);
+            ImGui::ProgressBar(agc, ImVec2(-1.0f,0.0f), str);
+
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("CW jamming");
+            ImGui::SameLine(dataOffs);
+            const float jam = (float)block.jamInd / (float)UBX_MON_RF_V0_JAMIND_MAX;
+            snprintf(str, sizeof(str), "%.1f%%", jam * 1e2f);
+            ImGui::ProgressBar(jam, ImVec2(-1.0f,0.0f), str);
+
+            GuiMsgUbxMonHw2::DrawIQ(ImGui::GetContentRegionAvail(), _blockIqs[blockIx]);
         }
-
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-        ImGui::Text("RF block #%u", blockIx);
-        ImGui::PopStyleColor();
-
-        _RenderStatusFlag(_aStatusFlags,  block.antStatus,                                   "Antenna status", dataOffs);
-        _RenderStatusFlag(_aPowerFlags,   block.antPower,                                    "Antenna power",  dataOffs);
-        _RenderStatusFlag(_jammingFlags,  UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_GET(block.flags), "Jamming status", dataOffs);
-
-        char str[100];
-
-        snprintf(str, sizeof(str), "0x%08x", block.postStatus);
-        _RenderStatusText("POST status", str, dataOffs);
-
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Noise level");
-        ImGui::SameLine(dataOffs);
-        const float noise = (float)block.noisePerMS / (float)UBX_MON_RF_V0_NOISEPERMS_MAX;
-        snprintf(str, sizeof(str), "%u", block.noisePerMS);
-        ImGui::ProgressBar(noise, ImVec2(-1.0f,0.0f), str);
-
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("AGC monitor");
-        ImGui::SameLine(dataOffs);
-        const float agc = (float)block.agcCnt / (float)UBX_MON_RF_V0_AGCCNT_MAX;
-        snprintf(str, sizeof(str), "%.1f%%", agc * 1e2f);
-        ImGui::ProgressBar(agc, ImVec2(-1.0f,0.0f), str);
-
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("CW jamming");
-        ImGui::SameLine(dataOffs);
-        const float jam = (float)block.jamInd / (float)UBX_MON_RF_V0_JAMIND_MAX;
-        snprintf(str, sizeof(str), "%.1f%%", jam * 1e2f);
-        ImGui::ProgressBar(jam, ImVec2(-1.0f,0.0f), str);
-
-        GuiMsgUbxMonHw2::DrawIQ(ImGui::GetContentRegionAvail(), _blockIqs[blockIx]);
-
         ImGui::EndChild();
 
         if (blockIx < ((int)rf.nBlocks - 1))

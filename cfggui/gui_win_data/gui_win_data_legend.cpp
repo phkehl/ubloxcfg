@@ -21,15 +21,10 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataLegend::GuiWinDataLegend(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database)
+GuiWinDataLegend::GuiWinDataLegend(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database)
 {
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winFlags = ImGuiWindowFlags_AlwaysAutoResize;
-    _winTitle = name;
-    _winName  = name;
+    _winFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -23,17 +23,13 @@
 
 /* ****************************************************************************************************************** */
 
-GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name,
-            std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile, std::shared_ptr<Database> database) :
+GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name, std::shared_ptr<Database> database) :
+    GuiWinData(name, database),
     _countAll{"All"}, _countGps{"GPS"}, _countGlo{"GLO"}, _countBds{"BDS"}, _countGal{"GAL"}, _countSbas{"SBAS"}, _countQzss{"QZSS"},
     _selSats{}
 {
-    _winSize  = { 80, 25 };
-    _receiver = receiver;
-    _logfile  = logfile;
-    _database = database;
-    _winTitle = name;
-    _winName  = name;
+    _winSize = { 80, 25 };
+
     ClearData();
 
     const float em = _winSettings->charSize.x;

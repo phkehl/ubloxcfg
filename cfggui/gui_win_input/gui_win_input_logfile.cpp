@@ -15,69 +15,94 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data.hpp"
+// #include <cstdint>
+// #include <cstring>
+// #include <functional>
+
+// #include "ff_stuff.h"
+// #include "ff_ubx.h"
+// #include "ff_port.h"
+// #include "ff_trafo.h"
+// #include "ff_cpp.hpp"
+
+#include "imgui.h"
+#include "imgui_stdlib.h"
+#include "IconsForkAwesome.h"
+
+// #include "platform.hpp"
+
+#include "gui_win_input_logfile.hpp"
 
 /* ****************************************************************************************************************** */
 
-GuiWinData::GuiWinData(const std::string &name, std::shared_ptr<Database> database) :
-    GuiWin(name),
-    _database{database}
+GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
+    GuiWinInput(name)
 {
-    DEBUG("GuiWinData(%s)", _winName.c_str());
+    DEBUG("GuiWinInputLogfile(%s)", _winName.c_str());
+
+    _winIniPos = POS_NW;
+    _winOpen   = true;
+    _winSize   = { 80, 25 };
+    SetTitle("Logfile X");
+
+    _logfile = std::make_shared<Logfile>(name, _database);
+    _logfile->SetDataCb( std::bind(&GuiWinInputLogfile::_ProcessData, this, std::placeholders::_1) );
+
+    _ClearData();
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiWinInputLogfile::~GuiWinInputLogfile()
+{
+    DEBUG("~GuiWinInputLogfile(%s)", _winName.c_str());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinData::~GuiWinData()
+void GuiWinInputLogfile::Loop(const uint32_t &frame, const double &now)
 {
-    DEBUG("~GuiWinData(%s)", _winName.c_str());
+    UNUSED(frame);
+    UNUSED(now);
+
+    // // Pump receiver events and dispatch
+    // _receiver->Loop(now);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::SetReceiver(std::shared_ptr<Receiver> receiver)
+void GuiWinInputLogfile::_ProcessData(const Data &data)
 {
-    _receiver = receiver;
+    GuiWinInput::_ProcessData(data);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::SetLogfile(std::shared_ptr<Logfile> logfile)
+void GuiWinInputLogfile::_ClearData()
 {
-    _logfile = logfile;
+    GuiWinInput::_ClearData();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::Loop(const uint32_t &frame, const double &now)
+void GuiWinInputLogfile::_AddDataWindow(std::unique_ptr<GuiWinData> dataWin)
 {
-    (void)frame;
-    (void)now;
+    dataWin->SetLogfile(_logfile);
+    _dataWindows.push_back(std::move(dataWin));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::ProcessData(const Data &data)
+void GuiWinInputLogfile::_DrawActionButtons()
 {
-    (void)data;
+    GuiWinInput::_DrawActionButtons();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::ClearData()
+void GuiWinInputLogfile::_DrawControls()
 {
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinData::DrawWindow()
-{
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    _DrawWindowEnd();
+    ImGui::TextUnformatted("to be implemented...");
 }
 
 /* ****************************************************************************************************************** */
