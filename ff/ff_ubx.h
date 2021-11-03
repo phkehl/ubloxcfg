@@ -1549,6 +1549,21 @@ typedef struct UBX_ESF_STATUS_V2_GROUP1_s
     ((int)(sizeof(UBX_ESF_STATUS_V2_GROUP0_t) + UBX_FRAME_SIZE + \
     (((uint8_t *)(msg))[UBX_HEAD_SIZE + 15] * sizeof(UBX_ESF_STATUS_V2_GROUP1_t))))
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-TIM_TP payload
+typedef struct UBX_TIME_TP_V0_GROUP0_s
+{
+    uint32_t towMs;
+    uint32_t towSubMS;
+    int32_t qErr;
+    uint16_t week;
+    uint8_t flags;
+    uint8_t refInfo;
+} UBX_TIME_TP_V0_GROUP0_t;
+
+#define UBX_TIM_TP_V0_SIZE    ((int)(sizeof(UBX_TIME_TP_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
 /* ****************************************************************************************************************** */
 
 //! Make a UBX message
