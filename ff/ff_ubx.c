@@ -31,7 +31,7 @@ int ubxMakeMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payl
 {
     if ( (payload != NULL) && (payloadSize > 0) )
     {
-        memmove(&msg[6], payload, payloadSize);
+        memmove(&msg[UBX_HEAD_SIZE], payload, payloadSize);
     }
     const int msgSize = payloadSize + UBX_FRAME_SIZE;
     msg[0] = UBX_SYNC_1;
@@ -252,6 +252,7 @@ typedef struct MSGINFO_s
 
 #define _P_MSGINFO(_clsId_, _msgId_, _msgName_) { .clsId = (_clsId_), .msgId = (_msgId_), .msgName = (_msgName_) },
 #define _P_MSGINFO_UNKN(_clsId_, _clsName_) { .clsId = (_clsId_), .msgName = (_clsName_) },
+#define _P_MSGDEF(_clsId_, _msgId_, _msgName_) { .name = (_msgName_),  .clsId = (_clsId_), .msgId = (_msgId_) },
 
 const MSGINFO_t kMsgInfo[] =
 {
@@ -261,6 +262,11 @@ const MSGINFO_t kMsgInfo[] =
 const MSGINFO_t kUnknInfo[] =
 {
     UBX_CLASSES(_P_MSGINFO_UNKN)
+};
+
+const UBX_MSGDEF_t kMsgDefs[] =
+{
+    UBX_MESSAGES(_P_MSGDEF)
 };
 
 static bool _ubxMessageName(char *name, const int size, const uint8_t clsId, const uint8_t msgId)
@@ -317,6 +323,15 @@ bool ubxMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId)
     }
 
     return false;
+}
+
+const UBX_MSGDEF_t *ubxMessageDefs(int *num)
+{
+    if (num != NULL)
+    {
+        *num = NUMOF(kMsgDefs);
+    }
+    return kMsgDefs;
 }
 
 /* ****************************************************************************************************************** */

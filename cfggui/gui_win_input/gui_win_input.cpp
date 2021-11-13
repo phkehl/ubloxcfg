@@ -16,6 +16,7 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <memory>
+#include <algorithm>
 
 #include "imgui.h"
 #include "implot.h"
@@ -38,6 +39,7 @@
 #include "gui_win_data_signals.hpp"
 #include "gui_win_data_satellites.hpp"
 #include "gui_win_data_stats.hpp"
+#include "gui_win_data_custom.hpp"
 
 #include "gui_win_input.hpp"
 
@@ -45,10 +47,10 @@
 
 GuiWinInput::GuiWinInput(const std::string &name) :
     GuiWin(name),
-    _database  { std::make_shared<Database>(10000) },
-    // _callback  { nullptr },
-    _logWidget { 1000, false },
-    _rxVerStr  { "" }
+    _database    { std::make_shared<Database>(10000) },
+    _logWidget   { 1000, false },
+    _rxVerStr    { "" },
+    _dataWinCaps { DataWinDef::Cap_e::ALL }
 {
     DEBUG("GuiWinInput(%s)", _winName.c_str());
 
@@ -67,8 +69,7 @@ GuiWinInput::~GuiWinInput()
     {
         openWinNames.push_back(dataWin->GetName());
     }
-    const std::string dataWinNames = Ff::StrJoin(openWinNames, ",");
-    _winSettings->SetValue(_winName, dataWinNames);
+    _winSettings->SetValueList(_winName + ".dataWindows", openWinNames);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -222,83 +223,34 @@ void GuiWinInput::DrawWindow()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static const struct
+#define _MK_CREATE(_cls_) \
+    [](const std::string &name, std::shared_ptr<Database> database) -> std::unique_ptr<GuiWinData> { return std::make_unique<_cls_>(name, database); }
+
+/*static*/ const std::vector<GuiWinInput::DataWinDef> GuiWinInput::_dataWinDefs =
 {
-    const char   *name;
-    const char   *title;
-    const char   *button;
-    std::function< std::unique_ptr<GuiWinData> ( const std::string &name, std::shared_ptr<Database> database ) > create;
-} kDataWindows[] =
-{
-    {
-        .name   = "Log",       .title  = "Log" ,              .button = ICON_FK_LIST_UL "##Log",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataLog>(name, database); }
-    },
-    {
-        .name   = "Messages",  .title  = "Messages" ,         .button = ICON_FK_SORT_ALPHA_ASC "##Msgs",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataMessages>(name, database); }
-    },
-    {
-        .name   = "Inf",       .title  = "Inf messages" ,     .button = ICON_FK_FILE_TEXT_O "##Inf",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataInf>(name, database); }
-    },
-    {
-        .name   = "Scatter",   .title  = "Scatter plot" ,     .button = ICON_FK_CROSSHAIRS "##Scatter",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataScatter>(name, database); }
-    },
-    {
-        .name   = "Signals",   .title  = "Signals" ,          .button = ICON_FK_BAR_CHART "##Signals",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataSignals>(name, database); }
-    },
-    {
-        .name   = "Config",    .title  = "Configuration" ,    .button = ICON_FK_PAW "##Config",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataConfig>(name, database); }
-    },
-    {
-        .name   = "Legend",    .title  = "Legend" ,           .button = ICON_FK_QUESTION "##Legend",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataLegend>(name, database); }
-    },
-    {
-        .name   = "Plots",     .title  = "Plots" ,            .button = ICON_FK_LINE_CHART "##Plots",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataPlot>(name, database); }
-    },
-    {
-        .name   = "Map",       .title  = "Map" ,              .button = ICON_FK_MAP "##Map",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataMap>(name, database); }
-    },
-    {
-        .name   = "Satellites",.title  = "Satellites" ,       .button = ICON_FK_ROCKET "##Satellites",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataSatellites>(name, database); }
-    },
-    {
-        .name   = "Stats",     .title  = "Statistics" ,       .button = ICON_FK_TABLE "##Stats",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataStats>(name, database); }
-    },
-    {
-        .name   = "Fwupdate",  .title  = "Firmware update" ,  .button = ICON_FK_DOWNLOAD "##Fwupdate",
-        .create = [](const std::string &name, std::shared_ptr<Database> database)
-            -> std::unique_ptr<GuiWinData> { return std::make_unique<GuiWinDataFwupdate>(name, database); }
-    },
+    { "Log",        "Log",             ICON_FK_LIST_UL        "##Log",        DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataLog)        },
+    { "Messages",   "Messages",        ICON_FK_SORT_ALPHA_ASC "##Messages",   DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataMessages)   },
+    { "Inf",        "Inf messages",    ICON_FK_FILE_TEXT_O    "##Inf",        DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataInf)        },
+    { "Scatter",    "Scatter plot",    ICON_FK_CROSSHAIRS     "##Scatter",    DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataScatter)    },
+    { "Signals",    "Signals",         ICON_FK_BAR_CHART      "##Signals",    DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataSignals)    },
+    { "Config",     "Configuration",   ICON_FK_PAW            "##Config",     DataWinDef::Cap_e::ACTIVE, _MK_CREATE(GuiWinDataConfig)     },
+    { "Legend",     "Legend",          ICON_FK_QUESTION       "##Legend",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataLegend)     },
+    { "Plots",      "Plots",           ICON_FK_LINE_CHART     "##Plots",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataPlot)       },
+    { "Map",        "Map",             ICON_FK_MAP            "##Map",        DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataMap)        },
+    { "Satellites", "Satellites",      ICON_FK_ROCKET         "##Satellites", DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataSatellites) },
+    { "Stats",      "Statistics",      ICON_FK_TABLE          "##Stats",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataStats)      },
+    { "Fwupdate",   "Firmware update", ICON_FK_DOWNLOAD       "##Fwupdate",   DataWinDef::Cap_e::ACTIVE, _MK_CREATE(GuiWinDataFwupdate)   },
+    { "Custom",     "Custom message",  ICON_FK_TERMINAL       "##Custom",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataCustom)     },
 };
 
 void GuiWinInput::_DrawDataWinButtons()
 {
-    for (int ix = 0; ix < NUMOF(kDataWindows); ix++)
+    for (auto &def: _dataWinDefs)
     {
-        if (ImGui::Button(kDataWindows[ix].button, _winSettings->iconButtonSize))
+        ImGui::BeginDisabled(!CHKBITS(def.reqs, _dataWinCaps));
+        if (ImGui::Button(def.button, _winSettings->iconButtonSize))
         {
-            const std::string baseName = GetName() + kDataWindows[ix].name; // Receiver1Map, Logfile4Stats, ...
+            const std::string baseName = GetName() + def.name; // Receiver1Map, Logfile4Stats, ...
             int winNumber = 1;
             while (winNumber < 1000)
             {
@@ -316,9 +268,9 @@ void GuiWinInput::_DrawDataWinButtons()
                 {
                     try
                     {
-                        std::unique_ptr<GuiWinData> dataWin = kDataWindows[ix].create(winName, _database);
+                        std::unique_ptr<GuiWinData> dataWin = def.create(winName, _database);
                         dataWin->Open();
-                        dataWin->SetTitle(GetTitle() + std::string(" - ") + kDataWindows[ix].title + std::string(" ") + std::to_string(winNumber));
+                        dataWin->SetTitle(GetTitle() + std::string(" - ") + def.title + std::string(" ") + std::to_string(winNumber));
                         _AddDataWindow(std::move(dataWin));
                     }
                     catch (std::exception &e)
@@ -330,12 +282,10 @@ void GuiWinInput::_DrawDataWinButtons()
                 winNumber++;
             }
         }
-        Gui::ItemTooltip(kDataWindows[ix].title);
+        ImGui::EndDisabled();
+        Gui::ItemTooltip(def.title);
 
-        if (ix < (NUMOF(kDataWindows) - 1))
-        {
-            ImGui::SameLine();
-        }
+        ImGui::SameLine(); // FIXME: for all but the last one..
     }
 }
 
@@ -344,36 +294,23 @@ void GuiWinInput::_DrawDataWinButtons()
 void GuiWinInput::OpenPreviousDataWin()
 {
     const std::string winName = GetName(); // "Receiver1", "Logfile3", ...
-    std::string openDataWindows = "";
-    _winSettings->GetValue(winName, openDataWindows, "");
-    if (openDataWindows.empty())
-    {
-        return;
-    }
-
-     std::vector<std::string> dataWinNames = Ff::StrSplit(openDataWindows, ",");
-    if (dataWinNames.empty())
-    {
-        return;
-    }
-
+    const std::vector<std::string> dataWinNames = _winSettings->GetValueList(winName + ".dataWindows");
     for (const auto &dataWinName: dataWinNames) // "Receiver1Scatter1", "Logfile3Map1", ...
     {
         try
         {
             std::string name = dataWinName.substr(winName.size()); // ""Receiver1Map1" -> "Map1"
-            for (int ix = 0; ix < NUMOF(kDataWindows); ix++)
+            for (auto &def: _dataWinDefs)
             {
-                auto *dw = &kDataWindows[ix];
-                const int nameLen = strlen(dw->name);
-                if (std::strncmp(name.c_str(), dw->name, nameLen) != 0) // "Map"(1) == "Map", "Scatter", ... ?
+                const int nameLen = strlen(def.name);
+                if (std::strncmp(name.c_str(), def.name, nameLen) != 0) // "Map"(1) == "Map", "Scatter", ... ?
                 {
                     continue;
                 }
                 std::string dataWinName2 = winName + name; // "Receiver1Map1"
-                auto win = dw->create(dataWinName2, _database);
+                auto win = def.create(dataWinName2, _database);
                 win->Open();
-                win->SetTitle(winName + std::string(" - ") + dw->title + std::string(" ") + name.substr(nameLen));
+                win->SetTitle(winName + std::string(" - ") + def.title + std::string(" ") + name.substr(nameLen));
                 _AddDataWindow(std::move(win));
                 break;
             }

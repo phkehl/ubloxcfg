@@ -127,6 +127,7 @@ bool epochCollect(EPOCH_t *coll, const PARSER_MSG_t *msg, EPOCH_t *epoch)
         default:
             break;
     }
+    // TODO: in case of UBX-NAV-EOE, output that first and complete epoch on next call (if it can be done nicely..)
 
     // Output epoch
     if (complete)
@@ -286,7 +287,7 @@ static EPOCH_GNSS_t _nmeaGnssToGnss(NMEA_GNSS_t gnss)
 {
     switch (gnss)
     {
-        case NMEA_GNSS_UNKNOWN: break;;
+        case NMEA_GNSS_UNKNOWN: break;
         case NMEA_GNSS_GPS:     return EPOCH_GNSS_GPS;
         case NMEA_GNSS_GLO:     return EPOCH_GNSS_GLO;
         case NMEA_GNSS_BDS:     return EPOCH_GNSS_BDS;
@@ -300,12 +301,12 @@ static EPOCH_GNSS_t _nmeaGnssToGnss(NMEA_GNSS_t gnss)
 static const char * const kEpochGnssStrs[] =
 {
     [EPOCH_GNSS_UNKNOWN] = "?",
-    [EPOCH_GNSS_GPS]  = "GPS",
-    [EPOCH_GNSS_GLO]  = "GLO",
-    [EPOCH_GNSS_GAL]  = "GAL",
-    [EPOCH_GNSS_BDS]  = "BDS",
-    [EPOCH_GNSS_SBAS] = "SBAS",
-    [EPOCH_GNSS_QZSS] = "QZSS",
+    [EPOCH_GNSS_GPS]     = "GPS",
+    [EPOCH_GNSS_GLO]     = "GLO",
+    [EPOCH_GNSS_GAL]     = "GAL",
+    [EPOCH_GNSS_BDS]     = "BDS",
+    [EPOCH_GNSS_SBAS]    = "SBAS",
+    [EPOCH_GNSS_QZSS]    = "QZSS",
 };
 
 const char *epochGnssStr(const EPOCH_GNSS_t gnss)

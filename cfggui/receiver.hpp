@@ -47,26 +47,22 @@ class Receiver
         Receiver(const std::string &name, std::shared_ptr<Database> database);
        ~Receiver();
 
-        bool                 Start(const std::string &port, const int baudrate = 0);
-        bool                 Stop(const bool force = false);
-        bool                 IsIdle();
-        bool                 IsBusy();
-        bool                 IsReady();
+        bool Start(const std::string &port, const int baudrate = 0);
+        void Stop();
+        bool IsIdle();
+        bool IsBusy();
+        bool IsReady();
 
-        void                 Send(const uint8_t *data, const int size, const uint64_t uid = 0);
-        void                 Reset(const RX_RESET_t reset, const uint64_t uid = 0);
-        void                 GetConfig(const UBLOXCFG_LAYER_t layer, const std::vector<uint32_t> &_keys, const uint64_t uid = 0);
-        void                 SetConfig(const bool ram, const bool bbr, const bool flash, const bool apply, const std::vector<UBLOXCFG_KEYVAL_t> &keys, const uint64_t uid = 0);
-        void                 SetBaudrate(const int baudrate, const uint64_t uid = 0);
-        int                  GetBaudrate();
+        void Send(const uint8_t *data, const int size, const uint64_t uid = 0);
+        void Reset(const RX_RESET_t reset, const uint64_t uid = 0);
+        void GetConfig(const UBLOXCFG_LAYER_t layer, const std::vector<uint32_t> &_keys, const uint64_t uid = 0);
+        void SetConfig(const bool ram, const bool bbr, const bool flash, const bool apply, const std::vector<UBLOXCFG_KEYVAL_t> &keys, const uint64_t uid = 0);
+        void SetBaudrate(const int baudrate, const uint64_t uid = 0);
+        int GetBaudrate();
 
-        void                 Loop(const double &now);
+        void Loop(const double &now);
 
-        void                 SetDataCb(std::function<void(const Data &)> cb);
-
-        // Receiver thread only, but declared public because shared with c callback! SMELL
-        uint32_t             _msgSeq;
-        void                 _SendEvent(std::unique_ptr<ReceiverEvent> event);
+        void SetDataCb(std::function<void(const Data &)> cb);
 
     protected:
 
@@ -75,11 +71,11 @@ class Receiver
 
         // Main thread stuff
         std::string          _name;
-        std::thread         *_thread;
+        std::unique_ptr<std::thread> _thread;
 
         std::function<void(const Data &)> _dataCb;
 
-        void                 _SendCommand(std::unique_ptr<ReceiverCommand> command);
+        void _SendCommand(std::unique_ptr<ReceiverCommand> command);
         std::unique_ptr<ReceiverEvent> _GetEvent();
 
         // Shared between main thread and receiver thread
@@ -101,6 +97,9 @@ class Receiver
         void                 _ReceiverThreadWrap();
         void                 _ReceiverThread();
         std::unique_ptr<ReceiverCommand> _GetCommand();
+        static void _ReceiverMsgCb(PARSER_MSG_t *msg, void *arg);
+        uint32_t             _msgSeq;
+        void                 _SendEvent(std::unique_ptr<ReceiverEvent> event);
 };
 
 /* ****************************************************************************************************************** */

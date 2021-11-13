@@ -142,12 +142,14 @@ class GuiSettings
         void                 SetValue(const std::string &key, const float  value);
         void                 SetValue(const std::string &key, const double value);
         void                 SetValue(const std::string &key, const std::string &value);
+        void                 SetValueList(const std::string &key, const std::vector<std::string> &list);
         void                 GetValue(const std::string &key, bool   &value, const bool   def);
         void                 GetValue(const std::string &key, int    &value, const int    def);
         void                 GetValue(const std::string &key, float  &value, const float  def);
         void                 GetValue(const std::string &key, double &value, const double def);
         void                 GetValue(const std::string &key, std::string &value, const std::string &def);
         std::string          GetValue(const std::string &key);
+        std::vector<std::string> GetValueList(const std::string &key);
 
         // Font
         enum Font_e : int { FONT_PROGGY_IX = 0, FONT_DEJAVU_IX = 1, NUM_FONTS = 2 };

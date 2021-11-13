@@ -135,7 +135,9 @@ Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 
 ## GUI
 
-A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. YMMV.
+A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. `sudo apt-get install libcurl4-dev libglfw3-dev`.
+
+YMMV.
 
 ## Licenses
 

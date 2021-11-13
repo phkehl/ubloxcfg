@@ -21,8 +21,10 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <mutex>
 
 #include "logfile.hpp"
+#include "gui_win_filedialog.hpp"
 #include "gui_win_input.hpp"
 
 /* ***** Logfile input ********************************************************************************************** */
@@ -39,11 +41,17 @@ class GuiWinInputLogfile : public GuiWinInput
 
     protected:
 
-        std::shared_ptr<Logfile> _logfile;
-        std::shared_ptr<Database> _database;
+        // Shared across multiple instances of this window
+        static std::vector<std::string> _recentLogs;
+        static std::mutex _recentLogsMutex;
+        static constexpr int MAX_RECENT_LOGS = 20;
+        static void _AddRecentLog(const std::string &path);
 
-        std::unique_ptr<GuiWinFileDialog> _logfileFileDialog;
-        std::shared_ptr<std::string> _logfileName;
+        std::shared_ptr<Logfile>  _logfile;
+        GuiWinFileDialog          _fileDialog;
+        float                     _seekProgress;
+        float                     _playSpeed;
+        bool                      _limitPlaySpeed;
 
         void _DrawActionButtons() final;
         void _DrawControls() final;

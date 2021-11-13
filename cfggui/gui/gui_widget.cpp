@@ -533,18 +533,25 @@ void GuiWidgetLog::_DrawLogLines()
 /* ****************************************************************************************************************** */
 
 // https://github.com/ocornut/imgui/issues/1889#issuecomment-398681105
+// There is now ImGui::BeginDisabled(bool) and ImGui::EndDisabled()
 
-void Gui::BeginDisabled()
-{
-    ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.65f);
-}
+// void ImGui::BeginDisabled(const bool disabled)
+// {
+//     if (disabled)
+//     {
+//         ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+//         ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.65f);
+//     }
+// }
 
-void Gui::EndDisabled()
-{
-    ImGui::PopItemFlag();
-    ImGui::PopStyleVar();
-}
+// void Gui::EndDisabled(const bool disabled)
+// {
+//     if (disabled)
+//     {
+//         ImGui::PopItemFlag();
+//         ImGui::PopStyleVar();
+//     }
+// }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -801,7 +808,7 @@ void GuiWidgetTable::BeginDraw()
 {
     ImGui::PushID(this);
 
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
+    const float currWidth = ImGui::GetContentRegionAvail().x;
 
     // Child window of fixed width with horizontal scrolling
     ImGui::SetNextWindowContentSize(ImVec2(currWidth > _totalWidth ? currWidth : _totalWidth, 0.0f));

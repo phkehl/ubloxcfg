@@ -138,7 +138,10 @@ bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
             ImGui::Text("%s", info.sigStr.c_str());
 
             ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
+            if (_receiver)
+            {
+                ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
+            }
 
             ImGui::TableSetColumnIndex(ix++);
             ImGui::Text("%s", info.navMsg.c_str());

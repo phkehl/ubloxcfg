@@ -55,8 +55,7 @@ void GuiWinDataFwupdate::DrawWindow()
         return;
     }
 
-    ImGui::TextUnformatted("Schön wärs.. :-/");
-    ImGui::TextUnformatted("Someone should work out the protocol.. shouldn't be too hard to figure out..");
+    ImGui::TextUnformatted("Not implemented");
 
     _DrawWindowEnd();
 }

@@ -31,7 +31,6 @@ class GuiMsgUbxMonVer : public GuiMsg
         GuiMsgUbxMonVer(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
-        void Buttons() final;
 
     protected:
 

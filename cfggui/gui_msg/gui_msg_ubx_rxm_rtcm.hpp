@@ -50,6 +50,7 @@ class GuiMsgUbxRxmRtcm : public GuiMsg
             uint32_t    nUnknown;
             uint32_t    nCrcFailed;
             uint32_t    lastTs;
+            const char *tooltip;
         };
 
         std::map<uint32_t, RtcmInfo> _rtcmInfos;

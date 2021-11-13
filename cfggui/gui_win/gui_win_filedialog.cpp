@@ -50,49 +50,37 @@ GuiWinFileDialog::GuiWinFileDialog(const std::string &name) :
 {
     _winSize = { 100, 30 };
     _winFlags = ImGuiWindowFlags_NoCollapse; //ImGuiWindowFlags_NoTitleBar;
-    // switch (_mode)
-    // {
-    //     case FILE_OPEN:
-    //         SetTitle("Open file...");
-    //         break;
-    //     case FILE_SAVE:
-    //         SetTitle("Save file...");
-    //         break;
-    // }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinFileDialog::InitDialog(const Mode_e mode, std::shared_ptr<std::string> result)
+void GuiWinFileDialog::InitDialog(const Mode_e mode)
 {
-    if (result)
+    _dialogMode  = mode;
+    _dialogState = SELECT;
+    _selectedPath.clear();
+    _resultPath.clear();
+    if (_currentDir.empty())
     {
-        _dialogMode  = mode;
-        _dialogState = SELECT;
-        _resultPath  = result;
-        _selectedPath.clear();
-        _resultPath->clear();
-        if (_currentDir.empty())
-        {
-            _ChangeDir(std::filesystem::current_path());
-        }
-        _RefreshDir();
-        switch (_dialogMode)
-        {
-            case FILE_OPEN:
-                _confirmSelect    = false;
-                _confirmOverwrite = false;
-                SetTitle("Open file...");
-                break;
-            case FILE_SAVE:
-                _confirmSelect    = false;
-                _confirmOverwrite = true;
-                SetTitle("Save file...");
-                break;
-        }
-        Open();
-        Focus();
+        _ChangeDir(std::filesystem::current_path());
     }
+    _RefreshDir();
+    switch (_dialogMode)
+    {
+        case FILE_OPEN:
+            _confirmSelect    = false;
+            _confirmOverwrite = false;
+            SetTitle("Open file...");
+            break;
+        case FILE_SAVE:
+            _confirmSelect    = false;
+            _confirmOverwrite = true;
+            SetTitle("Save file...");
+            break;
+    }
+    Open();
+    Focus();
+
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -233,17 +221,23 @@ bool GuiWinFileDialog::DrawDialog()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+std::string &GuiWinFileDialog::GetPath()
+{
+    return _resultPath;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void GuiWinFileDialog::_Done()
 {
     if (_selectedFileValid)
     {
-        *_resultPath = _selectedPath;
+        _resultPath = _selectedPath;
     }
     _dialogState       = UNINIT;
     _selectedFileValid = false;
     _selectedFileName.clear();
     _selectedPath.clear();
-    _resultPath       = nullptr;
     Close();
 }
 
@@ -485,7 +479,7 @@ bool GuiWinFileDialog::_DrawWindow()
         ImGui::SameLine();
 
         // Open/save button, only available if a valid filename is selected
-        if (!_selectedFileValid) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!_selectedFileValid);
         switch (_dialogMode)
         {
             case FILE_OPEN:
@@ -501,7 +495,7 @@ bool GuiWinFileDialog::_DrawWindow()
                 }
                 break;
         }
-        if (!_selectedFileValid) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     // Update selected file validity. This is maybe a bit expensive, but the InpuText() callbacks don't let us do this

@@ -30,8 +30,8 @@
 
 namespace Gui
 {
-    void BeginDisabled();
-    void EndDisabled();
+    // void BeginDisabled(const bool disabled = true);
+    // void EndDisabled(const bool disabled = true);
     ImU32 ColourHSV(const float h, const float s, const float v, const float a = 1.0f);
     void SetWindowScale(const float scale = 1.0f);
     void VerticalSeparator(const float offset_from_start_x = 0.0f);

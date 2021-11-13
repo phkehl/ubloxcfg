@@ -30,10 +30,8 @@
 
 GuiWinExperiment::GuiWinExperiment() :
     GuiWin("Experiments"),
-    _openFileDialog    { std::make_unique<GuiWinFileDialog>("ExperimentOpenFile") },
-    _openFilePath      { std::make_shared<std::string>("nope") },
-    _saveFileDialog    { std::make_unique<GuiWinFileDialog>("ExperimentSaveFile") },
-    _saveFilePath      { std::make_shared<std::string>("nope") }
+    _openFileDialog{_winName + "OpenFileDialog"},
+    _saveFileDialog{_winName + "SaveFileDialog"}
 {
     _winSize = { 100, 50 };
 }
@@ -49,49 +47,51 @@ void GuiWinExperiment::DrawWindow()
 
     if (ImGui::Button("Open a file..."))
     {
-        if (!_openFileDialog->IsInit())
+        if (!_openFileDialog.IsInit())
         {
-            _openFileDialog->InitDialog(GuiWinFileDialog::FILE_OPEN, _openFilePath);
-            _openFileDialog->SetDirectory("/usr/share/doc");
+            _openFileDialog.InitDialog(GuiWinFileDialog::FILE_OPEN);
+            _openFileDialog.SetDirectory("/usr/share/doc");
         }
         else
         {
-            _openFileDialog->Focus();
+            _openFileDialog.Focus();
         }
     }
     ImGui::SameLine();
-    ImGui::Text("--> %s", _openFilePath->c_str());
+    ImGui::Text("--> %s", _openFilePath.c_str());
 
 
     if (ImGui::Button("Save a file..."))
     {
-        if (!_saveFileDialog->IsInit())
+        if (!_saveFileDialog.IsInit())
         {
-            _saveFileDialog->InitDialog(GuiWinFileDialog::FILE_SAVE, _saveFilePath);
-            _saveFileDialog->SetFilename("saveme.txt");
-            _saveFileDialog->SetTitle("blablabla...");
+            _saveFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
+            _saveFileDialog.SetFilename("saveme.txt");
+            _saveFileDialog.SetTitle("blablabla...");
             //_saveFileDialog->ConfirmOverwrite(false);
         }
         else
         {
-            _saveFileDialog->Focus();
+            _saveFileDialog.Focus();
         }
     }
     ImGui::SameLine();
-    ImGui::Text("--> %s", _saveFilePath->c_str());
+    ImGui::Text("--> %s", _saveFilePath.c_str());
 
 
-    if (_openFileDialog->IsInit())
+    if (_openFileDialog.IsInit())
     {
-        if (_openFileDialog->DrawDialog())
+        if (_openFileDialog.DrawDialog())
         {
+            _openFilePath = _openFileDialog.GetPath();
             DEBUG("open file done");
         }
     }
-    if (_saveFileDialog->IsInit())
+    if (_saveFileDialog.IsInit())
     {
-        if (_saveFileDialog->DrawDialog())
+        if (_saveFileDialog.DrawDialog())
         {
+            _saveFilePath = _saveFileDialog.GetPath();
             DEBUG("save file done");
         }
     }

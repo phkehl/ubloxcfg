@@ -839,13 +839,13 @@ bool GuiWinDataConfig::_DrawControls()
 
     // Refresh items
     {
-        if (!ctrlEnabled) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!ctrlEnabled);
         if (ImGui::Button(ICON_FK_REFRESH "##RefreshItems", _winSettings->iconButtonSize))
         {
             _dbPollState = POLL_INIT;
         }
         Gui::ItemTooltip("Load configuration data from receiver");
-        if (!ctrlEnabled) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();
@@ -853,13 +853,13 @@ bool GuiWinDataConfig::_DrawControls()
     // Clear items
     {
         const bool dataAvail = _dbPollDataAvail;
-        if (!ctrlEnabled || !dataAvail) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!ctrlEnabled || !dataAvail);
         if (ImGui::Button(ICON_FK_TIMES "##ClearItems", _winSettings->iconButtonSize))
         {
             _DbClear();
         }
         Gui::ItemTooltip("Clear loaded configuration data");
-        if (!ctrlEnabled || !dataAvail) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     Gui::VerticalSeparator();
@@ -976,7 +976,7 @@ bool GuiWinDataConfig::_DrawControls()
     // Layers
     {
         const bool disable = (_dbSetState != SET_IDLE);
-        if (disable) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(disable);
         if (ImGui::Button(ICON_FK_BARS "##Layers", _winSettings->iconButtonSize))
         {
             ImGui::OpenPopup("Layers");
@@ -991,7 +991,7 @@ bool GuiWinDataConfig::_DrawControls()
             ImGui::Checkbox("Apply (activate) after store", &_dbSetApply);
             ImGui::EndPopup();
         }
-        if (disable) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();
@@ -999,13 +999,13 @@ bool GuiWinDataConfig::_DrawControls()
     // Apply configuration
     {
         const bool disable = !ctrlEnabled || _cfgChangedKv.empty() || (_dbSetState != SET_IDLE);
-        if (disable) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(disable);
         if (ImGui::Button(ICON_FK_THUMBS_UP "##ApplyConfig", _winSettings->iconButtonSize))
         {
             _dbSetState = SET_START;
         }
         Gui::ItemTooltip("Apply configuration changes");
-        if (disable) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();
@@ -1013,7 +1013,7 @@ bool GuiWinDataConfig::_DrawControls()
     // Clear configuration
     {
         const bool disable = _cfgChangedKv.empty() || (_dbSetState != SET_IDLE);
-        if (disable) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(disable);
         if (ImGui::Button(ICON_FK_THUMBS_DOWN "##DiscardConfig", _winSettings->iconButtonSize))
         {
             for (auto &dbitem: _dbItems)
@@ -1024,7 +1024,7 @@ bool GuiWinDataConfig::_DrawControls()
             somethingChanged = true;
         }
         Gui::ItemTooltip("Discard configuration changes");
-        if (disable) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();
@@ -1032,7 +1032,7 @@ bool GuiWinDataConfig::_DrawControls()
     // Copy config to clipboard
     {
         const bool disable = _cfgChangedKv.empty();
-        if (disable) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(disable);
         if (ImGui::Button(ICON_FK_FILES_O "##CopyChanges", _winSettings->iconButtonSize))
         {
             ImGui::LogToClipboard();
@@ -1043,7 +1043,7 @@ bool GuiWinDataConfig::_DrawControls()
             ImGui::LogFinish();
         }
         Gui::ItemTooltip("Copy configuration changes to clipboard");
-        if (disable) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     ImGui::SameLine();
@@ -1051,32 +1051,32 @@ bool GuiWinDataConfig::_DrawControls()
     // Save to file
     {
         const bool disable = _cfgChangedKv.empty();
-        if (disable) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(disable);
         if (ImGui::Button(ICON_FK_FLOPPY_O "##Save", _winSettings->iconButtonSize))
         {
             ImGui::OpenPopup("SaveToFilePopup");
         }
         Gui::ItemTooltip("Save configuration to file");
-        if (disable) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     Gui::VerticalSeparator();
 
     // Clear everything
     {
-        if (!ctrlEnabled) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!ctrlEnabled);
         if (ImGui::Button(ICON_FK_ERASER "##ClearAll", _winSettings->iconButtonSize))
         {
             ClearData();
         }
         Gui::ItemTooltip("Clear all data");
-        if (!ctrlEnabled) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
     }
 
     Gui::VerticalSeparator();
 
     // Filter
-    const float width = 0.5f * (ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX());
+    const float width = 0.5f * (ImGui::GetContentRegionAvail().x - ImGui::GetCursorPosX());
     if (_dbFilterWidget.DrawWidget(width) || _dbFilterUpdate)
     {
         _dbFilterUpdate = false;
@@ -1141,14 +1141,14 @@ bool GuiWinDataConfig::_DrawControls()
     if (ImGui::BeginPopup("SaveToFilePopup"))
     {
         const bool showMessage = (_cfgFileSaveResultTo > 0.0f) && (ImGui::GetTime() < _cfgFileSaveResultTo);
-        if (showMessage) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(showMessage);
         ImGui::PushItemWidth(400.0f);
         ImGui::InputTextWithHint("##FileName", "File name", &_cfgFileName);
         ImGui::PopItemWidth();
-        if (showMessage) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
         if (_cfgFileSaveResultTo < 0.0f)
         {
-            if (_cfgFileName.empty()) { Gui::BeginDisabled(); }
+            ImGui::BeginDisabled(_cfgFileName.empty());
             if (ImGui::Button(ICON_FK_CHECK " Save"))
             {
                 _cfgFileSaveError.clear();
@@ -1173,7 +1173,7 @@ bool GuiWinDataConfig::_DrawControls()
                 _cfgFileSaveResultTo = ImGui::GetTime() + 2.0;
             }
             ImGui::SameLine();
-            if (_cfgFileName.empty()) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             if (ImGui::Button(ICON_FK_TIMES " Cancel"))
             {
                 ImGui::CloseCurrentPopup();
@@ -1212,7 +1212,7 @@ void GuiWinDataConfig::_DrawDb()
 
     const float width = wItem + wId + wType + wScale + wUnit + (NUM_LAYERS * wLayer);
     const int nColumns = 5 + NUM_LAYERS;
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
+    const float currWidth = ImGui::GetContentRegionAvail().x;
 
     // Child window of fixed width with horizontal scrolling
     ImGui::SetNextWindowContentSize(ImVec2(currWidth > width ? currWidth : width, 0.0f));
@@ -1374,7 +1374,7 @@ bool GuiWinDataConfig::_DrawPorts()
     const float wBaud =  15 * charWidth;
     const float wProt =  42 * charWidth;
     const float width = wPort + wBaud + (2 * wProt);
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
+    const float currWidth = ImGui::GetContentRegionAvail().x;
     const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
 
     // Child window of fixed width with horizontal scrolling
@@ -1500,14 +1500,14 @@ bool GuiWinDataConfig::_DrawPorts()
             {
                 // Revert to current/default
                 const bool dirty = baudDbitem->chDirty;
-                if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
+                if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
                 if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
                 {
                     baudDbitem->chValue._raw = baudDbitem->chReference._raw;
                     baudDbitem->ChSync();
                     somethingChanged = true;
                 }
-                if (dirty) { ImGui::PopStyleColor(); } else { Gui::EndDisabled(); };
+                if (dirty) { ImGui::PopStyleColor(); } else { ImGui::EndDisabled(); }
                 Gui::ItemTooltip(_chValueRevertStrs[_chValueRef]);
 
                 ImGui::SameLine(0.0f, itemSpacing);
@@ -1551,15 +1551,15 @@ bool GuiWinDataConfig::_DrawPorts()
                     if (dbitem)
                     {
                         // Revert to current/default
-                        const bool dirty = dbitem->chDirty;
-                        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
-                        if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
+                        const bool dirty2 = dbitem->chDirty;
+                        if (dirty2) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
+                        if (ImGui::Button(dirty2 ? "#" : " ", _winSettings->iconButtonSize))
                         {
                             dbitem->chValue._raw = dbitem->chReference._raw;
                             dbitem->ChSync();
                             somethingChanged = true;
                         }
-                        if (dirty) { ImGui::PopStyleColor(); } else { Gui::EndDisabled(); };
+                        if (dirty2) { ImGui::PopStyleColor(); } else { ImGui::EndDisabled(); }
                         Gui::ItemTooltip(_chValueRevertStrs[_chValueRef]);
 
                         ImGui::SameLine(0.0f, itemSpacing);
@@ -1599,12 +1599,12 @@ bool GuiWinDataConfig::_DrawMsgRates()
     // 0              1     2       3       4     5     6
     // Message name | ALL | UART1 | UART2 | SPI | I2C | USB |
     const float charWidth = _winSettings->charSize.x;
-    const float wName = 30 * charWidth;;
+    const float wName = 30 * charWidth;
     const float wRate = 20 * charWidth;
 
     const float width = wName + ((1 + NUM_PORTS) * wRate);
     const int nColumns = 1 + (1 + NUM_PORTS);
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
+    const float currWidth = ImGui::GetContentRegionAvail().x;
     const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
 
     bool somethingChanged = false;
@@ -1884,7 +1884,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 
         // Revert to current/default
         const bool dirty = port < 0 ? anyPortDirty : (item ? item->chDirty : false);
-        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
+        if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
         if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
         {
             somethingChanged = true;
@@ -1905,7 +1905,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
                 item->ChSync();
             }
         }
-        if (dirty) { ImGui::PopStyleColor(); } else { Gui::EndDisabled(); };
+        if (dirty) { ImGui::PopStyleColor(); } else { ImGui::EndDisabled(); }
         Gui::ItemTooltip(_chValueRevertStrs[_chValueRef]);
 
         ImGui::SameLine(0.0f, itemSpacing);
@@ -1991,7 +1991,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
         ImGui::PushButtonRepeat(true);
 
         // Increment rate
-        if (!canInc) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!canInc);
         if (ImGui::Button("+", _winSettings->iconButtonSize))
         {
             somethingChanged = true;
@@ -2012,13 +2012,13 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
                 item->ChSync();
             }
         }
-        if (!canInc) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
         Gui::ItemTooltip("Increment rate");
 
         ImGui::SameLine(0.0f, itemSpacing);
 
         // Decrement rate
-        if (!canDec) { Gui::BeginDisabled(); }
+        ImGui::BeginDisabled(!canDec);
         if (ImGui::Button("-", _winSettings->iconButtonSize))
         {
             somethingChanged = true;
@@ -2039,7 +2039,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
                 item->ChSync();
             }
         }
-        if (!canDec) { Gui::EndDisabled(); }
+        ImGui::EndDisabled();
         Gui::ItemTooltip("Decrement rate");
         ImGui::PopButtonRepeat();
 
@@ -2058,7 +2058,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 
 bool GuiWinDataConfig::_DrawItems()
 {
-    const float currWidth = ImGui::GetWindowContentRegionWidth();
+    const float currWidth = ImGui::GetContentRegionAvail().x;
 
     const float charWidth = _winSettings->charSize.x;
     const float wItem  = 36 * charWidth;
@@ -2225,14 +2225,14 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 
     // Revert to current/default value
     const bool dirty = dbitem.chDirty;
-    if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { Gui::BeginDisabled(); };
+    if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
     if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
     {
         dbitem.chValue._raw = dbitem.chReference._raw;
         dbitem.ChSync();
         somethingChanged = true;
     }
-    if (dirty) { ImGui::PopStyleColor(); } else { Gui::EndDisabled(); };
+    if (dirty) { ImGui::PopStyleColor(); } else { ImGui::EndDisabled(); }
     Gui::ItemTooltip(_chValueRevertStrs[_chValueRef]);
 
     ImGui::SameLine(0.0f, itemSpacing);
@@ -2268,26 +2268,26 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 
             // Increment
             const bool canInc = val < max;
-            if (!canInc) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canInc);
             if (ImGui::Button("+", _winSettings->iconButtonSize))
             {
                 val++;
                 somethingChanged = true;
             }
-            if (!canInc) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Increment");
 
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Decrement
             const bool canDec = val > min;
-            if (!canDec) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canDec);
             if (ImGui::Button("-", _winSettings->iconButtonSize))
             {
                 val--;
                 somethingChanged = true;
             }
-            if (!canDec) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Decrement");
 
             ImGui::PopButtonRepeat();
@@ -2384,7 +2384,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             uint64_t    min  = 0;
             uint64_t    max  = UINT8_MAX;
             int         dig  = 3;
-            const char *fmt  = "%" PRIu64;;
+            const char *fmt  = "%" PRIu64;
             bool        hex  = false;
             switch (dbitem.type)
             {
@@ -2403,26 +2403,26 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 
             // Increment
             const bool canInc = val < max;
-            if (!canInc) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canInc);
             if (ImGui::Button("+", _winSettings->iconButtonSize))
             {
                 val++;
                 somethingChanged = true;
             }
-            if (!canInc) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Increment");
 
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Decrement
             const bool canDec = val > min;
-            if (!canDec) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canDec);
             if (ImGui::Button("-", _winSettings->iconButtonSize))
             {
                 val--;
                 somethingChanged = true;
             }
-            if (!canDec) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Decrement");
 
             ImGui::PopButtonRepeat();
@@ -2524,28 +2524,28 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 
             // Increment
             const bool canInc = val < max;
-            if (!canInc) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canInc);
             if (ImGui::Button("+", _winSettings->iconButtonSize))
             {
                 val += step;
                 val = std::floor(val + 0.5);
                 somethingChanged = true;
             }
-            if (!canInc) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Increment");
 
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Decrement
             const bool canDec = val > min;
-            if (!canDec) { Gui::BeginDisabled(); };
+            ImGui::BeginDisabled(!canDec);
             if (ImGui::Button("-", _winSettings->iconButtonSize))
             {
                 val -= step;
                 val = std::floor(val - 0.5);
                 somethingChanged = true;
             }
-            if (!canDec) { Gui::EndDisabled(); }
+            ImGui::EndDisabled();
             Gui::ItemTooltip("Decrement");
 
             ImGui::PopButtonRepeat();

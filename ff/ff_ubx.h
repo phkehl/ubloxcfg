@@ -156,6 +156,7 @@ extern "C" {
 #define UBX_UPD_SOS_MSGID            0x14
 #define UBX_UPD_POS_MSGID            0x15 // says u-center...
 #define UBX_UPD_SAFEBOOT_MSGID       0x07 // says ubxfwupdate.exe that comes with u-center...
+#define UBX_UPD_FLDET_MSGID          0x08 // says u-center...
 
 #define UBX_SEC_CLSID                0x27
 #define UBX_SEC_SIG_MSGID            0x09
@@ -271,6 +272,7 @@ extern "C" {
     _P_(UBX_UPD_CLSID, UBX_UPD_SOS_MSGID,         "UBX-UPD-SOS") \
     _P_(UBX_UPD_CLSID, UBX_UPD_POS_MSGID,         "UBX-UPD-POS") \
     _P_(UBX_UPD_CLSID, UBX_UPD_SAFEBOOT_MSGID,    "UBX-UPD-SAFEBOOT") \
+    _P_(UBX_UPD_CLSID, UBX_UPD_FLDET_MSGID,       "UBX-UPD-FLDET") \
     _P_(UBX_SEC_CLSID, UBX_SEC_SIG_MSGID,         "UBX-SEC-SIG") \
     _P_(UBX_SEC_CLSID, UBX_SEC_UNIQID_MSGID,      "UBX-SEC-UNIQID")
 
@@ -1609,6 +1611,17 @@ bool ubxMessageNameIds(char *name, const int size, const uint8_t clsId, const ui
     \returns true if \c name was found and \c clsId and \c msgId are valid
 */
 bool ubxMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
+
+//! UBX message definitions
+typedef struct UBX_MSGDEF_s
+{
+    const char *name;
+    uint8_t     clsId;
+    uint8_t     msgId;
+} UBX_MSGDEF_t;
+
+//! Get UBX message definitions
+const UBX_MSGDEF_t *ubxMessageDefs(int *num);
 
 //! Render message info string
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);

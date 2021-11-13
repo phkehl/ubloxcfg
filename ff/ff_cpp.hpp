@@ -195,6 +195,10 @@ namespace Ff
             int         _lastLine;
             std::string _file;
     };
+
+    // Hexdump
+    std::vector<std::string> HexDump(const std::vector<uint8_t> data);
+    std::vector<std::string> HexDump(const uint8_t *data, const int size);
 };
 
 /* ****************************************************************************************************************** */

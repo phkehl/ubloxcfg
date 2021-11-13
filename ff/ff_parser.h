@@ -32,12 +32,12 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
-#define PARSER_BUF_SIZE      16384 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
+#define PARSER_BUF_SIZE      32768 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
 #define PARSER_MAX_UBX_SIZE   4096 // messages larger than this will be GARBAGE
 #define PARSER_MAX_NMEA_SIZE   200 // messages larger than this will be GARBAGE
 #define PARSER_MAX_RTCM3_SIZE 4096 // messages larger than this will be GARBAGE
 #define PARSER_MAX_GARB_SIZE   256
-#define PARSER_MAX_ANY_SIZE   4096 // the largest of the above
+#define PARSER_MAX_ANY_SIZE  16384 // the largest of the above
 #define PARSER_MAX_NAME_SIZE   100
 #define PARSER_MAX_INFO_SIZE  1000
 

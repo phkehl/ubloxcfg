@@ -41,11 +41,10 @@ class GuiWinExperiment : public GuiWin
 
     protected:
 
-        std::unique_ptr<GuiWinFileDialog> _openFileDialog;
-        std::shared_ptr<std::string   >   _openFilePath;
-
-        std::unique_ptr<GuiWinFileDialog> _saveFileDialog;
-        std::shared_ptr<std::string   >   _saveFilePath;
+        GuiWinFileDialog _openFileDialog;
+        std::string      _openFilePath;
+        GuiWinFileDialog _saveFileDialog;
+        std::string      _saveFilePath;
 };
 
 /* ****************************************************************************************************************** */

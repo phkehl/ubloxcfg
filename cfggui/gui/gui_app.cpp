@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <cstring>
+#include <chrono>
 
 #include <sys/time.h>
 
@@ -29,9 +30,16 @@
 
 #include "IconsForkAwesome.h"
 
+#include "implot.h"
+
 #include "platform.hpp"
 
 #include "config.h"
+
+#include "gui_win_app.hpp"
+#include "gui_win_data.hpp"
+#include "gui_win_experiment.hpp"
+#include "gui_win_play.hpp"
 
 #include "gui_app.hpp"
 
@@ -107,14 +115,34 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _appWindows[APP_WIN_IMGUI_STYLES]     = std::make_unique<GuiWinImguiStyles>();
     _appWindows[APP_WIN_IMPLOT_STYLES]    = std::make_unique<GuiWinImplotStyles>();
     _appWindows[APP_WIN_EXPERIMENT]       = std::make_unique<GuiWinExperiment>();
+    _appWindows[APP_WIN_PLAY]             = std::make_unique<GuiWinPlay>();
 
     // Load settings
-    _settings->GetValue("DebugWinOpen", _debugWinOpen, false);
+    _settings->GetValue("App.debugWindow", _debugWinOpen, false);
+    _settings->GetValue("App.aboutWindow",    *_appWindows[APP_WIN_ABOUT]->GetOpenFlag(), false);
+    _settings->GetValue("App.settingsWindow", *_appWindows[APP_WIN_SETTINGS]->GetOpenFlag(), false);
+    _settings->GetValue("App.helpWindow",     *_appWindows[APP_WIN_HELP]->GetOpenFlag(), false);
+    _settings->GetValue("App.playWindow",     *_appWindows[APP_WIN_PLAY]->GetOpenFlag(), false);
 
-    // Create at least one receiver window, load previous windows
-    _CreateReceiverWindow();
+    // Load previous receiver and logfile windows
+    const std::vector<std::string> receiverWinNames = _settings->GetValueList("App.receiverWindows");
+    if (!receiverWinNames.empty())
+    {
+        for (auto &winName: receiverWinNames)
+        {
+            _CreateInputWindow("Receiver", _receiverWindows, winName);
+        }
+    }
+    const std::vector<std::string> logfileWinNames = _settings->GetValueList("App.logfileWindows");
+    if (!logfileWinNames.empty())
+    {
+        for (auto &winName: logfileWinNames)
+        {
+            _CreateInputWindow("Logfile", _logfileWindows, winName);
+        }
+    }
 
-    // Hello, hello
+    // Say hello
     NOTICE("cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
 }
 
@@ -128,22 +156,25 @@ GuiApp::~GuiApp()
     DEBUG("GuiApp::~GuiApp()");
 
     // Remember some settings
-    _settings->SetValue("DebugWinOpen", _debugWinOpen);
+    _settings->SetValue("App.debugWindow", _debugWinOpen);
+    _settings->SetValue("App.aboutWindow",    _appWindows[APP_WIN_ABOUT]->IsOpen());
+    _settings->SetValue("App.settingsWindow", _appWindows[APP_WIN_SETTINGS]->IsOpen());
+    _settings->SetValue("App.helpWindow",     _appWindows[APP_WIN_HELP]->IsOpen());
+    _settings->SetValue("App.playWindow",     _appWindows[APP_WIN_PLAY]->IsOpen());
 
     std::vector<std::string> openReceiverWinNames;
     for (auto &receiver: _receiverWindows)
     {
         openReceiverWinNames.push_back(receiver->GetName());
     }
-    _settings->SetValue("ReceiverWindows", Ff::StrJoin(openReceiverWinNames, ","));
+    _settings->SetValueList("App.receiverWindows", openReceiverWinNames);
 
     std::vector<std::string> openLogfileWinNames;
     for (auto &logfile: _logfileWindows)
     {
         openLogfileWinNames.push_back(logfile->GetName());
     }
-    _settings->SetValue("LogfileWindows", Ff::StrJoin(openLogfileWinNames, ","));
-
+    _settings->SetValueList("App.logfileWindows", openLogfileWinNames);
 
     // Destroy child windows, so that they can save their settings before we save the file below
     _appWindows.clear();
@@ -205,12 +236,6 @@ void GuiApp::Loop()
     {
         win->Loop(frame, now);
     }
-
-    // Debug window
-    if (_debugWinOpen)
-    {
-        _DrawDebugWin();
-    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -257,85 +282,62 @@ void GuiApp::DrawFrame()
             iter = _logfileWindows.erase(iter);
         }
     }
+
+    // Debug window
+    if (_debugWinOpen)
+    {
+        _DrawDebugWin();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int GuiApp::_FindUnusedWindowNumber(const std::string &baseName, const std::vector<std::string> existingNames)
+template<typename T> void GuiApp::_CreateInputWindow(
+    const std::string &baseName, std::vector< std::unique_ptr<T> > &inputWindows, const std::string &prevWinName)
 {
-    int n = 1;
-    while (n < 1000)
+    std::vector<std::string> existingWinNames;
+    for (auto &win: inputWindows)
     {
-        const std::string winName = baseName + std::to_string(n); // BaseName1, BaseName2, ...
-        bool nameUnused = true;
-        for (auto &existingName: existingNames)
+        existingWinNames.push_back(win->GetName());
+    }
+
+    int winNumber = 0;
+    // Open a previous window
+    if (!prevWinName.empty())
+    {
+        if (std::find(existingWinNames.begin(), existingWinNames.end(), prevWinName) == existingWinNames.end())
         {
-            if (winName == existingName)
+            try { winNumber = std::stoi(prevWinName.substr(baseName.size())); } catch (...) { }
+        }
+    }
+    // Find next free
+    else
+    {
+        int n = 1;
+        while (n < 1000)
+        {
+            const std::string newWinName = baseName + std::to_string(n); // BaseName1, BaseName2, ...
+            if (std::find(existingWinNames.begin(), existingWinNames.end(), newWinName) == existingWinNames.end())
             {
-                nameUnused = false;
+                winNumber = n;
                 break;
             }
+            n++;
         }
-        if (nameUnused)
-        {
-            return n;
-        }
-        n++;
     }
-    return 0;
-}
 
-void GuiApp::_CreateReceiverWindow()
-{
-    std::vector<std::string> winNames;
-    for (auto &win: _receiverWindows)
-    {
-        winNames.push_back(win->GetName());
-    }
-    const std::string baseName = "Receiver";
-    const int winNumber = _FindUnusedWindowNumber(baseName, winNames);
+    // Create it
     if (winNumber > 0)
     {
         try
         {
-            auto win = std::make_unique<GuiWinInputReceiver>(baseName + std::to_string(winNumber));
+            auto win = std::make_unique<T>(baseName + std::to_string(winNumber));
             win->Open();
             win->SetTitle(baseName + " " + std::to_string(winNumber));
             win->OpenPreviousDataWin();
-            _receiverWindows.push_back(std::move(win));
-            std::sort(_receiverWindows.begin(), _receiverWindows.end(),
-                [](const std::unique_ptr<GuiWinInputReceiver> &a, const std::unique_ptr<GuiWinInputReceiver> &b)
-                {
-                    return a->GetName() < b->GetName();
-                });
-        }
-        catch (std::exception &e)
-        {
-            ERROR("new %s%d: %s", baseName.c_str(), winNumber, e.what());
-        }
-    }
-}
-
-void GuiApp::_CreateLogfileWindow()
-{
-    std::vector<std::string> winNames;
-    for (auto &win: _logfileWindows)
-    {
-        winNames.push_back(win->GetName());
-    }
-    const std::string baseName = "Logfile";
-    const int winNumber = _FindUnusedWindowNumber(baseName, winNames);
-    if (winNumber > 0)
-    {
-        try
-        {
-            auto win = std::make_unique<GuiWinInputLogfile>(baseName + std::to_string(winNumber));
-            win->Open();
-            win->SetTitle(baseName + " " + std::to_string(winNumber));
-            win->OpenPreviousDataWin();
-            _logfileWindows.push_back(std::move(win));
-            std::sort(_logfileWindows.begin(), _logfileWindows.end(),
-                [](const std::unique_ptr<GuiWinInputLogfile> &a, const std::unique_ptr<GuiWinInputLogfile> &b)
+            inputWindows.push_back(std::move(win));
+            std::sort(inputWindows.begin(), inputWindows.end(),
+                [](const std::unique_ptr<T> &a, const std::unique_ptr<T> &b)
                 {
                     return a->GetName() < b->GetName();
                 });
@@ -358,11 +360,11 @@ void GuiApp::_MainMenu()
 
         ImGui::PushStyleColor(ImGuiCol_PopupBg, _settings->style.Colors[ImGuiCol_MenuBarBg]);
 
-        if (ImGui::BeginMenu("Receiver"))
+        if (ImGui::BeginMenu(ICON_FK_HEART " Receiver"))
         {
             if (ImGui::MenuItem("New"))
             {
-                _CreateReceiverWindow();
+                _CreateInputWindow("Receiver", _receiverWindows);
             }
             if (!_receiverWindows.empty())
             {
@@ -378,11 +380,11 @@ void GuiApp::_MainMenu()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Logfile"))
+        if (ImGui::BeginMenu(ICON_FK_FOLDER " Logfile"))
         {
             if (ImGui::MenuItem("New"))
             {
-                _CreateLogfileWindow();
+                _CreateInputWindow("Logfile", _logfileWindows);
             }
             if (!_logfileWindows.empty())
             {
@@ -398,12 +400,13 @@ void GuiApp::_MainMenu()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Tools"))
+        if (ImGui::BeginMenu(ICON_FK_COG " Tools"))
         {
             ImGui::MenuItem("About",       NULL, _appWindows[APP_WIN_ABOUT]->GetOpenFlag());
             ImGui::MenuItem("Settings",    NULL, _appWindows[APP_WIN_SETTINGS]->GetOpenFlag());
             ImGui::MenuItem("Help",        NULL, _appWindows[APP_WIN_HELP]->GetOpenFlag());
-            ImGui::MenuItem(/*ICON_FK_BUG " " */"Debug",       NULL, &_debugWinOpen);
+            ImGui::MenuItem("Play",        NULL, _appWindows[APP_WIN_PLAY]->GetOpenFlag());
+            ImGui::MenuItem("Debug",       NULL, &_debugWinOpen);
             ImGui::EndMenu();
         }
 
@@ -561,6 +564,68 @@ void GuiApp::_DrawDebugWin()
                 }
                 ImGui::EndTabItem();
             }
+            if (ImGui::BeginTabItem("Perf"))
+            {
+                const ImVec2 sizeAvail = ImGui::GetContentRegionAvail();
+                const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - _settings->style.ItemSpacing.y };
+                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * _settings->style.ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y };
+
+                const struct { const char *title; const char *label; enum Perf_e perf; } plots[] =
+                {
+                    { "##Newframe",     "Newframe",      Perf_e::NEWFRAME },
+                    { "##Loop",         "Loop",          Perf_e::LOOP },
+                    { "##Draw",         "Draw",          Perf_e::DRAW },
+                    { "##RenderImGui",  "Render ImGui",  Perf_e::RENDER_IM },
+                    { "##RenderOpenGL", "Render OpenGL", Perf_e::RENDER_IM },
+                };
+
+                ImPlot::SetNextPlotLimitsY(0, 5, ImGuiCond_Once);
+                if (ImPlot::BeginPlot("##Performance", nullptr, nullptr, plotSize1,
+                    ImPlotFlags_Crosshairs,
+                    ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoTickLabels,
+                    ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale))
+                {
+                    ImPlot::SetLegendLocation(ImPlotLocation_South, ImPlotOrientation_Horizontal, true);
+                    for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
+                    {
+                        PerfData *pd = &_perfData[plots[plotIx].perf];
+                        // PlotLineG, PlotStairsG
+                        ImPlot::PlotLineG(plots[plotIx].label, [](void *arg, int ix)
+                            {
+                                const PerfData *perf = (PerfData *)arg;
+                                // TODO
+                                // int iix = perf->ix - perf->num + ix;
+                                // if (iix < 0)
+                                // {
+                                //     iix += perf->data.size();
+                                // }
+                                int iix = ix;
+                                return ImPlotPoint( iix, iix >= perf->num ? NAN : perf->data[iix] );
+                            }, pd, pd->data.size());
+                    }
+                    ImPlot::PlotVLines("##VLines", &_perfData[0].ix, 1);
+                    ImPlot::EndPlot();
+                }
+
+                for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
+                {
+                    if (ImPlot::BeginPlot(plots[plotIx].title, nullptr, nullptr, plotSize2,
+                        ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend,
+                        ImPlotAxisFlags_AutoFit,
+                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines))
+                    {
+                        PerfData &pd = _perfData[plots[plotIx].perf];
+                        ImPlot::SetNextFillStyle(ImPlot::GetColormapColor(plotIx));
+                        ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.num, ImPlotBin_Sturges);
+                        ImPlot::EndPlot();
+                    }
+                    if (plotIx < (NUMOF(plots) - 1))
+                    {
+                        ImGui::SameLine();
+                    }
+                }
+                ImGui::EndTabItem();
+            }
             ImGui::EndTabBar();
         }
     }
@@ -620,6 +685,50 @@ void GuiApp::_DrawDebugWin()
     std::lock_guard<std::mutex> guard(mutex);
 
     logWidget->AddLine(tmp, colour);
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiApp::PerfData::PerfData() :
+    data{0.0}, ix{0}, num{0}
+{
+}
+
+void GuiApp::PerfData::Tic()
+{
+    t0 = std::chrono::system_clock::now();
+}
+
+void GuiApp::PerfData::Toc()
+{
+    const auto t1 = std::chrono::system_clock::now();
+    std::chrono::duration<float, std::milli> dt = t1 - t0;
+    data[ix] = dt.count();
+    ix++;
+    ix %= data.size();
+    if (num < (int)data.size())
+    {
+        num++;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::PerfTic(const enum Perf_e perf)
+{
+    if (perf < _NUM_PERF)
+    {
+        _perfData[perf].Tic();
+    }
+}
+
+void GuiApp::PerfToc(const enum Perf_e perf)
+{
+    if (perf < _NUM_PERF)
+    {
+        _perfData[perf].Toc();
+    }
 }
 
 /* ****************************************************************************************************************** */

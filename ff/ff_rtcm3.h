@@ -37,6 +37,8 @@ bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int 
 
 bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 
+const char *rtcm3TypeDesc(const int msgType, const int subType);
+
 /* ****************************************************************************************************************** */
 
 typedef enum RTCM3_MSM_GNSS_e

@@ -26,7 +26,7 @@
 #endif
 
 #include <curl/curl.h>
-#include <SDL_opengl.h>
+#include <GLFW/glfw3.h>
 
 #ifndef _WIN32
 #  include <sys/prctl.h>

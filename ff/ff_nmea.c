@@ -91,18 +91,6 @@ static bool sNmeaMessageInfo(MSG_INFO_t *info, const uint8_t *msg, const int msg
     }
     info->formatter[oIx] = '\0';
 
-    // u-blox proprietary formatter, add "_XX"
-    if ( (info->formatter[0] == 'U') && (info->formatter[1] == 'B') &&
-         (info->formatter[2] == 'X') && (info->formatter[3] == '\0') )
-    {
-        iIx++;
-        info->formatter[oIx++] = '_';
-        info->formatter[oIx++] = msg[iIx++];
-        info->formatter[oIx++] = msg[iIx++];
-        info->formatter[oIx] = '\0';
-        info->payloadIx0 += 3;
-    }
-
     info->payloadIx1 = msgSize - 5 - 1;
 
     return true;
@@ -118,33 +106,16 @@ bool nmeaMessageName(char *name, const int size, const uint8_t *msg, const int m
         if ( (info.talker[0] == 'P') && (info.formatter[0] == 'U') && (info.formatter[1] == 'B') && (info.formatter[2] == 'X') )
         {
             const char *pubx = NULL;
-            if ( (info.formatter[4] == '4') && (info.formatter[5] == '1') )
-            {
-                pubx = "CONFIG";
-            }
-            else if ( (info.formatter[4] == '4') && (info.formatter[5] == '1') )
-            {
-                pubx = "CONFIG";
-            }
-            else if ( (info.formatter[4] == '0') && (info.formatter[5] == '0') )
-            {
-                pubx = "POSITION";
-            }
-            else if ( (info.formatter[4] == '4') && (info.formatter[5] == '0') )
-            {
-                pubx = "RATE";
-            }
-            else if ( (info.formatter[4] == '0') && (info.formatter[5] == '3') )
-            {
-                pubx = "SVSTATUS";
-            }
-            else if ( (info.formatter[4] == '0') && (info.formatter[5] == '4') )
-            {
-                pubx = "TIME";
-            }
+            const char c1 = msg[info.payloadIx0];
+            const char c2 = msg[info.payloadIx0 + 1];
+            if      ( (c1 == '4') && (c2 == '1') ) { pubx = "CONFIG"; }
+            else if ( (c1 == '0') && (c2 == '0') ) { pubx = "POSITION"; }
+            else if ( (c1 == '4') && (c2 == '0') ) { pubx = "RATE"; }
+            else if ( (c1 == '0') && (c2 == '3') ) { pubx = "SVSTATUS"; }
+            else if ( (c1 == '0') && (c2 == '4') ) { pubx = "TIME"; }
             else
             {
-                return snprintf(name, size, "NMEA-PUBX-%c%c", info.formatter[4], info.formatter[5]) < size;
+                return snprintf(name, size, "NMEA-PUBX-%c%c", c1, c2) < size;
             }
             return snprintf(name, size, "NMEA-PUBX-%s", pubx) < size;
         }
@@ -260,6 +231,8 @@ bool nmeaDecode(NMEA_MSG_t *nmea, const uint8_t *msg, const int msgSize)
     }
     memcpy(nmea->talker,    info.talker,    sizeof(nmea->talker));
     memcpy(nmea->formatter, info.formatter, sizeof(nmea->formatter));
+    nmea->payloadIx0 = info.payloadIx0;
+    nmea->payloadIx1 = info.payloadIx1;
 
     // 012345678901234567890
     // $GNGGA,.......*xx\r\n
@@ -866,6 +839,66 @@ bool nmeaMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId)
     }
 
     return false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+int nmeaMakeMessage(const char *talker, const char *formatter, const char *payload, char *msg)
+{
+    if ( (talker == NULL) || (formatter == NULL) || (msg == NULL) )
+    {
+        return 0;
+    }
+
+    const int payloadLen = (payload != NULL ? strlen(payload) : 0);
+    if (payloadLen > 0)
+    {
+        memmove(&msg[1], payload, payloadLen);
+    }
+    int offs = 0;
+    msg[offs++] = '$';
+
+    const int talkerLen = strlen(talker);
+    if (talkerLen > 0)
+    {
+        offs += snprintf(&msg[offs], talkerLen + 1, "%s", talker);
+    }
+
+    const int formatterLen = strlen(formatter);
+    if (formatterLen > 0)
+    {
+        offs += snprintf(&msg[offs], formatterLen + 1, "%s", formatter);
+    }
+
+    if (payloadLen > 0)
+    {
+        if ( (talkerLen > 0) || (formatterLen > 0) )
+        {
+            msg[offs++] = ',';
+        }
+        offs += snprintf(&msg[offs], payloadLen + 1, "%s", payload);
+    }
+
+    uint8_t ck = 0;
+    for (int ix = 1; ix <= offs; ix++)
+    {
+        ck ^= msg[ix];
+    }
+    uint8_t c1 = '0' + ((ck >> 4) & 0x0f);
+    uint8_t c2 = '0' + (ck & 0x0f);
+    if (c2 > '9')
+    {
+        c2 += 'A' - '9' - 1;
+    }
+
+    msg[offs++] = '*';
+    msg[offs++] = c1;
+    msg[offs++] = c2;
+    msg[offs++] = '\r';
+    msg[offs++] = '\n';
+    msg[offs] = '\0';
+
+    return offs;
 }
 
 /* ****************************************************************************************************************** */

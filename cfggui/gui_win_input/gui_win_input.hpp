@@ -42,9 +42,6 @@ class GuiWinInput : public GuiWin
 
         void OpenPreviousDataWin();
 
-        // enum Callback_e { DRAW_BUTTONS, CHANGE_TITLE, CLEAR_DATA };
-        // void SetCallback(std::function<void(Callback_e)> callback);
-
         void Loop(const uint32_t &frame, const double &now) override;
         void DrawWindow() final;
         // virtual void ProcessData(const Data &data);
@@ -65,6 +62,19 @@ class GuiWinInput : public GuiWin
         virtual void _ProcessData(const Data &data);
         virtual void _ClearData();
         virtual void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin);
+
+        using DataWinCreateFn_t = std::function< std::unique_ptr<GuiWinData>(const std::string &, std::shared_ptr<Database>) >;
+        struct DataWinDef
+        {
+            const char   *name;
+            const char   *title;
+            const char   *button;
+            enum Cap_e { ACTIVE = BIT(0), PASSIVE = BIT(1), ALL = BIT(0) | BIT(1) };
+            enum Cap_e    reqs;
+            DataWinCreateFn_t create;
+        };
+        static const std::vector<DataWinDef> _dataWinDefs;
+        enum DataWinDef::Cap_e               _dataWinCaps;
 
         virtual void _DrawDataWinButtons();
         virtual void _DrawActionButtons();

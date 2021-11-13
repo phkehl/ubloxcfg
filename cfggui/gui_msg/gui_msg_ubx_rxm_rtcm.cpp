@@ -18,10 +18,13 @@
 #include <cstring>
 
 #include "ff_ubx.h"
+#include "ff_rtcm3.h"
 
 #include "imgui.h"
 #include "implot.h"
 #include "IconsForkAwesome.h"
+
+#include "gui_widget.hpp"
 
 #include "gui_msg_ubx_rxm_rtcm.hpp"
 
@@ -39,6 +42,11 @@ GuiMsgUbxRxmRtcm::RtcmInfo::RtcmInfo(const int _msgType, const int _subType, con
     nUsed{0}, nUnused{0}, nUnknown{0}, nCrcFailed{0}
 {
     name = std::to_string(msgType) + (msgType == 4072 ? "." + std::to_string(subType) : "");
+    tooltip = rtcm3TypeDesc(msgType, subType);
+    if (tooltip == NULL)
+    {
+        tooltip = "Unknown RTCM3 message";
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -112,6 +120,7 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
         { .label = "#Unknown",  .flags = 0 },
         { .label = "#CrcFail",  .flags = 0 },
         { .label = "Age",       .flags = 0 },
+        { .label = "Desc",      .flags = 0 },
     };
 
     if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail))
@@ -131,6 +140,7 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
 
             ImGui::TableSetColumnIndex(ix++);
             ImGui::Selectable(info.name.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+            //Gui::ItemTooltip(info.tooltip);
 
             ImGui::TableSetColumnIndex(ix++);
             ImGui::Text("%d", info.refStation);
@@ -148,7 +158,13 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const I
             ImGui::Text("%u", info.nCrcFailed);
 
             ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
+            if (_receiver)
+            {
+                ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
+            }
+
+            ImGui::TableSetColumnIndex(ix++);
+            ImGui::TextUnformatted(info.tooltip);
         }
 
         ImGui::EndTable();

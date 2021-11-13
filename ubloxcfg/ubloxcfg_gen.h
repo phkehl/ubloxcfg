@@ -6320,6 +6320,150 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SFODO CFG-SFODO
+    @{
+*/
+
+#define UBLOXCFG_CFG_SFODO_ID  0x00070000 //!< Group ID of the CFG-SFODO-* items
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_COMBINE_TICKS CFG-SFODO-COMBINE_TICKS (Use combined rear wheel ticks instead of the single tick)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_COMBINE_TICKS_ID                0x10070001                               //!< ID of CFG-SFODO-COMBINE_TICKS
+#define UBLOXCFG_CFG_SFODO_COMBINE_TICKS_STR               "CFG-SFODO-COMBINE_TICKS"                //!< Name of CFG-SFODO-COMBINE_TICKS
+#define UBLOXCFG_CFG_SFODO_COMBINE_TICKS_TYPE              L                                        //!< Type of CFG-SFODO-COMBINE_TICKS
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_USE_SPEED CFG-SFODO-USE_SPEED (Use speed measurements (UBX-ESF-MEAS data type 11 instead of 10))
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_USE_SPEED_ID                    0x10070003                               //!< ID of CFG-SFODO-USE_SPEED
+#define UBLOXCFG_CFG_SFODO_USE_SPEED_STR                   "CFG-SFODO-USE_SPEED"                    //!< Name of CFG-SFODO-USE_SPEED
+#define UBLOXCFG_CFG_SFODO_USE_SPEED_TYPE                  L                                        //!< Type of CFG-SFODO-USE_SPEED
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_DIS_AUTOCOUNTMAX CFG-SFODO-DIS_AUTOCOUNTMAX (Disable automatic estimation of maximum absolute wheel tick counter)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOCOUNTMAX_ID             0x10070004                               //!< ID of CFG-SFODO-DIS_AUTOCOUNTMAX
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOCOUNTMAX_STR            "CFG-SFODO-DIS_AUTOCOUNTMAX"             //!< Name of CFG-SFODO-DIS_AUTOCOUNTMAX
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOCOUNTMAX_TYPE           L                                        //!< Type of CFG-SFODO-DIS_AUTOCOUNTMAX
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_DIS_AUTODIRPINPOL CFG-SFODO-DIS_AUTODIRPINPOL (Disable automatic wheel tick direction pin polarity detection)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_DIS_AUTODIRPINPOL_ID            0x10070005                               //!< ID of CFG-SFODO-DIS_AUTODIRPINPOL
+#define UBLOXCFG_CFG_SFODO_DIS_AUTODIRPINPOL_STR           "CFG-SFODO-DIS_AUTODIRPINPOL"            //!< Name of CFG-SFODO-DIS_AUTODIRPINPOL
+#define UBLOXCFG_CFG_SFODO_DIS_AUTODIRPINPOL_TYPE          L                                        //!< Type of CFG-SFODO-DIS_AUTODIRPINPOL
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_DIS_AUTOSPEED CFG-SFODO-DIS_AUTOSPEED (Disable automatic receiver reconfiguration for processing speed data instead of wheel tick data)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSPEED_ID                0x10070006                               //!< ID of CFG-SFODO-DIS_AUTOSPEED
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSPEED_STR               "CFG-SFODO-DIS_AUTOSPEED"                //!< Name of CFG-SFODO-DIS_AUTOSPEED
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSPEED_TYPE              L                                        //!< Type of CFG-SFODO-DIS_AUTOSPEED
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_FACTOR CFG-SFODO-FACTOR (Wheel tick scale factor to obtain distance [m] from wheel ticks.)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_FACTOR_ID                       0x40070007                               //!< ID of CFG-SFODO-FACTOR
+#define UBLOXCFG_CFG_SFODO_FACTOR_STR                      "CFG-SFODO-FACTOR"                       //!< Name of CFG-SFODO-FACTOR
+#define UBLOXCFG_CFG_SFODO_FACTOR_TYPE                     U4                                       //!< Type of CFG-SFODO-FACTOR
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_QUANT_ERROR CFG-SFODO-QUANT_ERROR (Wheel tick quantization)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_QUANT_ERROR_ID                  0x40070008                               //!< ID of CFG-SFODO-QUANT_ERROR
+#define UBLOXCFG_CFG_SFODO_QUANT_ERROR_STR                 "CFG-SFODO-QUANT_ERROR"                  //!< Name of CFG-SFODO-QUANT_ERROR
+#define UBLOXCFG_CFG_SFODO_QUANT_ERROR_TYPE                U4                                       //!< Type of CFG-SFODO-QUANT_ERROR
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_COUNT_MAX CFG-SFODO-COUNT_MAX (Wheel tick counter maximum value (0 = relative, 1 = automatic))
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_COUNT_MAX_ID                    0x40070009                               //!< ID of CFG-SFODO-COUNT_MAX
+#define UBLOXCFG_CFG_SFODO_COUNT_MAX_STR                   "CFG-SFODO-COUNT_MAX"                    //!< Name of CFG-SFODO-COUNT_MAX
+#define UBLOXCFG_CFG_SFODO_COUNT_MAX_TYPE                  U4                                       //!< Type of CFG-SFODO-COUNT_MAX
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_LATENCY CFG-SFODO-LATENCY (Wheel tick data latency due to e.g. CAN bus)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_LATENCY_ID                      0x3007000a                               //!< ID of CFG-SFODO-LATENCY
+#define UBLOXCFG_CFG_SFODO_LATENCY_STR                     "CFG-SFODO-LATENCY"                      //!< Name of CFG-SFODO-LATENCY
+#define UBLOXCFG_CFG_SFODO_LATENCY_TYPE                    U2                                       //!< Type of CFG-SFODO-LATENCY
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_FREQUENCY CFG-SFODO-FREQUENCY (Nominal wheel tick data frequency (0 = not set))
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_FREQUENCY_ID                    0x2007000b                               //!< ID of CFG-SFODO-FREQUENCY
+#define UBLOXCFG_CFG_SFODO_FREQUENCY_STR                   "CFG-SFODO-FREQUENCY"                    //!< Name of CFG-SFODO-FREQUENCY
+#define UBLOXCFG_CFG_SFODO_FREQUENCY_TYPE                  U1                                       //!< Type of CFG-SFODO-FREQUENCY
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_CNT_BOTH_EDGES CFG-SFODO-CNT_BOTH_EDGES (Count both rising and falling edges on wheel tick signal)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_CNT_BOTH_EDGES_ID               0x1007000d                               //!< ID of CFG-SFODO-CNT_BOTH_EDGES
+#define UBLOXCFG_CFG_SFODO_CNT_BOTH_EDGES_STR              "CFG-SFODO-CNT_BOTH_EDGES"               //!< Name of CFG-SFODO-CNT_BOTH_EDGES
+#define UBLOXCFG_CFG_SFODO_CNT_BOTH_EDGES_TYPE             L                                        //!< Type of CFG-SFODO-CNT_BOTH_EDGES
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_SPEED_BAND CFG-SFODO-SPEED_BAND (Speed sensor dead badn (0 = not set))
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_SPEED_BAND_ID                   0x3007000e                               //!< ID of CFG-SFODO-SPEED_BAND
+#define UBLOXCFG_CFG_SFODO_SPEED_BAND_STR                  "CFG-SFODO-SPEED_BAND"                   //!< Name of CFG-SFODO-SPEED_BAND
+#define UBLOXCFG_CFG_SFODO_SPEED_BAND_TYPE                 U2                                       //!< Type of CFG-SFODO-SPEED_BAND
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_USE_WT_PIN CFG-SFODO-USE_WT_PIN (Wheel tick signal enabled)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_USE_WT_PIN_ID                   0x1007000f                               //!< ID of CFG-SFODO-USE_WT_PIN
+#define UBLOXCFG_CFG_SFODO_USE_WT_PIN_STR                  "CFG-SFODO-USE_WT_PIN"                   //!< Name of CFG-SFODO-USE_WT_PIN
+#define UBLOXCFG_CFG_SFODO_USE_WT_PIN_TYPE                 L                                        //!< Type of CFG-SFODO-USE_WT_PIN
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_DIR_PINPOL CFG-SFODO-DIR_PINPOL (Wheel tick direction pin polarity)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_DIR_PINPOL_ID                   0x10070010                               //!< ID of CFG-SFODO-DIR_PINPOL
+#define UBLOXCFG_CFG_SFODO_DIR_PINPOL_STR                  "CFG-SFODO-DIR_PINPOL"                   //!< Name of CFG-SFODO-DIR_PINPOL
+#define UBLOXCFG_CFG_SFODO_DIR_PINPOL_TYPE                 L                                        //!< Type of CFG-SFODO-DIR_PINPOL
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SFODO_DIS_AUTOSW CFG-SFODO-DIS_AUTOSW (Disable automatic use of wheel tick or speed data received over the software interface)
+    @{
+*/
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSW_ID                   0x10070011                               //!< ID of CFG-SFODO-DIS_AUTOSW
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSW_STR                  "CFG-SFODO-DIS_AUTOSW"                   //!< Name of CFG-SFODO-DIS_AUTOSW
+#define UBLOXCFG_CFG_SFODO_DIS_AUTOSW_TYPE                 L                                        //!< Type of CFG-SFODO-DIS_AUTOSW
+///@}
+
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL CFG-SIGNAL
     @{
 */
@@ -9834,7 +9978,7 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 777
+#define _UBLOXCFG_NUM_ITEMS 792
 const void **_ubloxcfg_allItems(void);
 #define _UBLOXCFG_NUM_RATES 90
 const void **_ubloxcfg_allRates(void);

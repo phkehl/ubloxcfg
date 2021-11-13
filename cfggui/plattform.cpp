@@ -201,6 +201,25 @@ const std::vector<Port> &EnumeratePorts(const bool enumerate)
     return ports;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+void SetThreadName(const std::string &name)
+{
+#ifndef _WIN32
+    // FIXME: refactor...
+    char currName[16];
+    char threadName[32]; // max 16 cf. prctl(2)
+    currName[0] = '\0';
+    if (prctl(PR_GET_NAME, currName, 0, 0, 0) == 0)
+    {
+        currName[8] = '\0';
+        std::snprintf(threadName, sizeof(threadName), "%s:%s", currName, name.c_str());
+        prctl(PR_SET_NAME, threadName, 0, 0, 0);
+    }
+#else
+    UNUSED(name);
+#endif
+}
 
 /* ****************************************************************************************************************** */
 } // namespace Platform

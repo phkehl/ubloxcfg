@@ -320,7 +320,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         }
 
         // Get item
-        const UBLOXCFG_ITEM_t *item = ubloxcfg_getItemByName(keyStr);;
+        const UBLOXCFG_ITEM_t *item = ubloxcfg_getItemByName(keyStr);
         if (item == NULL)
         {
             WARNING_INFILE("Unknown item '%s'!", keyStr);

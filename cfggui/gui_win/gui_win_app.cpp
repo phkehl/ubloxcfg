@@ -51,7 +51,7 @@ void GuiWinAbout::DrawWindow()
     Gui::TextLink(          "https://oinkzwurgl.org/hacking/ubloxcfg/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("This consists of the following parts:");
-    ImGui::TextUnformatted("- 'ubloxcfg' library, under GPL");
+    ImGui::TextUnformatted("- 'ubloxcfg' library, under LGPL");
     ImGui::TextUnformatted("- 'ff' library, under GPL");
     ImGui::TextUnformatted("- 'cfggui' application, under GPL");
     ImGui::Separator();  // -----------------------------------------------------------------------------
@@ -70,13 +70,15 @@ void GuiWinAbout::DrawWindow()
     ImGui::SameLine(); Gui::TextLink("https://proggyfonts.net");
     ImGui::TextUnformatted( "- ForkAwesome font, under a MIT license");
     ImGui::SameLine(); Gui::TextLink("https://forkaweso.me");
+    ImGui::TextUnformatted( "- Tetris by Stephen Brennan, under a Revised BSD license");
+    ImGui::SameLine(); Gui::TextLink("https://brennan.io/2015/06/12/tetris-reimplementation/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party data from the following public sources:");
     int nSources = 0;
     const char **sources = ubloxcfg_getSources(&nSources);
     for (int ix = 0; ix < nSources; ix++)
     {
-        ImGui::TextUnformatted(sources[ix]);
+        ImGui::Text("- %s", sources[ix]);
     }
     ImGui::Separator();  // -----------------------------------------------------------------------------
 

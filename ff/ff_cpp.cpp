@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <vector>
 #include <algorithm>
+#include <cinttypes>
 #include <time.h>
 
 #include "ff_cpp.hpp"
@@ -107,10 +108,17 @@ std::vector<std::string> Ff::StrSplit(const std::string &str, const std::string 
     std::size_t pos = 0;
     while ((pos = strCopy.find(sep)) != std::string::npos)
     {
-        out.push_back( strCopy.substr(0, pos) );
+        std::string part = strCopy.substr(0, pos);
         strCopy.erase(0, pos + sep.length());
+        if (!part.empty())
+        {
+            out.push_back(part);
+        }
     }
-    out.push_back(strCopy);
+    if (!strCopy.empty())
+    {
+        out.push_back(strCopy);
+    }
     return out;
 }
 
@@ -367,6 +375,49 @@ bool Ff::ConfFile::Save(const std::string &file, const std::string &section, con
         res = false;
     }
     return res;
+}
+
+std::vector<std::string> Ff::HexDump(const std::vector<uint8_t> data)
+{
+    return HexDump(data.data(), (int)data.size());
+}
+
+std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
+{
+    std::vector<std::string> hexdump;
+    const char i2hex[] = "0123456789abcdef";
+    const uint8_t *pData = data;
+    for (int ix = 0; ix < size; )
+    {
+        char str[70];
+        memset(str, ' ', sizeof(str));
+        str[50] = '|';
+        str[67] = '|';
+        str[68] = '\0';
+        for (int ix2 = 0; (ix2 < 16) && ((ix + ix2) < size); ix2++)
+        {
+            //           1         2         3         4         5         6
+            // 012345678901234567890123456789012345678901234567890123456789012345678
+            // xx xx xx xx xx xx xx xx  xx xx xx xx xx xx xx xx  |................|\0
+            // 0  1  2  3  4  5  6  7   8  9  10 11 12 13 14 15
+            const uint8_t c = pData[ix + ix2];
+            int pos1 = 3 * ix2;
+            int pos2 = 51 + ix2;
+            if (ix2 > 7)
+            {
+                   pos1++;
+            }
+            str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
+            str[pos1 + 1] = i2hex[  c       & 0xf ];
+
+            str[pos2] = isprint((int)c) ? c : '.';
+        }
+        char buf[1024];
+        std::snprintf(buf, sizeof(buf), "0x%04" PRIx8 " %05d  %s", ix, ix, str);
+        hexdump.push_back(buf);
+        ix += 16;
+    }
+    return hexdump;
 }
 
 /* ****************************************************************************************************************** */

@@ -19,6 +19,7 @@
 #define __GUI_WIN_DATA_MESSAGES_H__
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <memory>
@@ -83,9 +84,17 @@ class GuiWinDataMessages : public GuiWinData
             uint8_t                   clsId;
             uint8_t                   msgId;
         };
-        std::map<std::string, std::vector<MsgRate>> _msgRates; // FIXME: make static?
-        void _InitMsgRates();
+        std::unordered_map<std::string, std::vector<MsgRate>> _msgRates; // FIXME: make static?
+        struct MsgPoll
+        {
+            MsgPoll(const uint8_t _clsId, const uint8_t _msgId);
+            uint8_t clsId;
+            uint8_t msgId;
+        };
+        std::unordered_map<std::string, MsgPoll> _msgPolls;
+        void _InitMsgRatesAndPolls();
         void _SetRate(const MsgRate &def, const int rate);
+        void _PollMsg(const MsgPoll &def);
 
         void _UpdateInfo();
         void _DrawMessagesMenu();

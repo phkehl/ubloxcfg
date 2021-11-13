@@ -33,7 +33,7 @@ class GuiWinFileDialog : public GuiWin
         GuiWinFileDialog(const std::string &name);
 
         // Setup dialog
-        void InitDialog(const Mode_e mode, std::shared_ptr<std::string> result);
+        void InitDialog(const Mode_e mode);
 
         // Set current directory
         void SetDirectory(const std::string &directory);
@@ -52,6 +52,9 @@ class GuiWinFileDialog : public GuiWin
 
         // Draw dialog, return true when done, in which case result is the path (on success) or empty (on cancel)
         bool DrawDialog();
+
+        // Get result once done, empty string on cancel
+        std::string &GetPath();
 
     protected:
 
@@ -96,8 +99,7 @@ class GuiWinFileDialog : public GuiWin
         bool                  _selectedFileValid;
         std::string           _selectedPath;
 
-
-        std::shared_ptr<std::string> _resultPath;
+        std::string           _resultPath;
 
         enum Order_e { ASC, DESC };
         enum Col_e { TYPE, NAME, SIZE, DATE };

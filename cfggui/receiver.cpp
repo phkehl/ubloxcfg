@@ -35,6 +35,7 @@
 #include "ff_cpp.hpp"
 #include "ubloxcfg.h"
 
+#include "platform.hpp"
 #include "receiver.hpp"
 
 /* ****************************************************************************************************************** */
@@ -43,11 +44,13 @@
 struct ReceiverEvent
 {
     enum Event_e { NOOP, MSG, FAIL, ERROR, WARN, NOTICE, EPOCH, KEYVAL, ACK };
-    ReceiverEvent() :
-        event{NOOP}, uid{0}
+    ReceiverEvent(const enum Event_e _event, const uint64_t _uid) :
+        event{_event}, uid{_uid}
     {
     }
-    virtual ~ReceiverEvent() { } // virtual or the destructors of the derived classes won't be called!
+    virtual ~ReceiverEvent()
+    {
+    }
     enum Event_e event;
     uint64_t     uid;
 };
@@ -55,10 +58,8 @@ struct ReceiverEvent
 struct ReceiverEventMsg : public ReceiverEvent
 {
     ReceiverEventMsg(const PARSER_MSG_t *_msg, const uint64_t _uid = 0) :
-        msg{ std::make_shared<Ff::ParserMsg>(_msg) }
+        ReceiverEvent(MSG, _uid), msg{ std::make_shared<Ff::ParserMsg>(_msg) }
     {
-        event = MSG;
-        uid   = _uid;
     }
     std::shared_ptr<Ff::ParserMsg> msg;
 };
@@ -66,10 +67,8 @@ struct ReceiverEventMsg : public ReceiverEvent
 struct ReceiverEventFail : public ReceiverEvent
 {
     ReceiverEventFail(const std::string &_str, const uint64_t _uid = 0) :
-        str{_str}
+        ReceiverEvent(FAIL, _uid), str{_str}
     {
-        event = FAIL;
-        uid   = _uid;
     }
     std::string str;
 };
@@ -77,10 +76,8 @@ struct ReceiverEventFail : public ReceiverEvent
 struct ReceiverEventError : public ReceiverEvent
 {
     ReceiverEventError(const std::string &_str, const uint64_t _uid = 0) :
-        str{_str}
+        ReceiverEvent(ERROR, _uid), str{_str}
     {
-        event = ERROR;
-        uid   = _uid;
     }
     std::string str;
 };
@@ -88,10 +85,8 @@ struct ReceiverEventError : public ReceiverEvent
 struct ReceiverEventWarn : public ReceiverEvent
 {
     ReceiverEventWarn(const std::string &_str, const uint64_t _uid = 0) :
-        str{_str}
+        ReceiverEvent(WARN, _uid), str{_str}
     {
-        event = WARN;
-        uid   = _uid;
     }
     std::string str;
 };
@@ -99,10 +94,8 @@ struct ReceiverEventWarn : public ReceiverEvent
 struct ReceiverEventNotice : public ReceiverEvent
 {
     ReceiverEventNotice(const std::string &_str, const uint64_t _uid = 0) :
-        str{_str}
+        ReceiverEvent(NOTICE, _uid), str{_str}
     {
-        event = NOTICE;
-        uid   = _uid;
     }
     std::string str;
 };
@@ -110,33 +103,26 @@ struct ReceiverEventNotice : public ReceiverEvent
 struct ReceiverEventEpoch : public ReceiverEvent
 {
     ReceiverEventEpoch(const EPOCH_t *_epoch, const uint64_t _uid = 0) :
-        epoch{ std::make_shared<Ff::Epoch>(_epoch) }
+        ReceiverEvent(EPOCH, _uid), epoch{ std::make_shared<Ff::Epoch>(_epoch) }
     {
-        event = EPOCH;
-        uid   = _uid;
     }
-   ~ReceiverEventEpoch() { }
     std::shared_ptr<Ff::Epoch> epoch;
 };
 
 struct ReceiverEventKeyval : public ReceiverEvent
 {
     ReceiverEventKeyval(const UBLOXCFG_LAYER_t _layer, const UBLOXCFG_KEYVAL_t *_kv, const int _numKv, const uint64_t _uid = 0) :
-        keyval{ std::make_shared<Ff::KeyVal>(_layer, _kv, _numKv) }
+        ReceiverEvent(KEYVAL, _uid), keyval{ std::make_shared<Ff::KeyVal>(_layer, _kv, _numKv) }
     {
-        event = KEYVAL;
-        uid   = _uid;
     }
     std::shared_ptr<Ff::KeyVal> keyval;
 };
 
 struct ReceiverEventAck : public ReceiverEvent
 {
-    ReceiverEventAck(const bool _ack, const uint64_t _uid = 0)
-        : ack{_ack}
+    ReceiverEventAck(const bool _ack, const uint64_t _uid = 0) :
+        ReceiverEvent(ACK, _uid), ack{_ack}
     {
-        event = ACK;
-        uid   = _uid;
     }
     bool ack;
 };
@@ -147,8 +133,8 @@ struct ReceiverEventAck : public ReceiverEvent
 struct ReceiverCommand
 {
     enum Command_e { NOOP = 0, STOP, START, BAUD, RESET, SEND, GETCONFIG, SETCONFIG };
-    ReceiverCommand() :
-        command{NOOP}, uid{0}
+    ReceiverCommand(const enum Command_e _command, const uint64_t _uid) :
+        command{_command}, uid{_uid}
     {
     }
     virtual ~ReceiverCommand() {};
@@ -158,20 +144,17 @@ struct ReceiverCommand
 
 struct ReceiverCommandStop : public ReceiverCommand
 {
-    ReceiverCommandStop(const uint64_t _uid = 0)
+    ReceiverCommandStop(const uint64_t _uid = 0) :
+        ReceiverCommand(STOP, _uid)
     {
-        command = STOP;
-        uid     = _uid;
     }
 };
 
 struct ReceiverCommandStart : public ReceiverCommand
 {
     ReceiverCommandStart(const std::string &_port, const int _baudrate, const uint64_t _uid = 0) :
-        port{_port}, baudrate{_baudrate}
+        ReceiverCommand(START, _uid), port{_port}, baudrate{_baudrate}
     {
-        command = START;
-        uid     = _uid;
     }
     std::string port;
     int         baudrate;
@@ -180,10 +163,8 @@ struct ReceiverCommandStart : public ReceiverCommand
 struct ReceiverCommandBaud : public ReceiverCommand
 {
     ReceiverCommandBaud(const int _baudrate, const uint64_t _uid = 0) :
-        baudrate{_baudrate}
+        ReceiverCommand(BAUD, _uid), baudrate{_baudrate}
     {
-        command = BAUD;
-        uid     = _uid;
     };
     int baudrate;
 };
@@ -191,10 +172,8 @@ struct ReceiverCommandBaud : public ReceiverCommand
 struct ReceiverCommandReset : public ReceiverCommand
 {
     ReceiverCommandReset(const RX_RESET_t _reset, const uint64_t _uid = 0) :
-        reset{_reset}
+        ReceiverCommand(RESET, _uid), reset{_reset}
     {
-        command = RESET;
-        uid     = _uid;
     }
     RX_RESET_t reset;
 };
@@ -202,12 +181,9 @@ struct ReceiverCommandReset : public ReceiverCommand
 struct ReceiverCommandSend : public ReceiverCommand
 {
     ReceiverCommandSend(const uint8_t *_data, const int _size, const uint64_t _uid = 0) :
-        data{}
+        ReceiverCommand(SEND, _uid), data{}
     {
-        command = SEND;
-        uid     = _uid;
-        data.resize(_size);
-        memcpy(data.data(), _data, data.size());
+        data.assign(_data, &_data[_size]);
     }
     std::vector<uint8_t> data;
 };
@@ -215,10 +191,8 @@ struct ReceiverCommandSend : public ReceiverCommand
 struct ReceiverCommandGetconfig : public ReceiverCommand
 {
     ReceiverCommandGetconfig(const UBLOXCFG_LAYER_t _layer, const std::vector<uint32_t> &_keys, const uint64_t _uid = 0) :
-        layer{_layer}, keys{_keys}
+        ReceiverCommand(GETCONFIG, _uid), layer{_layer}, keys{_keys}
     {
-        command = GETCONFIG;
-        uid     = _uid;
     };
     UBLOXCFG_LAYER_t      layer;
     std::vector<uint32_t> keys;
@@ -227,10 +201,8 @@ struct ReceiverCommandGetconfig : public ReceiverCommand
 struct ReceiverCommandSetconfig : public ReceiverCommand
 {
     ReceiverCommandSetconfig(const bool _ram, const bool _bbr, const bool _flash, const bool _apply, const std::vector<UBLOXCFG_KEYVAL_t> &_kv, const uint64_t _uid = 0) :
-        ram{_ram}, bbr{_bbr}, flash{_flash}, apply{_apply}, kv{_kv}
+        ReceiverCommand(SETCONFIG, _uid), ram{_ram}, bbr{_bbr}, flash{_flash}, apply{_apply}, kv{_kv}
     {
-        command = SETCONFIG;
-        uid     = _uid;
     };
     bool ram;
     bool bbr;
@@ -243,15 +215,9 @@ struct ReceiverCommandSetconfig : public ReceiverCommand
 
 Receiver::Receiver(const std::string &name, std::shared_ptr<Database> database) :
     _name{name},
-    _thread{},
     _dataCb{nullptr},
-    _eventQueue{},
-    _eventMutex{},
-    _commandQueue{},
-    _commandMutex{},
     _state{IDLE},
     _baudrate{0},
-    _rx{nullptr},
     _eventQueueSaturation{false},
     _database{database}
 {
@@ -269,20 +235,7 @@ Receiver::~Receiver()
     _dataCb = nullptr;
 
     // Abort if still connected
-    if (_state != IDLE)
-    {
-        // Force stop
-        Stop(true);
-        // Wait for disconnect
-        while (_state != IDLE)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5) );
-        }
-    }
-    if (_thread)
-    {
-        _thread->join();
-    }
+    Stop();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -321,7 +274,7 @@ bool Receiver::Start(const std::string &port, const int baudrate)
     _SendCommand( std::make_unique<ReceiverCommandStart>(port, baudrate) );
 
     // Start new thread
-    _thread = new std::thread([this]{ _ReceiverThreadWrap(); }); // or: std::thread(&Receiver::_ReceiverThreadWrap, this);
+    _thread = std::make_unique<std::thread>(&Receiver::_ReceiverThreadWrap, this);
 
     if (_thread)
     {
@@ -343,27 +296,25 @@ bool Receiver::Start(const std::string &port, const int baudrate)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool Receiver::Stop(const bool force)
+void Receiver::Stop()
 {
     DEBUG("Receiver::Stop()");
-    if (!force && (_state == IDLE))
-    {
-        return false;
-    }
-    _SendCommand( std::make_unique<ReceiverCommandStop>() );
 
-    // Flag abort to rx handle
-    if (force && (_state != IDLE) && _rx)
+    if (_thread && (std::this_thread::get_id() != _thread->get_id()) )
     {
-        _rx->Abort();
+        _SendCommand( std::make_unique<ReceiverCommandStop>() );
+        if ( (_state != IDLE) && _rx )
+        {
+            _rx->Abort();
+        }
+        _thread->join();
+        _thread = nullptr;
     }
 
     if (_dataCb)
     {
         _dataCb( Data(Data::Type::EVENT_STOP) );
     }
-
-    return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -539,27 +490,14 @@ void Receiver::_SendCommand(std::unique_ptr<ReceiverCommand> command)
 
 /* ****************************************************************************************************************** */
 
-#ifdef _WIN32
-#define THREAD_DEBUG(fmt, args...) /* nothing */  // FIXME
-#else
-#  define THREAD_DEBUG(fmt, args...) DEBUG("thread %s " fmt, _name.c_str(), ## args)
-#endif
+#define _THREAD_DEBUG(fmt, args...) DEBUG("thread %s " fmt, _name.c_str(), ## args)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void Receiver::_ReceiverThreadWrap()
 {
-#ifndef _WIN32
-    char currName[16];
-    char threadName[32]; // max 16 cf. prctl(2)
-    currName[0] = '\0';
-    if (prctl(PR_GET_NAME, currName, 0, 0, 0) == 0)
-    {
-        std::snprintf(threadName, sizeof(threadName), "%s:%s", currName, _name.c_str());
-        prctl(PR_SET_NAME, threadName, 0, 0, 0);
-    }
-#endif
-    THREAD_DEBUG("started (%p)", this);
+    Platform::SetThreadName(_name);
+    _THREAD_DEBUG("started");
 
     _state = BUSY;
 
@@ -569,17 +507,18 @@ void Receiver::_ReceiverThreadWrap()
     }
     catch (const std::exception &e)
     {
-        ERROR("thread %s (%p) crashed: %s", _name.c_str(), this, e.what());
+        ERROR("thread %s crashed: %s", _name.c_str(), e.what());
+        Stop();
     }
 
     _state = IDLE;
 
-    THREAD_DEBUG("stopped (%p)", this);
+    _THREAD_DEBUG("stopped");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static void _receiverMsgCallback(PARSER_MSG_t *msg, void *arg)
+/*static*/ void Receiver::_ReceiverMsgCb(PARSER_MSG_t *msg, void *arg)
 {
     Receiver *rx = static_cast<Receiver *>(arg);
     msg->seq = ++rx->_msgSeq;
@@ -630,13 +569,13 @@ void Receiver::_ReceiverThread()
             {
                 case ReceiverCommand::NOOP:
                 {
-                    THREAD_DEBUG("command NOOP");
+                    _THREAD_DEBUG("command NOOP");
                     break;
                 }
                 case ReceiverCommand::STOP:
                 {
                     _state = BUSY;
-                    THREAD_DEBUG("command STOP");
+                    _THREAD_DEBUG("command STOP");
                     abort = true;
                     break;
                 }
@@ -644,14 +583,15 @@ void Receiver::_ReceiverThread()
                 {
                     _state = BUSY;
                     auto cmd = static_cast<ReceiverCommandStart *>(command.get());
-                    THREAD_DEBUG("command START (%s, %d)", cmd->port.c_str(), cmd->baudrate);
+                    _THREAD_DEBUG("command START (%s, %d)", cmd->port.c_str(), cmd->baudrate);
                     port = cmd->port;
                     int baudrate = cmd->baudrate;
                     _SEND_EVENT(ReceiverEventNotice, "Connecting receiver (" + port + ", " + (baudrate > 0 ? Ff::Sprintf("baudrate %d", baudrate) : "autobaud") +")");
                     _msgSeq = 0;
                     RX_ARGS_t args = RX_ARGS_DEFAULT();
-                    args.msgcb = _receiverMsgCallback;
+                    args.msgcb = _ReceiverMsgCb;
                     args.cbarg = this;
+
                     if (baudrate > 0)
                     {
                         args.autobaud = false;
@@ -691,7 +631,7 @@ void Receiver::_ReceiverThread()
                     _state = BUSY;
                     auto cmd = static_cast<ReceiverCommandBaud *>(command.get());
                     int baudrate = cmd->baudrate;
-                    THREAD_DEBUG("command BAUD (%d)", baudrate);
+                    _THREAD_DEBUG("command BAUD (%d)", baudrate);
                     if (baudrate > 0)
                     {
                         if (rxSetBaudrate(_rx->rx, baudrate))
@@ -729,7 +669,7 @@ void Receiver::_ReceiverThread()
                     _state = BUSY;
                     auto cmd = static_cast<ReceiverCommandReset *>(command.get());
                     const RX_RESET_t reset = cmd->reset;
-                    THREAD_DEBUG("command RESET (%d)", reset);
+                    _THREAD_DEBUG("command RESET (%d)", reset);
                     char str[100];
                     const char *resetStr = rxResetStr(reset);
                     snprintf(str, sizeof(str), "Resetting: %s", resetStr);
@@ -754,14 +694,14 @@ void Receiver::_ReceiverThread()
                 case ReceiverCommand::SEND:
                 {
                     auto cmd = static_cast<ReceiverCommandSend *>(command.get());
-                    THREAD_DEBUG("command SEND (%d)", (int)cmd->data.size());
+                    _THREAD_DEBUG("command SEND (%d)", (int)cmd->data.size());
                     rxSend(_rx->rx, cmd->data.data(), (int)cmd->data.size());
                     break;
                 }
                 case ReceiverCommand::GETCONFIG:
                 {
                     auto cmd = static_cast<ReceiverCommandGetconfig *>(command.get());
-                    THREAD_DEBUG("command GETCONFIG (%s, %d, 0x%016" PRIx64 ")", ubloxcfg_layerName(cmd->layer), (int)cmd->keys.size(), cmd->uid);
+                    _THREAD_DEBUG("command GETCONFIG (%s, %d, 0x%016" PRIx64 ")", ubloxcfg_layerName(cmd->layer), (int)cmd->keys.size(), cmd->uid);
                     _state = BUSY;
                     _SEND_EVENT(ReceiverEventNotice, "Getting configuration for layer " + std::string(ubloxcfg_layerName(cmd->layer)), cmd->uid);
                     UBLOXCFG_KEYVAL_t kv[5000];
@@ -780,7 +720,7 @@ void Receiver::_ReceiverThread()
                 case ReceiverCommand::SETCONFIG:
                 {
                     auto cmd = static_cast<ReceiverCommandSetconfig *>(command.get());
-                    THREAD_DEBUG("command SETCONFIG (%d, %d, %d, %d, %d)", cmd->ram, cmd->bbr, cmd->flash, cmd->apply, (int)cmd->kv.size());
+                    _THREAD_DEBUG("command SETCONFIG (%d, %d, %d, %d, %d)", cmd->ram, cmd->bbr, cmd->flash, cmd->apply, (int)cmd->kv.size());
                     _state = BUSY;
                     std::string layers = (cmd->ram   ? std::string(",RAM")   : std::string("")) +
                                          (cmd->bbr   ? std::string(",BBR")   : std::string("")) +
@@ -881,7 +821,7 @@ void Receiver::_SendEvent(std::unique_ptr<ReceiverEvent> event)
     }
     else if (_eventQueueSaturation && (size < 10))
     {
-        THREAD_DEBUG("Resuming queuing message.");
+        _THREAD_DEBUG("Resuming queuing message.");
         _eventQueueSaturation = false;
     }
 

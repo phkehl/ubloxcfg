@@ -207,7 +207,7 @@ bool GuiWin::_DrawWindowBegin()
 
     // Start drawing window
     {
-        if ( (_winFlags & ImGuiWindowFlags_AlwaysAutoResize) == 0)
+        if (!CHKBITS(_winFlags, ImGuiWindowFlags_AlwaysAutoResize))
         {
             // > 0 = units of character width/height, < 0 = fraction of display (main window) size
             /*ImVec2 size = _winSize;

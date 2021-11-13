@@ -48,6 +48,7 @@ struct Port
 };
 const std::vector<Port> &EnumeratePorts(const bool enumerate = true);
 
+void SetThreadName(const std::string &name);
 
 /* ****************************************************************************************************************** */
 } // namespace Platform

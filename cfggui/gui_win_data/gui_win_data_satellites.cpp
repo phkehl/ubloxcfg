@@ -225,9 +225,9 @@ void GuiWinDataSatellites::DrawWindow()
         Gui::ItemTooltip("Clear all data");
 
         // Age
-        if (_epoch && !_receiver->IsIdle())
+        if (_epoch && _receiver && !_receiver->IsIdle())
         {
-            ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - (3 * _winSettings->charSize.x) );
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - (3 * _winSettings->charSize.x) );
             ImGui::Text("%.1f", _epochAge);
         }
     }

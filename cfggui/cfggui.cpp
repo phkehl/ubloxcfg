@@ -27,21 +27,13 @@
 #include <memory>
 
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
-#include <SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
-#  include <SDL_opengles2.h>
+#  include <GLES2/gl2.h>
 #endif
-
-// #if defined(IMGUI_IMPL_OPENGL_ES2)
-// #  include <GLES2/gl2.h>
-// #elif defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-// #  include <GL/gl3w.h>
-// #else
-// #  error Nope!
-// #endif
+#include <GLFW/glfw3.h>
 
 #include "implot.h"
 
@@ -62,6 +54,30 @@ static void sInitLog(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG
         return;
     }
     fputs(str, stderr);
+}
+
+static void sGlfwErrorCallback(int error, const char* description)
+{
+    ERROR("GLFW error %d: %s", error, description);
+}
+
+static bool sWindowActivity;
+
+static void sCursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
+{
+    UNUSED(window);
+    UNUSED(xpos);
+    UNUSED(ypos);
+    sWindowActivity = true;
+}
+
+static void sMouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+{
+    UNUSED(window);
+    UNUSED(button);
+    UNUSED(action);
+    UNUSED(mods);
+    sWindowActivity = true;
 }
 
 int main(int argc, char **argv)
@@ -95,79 +111,67 @@ int main(int argc, char **argv)
 
     int windowWidth  = 1280;
     int windowHeight = 768;
-    int windowPosX   = SDL_WINDOWPOS_UNDEFINED;
-    int windowPosY   = SDL_WINDOWPOS_UNDEFINED;
+    int windowPosX   = -1;
+    int windowPosY   = -1;
     const int   kWindowMinWidth  =  640;
     const int   kWindowMinHeight =  384;
     const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
 
-    SDL_version sdlVerC;
-    SDL_version sdlVerL;
-    SDL_VERSION(&sdlVerC);
-    SDL_GetVersion(&sdlVerL);
-    DEBUG("SDL %d.%d.%d (compiled %d.%d.%d)", sdlVerL.major, sdlVerL.minor, sdlVerL.patch, sdlVerC.major, sdlVerC.minor, sdlVerC.patch);
-
-    // Setup SDL
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
+    DEBUG("GLFW: %s", glfwGetVersionString());
+    glfwSetErrorCallback(sGlfwErrorCallback);
+    if (glfwInit() != GLFW_TRUE)
     {
-        ERROR("Error: %s", SDL_GetError());
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     // https://en.wikipedia.org/wiki/OpenGL_Shading_Language
 #if defined(IMGUI_IMPL_OPENGL_ES2)
     // GL ES 2.0 + GLSL 100
     const char *glsl_version = "#version 100";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    glfwWindowHint(SDL_GL_CONTEXT_FLAGS, 0);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     DEBUG("OpenGL ES 2.0, GLSL 1.00");
 #elif defined(_WIN32)
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     DEBUG("OpenGL 3.2, GLSL 1.30");
 ##elif defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char *glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // Always required on Mac
     DEBUG("OpenGL 3.2, GLSL 1.50");
 #else
     // GL 3.2 + GLSL 150
     const char *glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     DEBUG("OpenGL 3.2, GLSL 1.50");
 #endif
 
     // Create window with graphics context
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_WindowFlags sdlWindowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window     *sdlWindow      = SDL_CreateWindow(kWindowTitle, windowPosX, windowPosY, windowWidth, windowHeight, sdlWindowFlags);
-    SDL_SetWindowMinimumSize(sdlWindow, kWindowMinWidth, kWindowMinHeight);
-    SDL_GLContext   sdlGlContext   = SDL_GL_CreateContext(sdlWindow);
-    SDL_GL_MakeCurrent(sdlWindow, sdlGlContext);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, kWindowTitle, NULL, NULL);
+    if (window == NULL)
+    {
+        return 1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+    glfwSetWindowSizeLimits(window, kWindowMinWidth, kWindowMinHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
-    // Initialize OpenGL loader
-// #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
-//     if (gl3wInit() != 0)
-//     {
-//         ERROR("Failed to initialize OpenGL loader!");
-//         return EXIT_FAILURE;
-//     }
-// #endif
+    // User activity detection, for frame rate control
+    glfwSetCursorPosCallback(window, sCursorPositionCallback);
+    glfwSetMouseButtonCallback(window, sMouseButtonCallback);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -175,12 +179,8 @@ int main(int argc, char **argv)
     ImPlot::CreateContext();
 
     // Setup Platform/Renderer bindings
-    ImGui_ImplSDL2_InitForOpenGL(sdlWindow, sdlGlContext);
-#ifdef _WIN32
-    ImGui_ImplOpenGL2_Init();
-#else
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
-#endif
 
     /* ***** Create application ************************************************************************************* */
 
@@ -203,16 +203,18 @@ int main(int argc, char **argv)
     // Restore previous window geometry
     if (app && settings)
     {
-        std::string geometry;
-        settings->GetValue("Geometry", geometry, "");
+        std::string geometry = settings->GetValue("Geometry");
         int w, h, x, y;
-        SDL_DisplayMode dm;
-        if ( (SDL_GetDesktopDisplayMode(0, &dm) == 0) &&
-            (std::sscanf(geometry.c_str(), "%d,%d,%d,%d", &w, &h, &x, &y) == 4) &&
-            (w < dm.w) && (h < dm.h) && (x >= 0) && (y >= 0) && (x < (dm.w - 100)) && (y < (dm.h - 100)) )
+        if (std::sscanf(geometry.c_str(), "%d,%d,%d,%d", &w, &h, &x, &y) == 4)
         {
-            SDL_SetWindowPosition(sdlWindow, x, y);
-            SDL_SetWindowSize(sdlWindow, w, h);
+            if ( (x >= 0) && (y >= 0) )
+            {
+                glfwSetWindowPos(window, x, y);
+            }
+            if (( w >= kWindowMinWidth) && (h >= kWindowMinHeight) )
+            {
+                glfwSetWindowSize(window, w, h);
+            }
         }
     }
 
@@ -221,111 +223,85 @@ int main(int argc, char **argv)
     // Main loop
     uint32_t lastDraw = 0;
     uint32_t lastMark = 0;
-    bool wantClose = false;
     while (!done)
     {
-        bool haveEvent = false;
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            switch (event.type)
-            {
-                case SDL_QUIT:
-                    wantClose = true;
-                    break;
-                case SDL_WINDOWEVENT:
-                    if (event.window.windowID == SDL_GetWindowID(sdlWindow))
-                    {
-                        switch (event.window.event)
-                        {
-                            case SDL_WINDOWEVENT_CLOSE:
-                                wantClose = true;
-                                break;
-                            case SDL_WINDOWEVENT_MOVED:
-                                windowPosX = event.window.data1;
-                                windowPosY = event.window.data2;
-                                break;
-                            case SDL_WINDOWEVENT_RESIZED:
-                                windowWidth = event.window.data1;
-                                windowHeight = event.window.data2;
-                                break;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            haveEvent = true;
-        }
+        glfwPollEvents();
 
-        uint32_t now = SDL_GetTicks();
+        uint32_t now = TIME();
         const uint32_t markInterval = 10000;
         if ((now - lastMark) >= markInterval)
         {
             DEBUG("----- MARK -----");
             lastMark = ((now + (markInterval / 2 )) / markInterval) * markInterval;
         }
-        if (haveEvent || ((now - lastDraw) > (1000/10)))
+
+        if ( sWindowActivity || ((now - lastDraw) > (1000/10)))
         {
             lastDraw = now;
+            sWindowActivity = false;
+
+            app->PerfTic(GuiApp::Perf_e::NEWFRAME);
 
             // Update font if necessary
             if (app->PrepFrame())
             {
-#ifdef _WIN32
-                ImGui_ImplOpenGL2_CreateFontsTexture();
-#else
                 ImGui_ImplOpenGL3_CreateFontsTexture();
-#endif
             }
 
             // Start the Dear ImGui frame
-#ifdef _WIN32
-            ImGui_ImplOpenGL2_NewFrame();
-#else
             ImGui_ImplOpenGL3_NewFrame();
-#endif
-            ImGui_ImplSDL2_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             app->NewFrame();
 
+            app->PerfToc(GuiApp::Perf_e::NEWFRAME);
+
             // Do things
+            app->PerfTic(GuiApp::Perf_e::LOOP);
             app->Loop();
+            app->PerfToc(GuiApp::Perf_e::LOOP);
 
             // Compose the frame
+            app->PerfTic(GuiApp::Perf_e::DRAW);
             app->DrawFrame();
+            app->PerfToc(GuiApp::Perf_e::DRAW);
 
             // Confirm close modal
-            if (wantClose)
+            if (glfwWindowShouldClose(window))
             {
+                bool wantClose = true;
                 app->ConfirmClose(wantClose, done);
+                glfwSetWindowShouldClose(window, wantClose);
             }
 
             // Render
+            app->PerfTic(GuiApp::Perf_e::RENDER_IM);
             //ImGui::EndFrame();
             ImGui::Render();
+            app->PerfToc(GuiApp::Perf_e::RENDER_IM);
+            app->PerfTic(GuiApp::Perf_e::RENDER_GL);
             glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
             const auto c = app->BackgroundColour();
             glClearColor(c.x, c.y, c.z, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
-            SDL_SetWindowOpacity(sdlWindow, c.w < 0.2f ? 0.2f : c.w);
-#ifdef _WIN32
-            ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
-#else
+            glClear(GL_COLOR_BUFFER_BIT); // FIXME: why does this take almost 15 ms when moving the mouse but not use any CPU (it seems..)???
+            glfwSetWindowOpacity(window, c.w < 0.2f ? 0.2f : c.w);
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-#endif
-            SDL_GL_SwapWindow(sdlWindow);
+            app->PerfToc(GuiApp::Perf_e::RENDER_GL);
+
+            glfwSwapBuffers(window);
+            glFlush();
         }
         else
         {
-            SDL_Delay(5);
+            SLEEP(5);
         }
     }
 
     if (app && settings)
     {
         // Save window geometry
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+        glfwGetWindowPos(window, &windowPosX, &windowPosY);
         settings->SetValue("Geometry", Ff::Sprintf("%d,%d,%d,%d", windowWidth, windowHeight, windowPosX, windowPosY));
 
         // Tear down
@@ -337,19 +313,13 @@ int main(int argc, char **argv)
 
     /* ***** Cleanup ************************************************************************************************ */
 
-#ifdef _WIN32
-    ImGui_ImplOpenGL2_Shutdown();
-#else
     ImGui_ImplOpenGL3_Shutdown();
-#endif
-    ImGui_ImplSDL2_Shutdown();
-
+    ImGui_ImplGlfw_Shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
-    SDL_GL_DeleteContext(sdlGlContext);
-    SDL_DestroyWindow(sdlWindow);
-    SDL_Quit();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     return EXIT_SUCCESS;
 }

@@ -99,19 +99,17 @@ endif
 # cfggui
 CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
 CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) 3rdparty/stuff/platform_folders.cpp
-CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c
+CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3rdparty/stuff/tetris.c
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
 LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++
-CXXFLAGS_cfggui       += $(shell sdl2-config --cflags) $(shell curl-config --cflags)
-LDFLAGS_cfggui        += $(shell sdl2-config --libs)   $(shell curl-config --libs)
+CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 2>/dev/null)          $(shell curl-config --cflags 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --static --libs glfw3 2>/dev/null)   $(shell curl-config --libs 2>/dev/null)
 ifeq ($(MSYSTEM),MINGW64)
 LDFLAGS_cfggui        += -lglu32 -lopengl32 -luuid -lole32 -lxinput
 CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_ES2
 else
 LDFLAGS_cfggui        += -lGL -ldl
-#CFILES_cfggui         += 3rdparty/imgui/GL/gl3w.c
-#CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_LOADER_GL3W
 endif
 
 $(CXXFILES_cfggui): $(BUILDDIR)/config.h $(BUILDDIR)/tilenope.c $(BUILDDIR)/tileload.c $(BUILDDIR)/tilefail.c $(BUILDDIR)/tiletest.c $(BUILDDIR)/maps_conf.c

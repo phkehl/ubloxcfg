@@ -220,6 +220,11 @@ void GuiSettings::SetValue(const std::string &key, const std::string &value)
     _confFile.Set(key, value);
 }
 
+void GuiSettings::SetValueList(const std::string &key, const std::vector<std::string> &list)
+{
+    _confFile.Set(key, Ff::StrJoin(list, ","));
+}
+
 void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
 {
     if (!_confFile.Get(key, value))
@@ -270,6 +275,12 @@ std::string GuiSettings::GetValue(const std::string &key)
     std::string value;
     GetValue(key, value, "");
     return value;
+}
+
+std::vector<std::string> GuiSettings::GetValueList(const std::string &key)
+{
+    std::string value = GetValue(key);
+    return value.empty() ? std::vector<std::string>() : Ff::StrSplit(value, ",");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

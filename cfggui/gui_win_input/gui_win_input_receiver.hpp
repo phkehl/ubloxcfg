@@ -59,8 +59,8 @@ class GuiWinInputReceiver : public GuiWinInput
 
         double               _epochTs;
 
-        std::unique_ptr<GuiWinFileDialog> _recordFileDialog;
-        std::shared_ptr<std::string> _recordFileName;
+        GuiWinFileDialog     _recordFileDialog;
+        std::string          _recordFilePath;
         std::unique_ptr<std::ofstream> _recordHandle;
         uint32_t             _recordSize;
         std::string          _recordMessage;

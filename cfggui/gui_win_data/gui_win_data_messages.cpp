@@ -36,7 +36,7 @@ GuiWinDataMessages::GuiWinDataMessages(const std::string &name, std::shared_ptr<
     _winSettings->GetValue(_winName + ".showHexDump", _showHexDump, false);
     _winSettings->GetValue(_winName + ".showList",    _showList,    false);
 
-    _InitMsgRates();
+    _InitMsgRatesAndPolls();
     ClearData();
 }
 
@@ -71,7 +71,12 @@ GuiWinDataMessages::MsgRate::MsgRate(const UBLOXCFG_MSGRATE_t *_rate) :
     menuNameDisabled += msgName + "##" + msgName;
 }
 
-void GuiWinDataMessages::_InitMsgRates()
+GuiWinDataMessages::MsgPoll::MsgPoll(const uint8_t _clsId, const uint8_t _msgId) :
+    clsId{_clsId}, msgId{_msgId}
+{
+}
+
+void GuiWinDataMessages::_InitMsgRatesAndPolls()
 {
     if (!_msgRates.empty())
     {
@@ -99,7 +104,24 @@ void GuiWinDataMessages::_InitMsgRates()
 
         // Add rate info
         rates->emplace_back(rate);
+
+
+        // Add poll info (some cannot be polled)
+        if ( (msgName != "UBX-RXM-SFRBX") && (msgName != "UBX-RXM-RTCM") )
+        {
+            uint8_t clsId;
+            uint8_t msgId;
+            if ( ubxMessageClsId(rate->msgName, &clsId, &msgId) /* ||
+                nmea3MessageClsId(rate->msgName, &clsId, &msgId) ||   // FIXME: poll NMEA or RTCM
+                rtcm3MessageClsId(rate->msgName, &clsId, &msgId)*/ )  //        doesn't work this way.. :-(
+            {
+                _msgPolls.insert({ msgName, MsgPoll(clsId, msgId) });
+            }
+        }
     }
+
+    // Pollable non-periodic messages
+    _msgPolls.insert({ "UBX-MON-VER", MsgPoll(UBX_MON_CLSID, UBX_MON_VER_MSGID) });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -198,42 +220,7 @@ void GuiWinDataMessages::MsgInfo::Update(const std::shared_ptr<Ff::ParserMsg> &_
     rate = 1e3f / ((float)sum / (float)num);
 
     // Update hexdump
-    const uint8_t *data = msg->data;
-    const int size = msg->size;
-
-    hexdump.clear();
-    const char i2hex[] = "0123456789abcdef";
-    const uint8_t *pData = data;
-    for (int ix = 0; ix < size; )
-    {
-        char str[70];
-        memset(str, ' ', sizeof(str));
-        str[50] = '|';
-        str[67] = '|';
-        str[68] = '\0';
-        for (int ix2 = 0; (ix2 < 16) && ((ix + ix2) < size); ix2++)
-        {
-            //           1         2         3         4         5         6
-            // 012345678901234567890123456789012345678901234567890123456789012345678
-            // xx xx xx xx xx xx xx xx  xx xx xx xx xx xx xx xx  |................|\0
-            // 0  1  2  3  4  5  6  7   8  9  10 11 12 13 14 15
-            const uint8_t c = pData[ix + ix2];
-            int pos1 = 3 * ix2;
-            int pos2 = 51 + ix2;
-            if (ix2 > 7)
-            {
-                   pos1++;
-            }
-            str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
-            str[pos1 + 1] = i2hex[  c       & 0xf ];
-
-            str[pos2] = isprint((int)c) ? c : '.';
-        }
-        char buf[1024];
-        std::snprintf(buf, sizeof(buf), "0x%04" PRIx8 " %05d  %s", ix, ix, str);
-        hexdump.push_back(buf);
-        ix += 16;
-    }
+    hexdump = Ff::HexDump(msg->data, msg->size);
 
     // Update renderer
     if (msg)
@@ -371,35 +358,37 @@ void GuiWinDataMessages::_DrawListButtons()
     const bool ctrlEnabled = _receiver && _receiver->IsReady();
 
     // Quick message enable/disable
-    if (!ctrlEnabled) { Gui::BeginDisabled(); }
-    if (ImGui::Button(ICON_FK_BARS "##Quick", _winSettings->iconButtonSize))
     {
-        ImGui::OpenPopup("Quick");
-    }
-
-    if (ImGui::IsPopupOpen("Quick"))
-    {
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, _winSettings->style.Colors[ImGuiCol_MenuBarBg]);
-        if (ImGui::BeginPopup("Quick"))
+        ImGui::BeginDisabled(!ctrlEnabled);
+        if (ImGui::Button(ICON_FK_BARS "##Quick", _winSettings->iconButtonSize))
         {
-            _DrawMessagesMenu();
-            ImGui::EndPopup();
+            ImGui::OpenPopup("Quick");
         }
-        ImGui::PopStyleColor();
-    }
+        if (ImGui::IsPopupOpen("Quick"))
+        {
+            ImGui::PushStyleColor(ImGuiCol_PopupBg, _winSettings->style.Colors[ImGuiCol_MenuBarBg]);
+            if (ImGui::BeginPopup("Quick"))
+            {
+                _DrawMessagesMenu();
+                ImGui::EndPopup();
+            }
+            ImGui::PopStyleColor();
+        }
 
-    Gui::ItemTooltip("Enable/disable output messages");
-    if (!ctrlEnabled) { Gui::EndDisabled(); }
+        Gui::ItemTooltip("Enable/disable output messages");
+        ImGui::EndDisabled();
+    }
 
     ImGui::SameLine();
 
     // Clear
-    if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
     {
-        ClearData();
+        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+        {
+            ClearData();
+        }
+        Gui::ItemTooltip("Clear all data");
     }
-    Gui::ItemTooltip("Clear all data");
-
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -444,24 +433,24 @@ void GuiWinDataMessages::_DrawMessagesMenu()
                 // UBX-CLASS-MESSAGE menu entry
                 if (ImGui::BeginMenu(enabled ? rate.menuNameEnabled.c_str() : rate.menuNameDisabled.c_str()))
                 {
-                    if (enabled) { Gui::BeginDisabled(); }
+                    ImGui::BeginDisabled(enabled);
                     if (ImGui::MenuItem("Enable"))
                     {
                         _SetRate(rate, 1);
                     }
-                    if (enabled) { Gui::EndDisabled(); }
-                    if (!enabled) { Gui::BeginDisabled(); }
+                    ImGui::EndDisabled();
+                    ImGui::BeginDisabled(!enabled);
                     if (ImGui::MenuItem("Disable"))
                     {
                         _SetRate(rate, 0);
                     }
-                    if (!enabled) { Gui::EndDisabled(); }
-                    if (enabled || !rate.haveIds) { Gui::BeginDisabled(); }
+                    ImGui::EndDisabled();
+                    ImGui::BeginDisabled(enabled || (_msgPolls.find(rate.msgName) == _msgPolls.end()) );
                     if (ImGui::MenuItem("Poll"))
                     {
-                        _SetRate(rate, -1);
+                        _PollMsg(_msgPolls.find(rate.msgName)->second);
                     }
-                    if (enabled || !rate.haveIds) { Gui::EndDisabled(); }
+                    ImGui::EndDisabled();
 
                     ImGui::EndMenu();
                 }
@@ -477,18 +466,8 @@ void GuiWinDataMessages::_DrawMessagesMenu()
 
 void GuiWinDataMessages::_SetRate(const GuiWinDataMessages::MsgRate &def, const int rate)
 {
-    // Poll
-    if (rate < 0)
-    {
-        uint8_t poll[UBX_FRAME_SIZE];
-        const int size = ubxMakeMessage(def.clsId, def.msgId, poll, 0, poll);
-        if (size > 0)
-        {
-            _receiver->Send(poll, size, _winUid);
-        }
-    }
     // Enable/disable
-    else
+    if (rate >= 0)
     {
         std::vector<UBLOXCFG_KEYVAL_t> keyVal;
         if (def.rate->itemUart1 != NULL) { keyVal.push_back({ .id = def.rate->itemUart1->id, .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
@@ -500,6 +479,16 @@ void GuiWinDataMessages::_SetRate(const GuiWinDataMessages::MsgRate &def, const 
         {
             _receiver->SetConfig(true, false, false, false, keyVal, _winUid);
         }
+    }
+}
+
+void GuiWinDataMessages::_PollMsg(const MsgPoll &def)
+{
+    uint8_t poll[UBX_FRAME_SIZE] = { 0 };
+    const int size = ubxMakeMessage(def.clsId, def.msgId, poll, 0, poll);
+    if (size > 0)
+    {
+        _receiver->Send(poll, size, _winUid);
     }
 }
 
@@ -515,17 +504,49 @@ void GuiWinDataMessages::_DrawMessageButtons()
     ImGui::SameLine();
 
     // Clear
-    if (!haveDispEntry) { Gui::BeginDisabled(); }
-    if (ImGui::Button(ICON_FK_ERASER "##ClearMsg", _winSettings->iconButtonSize))
     {
-        _displayedEntry->second.Clear();
+        ImGui::BeginDisabled(!haveDispEntry);
+        if (ImGui::Button(ICON_FK_ERASER "##ClearMsg", _winSettings->iconButtonSize))
+        {
+            _displayedEntry->second.Clear();
+        }
+        ImGui::EndDisabled();
+        Gui::ItemTooltip("Clear message data");
     }
-    Gui::ItemTooltip("Clear message data");
-    if (!haveDispEntry) { Gui::EndDisabled(); }
 
+    ImGui::SameLine();
+
+    // Poll
+    {
+        ImGui::BeginDisabled( !haveDispEntry || !_receiver || !_receiver->IsReady() ||
+            (_msgPolls.find(_displayedEntry->first) == _msgPolls.end()) );
+        if (ImGui::Button(ICON_FK_REFRESH "##PollMsg", _winSettings->iconButtonSize))
+        {
+            _PollMsg(_msgPolls.find(_displayedEntry->first)->second);
+        }
+        ImGui::EndDisabled();
+        Gui::ItemTooltip("Poll message");
+    }
+
+    ImGui::SameLine();
+
+    // Step
+    {
+        ImGui::BeginDisabled( !haveDispEntry || !_logfile || !_logfile->CanStep() );
+        if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", _winSettings->iconButtonSize))
+        {
+            _logfile->StepMsg(_displayedEntry->first);
+        }
+        ImGui::EndDisabled();
+        Gui::ItemTooltip("Step message");
+    }
+
+    // Optional message view buttons
     if (haveDispEntry)
     {
+        ImGui::PushID(std::addressof(_displayedEntry->second.renderer));
         _displayedEntry->second.renderer->Buttons();
+        ImGui::PopID();
     }
 }
 
@@ -665,10 +686,10 @@ void GuiWinDataMessages::_DrawMessage()
             ImGui::PopStyleVar();
         }
         ImGui::EndChild();
-        if (ImGui::BeginPopupContextItem("Constants"))
+        if (ImGui::BeginPopupContextItem("Copy"))
         {
             std::string text = "";
-            if (ImGui::MenuItem("Copy (all)"))
+            if (ImGui::MenuItem("Copy (full dump)"))
             {
                 for (const auto &line: info.hexdump)
                 {
@@ -676,7 +697,7 @@ void GuiWinDataMessages::_DrawMessage()
                     text += "\n";
                 }
             }
-            if (ImGui::MenuItem("Copy (data)"))
+            if (ImGui::MenuItem("Copy (hex only)"))
             {
                 for (const auto &line: info.hexdump)
                 {
@@ -684,6 +705,16 @@ void GuiWinDataMessages::_DrawMessage()
                     text += "\n";
                 }
             }
+
+            const bool isStr = msg->type == Ff::ParserMsg::Type_e::NMEA;
+
+            ImGui::BeginDisabled(!isStr);
+            if (ImGui::MenuItem("Copy (string)"))
+            {
+                text.assign(msg->data, msg->data + msg->size);
+            }
+            ImGui::EndDisabled();
+
             if (!text.empty())
             {
                 ImGui::SetClipboardText(text.c_str());

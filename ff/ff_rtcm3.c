@@ -49,6 +49,53 @@ bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int 
     return res < size;
 }
 
+const char *rtcm3TypeDesc(const int msgType, const int subType)
+{
+    switch (msgType)
+    {
+        case 1001: return "L1-only GPS RTK observables";
+        case 1002: return "Extended L1-only GPS RTK observables";
+        case 1003: return "L1/L2 GPS RTK observables";
+        case 1004: return "Extended L1/L2 GPS RTK observables";
+        case 1005: return "Stationary RTK reference station ARP";
+        case 1006: return "Stationary RTK reference station ARP with antenna height";
+        case 1007: return "Antenna descriptor";
+        case 1008: return "Antenna descriptor and serial number";
+        case 1009: return "L1-only GLONASS RTK observables";
+        case 1032: return "Physical reference station position message";
+        case 1033: return "Receiver and antenna descriptors";
+
+        case 1010: return "Extended L1-only GLONASS RTK observables";
+        case 1011: return "L1/L2 GLONASS RTK observables";
+        case 1012: return "Extended L1/L2 GLONASS RTK observables";
+        case 1030: return "GPS network RTK residual message";
+        case 1031: return "GLONASS network RTK residual message";
+        case 1230: return "GLONASS code-phase biases";
+
+        case 1074: return "GPS MSM4 (full C, full L, S)";
+        case 1075: return "GPS MSM5 (full C, full L, S, D)";
+        case 1077: return "GPS MSM7 (ext full C, ext full L, S, D)";
+        case 1084: return "GLONASS MSM4 (full C, full L, S)";
+        case 1085: return "GLONASS MSM5 (full C, full L, S, D)";
+        case 1087: return "GLONASS MSM7 (ext full C, ext full L, S, D)";
+        case 1094: return "Galileo MSM4 (full C, full L, S)";
+        case 1095: return "Galileo MSM5 (full C, full L, S, D)";
+        case 1097: return "Galileo MSM7 (ext full C, ext full L, S, D)";
+        case 1124: return "BeiDou MSM4 (full C, full L, S)";
+        case 1125: return "BeiDou MSM5 (full C, full L, S, D)";
+        case 1127: return "BeiDou MSM7 (ext full C, ext full L, S, D)";
+
+        case 4072: switch (subType)
+                   {
+                       case 0: return "u-blox proprietary: Reference station PVT";
+                       case 1: return "u-blox proprietary: Additional reference station information";
+                   }
+                   break;
+    }
+
+    return NULL;
+}
+
 bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
     if (info == NULL)
@@ -62,61 +109,6 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
     }
     int len = 0;
     const uint32_t type = RTCM3_TYPE(msg);
-    switch (type)
-    {
-        case 1001:
-            len = snprintf(info, size, "L1-only GPS RTK observables");
-            break;
-        case 1002:
-            len = snprintf(info, size, "Extended L1-only GPS RTK observables");
-            break;
-        case 1003:
-            len = snprintf(info, size, "L1/L2 GPS RTK observables");
-            break;
-        case 1004:
-            len = snprintf(info, size, "Extended L1/L2 GPS RTK observables");
-            break;
-        case 1009:
-            len = snprintf(info, size, "L1-only GLONASS RTK observables");
-            break;
-        case 1010:
-            len = snprintf(info, size, "Extended L1-only GLONASS RTK observables");
-            break;
-        case 1011:
-            len = snprintf(info, size, "L1/L2 GLONASS RTK observables");
-            break;
-        case 1012:
-            len = snprintf(info, size, "Extended L1/L2 GLONASS RTK observables");
-            break;
-        case 1030:
-            len = snprintf(info, size, "GPS network RTK residual message");
-            break;
-        case 1031:
-            len = snprintf(info, size, "GLONASS network RTK residual message");
-            break;
-        case 1230:
-            len = snprintf(info, size, "GLONASS code-phase biases");
-            break;
-        case 4072:
-            if (msgSize > (RTCM3_HEAD_SIZE + 2 + 1))
-            {
-                const uint32_t subtype = RTCM3_4072_SUBTYPE(msg);
-                switch (subtype)
-                {
-                    case 0:
-                        len = snprintf(info, size, "u-blox proprietary: Reference station PVT");
-                        break;
-                    case 1:
-                        len = snprintf(info, size, "u-blox proprietary: Additional reference station information");
-                        break;
-                    default:
-                        len = snprintf(info, size, "u-blox proprietary: Unknown sub-type %u", subtype);
-                        break;
-                }
-            }
-            break;
-    }
-
 
     if ( (len == 0) && ((type == 1005) || (type == 1006) || (type == 1032)) )
     {
@@ -124,21 +116,6 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         if (rtcm3GetArp(msg, &arp))
         {
             len = snprintf(info, size, "(#%d) %.2f %.2f %.2f - ", arp.refStaId, arp.X, arp.Y, arp.Z);
-        }
-        if (len < size)
-        {
-            switch (type)
-            {
-                case 1005:
-                    len = snprintf(&info[len], size - len, "Stationary RTK reference station ARP");
-                    break;
-                case 1006:
-                    len = snprintf(&info[len], size - len, "Stationary RTK reference station ARP with antenna height");
-                    break;
-                case 1032:
-                    len = snprintf(&info[len], size - len, "Physical reference station position message");
-                    break;
-            }
         }
     }
 
@@ -149,21 +126,6 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         {
             len = snprintf(info, size, "(#%d) [%s] [%s] %u [%s] [%s] [%s] - ",
                 ant.refStaId, ant.antDesc, ant.antSerial, ant.refStaId, ant.rxType, ant.rxFw, ant.rxSerial);
-        }
-        if (len < size)
-        {
-            switch (type)
-            {
-                case 1007:
-                    len = snprintf(&info[len], size - len, "Antenna descriptor");
-                    break;
-                case 1008:
-                    len = snprintf(&info[len], size - len, "Antenna descriptor and serial number");
-                    break;
-                case 1033:
-                    len = snprintf(&info[len], size - len, "Receiver and antenna descriptors");
-                    break;
-            }
         }
     }
 
@@ -179,51 +141,25 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
             len = snprintf(info, size, "(#%d) %010.3f (%d * %d) - ",
                 header.refStaId, header.anyTow, header.numSat, header.numSig);
         }
-
-        if (len < size)
-        {
-            switch (type)
-            {
-                case 1074:
-                    len = snprintf(&info[len], size - len, "GPS MSM4 (full C, full L, S)") + len;
-                    break;
-                case 1075:
-                    len = snprintf(&info[len], size - len, "GPS MSM5 (full C, full L, S, D)") + len;
-                    break;
-                case 1077:
-                    len = snprintf(&info[len], size - len, "GPS MSM7 (ext full C, ext full L, S, D)") + len;
-                    break;
-                case 1084:
-                    len = snprintf(&info[len], size - len, "GLONASS MSM4 (full C, full L, S)") + len;
-                    break;
-                case 1085:
-                    len = snprintf(&info[len], size - len, "GLONASS MSM5 (full C, full L, S, D)") + len;
-                    break;
-                case 1087:
-                    len = snprintf(&info[len], size - len, "GLONASS MSM7 (ext full C, ext full L, S, D)") + len;
-                    break;
-                case 1094:
-                    len = snprintf(&info[len], size - len, "Galileo MSM4 (full C, full L, S)") + len;
-                    break;
-                case 1095:
-                    len = snprintf(&info[len], size - len, "Galileo MSM5 (full C, full L, S, D)") + len;
-                    break;
-                case 1097:
-                    len = snprintf(&info[len], size - len, "Galileo MSM7 (ext full C, ext full L, S, D)") + len;
-                    break;
-                case 1124:
-                    len = snprintf(&info[len], size - len, "BeiDou MSM4 (full C, full L, S)") + len;
-                    break;
-                case 1125:
-                    len = snprintf(&info[len], size - len, "BeiDou MSM5 (full C, full L, S, D)") + len;
-                    break;
-                case 1127:
-                    len = snprintf(&info[len], size - len, "BeiDou MSM7 (ext full C, ext full L, S, D)") + len;
-                    break;
-            }
-        }
     }
 
+    if (len < size)
+    {
+        const char *typeDescStr = NULL;
+        if (type == 4072)
+        {
+            const uint32_t subtype = (msgSize > (RTCM3_HEAD_SIZE + 2 + 1)) ? RTCM3_4072_SUBTYPE(msg) : -1;
+            typeDescStr = rtcm3TypeDesc(type, subtype);
+        }
+        else
+        {
+            typeDescStr = rtcm3TypeDesc(type, 0);
+        }
+        if (typeDescStr != NULL)
+        {
+            len += snprintf(&info[len], size - len, "%s", typeDescStr);
+        }
+    }
 
     return (len > 0) && (len < size);
 }

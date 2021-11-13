@@ -476,7 +476,7 @@ int main(int argc, char **argv)
     if (gArgs.cmd == NULL)
     {
         WARNING("Try '%s -h'.", argv[0]);
-        res = false;;
+        res = false;
     }
 
     // Open input file

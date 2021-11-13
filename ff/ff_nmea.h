@@ -26,7 +26,8 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
-#define NMEA_PREAMBLE  '$'
+#define NMEA_FRAME_SIZE  6   // "$*cc\r\n"
+#define NMEA_PREAMBLE    '$'
 
 typedef struct NMEA_TIME_s
 {
@@ -159,8 +160,10 @@ typedef enum NMEA_TYPE_e
 typedef struct NMEA_MSG_s
 {
     char talker[3];      //!< Talker ID ("GP", "GN", "P", ...)
-    char formatter[8];   //!< "GGA", "RMC", but also "UBX_nn"
+    char formatter[8];   //!< Formatter ("GGA", "RMC", "UBX", ...)
     char info[200];
+    int  payloadIx0;
+    int  payloadIx1;
     NMEA_TYPE_t type;
     union
     {
@@ -190,6 +193,20 @@ bool nmeaDecode(NMEA_MSG_t *nmea, const uint8_t *msg, const int msgSize);
     \returns true if \c name was found and \c clsId and \c msgId are valid
 */
 bool nmeaMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
+
+//! Make a NMEA message (sentence)
+/*!
+    \param[in]   talker       Talker ID (can be "")
+    \param[in]   formatter    Formatter (can be "")
+    \param[in]   payload      The message payload (can be NULL)
+    \param[out]  msg          Message buffer (must be at least \c strlen(talker) + \c strlen(formatter) +
+                              \c strlen(payload) + #NMEA_FRAME_SIZE + 2)
+
+    \note \c payload and \c msg may be the same buffer (or may overlap).
+
+    \returns the message size
+*/
+int nmeaMakeMessage(const char *talker, const char *formatter, const char *payload, char *msg);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

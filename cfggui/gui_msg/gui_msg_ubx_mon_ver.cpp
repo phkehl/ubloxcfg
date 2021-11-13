@@ -36,22 +36,6 @@ GuiMsgUbxMonVer::GuiMsgUbxMonVer(std::shared_ptr<Receiver> receiver, std::shared
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiMsgUbxMonVer::Buttons()
-{
-    if (_receiver)
-    {
-        Gui::VerticalSeparator();
-        if (ImGui::Button(ICON_FK_REFRESH, _winSettings->iconButtonSize))
-        {
-            const uint8_t pollUbxMonVer[] = { 0xb5, 0x62, 0x0a, 0x04, 0x00, 0x00, 0x0e, 0x34 };
-            _receiver->Send(pollUbxMonVer, sizeof(pollUbxMonVer));
-        }
-        Gui::ItemTooltip("Poll message");
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 bool GuiMsgUbxMonVer::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
 {
     UNUSED(sizeAvail);
