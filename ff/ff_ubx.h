@@ -1556,13 +1556,42 @@ typedef struct UBX_TIME_TP_V0_GROUP0_s
 {
     uint32_t towMs;
     uint32_t towSubMS;
-    int32_t qErr;
+    int32_t  qErr;
     uint16_t week;
-    uint8_t flags;
-    uint8_t refInfo;
+    uint8_t  flags;
+    uint8_t  refInfo;
 } UBX_TIME_TP_V0_GROUP0_t;
 
 #define UBX_TIM_TP_V0_SIZE    ((int)(sizeof(UBX_TIME_TP_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+#define UBX_TIM_TP_V0_TOWMS_SCALE                                    1e-3
+#define UBX_TIM_TP_V0_TOWSUBMS_SCALE                                 0x1.0624dd2f1a9fcp-42  // perl -e 'printf "%a", 2**-32 * 1e-3'
+#define UBX_TIM_TP_V0_TOWSUBMS_SCALE_APPROX                          2.3283064365386963e-18 // perl -e 'printf "%.18g", 2**-32 * 1e-8'
+#define UBX_TIM_TP_V0_FLAGS_TIMEBASE_GET(f)                          ( (uint8_t)(f) & 0x01 )
+#define UBX_TIM_TP_V0_FLAGS_TIMEBASE_GNSS                            0
+#define UBX_TIM_TP_V0_FLAGS_TIMEBASE_UTC                             1
+#define UBX_TIM_TP_V0_FLAGS_UTC                                      0x02
+#define UBX_TIM_TP_V0_FLAGS_RAIM_GET(f)                              ( ((uint8_t)(f) >> 2) & 0x03 )
+#define UBX_TIM_TP_V0_FLAGS_RAIM_NA                                  0
+#define UBX_TIM_TP_V0_FLAGS_RAIM_INACTIVE                            1
+#define UBX_TIM_TP_V0_FLAGS_RAIM_ACTIVE                              2
+#define UBX_TIM_TP_V0_FLAGS_QERRINVALID                              0x10
+#define UBX_TIM_TP_V0_REFINFO_GET(f)                                 ( (uint8_t)(f) & 0x0f )
+#define UBX_TIM_TP_V0_REFINFO_GPS                                    0
+#define UBX_TIM_TP_V0_REFINFO_GLO                                    1
+#define UBX_TIM_TP_V0_REFINFO_BDS                                    2
+#define UBX_TIM_TP_V0_REFINFO_GAL                                    3
+#define UBX_TIM_TP_V0_REFINFO_UNKNOWN                                15
+#define UBX_TIM_TP_V0_UTCSTANDARD_GET(f)                             ( ((uint8_t)(f) >> 4) & 0x0f )
+#define UBX_TIM_TP_V0_UTCSTANDARD_INFONA                             0
+#define UBX_TIM_TP_V0_UTCSTANDARD_CRL                                1
+#define UBX_TIM_TP_V0_UTCSTANDARD_NIST                               2
+#define UBX_TIM_TP_V0_UTCSTANDARD_USNO                               3
+#define UBX_TIM_TP_V0_UTCSTANDARD_BIPM                               4
+#define UBX_TIM_TP_V0_UTCSTANDARD_EU                                 5
+#define UBX_TIM_TP_V0_UTCSTANDARD_SU                                 6
+#define UBX_TIM_TP_V0_UTCSTANDARD_NTSC                               7
+#define UBX_TIM_TP_V0_UTCSTANDARD_UNNOWN                             15
 
 /* ****************************************************************************************************************** */
 
