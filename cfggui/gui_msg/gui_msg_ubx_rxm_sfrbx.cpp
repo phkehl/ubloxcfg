@@ -19,9 +19,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_rxm_sfrbx.hpp"
 
@@ -99,7 +97,7 @@ void GuiMsgUbxRxmSfrbx::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
     const uint32_t now = TIME();

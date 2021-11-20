@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_EXPERIMENT_H__
-#define __GUI_WIN_EXPERIMENT_H__
+#ifndef __GUI_WIN_EXPERIMENT_HPP__
+#define __GUI_WIN_EXPERIMENT_HPP__
 
 // #include <cinttypes>
 #include <memory>
@@ -48,4 +48,4 @@ class GuiWinExperiment : public GuiWin
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_EXPERIMENT_H__
+#endif // __GUI_WIN_EXPERIMENT_HPP__

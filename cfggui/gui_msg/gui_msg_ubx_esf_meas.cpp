@@ -20,9 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_esf_meas.hpp"
 
@@ -171,7 +169,7 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
     const uint32_t now = TIME();

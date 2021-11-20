@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_APP_H__
-#define __GUI_APP_H__
+#ifndef __GUI_APP_HPP__
+#define __GUI_APP_HPP__
 
 #include <memory>
 #include <mutex>
@@ -45,7 +45,8 @@ struct GuiAppEarlyLog
 class GuiApp
 {
     public:
-        GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog);
+        GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog,
+            const std::vector<std::string> &versionInfos);
        ~GuiApp();
 
         static GuiApp &GetInstance();
@@ -84,7 +85,7 @@ class GuiApp
         {
             APP_WIN_ABOUT = 0, APP_WIN_SETTINGS, APP_WIN_HELP, APP_WIN_IMGUI_DEMO, APP_WIN_IMPLOT_DEMO,
             APP_WIN_IMGUI_METRICS, APP_WIN_IMPLOT_METRICS, APP_WIN_IMGUI_STYLES, APP_WIN_IMPLOT_STYLES,
-            APP_WIN_EXPERIMENT, APP_WIN_PLAY,
+            APP_WIN_EXPERIMENT, APP_WIN_PLAY, APP_WIN_LEGEND,
             _NUM_APP_WIN
         };
         std::vector< std::unique_ptr<GuiWin> > _appWindows;
@@ -92,6 +93,7 @@ class GuiApp
         // Receiver and logfile windows
         std::vector< std::unique_ptr<GuiWinInputReceiver> > _receiverWindows;
         std::vector< std::unique_ptr<GuiWinInputLogfile>  > _logfileWindows;
+        static constexpr int MAX_SAVED_WINDOWS = 20;
         template<typename T> void _CreateInputWindow(
             const std::string &baseName, std::vector< std::unique_ptr<T> > &inputWindows, const std::string &prevWinName = "");
 
@@ -106,6 +108,7 @@ class GuiApp
         bool                 _debugWinOpen;
         bool                 _debugWinDim;
         GuiWidgetLog         _debugLog;
+        std::vector<std::string> _versionInfos;
         void _DrawDebugWin();
         static void _DebugLogCb(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG_t *cfg);
         static void _DebugLogAdd(const DEBUG_LEVEL_t level, const char *str, GuiWidgetLog *logWidget);
@@ -125,4 +128,4 @@ class GuiApp
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_APP_H__
+#endif // __GUI_APP_HPP__

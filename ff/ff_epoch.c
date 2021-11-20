@@ -1357,6 +1357,42 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
         }
     }
 
+    // Uptime string
+    if (epoch->haveUptime)
+    {
+        bool anyway = false;
+        int offs = 0;
+        double val = epoch->uptime;
+        // Days
+        if (val > 86400.0)
+        {
+            const int days = floor(val / 86400.0);
+            offs += snprintf(&epoch->uptimeStr[offs], sizeof(epoch->uptimeStr) - offs, "%dd", days);
+            val -= (double)days * 86400.0;
+            anyway = true;
+        }
+        // Hours
+        if (anyway || (val > 3600.0))
+        {
+            const int hours = floor(val / 3600.0);
+            offs += snprintf(&epoch->uptimeStr[offs], sizeof(epoch->uptimeStr) - offs, " %dh", hours);
+            val -= (double)hours * 3600.0;
+            anyway = true;
+        }
+        // Minutes
+        if (anyway || (val > 60.0))
+        {
+            const int minutes = floor(val / 60.0);
+            offs += snprintf(&epoch->uptimeStr[offs], sizeof(epoch->uptimeStr) - offs, " %dm", minutes);
+            val -= (double)minutes * 60.0;
+            anyway = true;
+        }
+        // Seconds
+        {
+            offs += snprintf(&epoch->uptimeStr[offs], sizeof(epoch->uptimeStr) - offs, anyway ? " %.1fs" : "%.1fs", val);
+        }
+    }
+
     // Epoch info stringification
     snprintf(epoch->str, sizeof(epoch->str),
         "%-12s %2d %04d-%02d-%02d (%c) %02d:%02d:%06.3f (%c) %+11.7f %+12.7f (%5.1f) %+5.0f (%5.1f) %4.1f",

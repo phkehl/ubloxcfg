@@ -1,0 +1,22 @@
+- Make database size dynamic / configurable
+- Implement epoch info page (table with all details / fields of EPOCH_t etc.)
+- Navigation status page (same stuff as in input window + velocity gage, artificial horizon, etc.)
+- Plot UBX-ESF-MEAS
+- Button to open/arrange all data windows?
+- Make some screenshots, add to repo, post in upstream discussion topic
+- Change old tables to new table API
+- Add generic helper routines for new tables, such as marking/selecting row(s)
+- Move common (duplicate) code from data windows to base class (clear controls, epoch store and age calc and display)
+- Implement A-GNSS
+- Propagate UBX-INF-{ERROR,WARNING} (and maybe NOTICE, too?) to receiver input window log (or perhaps auto-open inf msgs window?)
+- Record a UBX-INF-TEST message at the beginning of a log (with date, cfggui version, port, etc.)
+- Add epoch rate [Hz] to nav status (also for logfile!)
+- Messages data win: show tree anyway if hidden but selected message not present (until it is present...)
+- Clear all settings (on next restart) option
+- Custom message: implement RTCM3
+- Custom message: load from / save to file, load from clipboard? switch to right tab depending on what message it is?
+- Remove the set window position (context menu) rubbish in bool GuiWin::_DrawWindowBegin()
+- Fix docking troubles in GuiWinInput::DrawWindow(), disallow some centre dockings
+- Fix performance timeseries plot in debug window, it should scroll
+- Improve new window placement for windows that have no saved placement (offset from previous windows, detect if another window is at the same position?)
+- Maintain cache, wipe old data

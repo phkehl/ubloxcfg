@@ -16,6 +16,7 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <chrono>
+#include <cfloat>
 
 #include "ff_debug.h"
 

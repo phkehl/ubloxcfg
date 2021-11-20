@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_fwupdate.hpp"
+#include "gui_inc.hpp"
 
-#include "gui_win_data_inc.hpp"
+#include "gui_win_data_fwupdate.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -25,39 +25,8 @@ GuiWinDataFwupdate::GuiWinDataFwupdate(const std::string &name, std::shared_ptr<
     GuiWinData(name, database)
 {
     _winSize = { 80, 25 };
-    ClearData();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-
-//void GuiWinDataFwupdate::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-//void GuiWinDataFwupdate::ProcessData(const Data &data)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataFwupdate::ClearData()
-{
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataFwupdate::DrawWindow()
-{
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    ImGui::TextUnformatted("Not implemented");
-
-    _DrawWindowEnd();
-}
 
 /* ****************************************************************************************************************** */

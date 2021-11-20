@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include <cstring>
+
 #include "ff_ubx.h"
 #include "ff_nmea.h"
 #include "ff_rtcm3.h"
 
-#include "gui_win_data_inc.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_win_data_messages.hpp"
 
@@ -31,6 +33,9 @@ GuiWinDataMessages::GuiWinDataMessages(const std::string &name, std::shared_ptr<
     _selectedEntry{_messages.end()}, _displayedEntry{_messages.end()}, _classNames{}
 {
     _winSize = { 130, 25 };
+
+    _latestEpochEna = false;
+    _toolbarEna = false;
 
     _selectedName = _winSettings->GetValue(_winName + ".selectedMessage");
     _winSettings->GetValue(_winName + ".showHexDump", _showHexDump, false);
@@ -126,15 +131,7 @@ void GuiWinDataMessages::_InitMsgRatesAndPolls()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataMessages::Loop(const uint32_t &frame, const double &now)
-//{
-//    (void)frame;
-//    (void)now;
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMessages::ProcessData(const Data &data)
+void GuiWinDataMessages::_ProcessData(const Data &data)
 {
     switch (data.type)
     {
@@ -168,7 +165,7 @@ void GuiWinDataMessages::ProcessData(const Data &data)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMessages::Loop(const uint32_t &frame, const double &now)
+void GuiWinDataMessages::_Loop(const uint32_t &frame, const double &now)
 {
     UNUSED(frame);
     _nowIm = now;
@@ -231,7 +228,7 @@ void GuiWinDataMessages::MsgInfo::Update(const std::shared_ptr<Ff::ParserMsg> &_
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMessages::ClearData()
+void GuiWinDataMessages::_ClearData()
 {
     _messages.clear();
 
@@ -293,13 +290,8 @@ void GuiWinDataMessages::_UpdateInfo()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMessages::DrawWindow()
+void GuiWinDataMessages::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
     _UpdateInfo();
 
     const float listWidth = 40 * _winSettings->charSize.x;
@@ -332,8 +324,6 @@ void GuiWinDataMessages::DrawWindow()
         }
         ImGui::EndChild(); // ##Message
     }
-
-    _DrawWindowEnd();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -366,13 +356,11 @@ void GuiWinDataMessages::_DrawListButtons()
         }
         if (ImGui::IsPopupOpen("Quick"))
         {
-            ImGui::PushStyleColor(ImGuiCol_PopupBg, _winSettings->style.Colors[ImGuiCol_MenuBarBg]);
             if (ImGui::BeginPopup("Quick"))
             {
                 _DrawMessagesMenu();
                 ImGui::EndPopup();
             }
-            ImGui::PopStyleColor();
         }
 
         Gui::ItemTooltip("Enable/disable output messages");

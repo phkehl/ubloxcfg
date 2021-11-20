@@ -15,9 +15,13 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_scatter.hpp"
+#include <cstring>
 
-#include "gui_win_data_inc.hpp"
+#include "ff_trafo.h"
+
+#include "gui_inc.hpp"
+
+#include "gui_win_data_scatter.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -57,14 +61,7 @@ GuiWinDataScatter::~GuiWinDataScatter()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-// void GuiWinDataScatter::ProcessData(const Data &data)
-// {
-//     (void)data;
-// }
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataScatter::ClearData()
+void GuiWinDataScatter::_ClearData()
 {
     _havePoints = false;
 }
@@ -89,21 +86,17 @@ const char * const GuiWinDataScatter::_sigmaLabels[NUM_SIGMA] =
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataScatter::DrawWindow()
+void GuiWinDataScatter::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
     ImGui::BeginChild("##Plot", ImVec2(0.0f, 0.0f), false,
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     // Canvas
-    const ImVec2 offs = ImGui::GetCursorScreenPos();
-    const ImVec2 size = ImGui::GetContentRegionAvail();
-    const ImVec2 cent = ImVec2(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
-    const ImVec2 cursorOrigin = ImGui::GetCursorPos();
-    const ImVec2 cursorMax = ImGui::GetWindowContentRegionMax();
+    const FfVec2 offs = ImGui::GetCursorScreenPos();
+    const FfVec2 size = ImGui::GetContentRegionAvail();
+    const FfVec2 cent = ImVec2(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
+    const FfVec2 cursorOrigin = ImGui::GetCursorPos();
+    const FfVec2 cursorMax = ImGui::GetWindowContentRegionMax();
 
     constexpr int _E_ = Database::_E_;
     constexpr int _N_ = Database::_N_;
@@ -138,19 +131,19 @@ void GuiWinDataScatter::DrawWindow()
         const float barSep = 2 * radiusPx / (float)NUM_HIST;
         const float barLen = 0.5 * radiusPx;
         const float norm = barLen / (float)_histNumPoints;
-        const ImVec2 pos0x = cent + ImVec2(-radiusPx, -radiusPx);
-        const ImVec2 pos0y = cent + ImVec2(-radiusPx, radiusPx - barSep);
+        const FfVec2 pos0x = cent + FfVec2(-radiusPx, -radiusPx);
+        const FfVec2 pos0y = cent + FfVec2(-radiusPx, radiusPx - barSep);
         for (int ix = 0; ix <NUM_HIST; ix++)
         {
             {
                 const float dx = ix * barSep;
                 const float dy = 1.0 + ((float)_histogramE[ix] * norm);
-                draw->AddRectFilled(pos0x + ImVec2(dx, 0), pos0x + ImVec2(dx + barSep, dy), GUI_COLOUR(PLOT_HISTOGRAM));
+                draw->AddRectFilled(pos0x + FfVec2(dx, 0), pos0x + FfVec2(dx + barSep, dy), GUI_COLOUR(PLOT_HISTOGRAM));
             }
             {
                 const float dx = 1.0 + ((float)_histogramN[ix] * norm);
                 const float dy = -ix * barSep;
-                draw->AddRectFilled(pos0y + ImVec2(0, dy), pos0y + ImVec2(dx, dy + barSep), GUI_COLOUR(PLOT_HISTOGRAM));
+                draw->AddRectFilled(pos0y + FfVec2(0, dy), pos0y + FfVec2(dx, dy + barSep), GUI_COLOUR(PLOT_HISTOGRAM));
             }
         }
     }
@@ -480,10 +473,10 @@ void GuiWinDataScatter::DrawWindow()
         }
         else if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
-            ImVec2 totalDrag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+            FfVec2 totalDrag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             if ( (totalDrag.x != 0.0) || (totalDrag.y != 0.0) )
             {
-                ImVec2 totalDragM = totalDrag * px2m;
+                FfVec2 totalDragM = totalDrag * px2m;
                 double enu[3] = { -totalDragM.x, totalDragM.y, 0 };
                 double newXyz[3];
                 enu2xyz_vec(enu, _refPosXyzDragStart, _refPosLlhDragStart, newXyz);
@@ -501,7 +494,7 @@ void GuiWinDataScatter::DrawWindow()
         draw->AddLine(ImVec2(io.MousePos.x, top), ImVec2(io.MousePos.x, bot), GUI_COLOUR(PLOT_FIX_CROSSHAIRS));
         draw->AddLine(ImVec2(left, io.MousePos.y), ImVec2(right, io.MousePos.y), GUI_COLOUR(PLOT_FIX_CROSSHAIRS));
 
-        const auto delta = (cent - io.MousePos) * (ImVec2(-1.0f, 1.0f) * px2m);
+        const auto delta = (cent - io.MousePos) * (FfVec2(-1.0f, 1.0f) * px2m);
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_FIX_CROSSHAIRS_LABEL));
         char label[20];
 
@@ -581,7 +574,6 @@ void GuiWinDataScatter::DrawWindow()
     }
 
     ImGui::EndChild();
-    _DrawWindowEnd();
 }
 
 /* ****************************************************************************************************************** */

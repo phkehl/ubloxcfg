@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __LOGFILE_H__
-#define __LOGFILE_H__
+#ifndef __LOGFILE_HPP__
+#define __LOGFILE_HPP__
 
 #include <memory>
 #include <string>
@@ -107,4 +107,4 @@ class Logfile
 };
 
 /* ****************************************************************************************************************** */
-#endif // __LOGFILE_H__
+#endif // __LOGFILE_HPP__

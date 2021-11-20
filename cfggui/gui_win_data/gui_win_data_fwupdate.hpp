@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_FWUPDATE_H__
-#define __GUI_WIN_DATA_FWUPDATE_H__
+#ifndef __GUI_WIN_DATA_FWUPDATE_HPP__
+#define __GUI_WIN_DATA_FWUPDATE_HPP__
 
 #include "gui_win_data.hpp"
 
@@ -27,13 +27,8 @@ class GuiWinDataFwupdate : public GuiWinData
     public:
         GuiWinDataFwupdate(const std::string &name, std::shared_ptr<Database> database);
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-      //void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_FWUPDATE_H__
+#endif // __GUI_WIN_DATA_FWUPDATE_HPP__

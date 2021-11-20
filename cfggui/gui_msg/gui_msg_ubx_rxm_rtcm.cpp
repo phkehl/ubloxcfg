@@ -20,11 +20,7 @@
 #include "ff_ubx.h"
 #include "ff_rtcm3.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_rxm_rtcm.hpp"
 
@@ -105,7 +101,7 @@ void GuiMsgUbxRxmRtcm::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
 

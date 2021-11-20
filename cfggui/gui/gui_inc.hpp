@@ -15,23 +15,14 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_INC_H__
-#define __GUI_WIN_DATA_INC_H__
-
-#include <cstring>
-#include <cmath>
-#include <algorithm>
-#include <fstream>
-#include <cerrno>
-
-#include "ubloxcfg.h"
-#include "ff_stuff.h"
-#include "ff_ubx.h"
-#include "ff_trafo.h"
+#ifndef __GUI_INC_HPP__
+#define __GUI_INC_HPP__
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
 #include "IconsForkAwesome.h"
-#include "implot.h"
 
-#endif // __GUI_WIN_DATA_INC_H__
+#include "gui_settings.hpp"
+#include "gui_utils.hpp"
+
+#endif // __GUI_INC_HPP__

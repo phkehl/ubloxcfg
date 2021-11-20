@@ -32,6 +32,7 @@
 #include "ff_rx.h"
 #include "ff_port.h"
 #include "ff_stuff.h"
+#include "ff_utils.hpp"
 #include "ff_cpp.hpp"
 #include "ubloxcfg.h"
 

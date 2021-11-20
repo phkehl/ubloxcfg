@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __RECEIVER_H__
-#define __RECEIVER_H__
+#ifndef __RECEIVER_HPP__
+#define __RECEIVER_HPP__
 
 #include <memory>
 #include <mutex>
@@ -103,4 +103,4 @@ class Receiver
 };
 
 /* ****************************************************************************************************************** */
-#endif // __RECEIVER_H__
+#endif // __RECEIVER_HPP__

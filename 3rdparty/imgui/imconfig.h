@@ -19,8 +19,13 @@
 //#define IM_ASSERT(_EXPR)  MyAssert(_EXPR)
 //#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
 #include "ff_debug.h"
-#define IM_ASSERT(_expr_) do { if (!(_expr_)) { ERROR("%s:%d:%s() Assertion failed: %s", __FILE__,  __LINE__, __FUNCTION__, # _expr_ ); }  } while (0)
-#define IM_ASSERT_USER_ERROR(_expr_, _msg_) do { if (!(_expr_)) { WARNING("Warning: %s", _msg_); } } while (0)
+#ifdef FF_BUILD_DEBUG
+#  define IM_ASSERT(_expr_) do { if (!(_expr_)) { ERROR("%s:%d:%s() Assertion failed: %s", __FILE__,  __LINE__, __FUNCTION__, # _expr_ ); DEBUGGER_BREAK(); }  } while (0)
+#  define IM_ASSERT_USER_ERROR(_expr_, _msg_) do { if (!(_expr_)) { WARNING("%s:%d:%s() Warning: %s", __FILE__,  __LINE__, __FUNCTION__, _msg_); } } while (0)
+#else
+#  define IM_ASSERT(_expr_)                   do { PANIC_AND_EXIT("Assertion failed: %s", # _expr_); } while (0)
+#  define IM_ASSERT_USER_ERROR(_expr_, _msg_) do { } while (0)
+#endif
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows
 // Using Dear ImGui via a shared library is not recommended, because of function call overhead and because we don't guarantee backward nor forward ABI compatibility.
@@ -74,7 +79,7 @@
 //---- Use FreeType to build and rasterize the font atlas (instead of stb_truetype which is embedded by default in Dear ImGui)
 // Requires FreeType headers to be available in the include path. Requires program to be compiled with 'misc/freetype/imgui_freetype.cpp' (in this repository) + the FreeType library (not provided).
 // On Windows you may use vcpkg with 'vcpkg install freetype --triplet=x64-windows' + 'vcpkg integrate install'.
-//#define IMGUI_ENABLE_FREETYPE
+#define IMGUI_ENABLE_FREETYPE
 
 //---- Use stb_truetype to build and rasterize the font atlas (default)
 // The only purpose of this define is if you want force compilation of the stb_truetype backend ALONG with the FreeType backend.
@@ -91,14 +96,16 @@
         ImVec4(const MyVec4& f) { x = f.x; y = f.y; z = f.z; w = f.w; }     \
         operator MyVec4() const { return MyVec4(x,y,z,w); }
 */
+
+#include "ff_utils.hpp"
+
 #define IM_VEC2_CLASS_EXTRA \
-        ImVec2 operator*(const float f) const { return ImVec2(x * f, y * f); } \
-        ImVec2 operator*(const ImVec2 &v) const { return ImVec2(x * v.x, y * v.y); } \
-        ImVec2 operator/(const float f) const { return ImVec2(x / f, y / f); } \
-        ImVec2 operator/(const ImVec2 &v) const { return ImVec2(x / v.x, y / v.y); } \
-        ImVec2 operator+(const ImVec2 &v) const { return ImVec2(x + v.x, y + v.y); } \
-        ImVec2 operator-(const ImVec2 &v) const { return ImVec2(x - v.x, y - v.y); }
-// Note: the above collide with stuff in imgui_internal.h (see IMGUI_DEFINE_MATH_OPERATORS), which needs to be commented out there
+    ImVec2(const Ff::Vec2<float> &v) { x = v.x; y = v.y; } \
+    ImVec2(const Ff::Vec2<double> &v) { x = v.x; y = v.y; } \
+    operator Ff::Vec2<float>() const { return Ff::Vec2<float>(x, y); } \
+    operator Ff::Vec2<double>() const { return Ff::Vec2<double>(x, y); }
+
+using FfVec2 = Ff::Vec2<float>;
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
 // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).

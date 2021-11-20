@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_LOG_H__
-#define __GUI_WIN_DATA_LOG_H__
+#ifndef __GUI_WIN_DATA_LOG_HPP__
+#define __GUI_WIN_DATA_LOG_HPP__
 
 #include "gui_win_data.hpp"
+#include "gui_widget_log.hpp"
 
 /* ***** Receiver log *********************************************************************************************** */
 
@@ -28,12 +29,13 @@ class GuiWinDataLog : public GuiWinData
         GuiWinDataLog(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataLog();
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _ProcessData(const Data &data) final;
+        void _DrawToolbar() final;
+        void _DrawContent() final;
+        void _ClearData() final;
+
         GuiWidgetLog         _log;
 
         uint32_t             _sizeRx;
@@ -46,4 +48,4 @@ class GuiWinDataLog : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_LOG_H__
+#endif // __GUI_WIN_DATA_LOG_HPP__

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_PLOT_H__
-#define __GUI_WIN_DATA_PLOT_H__
+#ifndef __GUI_WIN_DATA_PLOT_HPP__
+#define __GUI_WIN_DATA_PLOT_HPP__
 
 #include <functional>
 
@@ -32,17 +32,15 @@ class GuiWinDataPlot : public GuiWinData
         GuiWinDataPlot(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataPlot();
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
 
-        void                 _DrawControls();
-        void                 _DrawVars();
-        void                 _DrawPlot();
+        void _ProcessData(const Data &data) final;
+        void _DrawContent() final;
+        void _ClearData() final;
+        void _DrawToolbar();
 
+        void _DrawVars();
+        void _DrawPlot();
 
         //! Plot variables
         typedef double (*EpochValueGetter_t)(const Database::Epoch &);
@@ -101,4 +99,4 @@ class GuiWinDataPlot : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_INF_H__
+#endif // __GUI_WIN_DATA_INF_HPP__

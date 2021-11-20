@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __DATABASE_H__
-#define __DATABASE_H__
+#ifndef __DATABASE_HPP__
+#define __DATABASE_HPP__
 
 #include <mutex>
 #include <vector>
@@ -27,8 +27,6 @@
 #include "ff_parser.h"
 #include "ff_epoch.h"
 #include "ff_cpp.hpp"
-
-#include "gui_settings.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -108,6 +106,10 @@ class Database
         void                 SetRefPosLlh(double llh[_NUM_POS_]);
         void                 SetRefPosXyz(double xyz[_NUM_POS_]);
 
+        // Database status
+        int GetSize();
+        int GetUsage();
+
     protected:
 
         int                  _size;
@@ -128,4 +130,4 @@ class Database
 };
 
 /* ****************************************************************************************************************** */
-#endif // __DATABASE_H__
+#endif // __DATABASE_HPP__

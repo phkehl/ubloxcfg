@@ -19,6 +19,12 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <stdlib.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#  include <execinfo.h>
+#  include <signal.h>
+#endif
 #ifdef _WIN32
 #  define NOGDI
 #  include <windows.h>
@@ -282,6 +288,31 @@ void TRACE_HEXDUMP(const void *data, const int size, const char *fmt, ...)
     _hexdump(DEBUG_LEVEL_TRACE, LOG_COLOUR_TRACE, data, size, fmt, args);
     va_end(args);
 }
+
+void PANIC_AND_EXIT(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    va_end(args);
+    fputs("\n", stderr);
+#ifndef _WIN32
+    void *frames[100];
+    const int nFrames = backtrace(frames, sizeof(frames));
+    backtrace_symbols_fd(frames, nFrames, STDERR_FILENO);
+#endif
+    exit(255);
+}
+
+void DEBUGGER_BREAK(void)
+{
+#ifdef _WIN32
+    DebugBreak();
+#else
+    raise(SIGTRAP);
+#endif
+}
+
 
 /* ****************************************************************************************************************** */
 // eof

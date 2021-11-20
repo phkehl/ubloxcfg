@@ -15,19 +15,19 @@ cp "$tmp/Fork-Awesome-1.1.7/fonts/forkawesome-webfont.ttf" "$tmp/ForkAwesome.ttf
 
 g++ -o "$tmp/binary_to_compressed_c" "$base/binary_to_compressed_c.cpp"
 c="$tmp/gui_fonts.cpp"
-h="$tmp/gui_fonts.h"
+h="$tmp/gui_fonts.hpp"
 
 echo "// Automatically generated. Do not edit." >> "$h"
 echo "// Automatically generated. Do not edit." >> "$c"
-echo "#ifndef __GUI_FONTS_H__" >> "$h"
-echo "#define __GUI_FONTS_H__" >> "$h"
+echo "#ifndef __GUI_FONTS_HPP__" >> "$h"
+echo "#define __GUI_FONTS_HPP__" >> "$h"
 # ProggyClean
-for F in ProggyClean DejaVuSansMono ForkAwesome; do
+for F in DejaVuSansMono DejaVuSans ForkAwesome; do
     (cd $tmp && ./binary_to_compressed_c -base85 $F.ttf $F >> "$c");
     echo "const char *guiGetFont$F(void) { return ${F}_compressed_data_base85; }" >> "$c"
     echo "const char *guiGetFont$F(void);" >> "$h"
 done
-echo "#endif // __GUI_FONTS_H__" >> "$h"
-cp "$h" "$base/../../cfggui/gui_fonts.h"
-cp "$c" "$base/../../cfggui/gui_fonts.cpp"
+echo "#endif // __GUI_FONTS_HPP__" >> "$h"
+cp "$h" "$base/../../cfggui/gui/gui_fonts.hpp"
+cp "$c" "$base/../../cfggui/gui/gui_fonts.cpp"
 rm -rf "$tmp"

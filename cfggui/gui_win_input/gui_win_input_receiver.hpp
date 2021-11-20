@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_INPUT_RECEIVER_H__
-#define __GUI_WIN_INPUT_RECEIVER_H__
+#ifndef __GUI_WIN_INPUT_RECEIVER_HPP__
+#define __GUI_WIN_INPUT_RECEIVER_HPP__
 
 #include <memory>
 #include <map>
@@ -50,6 +50,7 @@ class GuiWinInputReceiver : public GuiWinInput
 
         // Detected and recent ports
         static std::vector<std::string> _recentPorts;
+        static constexpr int  MAX_RECENT_PORTS = 20;
         void                 _AddRecentPort(const std::string &port);
         void                 _InitRecentPorts();
 
@@ -78,4 +79,4 @@ class GuiWinInputReceiver : public GuiWinInput
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_INPUT_RECEIVER_H__
+#endif // __GUI_WIN_INPUT_RECEIVER_HPP__

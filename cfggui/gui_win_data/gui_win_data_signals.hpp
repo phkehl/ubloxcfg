@@ -15,8 +15,12 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_SIGNALS_H__
-#define __GUI_WIN_DATA_SIGNALS_H__
+#ifndef __GUI_WIN_DATA_SIGNALS_HPP__
+#define __GUI_WIN_DATA_SIGNALS_HPP__
+
+#include "ff_epoch.h"
+
+#include "gui_widget_table.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -27,15 +31,12 @@ class GuiWinDataSignals : public GuiWinData
     public:
         GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database);
 
-        void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
-        std::shared_ptr<Ff::Epoch> _epoch;
-        double _epochTs;
-        double _epochAge;
+
+        void _ProcessData(const Data &data) final;
+        void _DrawToolbar() final;
+        void _DrawContent() final;
+        void _ClearData() final;
 
         std::vector<const EPOCH_SIGINFO_t *> _sigInfo;
         struct Count
@@ -60,9 +61,8 @@ class GuiWinDataSignals : public GuiWinData
         GuiWidgetTable       _table;
         std::map<uint32_t, bool> _selSigs;
 
-        void                 _UpdateSignals();
-        void                 _DrawSignals(const EPOCH_GNSS_t filter);
+        void _UpdateSignals();
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_SIGNALS_H__
+#endif // __GUI_WIN_DATA_SIGNALS_HPP__

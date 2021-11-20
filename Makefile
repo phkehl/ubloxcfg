@@ -61,23 +61,25 @@ VERSION               := $(shell $(SED) -rn '/define CONFIG_VERSION/s/.*"(.+)"/\
 CFILES_ubloxcfg       := $(wildcard ubloxcfg/*.c)
 CFLAGS_library        := -fPIC
 LDFLAGS_library       := -shared -lm
+$(CFILES_ubloxcfg): $(BUILDDIR)/config.h
 
 # ff library souces
 CFILES_ff             := $(wildcard ff/*.c)
 CXXFILES_ff           := $(wildcard ff/*.cpp)
+$(CFILES_ff): $(BUILDDIR)/config.h
 
 # Toolchain flags
 CFLAGS_all            := -Wall -Wextra -Werror -Wshadow
 CXXFLAGS_all          := -Wall -Wextra -Werror -Wshadow
 LDFLAGS_all           :=
 
-CFLAGS_release        := -DFF_BUILD_RELEASE -O3 -g
-CXXFLAGS_release      := -DFF_BUILD_RELEASE -O3 -g
+CFLAGS_release        := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
+CXXFLAGS_release      := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
 LDFLAGS_release       := -g
 
-CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb
-CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb
-LDFLAGS_debug         := -ggdb
+CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
+CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
+LDFLAGS_debug         := -ggdb -rdynamic
 
 # test
 CFILES_test_m32       := test.c
@@ -86,15 +88,18 @@ LDFLAGS_test_m32      := -m32
 CFILES_test_m64       := test.c
 CFLAGS_test_m64       := -std=c99 -pedantic -Wno-pedantic-ms-format -m64
 LDFLAGS_test_m64      := -m64
+$(CFILES_test_m32): $(BUILDDIR)/config.h
+$(CFILES_test_m64): $(BUILDDIR)/config.h
 
 # cfgtool
-CFILES_cfgtool        := cfgtool.c $(wildcard cfgtool/*.c) 3rdparty/stuff/crc24q.c
+CFILES_cfgtool        := $(wildcard cfgtool/*.c) 3rdparty/stuff/crc24q.c
 CFLAGS_cfgtool        := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 LDFLAGS_cfgtool       := -lm
-$(CFILES_cfgtool): $(BUILDDIR)/config.h
 ifeq ($(WIN),64)
 LDFLAGS_cfgtool       += -lws2_32 -static
 endif
+$(CFILES_cfgtool): $(BUILDDIR)/config.h
+$(CFILES_cfgtool): $(BUILDDIR)/config.h
 
 # cfggui
 CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
@@ -103,16 +108,22 @@ CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3r
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
 LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++
-CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 2>/dev/null)          $(shell curl-config --cflags 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --static --libs glfw3 2>/dev/null)   $(shell curl-config --libs 2>/dev/null)
+CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --static --libs glfw3 2>/dev/null)
+CXXFLAGS_cfggui       += $(shell pkg-config --cflags freetype2 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --static --libs freetype2 2>/dev/null)
+CXXFLAGS_cfggui       += $(shell curl-config --cflags 2>/dev/null)
+LDFLAGS_cfggui        += $(shell curl-config --libs 2>/dev/null)
+$(CFILES_cfggui): $(BUILDDIR)/config.h
+$(CXXFILES_cfggui): $(BUILDDIR)/config.h
+
+
 ifeq ($(MSYSTEM),MINGW64)
 LDFLAGS_cfggui        += -lglu32 -lopengl32 -luuid -lole32 -lxinput
 CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_ES2
 else
 LDFLAGS_cfggui        += -lGL -ldl
 endif
-
-$(CXXFILES_cfggui): $(BUILDDIR)/config.h $(BUILDDIR)/tilenope.c $(BUILDDIR)/tileload.c $(BUILDDIR)/tilefail.c $(BUILDDIR)/tiletest.c $(BUILDDIR)/maps_conf.c
 
 # Binaries, makeTarget: name, .c/.cpp files, CFLAGS, CXXFLAGS, LDFLAGS -- The final CFLAGS, CXXFLAGS and LDFLAGS will be $(CFLAGS) etc. from the environment, + those given here
 $(eval $(call makeTarget, test_m32-release$(EXE), $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m32)))
@@ -147,33 +158,6 @@ ubloxcfg/ubloxcfg.c: ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h
 $(OUTPUTDIR)/ubloxcfg_html/index.html: ubloxcfg/Doxyfile $(LIBHFILES) $(LIBCFILES) Makefile | $(OUTPUTDIR)
 	@echo "$(HLY)*$(HLO) $(HLC)doxygen$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
 	$(V)( $(CAT) $<; $(ECHO) "OUTPUT_DIRECTORY = $(OUTPUTDIR)"; $(ECHO) "QUIET = YES"; ) | $(DOXYGEN) -
-
-# Make compiled-in default files
-$(BUILDDIR)/maps_conf.c: cfggui/maps.conf Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(XXD) -i $< > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-$(BUILDDIR)/tilefail.c: cfggui/tilefail.png Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(XXD) -i $< > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-$(BUILDDIR)/tileload.c: cfggui/tileload.png Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(XXD) -i $< > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-$(BUILDDIR)/tilenope.c: cfggui/tilenope.png Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(XXD) -i $< > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-$(BUILDDIR)/tiletest.c: cfggui/tiletest.png Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(XXD) -i $< > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
 
 ########################################################################################################################
 
@@ -218,7 +202,8 @@ help:
 	@echo "    scan-build      Run scan-build"
 	@echo "    cfggui-valgrind Run cfggui with valgrind"
 	@echo
-	@echo "To cross-compile for windows, use 'make <prog>.exe-<build> WIN=64'."
+	@echo "To cross-compile for windows, use 'make <prog>-<build>.exe WIN=64'."
+	@echo "Note that not all programs compile for Windoze!"
 	@echo
 	@echo "See README.md for more details"
 	@echo
@@ -292,7 +277,7 @@ $(OUTPUTDIR)/scan-build/.done: Makefile | $(OUTPUTDIR)
 
 .PHONY: cfggui-valgrind
 cfggui-valgrind: cfggui-debug
-	$(VALGRIND) -leak-check=full --suppressions=cfggui.supp $(OUTPUTDIR)/cfggui-debug
+	$(VALGRIND) -leak-check=full --suppressions=cfggui/cfggui.supp $(OUTPUTDIR)/cfggui-debug
 
 ########################################################################################################################
 

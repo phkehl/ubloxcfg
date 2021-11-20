@@ -15,23 +15,38 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_LEGEND_H__
-#define __GUI_WIN_DATA_LEGEND_H__
+#ifndef __GUI_WIDGET_TABLE_HPP__
+#define __GUI_WIDGET_TABLE_HPP__
 
-#include "gui_win_data.hpp"
+#include <vector>
 
-/* ***** Fix colours legend  **************************************************************************************** */
+/* ****************************************************************************************************************** */
 
-class GuiWinDataLegend : public GuiWinData
+struct GuiWidgetTable
 {
-    public:
-        GuiWinDataLegend(const std::string &name, std::shared_ptr<Database> database);
+    GuiWidgetTable();
+    void AddColumn(const char *title, const float width);
+    void BeginDraw();
+    void ColText(const char *text);
+    void ColTextF(const char *fmt, ...);
+    bool ColSelectable(const char *label, bool selected = false);
+    void ColSkip();
 
-        void                 DrawWindow() final;
+    void EndDraw();
 
     protected:
-        void                 _DrawFixColourLegend(const int value, const ImU32 colour, const char *label);
+        struct Column
+        {
+            Column(const char *_title, const float _width);
+            char  title[100];
+            float width;
+        };
+
+        std::vector<Column> _columns;
+        float               _totalWidth;
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_LEGEND_H__
+
+#endif // __GUI_WIDGET_TABLE_HPP__
+

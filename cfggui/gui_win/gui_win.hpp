@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_H__
-#define __GUI_WIN_H__
+#ifndef __GUI_WIN_HPP__
+#define __GUI_WIN_HPP__
 
 #include <memory>
 #include <cinttypes>
@@ -31,7 +31,6 @@
 #include "imgui.h"
 
 #include "gui_settings.hpp"
-#include "gui_widget.hpp"
 
 /* ***** Window base class ********************************************************************** */
 
@@ -44,6 +43,7 @@ class GuiWin
         void                 Open();
         void                 Close();
         virtual bool         IsOpen();
+        bool                 IsDrawn();
         bool                *GetOpenFlag();
         const std::string   &GetName();
         const std::string   &GetTitle(); // Title with ID ("title###id")
@@ -58,32 +58,31 @@ class GuiWin
         bool                 ToggleButton(const char *label, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff);
 
     protected:
-        enum POS_e : int
-        {
-            POS_NONE, POS_USER, POS_N, POS_NE, POS_E, POS_SE, POS_S, POS_SW, POS_W, POS_NW
-        };
 
         std::string          _winTitle;
         std::string          _winName;
         std::string          _winImguiName;
         bool                 _winOpen;
-        enum POS_e           _winPos;
-        enum POS_e           _winRePos;
-        enum POS_e           _winIniPos;
+        bool                 _winDrawn;
         ImGuiWindowFlags     _winFlags;
         ImVec2               _winSize;
         ImVec2               _winSizeMin;
         uint64_t             _winUid;
         std::string          _winUidStr;
         std::shared_ptr<GuiSettings> _winSettings;
+        std::unique_ptr<ImGuiWindowClass> _winClass;
 
         bool                 _DrawWindowBegin();
         void                 _DrawWindowEnd();
-        void                 _DrawWindowContextMenuItems(const bool lockPosition = false);
         ImVec2               _WinSizeToVec(ImVec2 size);
+
+        static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
+            ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
+             ImGuiTableFlags_ScrollY;
+
 
     private:
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_H__
+#endif // __GUI_WIN_HPP__

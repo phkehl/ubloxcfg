@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_MESSAGEs_H__
-#define __GUI_WIN_DATA_MESSAGES_H__
+#ifndef __GUI_WIN_DATA_MESSAGEs_HPP__
+#define __GUI_WIN_DATA_MESSAGES_HPP__
 
 #include <map>
 #include <unordered_map>
@@ -37,12 +37,13 @@ class GuiWinDataMessages : public GuiWinData
         GuiWinDataMessages(const std::string &name, std::shared_ptr<Database> database);
         ~GuiWinDataMessages();
 
-        void Loop(const uint32_t &frame, const double &now) final;
-        void ProcessData(const Data &data) final;
-        void ClearData() final;
-        void DrawWindow() final;
-
     protected:
+
+        void _Loop(const uint32_t &frame, const double &now) final;
+        void _ProcessData(const Data &data) final;
+        void _DrawContent() final;
+        void _ClearData() final;
+
         bool _showList;
         bool _showSubSec;
         bool _showHexDump;
@@ -106,4 +107,4 @@ class GuiWinDataMessages : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_MESSAGES_H__
+#endif // __GUI_WIN_DATA_MESSAGES_HPP__

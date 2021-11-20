@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_INPUT_H__
-#define __GUI_WIN_INPUT_H__
+#ifndef __GUI_WIN_INPUT_HPP__
+#define __GUI_WIN_INPUT_HPP__
 
 #include <string>
 #include <functional>
@@ -27,7 +27,8 @@
 
 #include "data.hpp"
 #include "database.hpp"
-#include "gui_widget.hpp"
+
+#include "gui_widget_log.hpp"
 #include "gui_win.hpp"
 #include "gui_win_data.hpp"
 #include "gui_win_filedialog.hpp"
@@ -42,15 +43,18 @@ class GuiWinInput : public GuiWin
 
         void OpenPreviousDataWin();
 
-        void Loop(const uint32_t &frame, const double &now) override;
+        void Loop(const uint32_t &frame, const double &now) override; // children can override but must call base method, too!
+
         void DrawWindow() final;
-        // virtual void ProcessData(const Data &data);
+
+        void DrawDataWindows();
 
     protected:
 
         std::shared_ptr<Database>                  _database;
         // std::function<void(Callback_e)>            _callback;
         std::vector< std::unique_ptr<GuiWinData> > _dataWindows;
+        static constexpr int MAX_SAVED_WINDOWS = 20;
         GuiWidgetLog                               _logWidget;
         std::string                                _rxVerStr;
 
@@ -76,10 +80,12 @@ class GuiWinInput : public GuiWin
         static const std::vector<DataWinDef> _dataWinDefs;
         enum DataWinDef::Cap_e               _dataWinCaps;
 
-        virtual void _DrawDataWinButtons();
-        virtual void _DrawActionButtons();
-        virtual void _DrawNavStatusLeft(const EPOCH_t *epoch);
-        virtual void _DrawNavStatusRight(const EPOCH_t *epoch);
+        bool _autoHideDatawin;
+
+        void _DrawDataWinButtons();
+        virtual void _DrawActionButtons();                     // children must call base method, too!
+        void _DrawNavStatusLeft(const EPOCH_t *epoch);
+        void _DrawNavStatusRight(const EPOCH_t *epoch);
         virtual void _DrawControls() = 0;
         virtual void _DrawLog();
 
@@ -89,4 +95,4 @@ class GuiWinInput : public GuiWin
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_INPUT_H__
+#endif // __GUI_WIN_INPUT_HPP__

@@ -15,8 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_CONFIG_H__
-#define __GUI_WIN_DATA_CONFIG_H__
+#ifndef __GUI_WIN_DATA_CONFIG_HPP__
+#define __GUI_WIN_DATA_CONFIG_HPP__
+
+#include "gui_inc.hpp"
+#include "gui_widget_filter.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -27,12 +30,12 @@ class GuiWinDataConfig : public GuiWinData
     public:
         GuiWinDataConfig(const std::string &name, std::shared_ptr<Database> database);
 
-        void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _Loop(const uint32_t &frame, const double &now) final;
+        void _ProcessData(const Data &data) final;
+        void _DrawContent() final;
+        void _ClearData() final;
 
         //! Index for DbItem.values[]
         enum DbItemLayer_e : int { IX_RAM = 0, IX_BBR = 1, IX_FLASH = 2, IX_DEFAULT = 3, NUM_LAYERS = 4 };
@@ -156,4 +159,4 @@ class GuiWinDataConfig : public GuiWinData
 
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_CONFIG_H__
+#endif // __GUI_WIN_DATA_CONFIG_HPP__

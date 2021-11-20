@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_SATELLITES_H__
-#define __GUI_WIN_DATA_SATELLITES_H__
+#ifndef __GUI_WIN_DATA_SATELLITES_HPP__
+#define __GUI_WIN_DATA_SATELLITES_HPP__
+
+#include "gui_widget_table.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -27,15 +29,11 @@ class GuiWinDataSatellites : public GuiWinData
     public:
         GuiWinDataSatellites(const std::string &name, std::shared_ptr<Database> database);
 
-        void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
-        std::shared_ptr<Ff::Epoch> _epoch;
-        double _epochTs;
-        double _epochAge;
+
+        void _ProcessData(const Data &data) final;
+        void _DrawContent() final;
+        void _ClearData() final;
 
         struct SatInfo
         {
@@ -72,11 +70,10 @@ class GuiWinDataSatellites : public GuiWinData
         GuiWidgetTable _table;
         std::map<uint32_t, bool> _selSats;
 
-        void                 _DrawSky(const EPOCH_GNSS_t filter);
-        void                 _DrawList(const EPOCH_GNSS_t filter);
-        void                 _UpdateSatellites();
-
+        void _UpdateSatellites();
+        void _DrawSky(const EPOCH_GNSS_t filter);
+        void _DrawList(const EPOCH_GNSS_t filter);
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_SATELLITES_H__
+#endif // __GUI_WIN_DATA_SATELLITES_HPP__

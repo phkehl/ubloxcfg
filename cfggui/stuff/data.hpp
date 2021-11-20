@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __DATA_H__
-#define __DATA_H__
+#ifndef __DATA_HPP__
+#define __DATA_HPP__
 
 #include <memory>
 #include <string>
@@ -64,4 +64,4 @@ struct Data
 };
 
 /* ****************************************************************************************************************** */
-#endif // __DATA_H__
+#endif // __DATA_HPP__

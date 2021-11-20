@@ -18,11 +18,9 @@
 #include <cstring>
 #include <cmath>
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
 #include "ff_stuff.h"
+
+#include "gui_inc.hpp"
 
 #include "gui_win_experiment.hpp"
 
@@ -34,6 +32,7 @@ GuiWinExperiment::GuiWinExperiment() :
     _saveFileDialog{_winName + "SaveFileDialog"}
 {
     _winSize = { 100, 50 };
+    _winFlags |= ImGuiWindowFlags_NoDocking;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

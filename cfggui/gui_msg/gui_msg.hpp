@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_H__
-#define __GUI_MSG_H__
+#ifndef __GUI_MSG_HPP__
+#define __GUI_MSG_HPP__
 
 #include <memory>
 #include <string>
@@ -39,7 +39,7 @@ class GuiMsg
 
         virtual void Update(const std::shared_ptr<Ff::ParserMsg> &msg);
         virtual void Buttons();
-        virtual bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail);
+        virtual bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail);
         virtual void Clear();
 
         static std::unique_ptr<GuiMsg> GetRenderer(const std::string &msgName,
@@ -72,4 +72,4 @@ class GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_H__
+#endif // __GUI_MSG_HPP__

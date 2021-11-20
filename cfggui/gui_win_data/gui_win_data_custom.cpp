@@ -16,14 +16,15 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <algorithm>
+#include <cstring>
 
 #include "ff_ubx.h"
 #include "ff_nmea.h"
 #include "ff_rtcm3.h"
 
-#include "gui_win_data_custom.hpp"
+#include "gui_inc.hpp"
 
-#include "gui_win_data_inc.hpp"
+#include "gui_win_data_custom.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -38,6 +39,9 @@ GuiWinDataCustom::GuiWinDataCustom(const std::string &name, std::shared_ptr<Data
 {
     _winSize = { 80, 20 };
 
+    _latestEpochEna = false;
+    _toolbarEna = false;
+
     // Make list of UBX messages
     int nMsgDefs = 0;
     const UBX_MSGDEF_t *msgDefs =ubxMessageDefs(&nMsgDefs);
@@ -46,25 +50,6 @@ GuiWinDataCustom::GuiWinDataCustom(const std::string &name, std::shared_ptr<Data
         _ubxMessages.emplace_back(msgDefs[ix].name, msgDefs[ix].clsId, msgDefs[ix].msgId);
     }
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-//void GuiWinDataCustom::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-// void GuiWinDataCustom::ProcessData(const Data &data)
-// {
-// }
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-// void GuiWinDataCustom::ClearData()
-// {
-// }
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -133,13 +118,8 @@ std::vector<uint8_t> GuiWinDataCustom::_HexToBin(const std::string &hex)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataCustom::DrawWindow()
+void GuiWinDataCustom::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
     const float  sepPadding   = (2 * _winSettings->style.ItemSpacing.y) + 1;
     const ImVec2 sizeAvail    = ImGui::GetContentRegionAvail();
     const ImVec2 hexDumpSize  { 0, 10 * _winSettings->charSize.y };
@@ -245,13 +225,11 @@ void GuiWinDataCustom::DrawWindow()
         }
         ImGui::EndPopup();
     }
-
-    _DrawWindowEnd();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-enum GuiWinDataCustom::Action_e GuiWinDataCustom::_DrawButtons()
+enum GuiWinDataCustom::Action_e GuiWinDataCustom::_DrawActionButtons()
 {
     Action_e action = ACTION_NONE;
 
@@ -281,7 +259,7 @@ void GuiWinDataCustom::_DrawEditText(const bool refresh)
     bool dirty = refresh;
 
     // Buttons
-    const auto action = _DrawButtons();
+    const auto action = _DrawActionButtons();
     ImGui::SameLine();
     if (ToggleButton(ICON_FK_PARAGRAPH "##Crlf", NULL, &_textLfToCrLf, "Replacing LF (0x0a) with CRLF (0x0a 0x0d)", "Not replacing LF (0x0a) with CRLF (0x0a 0x0d)"))
     {
@@ -334,7 +312,7 @@ void GuiWinDataCustom::_DrawEditRaw(const bool refresh)
     bool dirty = refresh;
 
     // Buttons
-    const auto action = _DrawButtons();
+    const auto action = _DrawActionButtons();
 
     // Actions
     if (action == ACTION_CLEAR)
@@ -374,7 +352,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     bool checksumDirty = refresh;
 
     // Buttons
-    const auto action = _DrawButtons();
+    const auto action = _DrawActionButtons();
 
     // Actions
     if (action == ACTION_CLEAR)
@@ -468,7 +446,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     ImGui::SameLine();
     ImGui::PushItemWidth((_winSettings->charSize.x * 4) + (_winSettings->style.ItemInnerSpacing.x * 2));
     if (_ubxChecksumBad) { ImGui::PushStyleColor(ImGuiCol_Border, GUI_COLOUR(TEXT_ERROR)); }
-    if (ImGui::InputScalar("##Checksum", ImGuiDataType_U16, &_ubxChecksum, NULL, NULL, "%04x", ImGuiInputTextFlags_CharsDecimal))
+    if (ImGui::InputScalar("##Checksum", ImGuiDataType_U16, &_ubxChecksum, NULL, NULL, "%04x", ImGuiInputTextFlags_CharsHexadecimal))
     {
         checksumDirty = true;
         _ubxChecksumUser = true;
@@ -543,7 +521,7 @@ void GuiWinDataCustom::_DrawEditNmea(const bool refresh)
     bool checksumDirty  = refresh;
 
     // Buttons
-    const auto action = _DrawButtons();
+    const auto action = _DrawActionButtons();
 
     // Actions
     if (action == ACTION_CLEAR)

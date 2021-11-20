@@ -19,9 +19,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_rxm_rawx.hpp"
 
@@ -108,7 +106,7 @@ void GuiMsgUbxRxmRawx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
     if (!_valid)

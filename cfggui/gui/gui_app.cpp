@@ -71,12 +71,14 @@ GuiApp &GuiApp::GetInstance()
 
 /* ****************************************************************************************************************** */
 
-GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog) :
-    _settingsFile{}, _settings{nullptr},
-    _appWindows{},
-    _debugMutex{},
-    _statsLast{}, _statsTime{}, _statsCpu{}, _statsRss{},
-    _debugWinOpen{false}
+GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog,
+    const std::vector<std::string> &versionInfos) :
+    _statsLast     { },
+    _statsTime     { },
+    _statsCpu      { },
+    _statsRss      { },
+    _debugWinOpen  { false },
+    _versionInfos  { versionInfos }
 {
     UNUSED(argv);
     DEBUG("GuiApp()");
@@ -95,27 +97,32 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _debugCfg.arg    = &_debugLog;
     debugSetup(&_debugCfg);
 
+    // TODO: Parse command line arguments
+    // -c <configfile>
+    // ...
+
     // Create settings instance, will be used by all windows
     _settingsFile = Platform::ConfigFile("cfggui.conf");
     _settings = std::make_shared<GuiSettings>(_settingsFile);
 
     // Create application windows
     _appWindows.resize(_NUM_APP_WIN);
-    _appWindows[APP_WIN_ABOUT]            = std::make_unique<GuiWinAbout>();
-    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinSettings>();
-    _appWindows[APP_WIN_HELP]             = std::make_unique<GuiWinHelp>();
+    _appWindows[APP_WIN_ABOUT]            = std::make_unique<GuiWinAppAbout>();
+    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinAppSettings>();
+    _appWindows[APP_WIN_HELP]             = std::make_unique<GuiWinAppHelp>();
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
-    _appWindows[APP_WIN_IMGUI_DEMO]       = std::make_unique<GuiWinImguiDemo>();
-    _appWindows[APP_WIN_IMPLOT_DEMO]      = std::make_unique<GuiWinImplotDemo>();
+    _appWindows[APP_WIN_IMGUI_DEMO]       = std::make_unique<GuiWinAppImguiDemo>();
+    _appWindows[APP_WIN_IMPLOT_DEMO]      = std::make_unique<GuiWinAppImplotDemo>();
 #endif
 #ifndef IMGUI_DISABLE_METRICS_WINDOW
-    _appWindows[APP_WIN_IMGUI_METRICS]    = std::make_unique<GuiWinImguiMetrics>();
+    _appWindows[APP_WIN_IMGUI_METRICS]    = std::make_unique<GuiWinAppImguiMetrics>();
 #endif
-    _appWindows[APP_WIN_IMPLOT_METRICS]   = std::make_unique<GuiWinImplotMetrics>();
-    _appWindows[APP_WIN_IMGUI_STYLES]     = std::make_unique<GuiWinImguiStyles>();
-    _appWindows[APP_WIN_IMPLOT_STYLES]    = std::make_unique<GuiWinImplotStyles>();
+    _appWindows[APP_WIN_IMPLOT_METRICS]   = std::make_unique<GuiWinAppImplotMetrics>();
+    _appWindows[APP_WIN_IMGUI_STYLES]     = std::make_unique<GuiWinAppImguiStyles>();
+    _appWindows[APP_WIN_IMPLOT_STYLES]    = std::make_unique<GuiWinAppImplotStyles>();
     _appWindows[APP_WIN_EXPERIMENT]       = std::make_unique<GuiWinExperiment>();
     _appWindows[APP_WIN_PLAY]             = std::make_unique<GuiWinPlay>();
+    _appWindows[APP_WIN_LEGEND]           = std::make_unique<GuiWinAppLegend>();
 
     // Load settings
     _settings->GetValue("App.debugWindow", _debugWinOpen, false);
@@ -123,9 +130,10 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _settings->GetValue("App.settingsWindow", *_appWindows[APP_WIN_SETTINGS]->GetOpenFlag(), false);
     _settings->GetValue("App.helpWindow",     *_appWindows[APP_WIN_HELP]->GetOpenFlag(), false);
     _settings->GetValue("App.playWindow",     *_appWindows[APP_WIN_PLAY]->GetOpenFlag(), false);
+    _settings->GetValue("App.legendWindow",   *_appWindows[APP_WIN_LEGEND]->GetOpenFlag(), false);
 
     // Load previous receiver and logfile windows
-    const std::vector<std::string> receiverWinNames = _settings->GetValueList("App.receiverWindows");
+    const std::vector<std::string> receiverWinNames = _settings->GetValueList("App.receiverWindows", ",", MAX_SAVED_WINDOWS);
     if (!receiverWinNames.empty())
     {
         for (auto &winName: receiverWinNames)
@@ -133,7 +141,7 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
             _CreateInputWindow("Receiver", _receiverWindows, winName);
         }
     }
-    const std::vector<std::string> logfileWinNames = _settings->GetValueList("App.logfileWindows");
+    const std::vector<std::string> logfileWinNames = _settings->GetValueList("App.logfileWindows", ",", MAX_SAVED_WINDOWS);
     if (!logfileWinNames.empty())
     {
         for (auto &winName: logfileWinNames)
@@ -161,20 +169,21 @@ GuiApp::~GuiApp()
     _settings->SetValue("App.settingsWindow", _appWindows[APP_WIN_SETTINGS]->IsOpen());
     _settings->SetValue("App.helpWindow",     _appWindows[APP_WIN_HELP]->IsOpen());
     _settings->SetValue("App.playWindow",     _appWindows[APP_WIN_PLAY]->IsOpen());
+    _settings->SetValue("App.legendWindow",   _appWindows[APP_WIN_LEGEND]->IsOpen());
 
     std::vector<std::string> openReceiverWinNames;
     for (auto &receiver: _receiverWindows)
     {
         openReceiverWinNames.push_back(receiver->GetName());
     }
-    _settings->SetValueList("App.receiverWindows", openReceiverWinNames);
+    _settings->SetValueList("App.receiverWindows", openReceiverWinNames, ",", MAX_SAVED_WINDOWS);
 
     std::vector<std::string> openLogfileWinNames;
     for (auto &logfile: _logfileWindows)
     {
         openLogfileWinNames.push_back(logfile->GetName());
     }
-    _settings->SetValueList("App.logfileWindows", openLogfileWinNames);
+    _settings->SetValueList("App.logfileWindows", openLogfileWinNames, ",", MAX_SAVED_WINDOWS);
 
     // Destroy child windows, so that they can save their settings before we save the file below
     _appWindows.clear();
@@ -260,6 +269,7 @@ void GuiApp::DrawFrame()
         if (receiverWin->IsOpen())
         {
             receiverWin->DrawWindow();
+            receiverWin->DrawDataWindows();
             iter++;
         }
         else
@@ -275,6 +285,7 @@ void GuiApp::DrawFrame()
         if (logfileWin->IsOpen())
         {
             logfileWin->DrawWindow();
+            logfileWin->DrawDataWindows();
             iter++;
         }
         else
@@ -405,6 +416,7 @@ void GuiApp::_MainMenu()
             ImGui::MenuItem("About",       NULL, _appWindows[APP_WIN_ABOUT]->GetOpenFlag());
             ImGui::MenuItem("Settings",    NULL, _appWindows[APP_WIN_SETTINGS]->GetOpenFlag());
             ImGui::MenuItem("Help",        NULL, _appWindows[APP_WIN_HELP]->GetOpenFlag());
+            ImGui::MenuItem("Legend",      NULL, _appWindows[APP_WIN_LEGEND]->GetOpenFlag());
             ImGui::MenuItem("Play",        NULL, _appWindows[APP_WIN_PLAY]->GetOpenFlag());
             ImGui::MenuItem("Debug",       NULL, &_debugWinOpen);
             ImGui::EndMenu();
@@ -502,7 +514,7 @@ void GuiApp::_DrawDebugWin()
     // Always position window at NE corner, constrain min/max size
     auto &io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, _settings->menuBarHeight), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGui::SetNextWindowSizeConstraints(ImVec2(300,100), ImVec2(io.DisplaySize.x, io.DisplaySize.y - _settings->menuBarHeight));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500,200), ImVec2(io.DisplaySize.x, io.DisplaySize.y - _settings->menuBarHeight));
 
     // Style window (no border, no round corners, no alpha if focused/active, bg colour same as menubar)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -511,7 +523,7 @@ void GuiApp::_DrawDebugWin()
     ImGui::PushStyleColor(ImGuiCol_WindowBg, _settings->style.Colors[ImGuiCol_MenuBarBg]);
 
     // Start window
-    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
+    constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
     const bool isOpen = ImGui::Begin("Debug##CfgGuiDebugWin", &_debugWinOpen, flags);
 
     // Pop style stack
@@ -537,15 +549,19 @@ void GuiApp::_DrawDebugWin()
 
                 const struct { const char *label; int win; bool newline; } buttons[] =
                 {
-                    { "ImGui demo",     APP_WIN_IMGUI_DEMO,       false },
+                    { "ImGui demo",     APP_WIN_IMGUI_DEMO,       true  },
                     { "ImGui metrics",  APP_WIN_IMGUI_METRICS,    false },
-                    { "ImGui styles",   APP_WIN_IMGUI_STYLES,     true  },
-                    { "ImPlot demo",    APP_WIN_IMPLOT_DEMO,      false },
-                    { "ImPlot metrics", APP_WIN_IMPLOT_METRICS,   true  },
-                    { "Experiments",    APP_WIN_EXPERIMENT,       false },
+                    { "ImGui styles",   APP_WIN_IMGUI_STYLES,     false },
+                    { "ImPlot demo",    APP_WIN_IMPLOT_DEMO,      true  },
+                    { "ImPlot metrics", APP_WIN_IMPLOT_METRICS,   false },
+                    { "Experiments",    APP_WIN_EXPERIMENT,       true  },
                 };
                 for (int ix = 0; ix < NUMOF(buttons); ix++)
                 {
+                    if (!buttons[ix].newline)
+                    {
+                        ImGui::SameLine();
+                    }
                     if (ImGui::Button(buttons[ix].label, buttonSize) && _appWindows[buttons[ix].win])
                     {
                         if (!_appWindows[buttons[ix].win]->IsOpen())
@@ -557,18 +573,22 @@ void GuiApp::_DrawDebugWin()
                             _appWindows[buttons[ix].win]->Focus();
                         }
                     }
-                    if (!buttons[ix].newline)
-                    {
-                        ImGui::SameLine();
-                    }
                 }
+
+                ImGui::Separator();
+                ImGui::PushFont(_settings->fontMono);
+                ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
+                ImGui::PopFont();
+                ImGui::PushFont(_settings->fontSans);
+                ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
+                ImGui::PopFont();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Perf"))
             {
                 const ImVec2 sizeAvail = ImGui::GetContentRegionAvail();
                 const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - _settings->style.ItemSpacing.y };
-                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * _settings->style.ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y };
+                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * _settings->style.ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y - _settings->style.ItemSpacing.y };
 
                 const struct { const char *title; const char *label; enum Perf_e perf; } plots[] =
                 {
@@ -624,6 +644,16 @@ void GuiApp::_DrawDebugWin()
                         ImGui::SameLine();
                     }
                 }
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("Versions"))
+            {
+                ImGui::PushTextWrapPos(0.0f);
+                for (const auto &info: _versionInfos)
+                {
+                    ImGui::TextUnformatted(info.c_str());
+                }
+                ImGui::PopTextWrapPos();
                 ImGui::EndTabItem();
             }
             ImGui::EndTabBar();

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_RXM_SFRBX_H__
-#define __GUI_MSG_UBX_RXM_SFRBX_H__
+#ifndef __GUI_MSG_UBX_RXM_SFRBX_HPP__
+#define __GUI_MSG_UBX_RXM_SFRBX_HPP__
 
 #include <memory>
 #include <map>
@@ -34,7 +34,7 @@ class GuiMsgUbxRxmSfrbx : public GuiMsg
         GuiMsgUbxRxmSfrbx(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
     protected:
@@ -63,4 +63,4 @@ class GuiMsgUbxRxmSfrbx : public GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_RXM_SFRBX_H__
+#endif // __GUI_MSG_UBX_RXM_SFRBX_HPP__

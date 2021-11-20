@@ -19,18 +19,12 @@
 #include <ctime>
 #include <algorithm>
 #include <filesystem>
-// #include <cstring>
-// #include <cmath>
-
-#include "imgui.h"
-#include "imgui_stdlib.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
 
 #include "ff_debug.h"
 
 #include "platform.hpp"
-#include "gui_settings.hpp"
+
+#include "gui_inc.hpp"
 #include "gui_app.hpp"
 
 #include "gui_win_filedialog.hpp"
@@ -49,7 +43,7 @@ GuiWinFileDialog::GuiWinFileDialog(const std::string &name) :
     _sortInfo            { { NAME, ASC }, /* and because _dirsFirst=true: */{ TYPE, ASC } }
 {
     _winSize = { 100, 30 };
-    _winFlags = ImGuiWindowFlags_NoCollapse; //ImGuiWindowFlags_NoTitleBar;
+    _winFlags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking; //ImGuiWindowFlags_NoTitleBar;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

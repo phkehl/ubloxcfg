@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_MON_HW3_H__
-#define __GUI_MSG_UBX_MON_HW3_H__
+#ifndef __GUI_MSG_UBX_MON_HW3_HPP__
+#define __GUI_MSG_UBX_MON_HW3_HPP__
 
 #include <memory>
 
@@ -30,7 +30,7 @@ class GuiMsgUbxMonHw3 : public GuiMsg
     public:
         GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
 
     private:
 
@@ -41,4 +41,4 @@ class GuiMsgUbxMonHw3 : public GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_MON_HW3_H__
+#endif // __GUI_MSG_UBX_MON_HW3_HPP__

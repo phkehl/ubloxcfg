@@ -20,9 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_nav_cov.hpp"
 
@@ -35,7 +33,7 @@ GuiMsgUbxNavCov::GuiMsgUbxNavCov(std::shared_ptr<Receiver> receiver, std::shared
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(sizeAvail);
     if ( (UBX_NAV_COV_VERSION_GET(msg->data) != UBX_NAV_COV_V0_VERSION) || (msg->size != UBX_NAV_COV_V0_SIZE) )

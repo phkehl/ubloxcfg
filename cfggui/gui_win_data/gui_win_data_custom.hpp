@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_CUSTOM_H__
-#define __GUI_WIN_DATA_CUSTOM_H__
+#ifndef __GUI_WIN_DATA_CUSTOM_HPP__
+#define __GUI_WIN_DATA_CUSTOM_HPP__
 
 #include <vector>
 #include <cinttypes>
@@ -30,12 +30,9 @@ class GuiWinDataCustom : public GuiWinData
     public:
         GuiWinDataCustom(const std::string &name, std::shared_ptr<Database> database);
 
-      //void Loop(const uint32_t &frame, const double &now) final;
-      //void ProcessData(const Data &data) final;
-      //void ClearData() final;
-      void DrawWindow() final;
-
     protected:
+
+        void _DrawContent() final;
 
         // Global state
         const char *_currentTab;
@@ -49,7 +46,7 @@ class GuiWinDataCustom : public GuiWinData
 
         // Common buttons / actions
         enum Action_e { ACTION_NONE, ACTION_CLEAR };
-        enum Action_e _DrawButtons();
+        enum Action_e _DrawActionButtons();
 
         // Text editor
         std::string _textEdit;
@@ -101,4 +98,4 @@ class GuiWinDataCustom : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_CUSTOM_H__
+#endif // __GUI_WIN_DATA_CUSTOM_HPP__

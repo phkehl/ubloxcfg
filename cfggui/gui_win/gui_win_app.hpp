@@ -15,53 +15,76 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_APP_H__
-#define __GUI_WIN_APP_H__
+#ifndef __GUI_WIN_APP_HPP__
+#define __GUI_WIN_APP_HPP__
+
+#include <string>
+#include <vector>
 
 #include "gui_win.hpp"
 
-/* ***** About ****************************************************************************************************** */
+/* ***** Base class ************************************************************************************************* */
 
-class GuiWinAbout : public GuiWin
+class GuiWinApp : public GuiWin
 {
     public:
-        GuiWinAbout();
+        GuiWinApp(const std::string &name);
+
+};
+
+/* ***** About ****************************************************************************************************** */
+
+class GuiWinAppAbout : public GuiWinApp
+{
+    public:
+        GuiWinAppAbout();
         void DrawWindow() final;
 };
 
 /* ***** Settings *************************************************************************************************** */
 
-class GuiWinSettings : public GuiWin
+class GuiWinAppSettings : public GuiWinApp
 {
     public:
-        GuiWinSettings();
+        GuiWinAppSettings();
         void DrawWindow() final;
 };
 
 /* ***** Help ******************************************************************************************************* */
 
-class GuiWinHelp : public GuiWin
+class GuiWinAppHelp : public GuiWinApp
 {
     public:
-        GuiWinHelp();
+        GuiWinAppHelp();
         void DrawWindow() final;
+};
+
+/* ***** Legend ***************************************************************************************************** */
+
+class GuiWinAppLegend : public GuiWinApp
+{
+    public:
+        GuiWinAppLegend();
+        void DrawWindow() final;
+    protected:
+        void _DrawFixColourLegend(const int value, const ImU32 colour, const char *label);
 };
 
 /* ***** ImGui/ImPlot demos and debugging *************************************************************************** */
 
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
 
-class GuiWinImguiDemo : public GuiWin
+class GuiWinAppImguiDemo : public GuiWinApp
 {
     public:
-        GuiWinImguiDemo();
+        GuiWinAppImguiDemo();
         void DrawWindow() final;
 };
 
-class GuiWinImplotDemo : public GuiWin
+class GuiWinAppImplotDemo : public GuiWinApp
 {
     public:
-        GuiWinImplotDemo();
+        GuiWinAppImplotDemo();
         void DrawWindow() final;
 };
 
@@ -69,35 +92,35 @@ class GuiWinImplotDemo : public GuiWin
 
 #ifndef IMGUI_DISABLE_METRICS_WINDOW
 
-class GuiWinImguiMetrics : public GuiWin
+class GuiWinAppImguiMetrics : public GuiWinApp
 {
     public:
-        GuiWinImguiMetrics();
+        GuiWinAppImguiMetrics();
         void DrawWindow() final;
 };
 
 #endif
 
-class GuiWinImplotMetrics : public GuiWin
+class GuiWinAppImplotMetrics : public GuiWinApp
 {
     public:
-        GuiWinImplotMetrics();
+        GuiWinAppImplotMetrics();
         void DrawWindow() final;
 };
 
-class GuiWinImguiStyles : public GuiWin
+class GuiWinAppImguiStyles : public GuiWinApp
 {
     public:
-        GuiWinImguiStyles();
+        GuiWinAppImguiStyles();
         void DrawWindow() final;
 };
 
-class GuiWinImplotStyles : public GuiWin
+class GuiWinAppImplotStyles : public GuiWinApp
 {
     public:
-        GuiWinImplotStyles();
+        GuiWinAppImplotStyles();
         void DrawWindow() final;
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_APP_H__
+#endif // __GUI_WIN_APP_HPP__

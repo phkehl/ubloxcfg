@@ -18,19 +18,17 @@
 #include <memory>
 #include <algorithm>
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
 #include "ff_stuff.h"
 #include "ff_ubx.h"
 #include "ff_trafo.h"
 #include "ff_cpp.hpp"
 
+#include "gui_inc.hpp"
+#include "imgui_internal.h"
+
 #include "gui_win_data_config.hpp"
 #include "gui_win_data_fwupdate.hpp"
 #include "gui_win_data_inf.hpp"
-#include "gui_win_data_legend.hpp"
 #include "gui_win_data_log.hpp"
 #include "gui_win_data_map.hpp"
 #include "gui_win_data_messages.hpp"
@@ -40,6 +38,7 @@
 #include "gui_win_data_satellites.hpp"
 #include "gui_win_data_stats.hpp"
 #include "gui_win_data_custom.hpp"
+#include "gui_win_data_epoch.hpp"
 
 #include "gui_win_input.hpp"
 
@@ -47,14 +46,28 @@
 
 GuiWinInput::GuiWinInput(const std::string &name) :
     GuiWin(name),
-    _database    { std::make_shared<Database>(10000) },
-    _logWidget   { 1000, false },
-    _rxVerStr    { "" },
-    _dataWinCaps { DataWinDef::Cap_e::ALL }
+    _database        { std::make_shared<Database>(10000) },
+    _logWidget       { 1000 },
+    _rxVerStr        { "" },
+    _dataWinCaps     { DataWinDef::Cap_e::ALL },
+    _autoHideDatawin { true }
 {
     DEBUG("GuiWinInput(%s)", _winName.c_str());
 
-    // OpenPreviousDataWin(); // cannot do this here, as it relies on some virtual methods only (fully) implemented in the derived classes
+    _winSize    = { 90, 25 };
+    //_winSizeMin = { 90, 20 };
+
+    // Prevent other (data win, other input win) windows from docking into center of the input window, i.e. other
+    // windows can only split this a input window but not "overlap" (add a tab)
+    // FIXME: Shouldn't ImGuiDockNodeFlags_NoDockingInCentralNode allone have that effect? bug?
+    // FIXME: This doesn't quite work... :-/
+    _winClass = std::make_unique<ImGuiWindowClass>();
+    _winClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingInCentralNode |
+         /* from imgui_internal.h: */ImGuiDockNodeFlags_CentralNode;
+
+    // Load saved settings
+    _winSettings->GetValue(_winName + ".autoHideDatawin", _autoHideDatawin, true);
+    // s.a. OpenPreviousDataWin(), called from GuiApp
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -69,7 +82,9 @@ GuiWinInput::~GuiWinInput()
     {
         openWinNames.push_back(dataWin->GetName());
     }
-    _winSettings->SetValueList(_winName + ".dataWindows", openWinNames);
+    DEBUG("openWinNames %d", (int)openWinNames.size());
+    _winSettings->SetValueList(_winName + ".dataWindows", openWinNames, ",", MAX_SAVED_WINDOWS);
+    _winSettings->SetValue(_winName + ".autoHideDatawin", _autoHideDatawin);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -163,6 +178,21 @@ void GuiWinInput::DrawWindow()
         return;
     }
 
+    // Options, other actions
+    if (ImGui::Button(ICON_FK_COG "##Options"))
+    {
+        ImGui::OpenPopup("Options");
+    }
+    Gui::ItemTooltip("Options");
+    if (ImGui::BeginPopup("Options"))
+    {
+        ImGui::Checkbox("Autohide data windows", &_autoHideDatawin);
+        Gui::ItemTooltip("Automatically hide all data windows if this window is collapsed\n"
+                         "respectively invisible while docked into another window.");
+        ImGui::EndPopup();
+    }
+    Gui::VerticalSeparator();
+
     _DrawDataWinButtons();
 
     Gui::VerticalSeparator();
@@ -174,11 +204,6 @@ void GuiWinInput::DrawWindow()
     const EPOCH_t *epoch = _epoch && _epoch->epoch.valid ? &_epoch->epoch : nullptr;
     const float statusHeight = ImGui::GetTextLineHeightWithSpacing() * 9;
     const float maxHeight = ImGui::GetContentRegionAvail().y;
-
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-    ImGui::TextUnformatted("Navigation status");
-    ImGui::PopStyleColor();
-    ImGui::Separator();
 
     if (ImGui::BeginChild("##StatusLeft", ImVec2(_winSettings->charSize.x * 40, statusHeight), false,
             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse ))
@@ -203,6 +228,16 @@ void GuiWinInput::DrawWindow()
     _DrawLog();
 
     _DrawWindowEnd();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinInput::DrawDataWindows()
+{
+    if (_autoHideDatawin && !_winDrawn)
+    {
+        return;
+    }
 
     // Draw data windows, destroy and remove closed ones
     for (auto iter = _dataWindows.begin(); iter != _dataWindows.end(); )
@@ -232,13 +267,13 @@ void GuiWinInput::DrawWindow()
     { "Messages",   "Messages",        ICON_FK_SORT_ALPHA_ASC "##Messages",   DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataMessages)   },
     { "Inf",        "Inf messages",    ICON_FK_FILE_TEXT_O    "##Inf",        DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataInf)        },
     { "Scatter",    "Scatter plot",    ICON_FK_CROSSHAIRS     "##Scatter",    DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataScatter)    },
-    { "Signals",    "Signals",         ICON_FK_BAR_CHART      "##Signals",    DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataSignals)    },
+    { "Signals",    "Signals",         ICON_FK_SIGNAL         "##Signals",    DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataSignals)    },
     { "Config",     "Configuration",   ICON_FK_PAW            "##Config",     DataWinDef::Cap_e::ACTIVE, _MK_CREATE(GuiWinDataConfig)     },
-    { "Legend",     "Legend",          ICON_FK_QUESTION       "##Legend",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataLegend)     },
     { "Plots",      "Plots",           ICON_FK_LINE_CHART     "##Plots",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataPlot)       },
     { "Map",        "Map",             ICON_FK_MAP            "##Map",        DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataMap)        },
     { "Satellites", "Satellites",      ICON_FK_ROCKET         "##Satellites", DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataSatellites) },
     { "Stats",      "Statistics",      ICON_FK_TABLE          "##Stats",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataStats)      },
+    { "Epoch",      "Epoch details",   ICON_FK_TH             "##Epoch",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataEpoch)      },
     { "Fwupdate",   "Firmware update", ICON_FK_DOWNLOAD       "##Fwupdate",   DataWinDef::Cap_e::ACTIVE, _MK_CREATE(GuiWinDataFwupdate)   },
     { "Custom",     "Custom message",  ICON_FK_TERMINAL       "##Custom",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataCustom)     },
 };
@@ -247,7 +282,7 @@ void GuiWinInput::_DrawDataWinButtons()
 {
     for (auto &def: _dataWinDefs)
     {
-        ImGui::BeginDisabled(!CHKBITS(def.reqs, _dataWinCaps));
+        ImGui::BeginDisabled(!CHKBITS_ANY(def.reqs, _dataWinCaps));
         if (ImGui::Button(def.button, _winSettings->iconButtonSize))
         {
             const std::string baseName = GetName() + def.name; // Receiver1Map, Logfile4Stats, ...
@@ -294,7 +329,7 @@ void GuiWinInput::_DrawDataWinButtons()
 void GuiWinInput::OpenPreviousDataWin()
 {
     const std::string winName = GetName(); // "Receiver1", "Logfile3", ...
-    const std::vector<std::string> dataWinNames = _winSettings->GetValueList(winName + ".dataWindows");
+    const std::vector<std::string> dataWinNames = _winSettings->GetValueList(winName + ".dataWindows", ",", MAX_SAVED_WINDOWS);
     for (const auto &dataWinName: dataWinNames) // "Receiver1Scatter1", "Logfile3Map1", ...
     {
         try
@@ -332,6 +367,33 @@ void GuiWinInput::_DrawActionButtons()
         _ClearData();
     }
     Gui::ItemTooltip("Clear all data");
+
+    ImGui::SameLine();
+
+    // Database status
+    const char * const dbIcons[] =
+    {
+        ICON_FK_BATTERY_EMPTY           /* "##DbStatus" */, //  0% ..  20%
+        ICON_FK_BATTERY_QUARTER         /* "##DbStatus" */, // 20% ..  40%
+        ICON_FK_BATTERY_HALF            /* "##DbStatus" */, // 40% ..  60%
+        ICON_FK_BATTERY_THREE_QUARTERS  /* "##DbStatus" */, // 60% ..  80%
+        ICON_FK_BATTERY_FULL            /* "##DbStatus" */, // 80% .. 100%
+    };
+    const int dbSize  = _database->GetSize();
+    const int dbUsage = _database->GetUsage();
+    const float dbFull = (float)dbUsage / (float)dbSize;
+    const int dbIconIx = CLIP(dbFull, 0.0f, 1.0f) * (float)(NUMOF(dbIcons) - 1);
+    const ImVec2 cursor = ImGui::GetCursorPos();
+    ImGui::InvisibleButton("DbStatus", _winSettings->iconButtonSize, ImGuiButtonFlags_None);
+    //ImGui::Button(dbIcons[dbIconIx], _winSettings->iconButtonSize);
+    if (Gui::ItemTooltipBegin())
+    {
+        ImGui::Text("Database %d/%d epochs, %.1f%% full", dbUsage, dbSize, dbFull * 1e2f);
+        Gui::ItemTooltipEnd();
+    }
+    ImGui::SetCursorPos(cursor);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(dbIcons[dbIconIx]);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -355,7 +417,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
         ImGui::SameLine();
         if (_epoch->epoch.haveUptime)
         {
-            ImGui::Text("%.1f", _epoch->epoch.uptime);
+            ImGui::TextUnformatted( _epoch->epoch.uptimeStr);
         }
         else
         {
@@ -506,13 +568,9 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
 
     ImGui::Separator();
 
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-    ImGui::Text("Signal levels vs. signals tracked/used:");
-    ImGui::PopStyleColor();
-
-    const ImVec2 canvasOffs = ImGui::GetCursorScreenPos();
-    const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const ImVec2 canvasMax  = canvasOffs + canvasSize;
+    const FfVec2 canvasOffs = ImGui::GetCursorScreenPos();
+    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
+    const FfVec2 canvasMax  = canvasOffs + canvasSize;
     //DEBUG("%f %f %f %f", canvasOffs.x, canvasOffs.y, canvasSize.x, canvasSize.y);
     const auto charSize = _winSettings->charSize;
     if (canvasSize.y < (charSize.y * 5))
@@ -624,13 +682,17 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
     }
 
     draw->PopClipRect();
+
+    ImGui::SetCursorScreenPos(canvasOffs);
+    ImGui::InvisibleButton("##SigLevPlotTooltop", canvasSize);
+    Gui::ItemTooltip("Signal levels (x axis) vs. number of signals tracked/used (y axis)");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinInput::_DrawLog()
 {
-    _logWidget.DrawWidget();
+    _logWidget.DrawLog(); // only log, no controls
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_MON_HW2_H__
-#define __GUI_MSG_UBX_MON_HW2_H__
+#ifndef __GUI_MSG_UBX_MON_HW2_HPP__
+#define __GUI_MSG_UBX_MON_HW2_HPP__
 
 #include <memory>
 #include <deque>
@@ -32,7 +32,7 @@ class GuiMsgUbxMonHw2 : public GuiMsg
         GuiMsgUbxMonHw2(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
         struct IQ
@@ -57,4 +57,4 @@ class GuiMsgUbxMonHw2 : public GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_MON_HW2_H__
+#endif // __GUI_MSG_UBX_MON_HW2_HPP__

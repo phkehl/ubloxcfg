@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_signals.hpp"
+#include <cstring>
 
-#include "gui_win_data_inc.hpp"
+#include "gui_inc.hpp"
+
+#include "gui_win_data_signals.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -44,51 +46,18 @@ GuiWinDataSignals::GuiWinDataSignals(const std::string &name, std::shared_ptr<Da
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataSignals::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataSignals::ProcessData(const Data &data)
+void GuiWinDataSignals::_ProcessData(const Data &data)
 {
-    switch (data.type)
+    if (data.type == Data::Type::DATA_EPOCH)
     {
-        case Data::Type::DATA_EPOCH:
-            if (data.epoch->epoch.numSignals > 0)
-            {
-                _epoch = data.epoch;
-                _epochTs = ImGui::GetTime();
-            }
-            _UpdateSignals();
-            // TODO: drop epoch if signals info gets too old
-            break;
-        default:
-            break;
+        _UpdateSignals();
     }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSignals::Loop(const uint32_t &frame, const double &now)
+void GuiWinDataSignals::_ClearData()
 {
-    (void)frame;
-    // Expire data
-    if (_epoch && !_receiver->IsIdle())
-    {
-        _epochAge = now - _epochTs;
-        if (_epochAge > 5.0)
-        {
-            ClearData();
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataSignals::ClearData()
-{
-    _epoch = nullptr;
     _UpdateSignals();
 }
 
@@ -133,16 +102,16 @@ void GuiWinDataSignals::_UpdateSignals()
     _countGal.Reset();
     _countSbas.Reset();
     _countQzss.Reset();
-    if (!_epoch)
+    if (!_latestEpoch)
     {
         return;
     }
 
     // Populate full list of signals, considering filters
-    const int numSig = _epoch->epoch.numSignals;
+    const int numSig = _latestEpoch->epoch.numSignals;
     for (int ix = 0; ix < numSig; ix++)
     {
-        const EPOCH_SIGINFO_t *sig = &_epoch->epoch.signals[ix];
+        const EPOCH_SIGINFO_t *sig = &_latestEpoch->epoch.signals[ix];
         if (sig->use < _minSigUse)
         {
             continue;
@@ -192,59 +161,40 @@ void GuiWinDataSignals::_UpdateSignals()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSignals::DrawWindow()
+void GuiWinDataSignals::_DrawToolbar()
 {
-    if (!_DrawWindowBegin())
+    ImGui::SameLine();
+
+    switch (_minSigUse)
     {
-        return;
+        case EPOCH_SIGUSE_UNKNOWN:
+        case EPOCH_SIGUSE_NONE:
+        case EPOCH_SIGUSE_SEARCH:
+            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
+            {
+                _minSigUse = EPOCH_SIGUSE_ACQUIRED;
+                _UpdateSignals();
+            }
+            Gui::ItemTooltip("Showing all signals");
+            break;
+        case EPOCH_SIGUSE_ACQUIRED:
+        case EPOCH_SIGUSE_UNUSED:
+        case EPOCH_SIGUSE_CODELOCK:
+        case EPOCH_SIGUSE_CARRLOCK:
+            if (ImGui::Button(ICON_FK_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
+            {
+                _minSigUse = EPOCH_SIGUSE_SEARCH;
+                _UpdateSignals();
+            }
+            Gui::ItemTooltip("Showing only tracked signals");
+            break;
     }
+}
 
-    // Controls
-    {
-        switch (_minSigUse)
-        {
-            case EPOCH_SIGUSE_UNKNOWN:
-            case EPOCH_SIGUSE_NONE:
-            case EPOCH_SIGUSE_SEARCH:
-                if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
-                {
-                    _minSigUse = EPOCH_SIGUSE_ACQUIRED;
-                    _UpdateSignals();
-                }
-                Gui::ItemTooltip("Showing all signals");
-                break;
-            case EPOCH_SIGUSE_ACQUIRED:
-            case EPOCH_SIGUSE_UNUSED:
-            case EPOCH_SIGUSE_CODELOCK:
-            case EPOCH_SIGUSE_CARRLOCK:
-                if (ImGui::Button(ICON_FK_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
-                {
-                    _minSigUse = EPOCH_SIGUSE_SEARCH;
-                    _UpdateSignals();
-                }
-                Gui::ItemTooltip("Showing only tracked signals");
-                break;
-        }
+// ---------------------------------------------------------------------------------------------------------------------
 
-        ImGui::SameLine();
-
-        // Clear
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
-        {
-            ClearData();
-        }
-        Gui::ItemTooltip("Clear all data");
-
-        // Age
-        if (_epoch && _receiver && !_receiver->IsIdle())
-        {
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x - (3 * _winSettings->charSize.x) );
-            ImGui::Text("%.1f", _epochAge);
-        }
-    }
-
-    ImGui::Separator();
-
+void GuiWinDataSignals::_DrawContent()
+{
     EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
     if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyScroll /*ImGuiTabBarFlags_FittingPolicyResizeDown*/))
     {
@@ -258,18 +208,11 @@ void GuiWinDataSignals::DrawWindow()
         ImGui::EndTabBar();
     }
 
-    _DrawSignals(filter);
-
-    _DrawWindowEnd();
-}
-
-void GuiWinDataSignals::_DrawSignals(const EPOCH_GNSS_t filter)
-{
     _table.BeginDraw();
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
     const float lineHeight = ImGui::GetTextLineHeight();
-    const ImVec2 barOffs(_winSettings->style.ItemSpacing.x + (4 * _winSettings->charSize.x), -_winSettings->style.ItemSpacing.y);
+    const FfVec2 barOffs(_winSettings->style.ItemSpacing.x + (4 * _winSettings->charSize.x), -_winSettings->style.ItemSpacing.y);
 
     uint32_t prevSat = 0xffffffff;
     for (auto *sig: _sigInfo)
@@ -308,10 +251,10 @@ void GuiWinDataSignals::_DrawSignals(const EPOCH_GNSS_t filter)
 
         _table.ColText(sig->bandStr);
         ImGui::Text("%4.1f", sig->cno);
-        const ImVec2 offs = ImGui::GetCursorScreenPos() + barOffs;
+        const FfVec2 offs = FfVec2(ImGui::GetCursorScreenPos()) + barOffs;
         const int colIx = sig->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0 ? (sig->cno / 5) : 0 );
-        draw->AddRectFilled(offs, offs + ImVec2(sig->cno * 2, -lineHeight), sigUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-        draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(PLOT_GRID_MAJOR));
+        draw->AddRectFilled(offs, offs + FfVec2(sig->cno * 2, -lineHeight), sigUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+        draw->AddLine(offs + FfVec2(42 * 2, 0), offs + FfVec2(42 * 2, -lineHeight), GUI_COLOUR(PLOT_GRID_MAJOR));
         ImGui::NextColumn();
 
         _table.ColTextF("%s", sig->useStr);

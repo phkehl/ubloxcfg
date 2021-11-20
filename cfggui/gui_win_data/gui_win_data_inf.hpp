@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_INF_H__
-#define __GUI_WIN_DATA_INF_H__
+#ifndef __GUI_WIN_DATA_INF_HPP__
+#define __GUI_WIN_DATA_INF_HPP__
 
 #include "gui_win_data.hpp"
+#include "gui_widget_log.hpp"
 
 /* ***** Receiver inf messages ************************************************************************************** */
 
@@ -27,12 +28,13 @@ class GuiWinDataInf : public GuiWinData
     public:
         GuiWinDataInf(const std::string &name, std::shared_ptr<Database> database);
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _ProcessData(const Data &data) final;
+        void _DrawToolbar() final;
+        void _DrawContent() final;
+        void _ClearData() final;
+
         GuiWidgetLog         _log;
 
         uint32_t             _sizeRx;
@@ -46,4 +48,4 @@ class GuiWinDataInf : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_INF_H__
+#endif // __GUI_WIN_DATA_INF_HPP__

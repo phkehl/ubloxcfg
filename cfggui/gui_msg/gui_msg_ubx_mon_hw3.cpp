@@ -19,12 +19,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
-#include "gui_settings.hpp"
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_mon_hw.hpp"
 #include "gui_msg_ubx_mon_hw3.hpp"
@@ -59,7 +54,7 @@ GuiMsgUbxMonHw3::GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver, std::shared
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     if ( (UBX_MON_HW3_VERSION_GET(msg->data) != UBX_MON_HW3_V0_VERSION) || (UBX_MON_HW3_V0_SIZE(msg->data) != msg->size) )
     {

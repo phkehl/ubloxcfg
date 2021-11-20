@@ -18,10 +18,10 @@
 #include <cstdlib>
 
 #include "ff_trafo.h"
-#include "gui_win_data_map.hpp"
 
-#include "gui_win_data_inc.hpp"
-#include "gui_app.hpp"
+#include "gui_inc.hpp"
+
+#include "gui_win_data_map.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -31,6 +31,9 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
 {
     _winSize   = { 80, 25 };
     _winFlags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+
+    _latestEpochEna = false;
+    _toolbarEna = false;
 
     ClearData();
 
@@ -70,17 +73,20 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
 
 GuiWinDataMap::~GuiWinDataMap()
 {
-    double lat, lon;
-    _map->GetCentLatLon(lat, lon);
-    _winSettings->SetValue(_winName + ".map", Ff::Sprintf("%s,%.2f,%.10f,%.10f",
-        _map->GetParams().name.c_str(), _map->GetZoom(), rad2deg(lat), rad2deg(lon)));
+    if (_map)
+    {
+        double lat, lon;
+        _map->GetCentLatLon(lat, lon);
+        _winSettings->SetValue(_winName + ".map", Ff::Sprintf("%s,%.2f,%.10f,%.10f",
+            _map->GetParams().name.c_str(), _map->GetZoom(), rad2deg(lat), rad2deg(lon)));
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMap::Loop(const uint32_t &frame, const double &now)
+void GuiWinDataMap::_Loop(const uint32_t &frame, const double &now)
 {
-    (void)frame;
+    UNUSED(frame);
     if (_tiles)
     {
         _tiles->Loop(now);
@@ -89,29 +95,11 @@ void GuiWinDataMap::Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataMap::ProcessData(const Data &data)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::ClearData()
+void GuiWinDataMap::_DrawContent()
 {
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::DrawWindow()
-{
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
     if (!_tiles || !_map)
     {
         ImGui::TextUnformatted("No maps :-(");
-        _DrawWindowEnd();
         return;
     }
 
@@ -119,16 +107,16 @@ void GuiWinDataMap::DrawWindow()
     //    ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     // Update canvas size
-    const ImVec2 canvasMin  = ImGui::GetCursorScreenPos();
-    const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const ImVec2 canvasMax  = canvasMin + canvasSize;
-    const ImVec2 canvasCent = ImVec2(canvasMin.x + std::floor(canvasSize.x * 0.5), canvasMin.y + std::floor(canvasSize.y * 0.5));
+    const FfVec2 canvasMin  = ImGui::GetCursorScreenPos();
+    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
+    const FfVec2 canvasMax  = canvasMin + canvasSize;
+    const FfVec2 canvasCent = FfVec2(canvasMin.x + std::floor(canvasSize.x * 0.5), canvasMin.y + std::floor(canvasSize.y * 0.5));
 
     _map->SetCanvas(canvasMin, canvasMax);
-    //_mapMain->SetCanvas(canvasMin, canvasMin  + (canvasSize * ImVec2(0.5,1)));
+    //_mapMain->SetCanvas(canvasMin, canvasMin  + (canvasSize * FfVec2(0.5,1)));
 
-    const ImVec2 cursorOrigin = ImGui::GetCursorPos();
-    //ImVec2 cursorMax = ImGui::GetWindowContentRegionMax();
+    const FfVec2 cursorOrigin = ImGui::GetCursorPos();
+    //FfVec2 cursorMax = ImGui::GetWindowContentRegionMax();
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
 
@@ -200,8 +188,8 @@ void GuiWinDataMap::DrawWindow()
             memcpy(llh, lastEpoch->raw.llh, sizeof(llh));
 
             // Approx. base lat/lon using rover lat/lon and North/East
-            constexpr double kWgs84a = 6378137.0;
-            const double m2r = 1.0 / kWgs84a; // metres per rad at equator
+            constexpr double WGS84_A = 6378137.0;
+            const double m2r = 1.0 / WGS84_A; // metres per rad at equator
             const double m2rAtLat = m2r / cos( llh[0] ); // at our latitude
             llh[0] -= lastEpoch->raw.relNed[0] * m2r;
             llh[1] -= lastEpoch->raw.relNed[1] * m2rAtLat;
@@ -272,11 +260,20 @@ void GuiWinDataMap::DrawWindow()
             {
                 for (const auto &m: _winSettings->maps)
                 {
-                    if (ImGui::Selectable(m.title.c_str(), m.name == map.name))
+                    if (m.enabled)
                     {
-                        if (m.name != map.name)
+                        const bool selected = m.name == map.name;
+                        if (ImGui::Selectable(m.title.c_str(), selected))
                         {
-                            _SetMap(m);
+                            if (m.name != map.name)
+                            {
+                                DEBUG("switch to %s", m.name.c_str());
+                                _SetMap(m);
+                            }
+                        }
+                        if (selected)
+                        {
+                            ImGui::SetItemDefaultFocus();
                         }
                     }
                 }
@@ -321,31 +318,62 @@ void GuiWinDataMap::DrawWindow()
         if (numTilesInQueue > 0)
         {
             ImGui::SameLine();
-            const float progress = (float)numTilesInQueue / (float)_tiles->kMaxtilesInQueue;
+            const float progress = (float)numTilesInQueue / (float)_tiles->MAX_TILES_IN_QUEUE;
             char str[100];
             std::snprintf(str, sizeof(str), "Loading %d tiles", numTilesInQueue);
             ImGui::ProgressBar(progress, ImVec2(_winSettings->charSize.x * 20, 0.0f), str);
         }
     }
 
-    // Attribution
+    // Attribution, license, terms of use
     {
         const ImVec2 attr0 { canvasMin.x + _winSettings->style.ItemSpacing.x,
                              canvasMax.y - _winSettings->charSize.y - (3 * _winSettings->style.ItemSpacing.y) };
         ImGui::SetCursorScreenPos(attr0);
         auto p = _map->GetParams();
+        const std::string *link = nullptr;
         if (ImGui::Button(p.attribution.c_str()))
         {
-            std::string cmd = "xdg-open " + p.link;
-            if (std::system(cmd.c_str()) != EXIT_SUCCESS)
-            {
-                WARNING("Command failed: %s", cmd.c_str());
-            }
+            link = &p.attrLink;
         }
         if (ImGui::IsItemHovered())
         {
             controlsHovered = true;
         }
+        if (!p.license.empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::Button(p.license.c_str()))
+            {
+                link = &p.licenseLink;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                controlsHovered = true;
+            }
+        }
+        if (!p.policy.empty())
+        {
+            ImGui::SameLine();
+            if (ImGui::Button(p.policy.c_str()))
+            {
+                link = &p.policyLink;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                controlsHovered = true;
+            }
+        }
+
+        if (link && !link->empty())
+        {
+            std::string cmd = "xdg-open " + *link;
+            if (std::system(cmd.c_str()) != EXIT_SUCCESS)
+            {
+                WARNING("Command failed: %s", cmd.c_str());
+            }
+        }
+
     }
 
     // Place an invisible button on top of everything to capture mouse events (and disable windows moving)
@@ -360,12 +388,12 @@ void GuiWinDataMap::DrawWindow()
     if (_showInfo)
     {
         const float lineSpacing = ImGui::GetTextLineHeightWithSpacing();
-        const ImVec2 infoSize { _winSettings->charSize.x * 23, lineSpacing * 3 };
-        const ImVec2 infoRectTopRight = ImVec2(canvasMax.x - _winSettings->style.ItemSpacing.x, canvasMin.y + _winSettings->style.ItemSpacing.y);
-        const ImVec2 infoRect0 = infoRectTopRight - ImVec2(infoSize.x, 0);
-        const ImVec2 infoRect1 = infoRectTopRight + ImVec2(0, infoSize.y);
+        const FfVec2 infoSize { _winSettings->charSize.x * 23, lineSpacing * 3 };
+        const FfVec2 infoRectTopRight = FfVec2(canvasMax.x - _winSettings->style.ItemSpacing.x, canvasMin.y + _winSettings->style.ItemSpacing.y);
+        const FfVec2 infoRect0 = infoRectTopRight - FfVec2(infoSize.x, 0);
+        const FfVec2 infoRect1 = infoRectTopRight + FfVec2(0, infoSize.y);
         draw->AddRectFilled(infoRect0, infoRect1, ImGui::GetColorU32(ImGuiCol_FrameBg), _winSettings->style.FrameRounding);
-        ImVec2 cursor = infoRect0 + _winSettings->style.FramePadding;
+        FfVec2 cursor = infoRect0 + _winSettings->style.FramePadding;
 
         // Lat/lon
         double lat;
@@ -381,7 +409,7 @@ void GuiWinDataMap::DrawWindow()
 
         ImGui::SetCursorScreenPos(cursor); cursor.y += lineSpacing;
 
-        if ( (lat < MapTiles::kMaxLat) && (lat > MapTiles::kMinLat) )
+        if ( (lat < MapParams::MAX_LAT) && (lat > MapParams::MIN_LAT) )
         {
             int d, m;
             double s;
@@ -393,7 +421,7 @@ void GuiWinDataMap::DrawWindow()
             ImGui::TextUnformatted("Lat: n/a");
         }
         ImGui::SetCursorScreenPos(cursor); cursor.y += lineSpacing;
-        if ( (lon < MapTiles::kMaxLon) && (lon > MapTiles::kMinLon) )
+        if ( (lon < MapParams::MAX_LON) && (lon > MapParams::MIN_LON) )
         {
             int d, m;
             double s;
@@ -430,8 +458,8 @@ void GuiWinDataMap::DrawWindow()
                 ImGui::Text("%.0f m", val);
             }
             const float len = val * m2px;
-            const ImVec2 offs = cursor + ImVec2(_winSettings->charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
-            draw->AddLine(offs, offs + ImVec2(len, 0), GUI_COLOUR(C_BLACK), 4.0f);
+            const FfVec2 offs = cursor + FfVec2(_winSettings->charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
+            draw->AddLine(offs, offs + FfVec2(len, 0), GUI_COLOUR(C_BLACK), 4.0f);
             //DEBUG("lenM=%f log=%f val=%f len=%f", scaleLenM, n, val, len);
         }
     }
@@ -486,12 +514,12 @@ void GuiWinDataMap::DrawWindow()
     if (_debugLayout)
     {
         draw->AddRect(canvasMin, canvasMax, _cDebugLayout);
-        draw->AddLine(canvasCent + ImVec2(0, -10), canvasCent + ImVec2(0, +10), _cDebugLayout);
-        draw->AddLine(canvasCent + ImVec2(-10, 0), canvasCent + ImVec2(+10, 0), _cDebugLayout);
-        draw->AddText(canvasMin + ImVec2(1,1), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasMin.x, canvasMin.y).c_str());
-        draw->AddText(canvasMin + canvasSize + ImVec2(-80,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasSize.x, canvasSize.y).c_str());
-        draw->AddText(canvasCent + ImVec2(1,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasCent.x, canvasCent.y).c_str());
-        //draw->AddText(canvasCent + ImVec2(1,0), _cDebugLayout, Ff::Sprintf("%.1fx%.1f (%.1f)", _tileSize.x, _tileSize.y, _tileScale).c_str());
+        draw->AddLine(canvasCent + FfVec2(0, -10), canvasCent + FfVec2(0, +10), _cDebugLayout);
+        draw->AddLine(canvasCent + FfVec2(-10, 0), canvasCent + FfVec2(+10, 0), _cDebugLayout);
+        draw->AddText(canvasMin + FfVec2(1,1), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasMin.x, canvasMin.y).c_str());
+        draw->AddText(canvasMin + canvasSize + FfVec2(-80,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasSize.x, canvasSize.y).c_str());
+        draw->AddText(canvasCent + FfVec2(1,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasCent.x, canvasCent.y).c_str());
+        //draw->AddText(canvasCent + FfVec2(1,0), _cDebugLayout, Ff::Sprintf("%.1fx%.1f (%.1f)", _tileSize.x, _tileSize.y, _tileScale).c_str());
         //draw->AddText(canvasCent + ImVec2(1,15), _cDebugLayout, Ff::Sprintf("%d %.1f", _zoomLevel, _mapZoom).c_str());
         ImGui::Begin((_winName + "Tiles").c_str());
         ImGui::TextUnformatted(_tiles->GetDebugText().c_str());
@@ -499,7 +527,6 @@ void GuiWinDataMap::DrawWindow()
     }
 
     //ImGui::EndChild(); // ##Plot
-    _DrawWindowEnd();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

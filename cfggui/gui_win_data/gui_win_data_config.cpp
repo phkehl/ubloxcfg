@@ -15,9 +15,12 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_config.hpp"
+#include "ff_ubx.h"
+#include "ff_cpp.hpp"
 
-#include "gui_win_data_inc.hpp"
+#include "gui_inc.hpp"
+
+#include "gui_win_data_config.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -47,6 +50,11 @@ GuiWinDataConfig::GuiWinDataConfig(const std::string &name, std::shared_ptr<Data
     _cfgFileName{}, _cfgFileSaveResultTo{-1.0}, _cfgFileSaveError{}
 {
     _winSize = { 155, 40 };
+
+    // Not using any common data win functions
+    _toolbarEna = false;
+    _latestEpochEna = false;
+
     _DbInit();
 }
 
@@ -102,7 +110,7 @@ const uint32_t GuiWinDataConfig::_baudItemIds[NUM_PORTS] =
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataConfig::Loop(const uint32_t &frame, const double &now)
+void GuiWinDataConfig::_Loop(const uint32_t &frame, const double &now)
 {
     (void)frame;
     (void)now;
@@ -178,7 +186,7 @@ void GuiWinDataConfig::Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataConfig::ProcessData(const Data &data)
+void GuiWinDataConfig::_ProcessData(const Data &data)
 {
     if (_dbPollState == POLL_WAIT)
     {
@@ -578,7 +586,7 @@ void GuiWinDataConfig::_DbClear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataConfig::ClearData()
+void GuiWinDataConfig::_ClearData()
 {
     _DbClear();
     for (auto &dbitem: _dbItems)
@@ -760,12 +768,8 @@ void GuiWinDataConfig::_UpdateChanges()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataConfig::DrawWindow()
+void GuiWinDataConfig::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
 
     bool somethingChanged = false;
 
@@ -821,8 +825,6 @@ void GuiWinDataConfig::DrawWindow()
 
         ImGui::EndTabBar();
     }
-
-    _DrawWindowEnd();
 
     if (somethingChanged)
     {
@@ -1067,7 +1069,7 @@ bool GuiWinDataConfig::_DrawControls()
         ImGui::BeginDisabled(!ctrlEnabled);
         if (ImGui::Button(ICON_FK_ERASER "##ClearAll", _winSettings->iconButtonSize))
         {
-            ClearData();
+            _ClearData();
         }
         Gui::ItemTooltip("Clear all data");
         ImGui::EndDisabled();

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_map.hpp"
 
@@ -77,7 +77,7 @@ void GuiMap::SetZoom(const float zoom, const int level)
     {
         _tileScale = 1.0 + deltaScale;
     }
-    _tileSize = ImVec2(_params.tileSizeX, _params.tileSizeY) * _tileScale;
+    _tileSize = FfVec2(_params.tileSizeX, _params.tileSizeY) * _tileScale;
 
     //DEBUG("_zoom=%.1f _zLevel=%d deltaScale=%.1f _tileScale=%.1f _tileSize=%.1fx%.1f",
     //    _zoom, _zLevel, deltaScale, _tileScale, _tileSize.x, _tileSize.y);
@@ -104,21 +104,21 @@ void GuiMap::SetCentLatLon(const double lat, const double lon)
 {
     _centLat = lat;
     _centLon = lon;
-    if (_centLat < MapTiles::kMinLat)
+    if (_centLat < MapParams::MIN_LAT)
     {
-        _centLat = MapTiles::kMinLat;
+        _centLat = MapParams::MIN_LAT;
     }
-    else if (_centLat > MapTiles::kMaxLat)
+    else if (_centLat > MapParams::MAX_LAT)
     {
-        _centLat = MapTiles::kMaxLat;
+        _centLat = MapParams::MAX_LAT;
     }
-    if (_centLon < MapTiles::kMinLon)
+    if (_centLon < MapParams::MIN_LON)
     {
-        _centLon = MapTiles::kMinLon;
+        _centLon = MapParams::MIN_LON;
     }
-    else if (_centLon > MapTiles::kMaxLon)
+    else if (_centLon > MapParams::MAX_LON)
     {
-        _centLon = MapTiles::kMaxLon;
+        _centLon = MapParams::MAX_LON;
     }
 
     _centTxy.x = MapTiles::LonToTx(_centLon, _zLevel);
@@ -144,16 +144,16 @@ Ff::Vec2<double> GuiMap::GetCentTxy()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiMap::GetLatLonAtMouse(const ImVec2 &mouse, double &lat, double &lon)
+void GuiMap::GetLatLonAtMouse(const FfVec2 &mouse, double &lat, double &lon)
 {
-    const ImVec2 deltaT = (mouse - _canvasCent + ImVec2(0.5, 0.5)) / _tileSize;
+    const FfVec2 deltaT = (mouse - _canvasCent + FfVec2(0.5, 0.5)) / _tileSize;
     lat = MapTiles::TyToLat(_centTxy.y + deltaT.y, _zLevel);
     lon = MapTiles::TxToLon(_centTxy.x + deltaT.x, _zLevel);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-Ff::Vec2<double> GuiMap::GetDeltaTxyFromMouseDelta(const ImVec2 &mouseDelta)
+Ff::Vec2<double> GuiMap::GetDeltaTxyFromMouseDelta(const FfVec2 &mouseDelta)
 {
     return Ff::Vec2<double> { mouseDelta.x / _tileSize.x, mouseDelta.y / _tileSize.y };
 }
@@ -237,7 +237,7 @@ void GuiMap::DrawCtrl(const bool debug)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiMap::SetCanvas(const ImVec2 &min, const ImVec2 &max)
+void GuiMap::SetCanvas(const FfVec2 &min, const FfVec2 &max)
 {
     _canvasMin = min;
     _canvasMax = max;
@@ -275,7 +275,7 @@ bool GuiMap::GetScreenXyFromLatLon(const double lat, const double lon, float &x,
 double GuiMap::GetPixelsPerMetre(const double lat)
 {
     const double cosLatPowZoom = std::cos(lat) * std::pow(2.0, -_zLevel);
-    const double sTile = MapTiles::kWgs84c * cosLatPowZoom;        // Tile width in [m]
+    const double sTile = MapTiles::WGS84_C * cosLatPowZoom;        // Tile width in [m]
     return _tileSize.x / sTile;                       // 1 [m] in [px]
 }
 
@@ -290,7 +290,7 @@ void GuiMap::DrawMap(ImDrawList *draw)
             char msg[200];
             std::snprintf(msg, sizeof(msg), "Zoom level %.2f outside of\nrange for map (%d..%d)",
                 _zoom, _params.zoomMin, _params.zoomMax);
-            const ImVec2 sz = ImGui::CalcTextSize(msg);
+            const FfVec2 sz = ImGui::CalcTextSize(msg);
             ImGui::SetCursorScreenPos( _canvasMin + (_canvasSize / 2) - (sz / 2) );
             ImGui::TextUnformatted(msg);
         }
@@ -363,8 +363,8 @@ void GuiMap::_DrawMapTile(ImDrawList *draw, const int ix, const int dx, const in
     const int ty = _centTy + dy;
     if ( (tx >= 0) && (tx < _numTiles) && (ty >= 0) && (ty < _numTiles) )
     {
-        const ImVec2 tile0 = _centTile0 + (ImVec2(dx, dy) * _tileSize);
-        const ImVec2 tile1 = tile0 + _tileSize;
+        const FfVec2 tile0 = _centTile0 + (FfVec2(dx, dy) * _tileSize);
+        const FfVec2 tile1 = tile0 + _tileSize;
         if ( (tile0.x < _canvasMax.x) && (tile0.y < _canvasMax.y) && (tile1.x > _canvasMin.x) && (tile1.y > _canvasMin.y) )
         {
             const bool skipDraw = (_tintColour & IM_COL32_A_MASK) == 0;
@@ -374,7 +374,7 @@ void GuiMap::_DrawMapTile(ImDrawList *draw, const int ix, const int dx, const in
             }
             else
             {
-                draw->AddImage(_tiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, ImVec2(0,0), ImVec2(1.0,1.0), _tintColour);
+                draw->AddImage(_tiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, FfVec2(0,0), FfVec2(1.0,1.0), _tintColour);
                 if (_debug)
                 {
 #if 0

@@ -390,6 +390,7 @@ typedef struct EPOCH_s
 
     bool                haveUptime;
     double              uptime;
+    char                uptimeStr[20];
 
     // Private states for epoch detection and collection
     uint64_t            _detect[3];

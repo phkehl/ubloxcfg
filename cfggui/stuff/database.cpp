@@ -16,12 +16,14 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <cmath>
+#include <cstring>
 #include <cfloat>
 #include <limits>
 
 #include "ff_stuff.h"
 #include "ff_debug.h"
 #include "ff_trafo.h"
+#include "ff_utils.hpp"
 
 #include "database.hpp"
 
@@ -239,6 +241,18 @@ void Database::Clear()
 
     EpochStats stats;
     _stats = stats;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+int Database::GetSize()
+{
+    return _size;
+}
+
+int Database::GetUsage()
+{
+    return _epochsValidCnt;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

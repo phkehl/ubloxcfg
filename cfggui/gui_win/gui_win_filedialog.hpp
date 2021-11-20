@@ -15,11 +15,12 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_FILEDIALOG_H__
-#define __GUI_WIN_FILEDIALOG_H__
+#ifndef __GUI_WIN_FILEDIALOG_HPP__
+#define __GUI_WIN_FILEDIALOG_HPP__
 
 #include <string>
 #include <memory>
+#include <filesystem>
 
 #include "gui_win.hpp"
 
@@ -121,4 +122,4 @@ class GuiWinFileDialog : public GuiWin
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_FILEDIALOG_H__
+#endif // __GUI_WIN_FILEDIALOG_HPP__

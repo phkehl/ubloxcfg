@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_STATS_H__
-#define __GUI_WIN_DATA_STATS_H__
+#ifndef __GUI_WIN_DATA_STATS_HPP__
+#define __GUI_WIN_DATA_STATS_HPP__
 
 #include "gui_win_data.hpp"
 
@@ -27,12 +27,11 @@ class GuiWinDataStats : public GuiWinData
     public:
         GuiWinDataStats(const std::string &name, std::shared_ptr<Database> database);
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-        void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _ProcessData(const Data &data) final;
+        void _DrawContent() final;
+        void _ClearData() final;
 
         typedef std::function<const Database::Stats (const Database::EpochStats &)> StatsGetter;
         struct Row;
@@ -56,4 +55,4 @@ class GuiWinDataStats : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_STATS_H__
+#endif // __GUI_WIN_DATA_STATS_HPP__

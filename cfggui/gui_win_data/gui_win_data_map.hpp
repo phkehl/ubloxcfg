@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_MAP_H__
-#define __GUI_WIN_DATA_MAP_H__
+#ifndef __GUI_WIN_DATA_MAP_HPP__
+#define __GUI_WIN_DATA_MAP_HPP__
 
 #include "ff_stuff.h"
 #include "maptiles.hpp"
@@ -32,12 +32,10 @@ class GuiWinDataMap : public GuiWinData
         GuiWinDataMap(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataMap();
 
-        void                 Loop(const uint32_t &frame, const double &now) final;
-      //void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _Loop(const uint32_t &frame, const double &now) final;
+        void _DrawContent() final;
 
         // Map display parameters
         bool                 _debugLayout;
@@ -69,4 +67,4 @@ class GuiWinDataMap : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_MAP_H__
+#endif // __GUI_WIN_DATA_MAP_HPP__

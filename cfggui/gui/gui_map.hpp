@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MAP_H__
-#define __GUI_MAP_H__
+#ifndef __GUI_MAP_HPP__
+#define __GUI_MAP_HPP__
 
 #include <cinttypes>
 #include <cmath>
@@ -38,9 +38,9 @@ struct GuiMap
     void                 GetCentLatLon(double &lat, double &lon);
     void                 SetCentTxy(const Ff::Vec2<double> &txy);
     Ff::Vec2<double>     GetCentTxy();
-    void                 GetLatLonAtMouse(const ImVec2 &mouse, double &lat, double &lon);
-    Ff::Vec2<double>     GetDeltaTxyFromMouseDelta(const ImVec2 &mouseDelta);
-    void                 SetCanvas(const ImVec2 &min, const ImVec2 &max);
+    void                 GetLatLonAtMouse(const FfVec2 &mouse, double &lat, double &lon);
+    Ff::Vec2<double>     GetDeltaTxyFromMouseDelta(const FfVec2 &mouseDelta);
+    void                 SetCanvas(const FfVec2 &min, const FfVec2 &max);
     void                 DrawMap(ImDrawList *draw);
     void                 DrawCtrl(const bool debug = false);
     float                GetAutoSizeZoom();
@@ -51,6 +51,7 @@ struct GuiMap
     double               GetPixelsPerMetre(const double lat);
 
     protected:
+
         void                 _DrawMapTile(ImDrawList *draw, const int ix, const int dx, const int dy);
 
         MapParams            _params;
@@ -68,17 +69,17 @@ struct GuiMap
         Ff::Vec2<double>     _centTxy;      // _centLat/_centLon in tile coordinate
         int                  _numTiles;     // Number of tiles in x and y direction at current _zoomLevel
         float                _tileScale;    // Scale of tile
-        ImVec2               _tileSize;     // Rendered tile size [px] (with _tileScale applied)
+        FfVec2               _tileSize;     // Rendered tile size [px] (with _tileScale applied)
         bool                 _drawMap;
 
         int                  _centTx;       // Tile x coordinate [int] for centre tile
         int                  _centTy;       // Tile y coordinate [int] for centre tile
-        ImVec2               _centTile0;    // Canvas coordinate for centre tile
+        FfVec2               _centTile0;    // Canvas coordinate for centre tile
 
-        ImVec2               _canvasMin;
-        ImVec2               _canvasMax;
-        ImVec2               _canvasCent;
-        ImVec2               _canvasSize;
+        FfVec2               _canvasMin;
+        FfVec2               _canvasMax;
+        FfVec2               _canvasCent;
+        FfVec2               _canvasSize;
         double              _canvasLatMin;
         double              _canvasLatMax;
         double              _canvasLonMin;
@@ -88,4 +89,4 @@ struct GuiMap
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MAP_H__
+#endif // __GUI_MAP_HPP__

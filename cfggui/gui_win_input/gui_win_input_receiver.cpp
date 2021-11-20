@@ -15,19 +15,9 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include <cstdint>
-#include <cstring>
-#include <functional>
-
-#include "ff_stuff.h"
-#include "ff_ubx.h"
 #include "ff_port.h"
-#include "ff_trafo.h"
-#include "ff_cpp.hpp"
 
-#include "imgui.h"
-#include "imgui_stdlib.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "platform.hpp"
 
@@ -44,17 +34,25 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 {
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
-    _winIniPos = POS_NW;
-    _winOpen   = true;
     _winSize   = { 80, 25 };
     SetTitle("Receiver X");
 
     _receiver = std::make_shared<Receiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
 
-    _InitRecentPorts();
-
-    if (!_recentPorts.empty())
+    if (_recentPorts.empty())
+    {
+        _recentPorts = _winSettings->GetValueMult("ReceiverRecentPorts", MAX_RECENT_PORTS);
+    }
+    // Populate some examples if none were loaded
+    if (_recentPorts.empty())
+    {
+        _recentPorts.push_back("/dev/ttyACM0");
+        _recentPorts.push_back("ser:///dev/ttyUSB0");
+        _recentPorts.push_back("tcp://192.168.1.1:12345");
+        _recentPorts.push_back("telnet://192.168.1.2:23456");
+    }
+    else
     {
         _port = _recentPorts[0];
     }
@@ -67,14 +65,14 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 GuiWinInputReceiver::~GuiWinInputReceiver()
 {
     DEBUG("~GuiWinInputReceiver(%s)", _winName.c_str());
-    _winSettings->SetValue("RecentPorts", Ff::StrJoin(_recentPorts, ","));
+    _winSettings->SetValueMult("ReceiverRecentPorts", _recentPorts, MAX_RECENT_PORTS);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 bool GuiWinInputReceiver::IsOpen()
 {
-    // Keep window open as long as receiver is still connected
+    // Keep window open as long as receiver is still connected (during disconnect)
     return _winOpen || !_receiver->IsIdle();
 }
 
@@ -525,38 +523,9 @@ void GuiWinInputReceiver::_AddRecentPort(const std::string &port)
         }
     }
     _recentPorts.insert(_recentPorts.begin(), 1, port);
-    while ((int)_recentPorts.size() > 20)
+    while ((int)_recentPorts.size() > MAX_RECENT_PORTS)
     {
         _recentPorts.pop_back();
-    }
-}
-
-void GuiWinInputReceiver::_InitRecentPorts()
-{
-    // Load from config file on first GuiWinInputReceiver instance, list is shared across instances
-    static bool loaded = false;
-    if (!loaded)
-    {
-        std::string recentPorts;
-        _winSettings->GetValue("RecentPorts", recentPorts, "");
-        for (auto &port: Ff::StrSplit(recentPorts, ","))
-        {
-            if (!port.empty())
-            {
-                _recentPorts.push_back(port);
-            }
-        }
-
-        // Populate some examples if none were loaded
-        if (_recentPorts.empty())
-        {
-            _recentPorts.push_back("/dev/ttyACM0");
-            _recentPorts.push_back("ser:///dev/ttyUSB0");
-            _recentPorts.push_back("tcp://192.168.1.1:12345");
-            _recentPorts.push_back("telnet://192.168.1.2:23456");
-        }
-
-        loaded = true;
     }
 }
 

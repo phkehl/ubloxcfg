@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "gui_win_data_stats.hpp"
+#include "ff_trafo.h"
 
-#include "gui_win_data_inc.hpp"
+#include "gui_inc.hpp"
+
+#include "gui_win_data_stats.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -148,13 +150,7 @@ GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Databa
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataStats::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataStats::ProcessData(const Data &data)
+void GuiWinDataStats::_ProcessData(const Data &data)
 {
     // New epoch means database stats have updated, render row contents
     if (data.type == Data::Type::DATA_EPOCH)
@@ -173,8 +169,7 @@ void GuiWinDataStats::ProcessData(const Data &data)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-
-void GuiWinDataStats::ClearData()
+void GuiWinDataStats::_ClearData()
 {
     for (auto &row: _rows)
     {
@@ -201,13 +196,8 @@ void GuiWinDataStats::Row::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataStats::DrawWindow()
+void GuiWinDataStats::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
     constexpr ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
         ImGuiTableFlags_Hideable | /*ImGuiTableFlags_Sortable |*/
         ImGuiTableFlags_BordersV /* ImGuiTableFlags_Borders */ |
@@ -242,8 +232,6 @@ void GuiWinDataStats::DrawWindow()
 
         ImGui::EndTable();
     }
-
-    _DrawWindowEnd();
 }
 
 /* ****************************************************************************************************************** */

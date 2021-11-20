@@ -15,21 +15,7 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-// #include <cstdint>
-// #include <cstring>
-// #include <functional>
-
-// #include "ff_stuff.h"
-// #include "ff_ubx.h"
-// #include "ff_port.h"
-// #include "ff_trafo.h"
-// #include "ff_cpp.hpp"
-
-#include "imgui.h"
-#include "imgui_stdlib.h"
-#include "IconsForkAwesome.h"
-
-// #include "platform.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_win_input_logfile.hpp"
 
@@ -41,8 +27,7 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
 {
     DEBUG("GuiWinInputLogfile(%s)", _winName.c_str());
 
-    _winIniPos = POS_NW;
-    _winSize   = { 80, 25 };
+    _winSize = { 80, 25 };
     SetTitle("Logfile X");
 
     _dataWinCaps = DataWinDef::Cap_e::PASSIVE;
@@ -55,15 +40,7 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
 
     if (_recentLogs.empty())
     {
-        for (int n = 1; n <= MAX_RECENT_LOGS; n++)
-        {
-            const std::string key = _winName + ".RecentLog" + std::to_string(n);
-            const std::string val = _winSettings->GetValue(key);
-            if (!val.empty())
-            {
-                _recentLogs.push_back(val);
-            }
-        }
+        _recentLogs = _winSettings->GetValueMult("LogfileRecentLogs", MAX_RECENT_LOGS);
     }
 
     _ClearData();
@@ -75,12 +52,7 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
 {
     DEBUG("~GuiWinInputLogfile(%s)", _winName.c_str());
 
-    int ix = 0;
-    for (const auto &path: _recentLogs)
-    {
-        const std::string key = _winName + ".RecentLog" + std::to_string(++ix);
-        _winSettings->SetValue(key, path);
-    }
+    _winSettings->SetValueMult("LogfileRecentLogs", _recentLogs, MAX_RECENT_LOGS);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

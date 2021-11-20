@@ -20,12 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
-#include "gui_settings.hpp"
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_mon_comms.hpp"
 
@@ -38,7 +33,7 @@ GuiMsgUbxMonComms::GuiMsgUbxMonComms(std::shared_ptr<Receiver> receiver, std::sh
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     if ( (UBX_MON_COMMS_VERSION_GET(msg->data) != UBX_MON_COMMS_V0_VERSION) || (UBX_MON_COMMS_V0_SIZE(msg->data) != msg->size) )
     {

@@ -20,9 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_esf_meas.hpp"
 #include "gui_msg_ubx_esf_status.hpp"
@@ -149,7 +147,7 @@ GuiMsgUbxEsfStatus::Sensor::Sensor(const uint8_t *groupData)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     if (!_valid)
     {

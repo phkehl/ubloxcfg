@@ -15,9 +15,12 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include "gui_inc.hpp"
+
 #include "gui_app.hpp"
-#include "gui_settings.hpp"
+
 #include "gui_msg.hpp"
+
 #include "gui_msg_ubx_esf_meas.hpp"
 #include "gui_msg_ubx_esf_status.hpp"
 #include "gui_msg_ubx_mon_comms.hpp"
@@ -50,7 +53,7 @@ void GuiMsg::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsg::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsg::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
     UNUSED(sizeAvail);

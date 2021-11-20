@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __PLATFORM_H__
-#define __PLATFORM_H__
+#ifndef __PLATFORM_HPP__
+#define __PLATFORM_HPP__
 
 // #include <cinttypes>
 #include <vector>
@@ -52,4 +52,4 @@ void SetThreadName(const std::string &name);
 
 /* ****************************************************************************************************************** */
 } // namespace Platform
-#endif // __PLATFORM_H__
+#endif // __PLATFORM_HPP__

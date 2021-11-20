@@ -19,11 +19,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_mon_ver.hpp"
 
@@ -36,7 +32,7 @@ GuiMsgUbxMonVer::GuiMsgUbxMonVer(std::shared_ptr<Receiver> receiver, std::shared
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonVer::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxMonVer::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(sizeAvail);
     if (msg->size >= UBX_MON_VER_V0_MIN_SIZE)

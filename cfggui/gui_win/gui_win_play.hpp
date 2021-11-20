@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_PLAY_H__
-#define __GUI_WIN_PLAY_H__
+#ifndef __GUI_WIN_PLAY_HPP__
+#define __GUI_WIN_PLAY_HPP__
 
 #include <memory>
 #include <thread>
@@ -56,9 +56,9 @@ class GuiWinPlay : public GuiWin
         void _TetrisThread();
 
         void _DrawTetris();
-        void _DrawTetromino(ImDrawList *draw, const ImVec2 &p0, const ImVec2 &square, const tetris_block &block);
+        void _DrawTetromino(ImDrawList *draw, const FfVec2 &p0, const FfVec2 &square, const tetris_block &block);
         ImU32 _TetrominoColour(const tetris_type type, const bool dim = false);
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_PLAY_H__
+#endif // __GUI_WIN_PLAY_HPP__

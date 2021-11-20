@@ -15,15 +15,21 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include "gui_inc.hpp"
+
 #include "gui_win_data.hpp"
 
 /* ****************************************************************************************************************** */
 
 GuiWinData::GuiWinData(const std::string &name, std::shared_ptr<Database> database) :
     GuiWin(name),
-    _database{database}
+    _database{database}, _toolbarEna{true}, _latestEpochEna{true}
 {
     DEBUG("GuiWinData(%s)", _winName.c_str());
+
+    //_winClass.ClassId = 2;
+
+    ClearData();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -51,20 +57,51 @@ void GuiWinData::SetLogfile(std::shared_ptr<Logfile> logfile)
 
 void GuiWinData::Loop(const uint32_t &frame, const double &now)
 {
-    (void)frame;
-    (void)now;
+    // Expire data
+    if (_latestEpochEna && _latestEpoch && _receiver && !_receiver->IsIdle())
+    {
+        _latestEpochAge = now - _latestEpochTs;
+        if (_latestEpochAge > _latestEpochExpire)
+        {
+            ClearData();
+        }
+    }
+
+    _Loop(frame, now);
+}
+
+void GuiWinData::_Loop(const uint32_t &frame, const double &now)
+{
+    UNUSED(frame);
+    UNUSED(now);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinData::ProcessData(const Data &data)
 {
-    (void)data;
+    if ( _latestEpochEna && (data.type == Data::Type::DATA_EPOCH) )
+    {
+        _latestEpoch = data.epoch;
+        _latestEpochTs = (double)data.epoch->epoch.ts * 1e-3;
+    }
+    _ProcessData(data);
+}
+
+void GuiWinData::_ProcessData(const Data &data)
+{
+    UNUSED(data);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinData::ClearData()
+{
+    _latestEpoch = nullptr;
+    _ClearData();
+}
+
+void GuiWinData::_ClearData()
 {
 }
 
@@ -77,7 +114,48 @@ void GuiWinData::DrawWindow()
         return;
     }
 
+    // Common buttons toolbar
+    if (_toolbarEna)
+    {
+        // Clear
+        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+        {
+            ClearData();
+        }
+        Gui::ItemTooltip("Clear all data");
+
+        _DrawToolbar();
+
+        // Age of latest epoch
+        if (_latestEpochEna && _receiver && !_receiver->IsIdle())
+        {
+                ImGui::SameLine(ImGui::GetContentRegionAvail().x - (4 * _winSettings->charSize.x));
+            ImGui::AlignTextToFramePadding();
+            if (_latestEpoch)
+            {
+                ImGui::Text("%4.1f", _latestEpochAge);
+            }
+            else
+            {
+                ImGui::TextUnformatted(" n/a");
+            }
+        }
+
+        ImGui::Separator();
+    }
+
+    _DrawContent();
+
     _DrawWindowEnd();
+}
+
+void GuiWinData::_DrawToolbar()
+{
+}
+
+void GuiWinData::_DrawContent()
+{
+    ImGui::TextUnformatted("Not implemented...");
 }
 
 /* ****************************************************************************************************************** */

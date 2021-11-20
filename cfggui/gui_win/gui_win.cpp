@@ -18,31 +18,28 @@
 #include <cstring>
 #include <cmath>
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
 #include "ff_stuff.h"
 #include "config.h"
 
-#include "gui_win.hpp"
+#include "gui_inc.hpp"
 #include "gui_app.hpp"
+
+#include "gui_win.hpp"
 
 /* ****************************************************************************************************************** */
 
 GuiWin::GuiWin(const std::string &name) :
-    _winTitle        { "Default" },
-    _winName         { "Default" },
-    _winImguiName    { "Default###Default" },
-    _winOpen         { false },
-    _winPos          { POS_USER },
-    _winRePos        { POS_NONE },
-    _winIniPos       { POS_USER },
-    _winFlags        { 0 },
-    _winSize         { 30, 30 }, // > 0: units of fontsize, < 0: = fraction of screen width/height
-    _winSizeMin      { 0, 0 },
-    _winUid          { reinterpret_cast<std::uintptr_t>(this) },
-    _winSettings     { GuiApp::GetInstance().GetSettings() }
+    _winTitle         { "Default" },
+    _winName          { "Default" },
+    _winImguiName     { "Default###Default" },
+    _winOpen          { false },
+    _winDrawn         { false },
+    _winFlags         { ImGuiWindowFlags_None },
+    _winSize          { 30, 30 }, // > 0: units of fontsize, < 0: = fraction of screen width/height
+    _winSizeMin       { 0, 0 },
+    _winUid           { reinterpret_cast<std::uintptr_t>(this) },
+    _winSettings      { GuiApp::GetInstance().GetSettings() },
+    _winClass         { std::make_unique<ImGuiWindowClass>() }
 {
     _winUidStr = Ff::Sprintf("%016lx", _winUid);
     _winName = name;
@@ -68,6 +65,13 @@ void GuiWin::Close()
 bool GuiWin::IsOpen()
 {
     return _winOpen;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiWin::IsDrawn()
+{
+    return _winDrawn;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -137,115 +141,27 @@ void GuiWin::DrawWindow()
 
 bool GuiWin::_DrawWindowBegin()
 {
-    auto &io = ImGui::GetIO();
-
-    // Set window position
-    {
-        const float padding = 10.0f;
-        const float topOffs = _winSettings->menuBarHeight;
-
-        enum POS_e position;
-        ImGuiCond cond = ImGuiCond_Always;
-        if (_winRePos != POS_NONE)
-        {
-            position    = _winRePos;
-            _winRePos = POS_NONE;
-        }
-        else if (_winIniPos != POS_NONE)
-        {
-            position = _winIniPos;
-            _winIniPos = POS_NONE;
-            cond = ImGuiCond_FirstUseEver;
-        }
-        else
-        {
-            position = _winPos;
-        }
-        switch (position)
-        {
-            case POS_NW:
-                ImGui::SetNextWindowPos(
-                    ImVec2(padding, topOffs + padding), cond, ImVec2(0.0f, 0.0f));
-                break;
-            case POS_NE:
-                ImGui::SetNextWindowPos(
-                    ImVec2(io.DisplaySize.x - padding, topOffs + padding), cond, ImVec2(1.0f, 0.0f));
-                break;
-            case POS_SE:
-                ImGui::SetNextWindowPos(
-                    ImVec2(io.DisplaySize.x - padding, io.DisplaySize.y - padding), cond, ImVec2(1.0f, 1.0f));
-                break;
-            case POS_SW:
-                ImGui::SetNextWindowPos(
-                    ImVec2(padding, io.DisplaySize.y - padding), cond, ImVec2(0.0f, 1.0f));
-                break;
-
-            case POS_N:
-                ImGui::SetNextWindowPos(
-                    ImVec2(io.DisplaySize.x / 2.0f, topOffs + padding), cond, ImVec2(0.5f, 0.0f));
-                break;
-            case POS_S:
-                ImGui::SetNextWindowPos(
-                    ImVec2(io.DisplaySize.x / 2.0f, io.DisplaySize.y - padding), cond, ImVec2(0.5f, 1.0f));
-                break;
-
-            case POS_E:
-                ImGui::SetNextWindowPos(
-                    ImVec2(io.DisplaySize.x - padding, io.DisplaySize.y / 2.0f), cond, ImVec2(1.0f, 0.5f));
-                break;
-
-            case POS_W:
-                ImGui::SetNextWindowPos(
-                    ImVec2(padding, io.DisplaySize.y / 2.0f), cond, ImVec2(0.0f, 0.5f));
-                break;
-
-            case POS_USER:
-            case POS_NONE:
-                break;
-        }
-    }
-
     // Start drawing window
-    {
-        if (!CHKBITS(_winFlags, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            // > 0 = units of character width/height, < 0 = fraction of display (main window) size
-            /*ImVec2 size = _winSize;
-            size.x *= _winSize.x < 0.0 ? -io.DisplaySize.x : _winSettings->charSize.x;
-            if (size.y != 0.0f)
-            {
-                size.y *= _winSize.y < 0.0 ? -io.DisplaySize.y : _winSettings->charSize.y;
-            }
-            else
-            {
-                size.y = size.x;
-            }*/
-            ImGui::SetNextWindowSize(_WinSizeToVec(_winSize), ImGuiCond_FirstUseEver);
-            if (_winSizeMin.x != 0.0)
-            {
-                ImGui::SetNextWindowSizeConstraints(_WinSizeToVec(_winSizeMin), ImVec2(FLT_MAX, FLT_MAX));
-            }
-        }
 
-        if (!ImGui::Begin(_winImguiName.c_str(), &_winOpen, _winFlags))
+    if (!CHKBITS(_winFlags, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::SetNextWindowSize(_WinSizeToVec(_winSize), ImGuiCond_FirstUseEver);
+        if (_winSizeMin.x != 0.0f)
         {
-            ImGui::End();
-            return false;
+            ImGui::SetNextWindowSizeConstraints(_WinSizeToVec(_winSizeMin), ImVec2(FLT_MAX, FLT_MAX));
         }
     }
 
-    // Add window context menu
+    ImGui::SetNextWindowClass(_winClass.get());
+
+    _winDrawn = ImGui::Begin(_winImguiName.c_str(), &_winOpen, _winFlags);
+
+    if (!_winDrawn)
     {
-        if ( (_winFlags & ImGuiWindowFlags_NoTitleBar) == 0 ?
-            ImGui::BeginPopupContextItem() : ImGui::BeginPopupContextWindow() )
-        {
-            ImGui::BeginPopupContextItem();
-            _DrawWindowContextMenuItems();
-            ImGui::EndPopup();
-        }
+        ImGui::End();
     }
 
-    return true;
+    return _winDrawn;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -270,46 +186,6 @@ ImVec2 GuiWin::_WinSizeToVec(ImVec2 size)
 void GuiWin::_DrawWindowEnd()
 {
     ImGui::End();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWin::_DrawWindowContextMenuItems(const bool lockPosition)
-{
-    enum POS_e position = _winPos;
-    ImGui::TextUnformatted(lockPosition ? "Position" : "Move to");
-    ImGui::RadioButton("##North-west", (int *)&position, POS_NW);   ImGui::SameLine();
-    ImGui::RadioButton("##North",      (int *)&position, POS_N);    ImGui::SameLine();
-    ImGui::RadioButton("##North-east", (int *)&position, POS_NE);
-
-    ImGui::RadioButton("##West",       (int *)&position, POS_W);    ImGui::SameLine();
-    ImGui::RadioButton("##User",       (int *)&position, POS_USER); ImGui::SameLine();
-    ImGui::RadioButton("##East",       (int *)&position, POS_E);
-
-    ImGui::RadioButton("##South-west", (int *)&position, POS_SW);   ImGui::SameLine();
-    ImGui::RadioButton("##South",      (int *)&position, POS_S);    ImGui::SameLine();
-    ImGui::RadioButton("##South-east", (int *)&position, POS_SE);
-
-    if (lockPosition)
-    {
-        _winPos   = position;
-        _winRePos = POS_NONE;
-    }
-    else
-    {
-        _winRePos = position;
-    }
-
-    ImGui::Separator();
-
-    //ImGui::SetNextItemWidth(100.0);
-    //ImGui::DragFloat("##scale", &_scale, 0.01f, 0.25f, 4.0f, "%.1f");
-    //ImGui::Separator();
-
-    if (ImGui::MenuItem("Close"))
-    {
-        Close();
-    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

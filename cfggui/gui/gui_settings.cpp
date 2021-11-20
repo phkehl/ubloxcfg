@@ -26,12 +26,16 @@
 #include "ff_trafo.h"
 #include "ff_cpp.hpp"
 
-#include "IconsForkAwesome.h"
+#include "platform.hpp"
+
+#include "gui_inc.hpp"
+#ifdef IMGUI_ENABLE_FREETYPE
+#  include "imgui_freetype.h"
+#endif
 
 #include "gui_fonts.hpp"
-#include "gui_widget.hpp"
+
 #include "gui_settings.hpp"
-#include "platform.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -39,58 +43,64 @@
 
 GuiSettings::GuiSettings(const std::string &cfgFile) :
     // Settings
-    fontIx{FONT_PROGGY_IX}, fontSize{13.0f},
-    //colours{ SETTINGS_COLOURS(_SETTINGS_COLOUR_COL) },
-    assetPath{}, cachePath{},
-    maps{},
+    fontSize                  { FONT_SIZE_DEF },
+    fontMono                  { nullptr },
+    fontSans                  { nullptr },
+    cachePath                 { },
+    maps                      { },
     // Helpers
-    menuBarHeight{10.0},
-    iconButtonSize{13.0, 13.0},
-    style{ImGui::GetStyle()},
-    charSize{8.0, 13.0},
-    plotStyle{ImPlot::GetStyle()},
+    style                     { ImGui::GetStyle() },
+    plotStyle                 { ImPlot::GetStyle() },
 
     // Private
-    _fontDirty{true}, _sizesDirty{true}
+    _fontDirty                { true },
+    _sizesDirty               { true },
+    _ftBuilderFlags           { FT_BUILDER_FLAGS_DEF },
+    _ftRasterizerMultiply     { FT_RASTERIZER_MULTIPLY_DEF },
+    _clearSettingsOnExit      { false }
 {
     DEBUG("GuiSettings()");
 
     ImGuiIO &io = ImGui::GetIO();
 
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    //io.FontAllowUserScaling = true;
-    //io.UserData = NULL;
-    io.IniFilename = NULL;
-    //io.IniFilename = "/tmp/meier.ini";
-    //io.FontGlobalScale = 2.0;
+    io.ConfigFlags                   |= ImGuiConfigFlags_NavEnableKeyboard;
+    //io.ConfigFlags                 |= ImGuiConfigFlags_NavEnableGamepad;
+    //io.FontAllowUserScaling         = true;
+    //io.UserData                     = NULL;
+    io.IniFilename                    = NULL; // Don't auto-load, we do it ourselves in LoadConf() below
+    //io.FontGlobalScale              = 2.0;
+    io.ConfigDockingWithShift         = true;
+    //io.ConfigViewportsNoAutoMerge   = true;
+    //io.ConfigViewportsNoTaskBarIcon = true;
+    io.ConfigWindowsResizeFromEdges   = true;
 
     ImGui::SetColorEditOptions(
         ImGuiColorEditFlags_Float | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_InputRGB |
         ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview |
         ImGuiColorEditFlags_AlphaPreviewHalf);
 
-    // Tune style
+    // Tune colours
     ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
+    style.Colors[ImGuiCol_PopupBg] = ImColor(IM_COL32(0x34, 0x34, 0x34, 0xf8));
+
+    // Tune style
     style.FrameBorderSize          = 1.0f;
     style.TabBorderSize            = 1.0f;
     style.WindowTitleAlign.x       = 0.5f;
-    style.WindowMenuButtonPosition = ImGuiDir_None;
+    style.WindowMenuButtonPosition = ImGuiDir_Left;
     style.FrameRounding            = 3.0f;
     //style.WindowBorderSize         = 5.0f;
     style.WindowRounding           = 5.0f;
 
     ImPlot::StyleColorsAuto();
-    plotStyle.LineWeight = 2.0;
-    //plotStyle.AntiAliasedLines = true;
-    plotStyle.UseLocalTime = false;
-    plotStyle.UseISO8601 = true;
-    plotStyle.Use24HourClock = true;
-    plotStyle.FitPadding = ImVec2(0.1, 0.1);
+    plotStyle.LineWeight           = 2.0;
+    //plotStyle.AntiAliasedLines   = true;
+    plotStyle.UseLocalTime         = false;
+    plotStyle.UseISO8601           = true;
+    plotStyle.Use24HourClock       = true;
+    plotStyle.FitPadding           = ImVec2(0.1, 0.1);
 
     const std::string baseDir = std::filesystem::weakly_canonical( std::filesystem::path(cfgFile).parent_path() ).string();
-    assetPath = baseDir + "/../cfggui";
     cachePath = Platform::CacheDir("tiles");
 
     if (!cfgFile.empty())
@@ -103,10 +113,6 @@ GuiSettings::~GuiSettings()
 {
     DEBUG("~GuiSettings()");
 }
-
-#define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
-
-/* static */ImU32 GuiSettings::colours[_NUM_COLOURS] = { SETTINGS_COLOURS(_SETTINGS_COLOUR_COL) };
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -123,74 +129,158 @@ void GuiSettings::LoadConf(const std::string &file)
         // Colours
         for (int ix = 0; ix < _NUM_COLOURS; ix++)
         {
-            uint32_t val;
-            if (_confFile.Get(std::string("Colour.") + kColourNames[ix], val))
-            {
-                colours[ix] = val;
-            }
+            GetValue(std::string("Settings.colour.") + COLOUR_NAMES[ix], colours[ix], COLOUR_DEFAULTS[ix]);
         }
+
+        // Font
+        GetValue("Settings.fontSize", fontSize, FONT_SIZE_DEF);
+        fontSize = CLIP(fontSize, FONT_SIZE_MIN, FONT_SIZE_MAX);
+
+        // Freetype renderer config
+        GetValue("Settings.ftBuilderFlags", _ftBuilderFlags, FT_BUILDER_FLAGS_DEF);
+        GetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply, FT_RASTERIZER_MULTIPLY_DEF);
+        _ftRasterizerMultiply = CLIP(_ftRasterizerMultiply, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX);
     }
 
     // Load maps
     {
-        const std::string mapsConfFile = Platform::ConfigFile("maps.conf");
-
-        // Create default maps.conf
-        if (!Platform::FileExists(mapsConfFile))
-        {
-#include "maps_conf.c"
-            Platform::FileSpew(mapsConfFile, cfggui_maps_conf, cfggui_maps_conf_len);
-        }
-
-        auto mapsConf = Ff::ConfFile();
-        while (mapsConf.Load(mapsConfFile, "map"))
+        maps.clear();
+        auto conf = Ff::ConfFile();
+        while (conf.Load(file, "map"))
         {
             MapParams map;
-            if (!mapsConf.Get("name",        map.name)        || map.name.empty()        ||
-                !mapsConf.Get("title",       map.title)       || map.title.empty()       ||
-                !mapsConf.Get("attribution", map.attribution) || map.attribution.empty() ||
-                !mapsConf.Get("link",        map.link)        || map.link.empty()        ||
-                !mapsConf.Get("zoomMin",     map.zoomMin)     || (map.zoomMin < 0)       ||
-                !mapsConf.Get("zoomMax",     map.zoomMax)     || (map.zoomMax < map.zoomMin) ||
-                !mapsConf.Get("tileSizeX",   map.tileSizeX)   || (map.tileSizeX < 100)   ||
-                !mapsConf.Get("tileSizeY",   map.tileSizeY)   || (map.tileSizeY < 100)   ||
-                !mapsConf.Get("downloadUrl", map.downloadUrl) || map.downloadUrl.empty() ||
-                !mapsConf.Get("cachePath",   map.cachePath)   || map.cachePath.empty()   ||
+            bool mapOk = true;
+            if (!conf.Get("name",        map.name)        || map.name.empty()        ||
+                !conf.Get("title",       map.title)       || map.title.empty()       ||
+                !conf.Get("attribution", map.attribution) || map.attribution.empty() ||
+                !conf.Get("attrLink",    map.attrLink)    || map.attrLink.empty()    ||
+                !conf.Get("zoomMin",     map.zoomMin)     || (map.zoomMin < 0)       ||
+                !conf.Get("zoomMax",     map.zoomMax)     || (map.zoomMax < map.zoomMin) ||
+                !conf.Get("tileSizeX",   map.tileSizeX)   || (map.tileSizeX < 100)   || (map.tileSizeX > 16384) ||
+                !conf.Get("tileSizeY",   map.tileSizeY)   || (map.tileSizeY < 100)   || (map.tileSizeY > 16384) ||
+                !conf.Get("downloadUrl", map.downloadUrl) || map.downloadUrl.empty() ||
+                !conf.Get("cachePath",   map.cachePath)   || map.cachePath.empty()   ||
                 false
                 )
             {
-                WARNING("Incomplete map info in %s!", mapsConfFile.c_str());
-                continue;
+                mapOk = false;
             }
-            DEBUG("Map %s: %s", map.name.c_str(), map.title.c_str());
-            mapsConf.Get("referer", map.referer);
-            mapsConf.Get("threads", map.threads);
-            mapsConf.Get("downloadTimeout", map.downloadTimeout);
-            if      (map.downloadTimeout <  1000) { map.downloadTimeout =  5000; }
-            else if (map.downloadTimeout > 60000) { map.downloadTimeout = 60000; }
-            if      (map.threads <  1) { map.threads =  1; }
-            else if (map.threads > 10) { map.threads = 10; }
-            if (mapsConf.Get("minLat", map.minLat)) { map.minLat = deg2rad(map.minLat); }
-            if (mapsConf.Get("maxLat", map.maxLat)) { map.maxLat = deg2rad(map.maxLat); }
-            if (mapsConf.Get("minLon", map.minLon)) { map.minLon = deg2rad(map.minLon); }
-            if (mapsConf.Get("maxLon", map.maxLon)) { map.maxLon = deg2rad(map.maxLon); }
-            if ( (map.minLat < MapTiles::kMinLat) || (map.maxLat > MapTiles::kMaxLat) ||
-                 (map.minLon < MapTiles::kMinLon) || (map.maxLon > MapTiles::kMaxLon) )
-            {
-                WARNING("Bad {min,max}{Lon,Lat} in %s!", mapsConfFile.c_str());
-                continue;
-            }
+
+            map.enabled = true;
+            conf.Get("enabled",         map.enabled);
+            conf.Get("referer",         map.referer);
+            conf.Get("threads",         map.threads);
+            conf.Get("downloadTimeout", map.downloadTimeout);
+            conf.Get("license",         map.license);
+            conf.Get("licenseLink",     map.licenseLink);
+            conf.Get("policy",          map.policy);
+            conf.Get("policyLink",      map.policyLink);
+
+            map.threads = CLIP(map.threads, 1, 10);
+            map.downloadTimeout = CLIP(map.downloadTimeout, 1000, 30000);
+
             std::string subDomains;
-            if (mapsConf.Get("subDomains", subDomains))
+            if (conf.Get("subDomains", subDomains))
             {
                 map.subDomains = Ff::StrSplit(subDomains, ",");
             }
-            maps.push_back(map);
-            mapsConf.Clear();
+
+            if (conf.Get("minLat", map.minLat)) { map.minLat = deg2rad(map.minLat); } else { mapOk = false; }
+            if (conf.Get("maxLat", map.maxLat)) { map.maxLat = deg2rad(map.maxLat); } else { mapOk = false; }
+            if (conf.Get("minLon", map.minLon)) { map.minLon = deg2rad(map.minLon); } else { mapOk = false; }
+            if (conf.Get("maxLon", map.maxLon)) { map.maxLon = deg2rad(map.maxLon); } else { mapOk = false; }
+            const double minDelta = deg2rad(1.0);
+            if ( (map.minLat < (MapParams::MIN_LAT - 1e-12)) || (map.maxLat > (MapParams::MAX_LAT + 1e-12)) ||
+                 (map.minLon < (MapParams::MIN_LON - 1e-12)) || (map.maxLon > (MapParams::MAX_LON + 1e-12)) ||
+                 ((map.maxLat - map.minLat) < minDelta) || ((map.maxLon - map.minLon) < minDelta) )
+            {
+                mapOk = false;
+            }
+
+            if (mapOk)
+            {
+                maps.push_back(map);
+            }
+            else
+            {
+                WARNING("%s:%d: Bad map info!", file.c_str(), conf.GetSectionBeginLine());
+            }
+        }
+
+        // Add / update from built-in maps
+        for (auto &builtin: MapParams::BUILTIN_MAPS)
+        {
+            auto entry = std::find_if(maps.begin(), maps.end(), [&builtin](MapParams &p) { return p.name == builtin.name; });
+            if (entry == maps.end())
+            {
+                maps.push_back(builtin);
+            }
+            else
+            {
+                const bool enabled = entry->enabled;
+                *entry = builtin;
+                entry->enabled = enabled;
+            }
         }
     }
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiSettings::SaveConf(const std::string &file)
+{
+    DEBUG("GuiSettings::SaveConf(%s)", file.c_str());
+
+    if (_clearSettingsOnExit)
+    {
+        Platform::FileSpew(file, nullptr, 0);
+        return;
+    }
+
+    // Save ImGui stuff
+    ImGui::SaveIniSettingsToDisk(file.c_str());
+
+    // Append our own stuff
+    for (int ix = 0; ix < _NUM_COLOURS; ix++)
+    {
+        SetValue(std::string("Settings.colour.") + COLOUR_NAMES[ix], colours[ix]);
+    }
+    SetValue("Settings.fontSize",             fontSize);
+    SetValue("Settings.ftBuilderFlags",       _ftBuilderFlags);
+    SetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply);
+
+    _confFile.Save(file, "cfggui", true);
+
+    // Save maps
+    for (const auto &map: maps)
+    {
+        Ff::ConfFile conf;
+        conf.Set("enabled",         map.enabled);
+        conf.Set("name",            map.name);
+        conf.Set("title",           map.title);
+        conf.Set("attribution",     map.attribution);
+        conf.Set("attrLink",        map.attrLink);
+        conf.Set("license",         map.license);
+        conf.Set("licenseLink",     map.licenseLink);
+        conf.Set("policy",          map.policy);
+        conf.Set("policyLink",      map.policyLink);
+        conf.Set("zoomMin",         map.zoomMin);
+        conf.Set("zoomMax",         map.zoomMax);
+        conf.Set("tileSizeX",       map.tileSizeX);
+        conf.Set("tileSizeY",       map.tileSizeY);
+        conf.Set("downloadUrl",     map.downloadUrl);
+        conf.Set("subDomains",      Ff::StrJoin(map.subDomains, ","));
+        conf.Set("downloadTimeout", map.downloadTimeout);
+        conf.Set("referer",         map.referer);
+        conf.Set("cachePath",       map.cachePath);
+        conf.Set("minLat",          rad2deg(map.minLat));
+        conf.Set("maxLat",          rad2deg(map.maxLat));
+        conf.Set("minLon",          rad2deg(map.minLon));
+        conf.Set("maxLon",          rad2deg(map.maxLon));
+        conf.Set("threads",         CLIP(map.threads, 1, 10));
+        conf.Save(file, "map", true);
+    }
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -202,6 +292,11 @@ void GuiSettings::SetValue(const std::string &key, const bool value)
 void GuiSettings::SetValue(const std::string &key, const int value)
 {
     _confFile.Set(key, value);
+}
+
+void GuiSettings::SetValue(const std::string &key, const uint32_t value)
+{
+    _confFile.Set(key, value, true);
 }
 
 void GuiSettings::SetValue(const std::string &key, const double value)
@@ -220,9 +315,26 @@ void GuiSettings::SetValue(const std::string &key, const std::string &value)
     _confFile.Set(key, value);
 }
 
-void GuiSettings::SetValueList(const std::string &key, const std::vector<std::string> &list)
+void GuiSettings::SetValueMult(const std::string &key, const std::vector<std::string> &list, const int maxNum)
 {
-    _confFile.Set(key, Ff::StrJoin(list, ","));
+    for (int n = 1; n <= maxNum; n++)
+    {
+        SetValue(key + std::to_string(n), n <= (int)list.size() ? list[n - 1] : "");
+    }
+}
+
+void GuiSettings::SetValueList(const std::string &key, const std::vector<std::string> &list, const std::string &sep, const int maxNum)
+{
+    if (!list.empty())
+    {
+        const std::vector<std::string> copy {
+            list.begin(), list.begin() + (maxNum < (int)list.size() ? maxNum : (int)list.size()) };
+        SetValue(key, Ff::StrJoin(copy, sep));
+    }
+    else
+    {
+        SetValue(key, std::string(""));
+    }
 }
 
 void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
@@ -234,6 +346,14 @@ void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
 }
 
 void GuiSettings::GetValue(const std::string &key, int &value, const int def)
+{
+    if (!_confFile.Get(key, value))
+    {
+        value = def;
+    }
+}
+
+void GuiSettings::GetValue(const std::string &key, uint32_t &value, const uint32_t def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -277,60 +397,65 @@ std::string GuiSettings::GetValue(const std::string &key)
     return value;
 }
 
-std::vector<std::string> GuiSettings::GetValueList(const std::string &key)
+std::vector<std::string> GuiSettings::GetValueMult(const std::string &key, const int maxNum)
 {
-    std::string value = GetValue(key);
-    return value.empty() ? std::vector<std::string>() : Ff::StrSplit(value, ",");
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiSettings::SaveConf(const std::string &file)
-{
-    DEBUG("GuiSettings::SaveConf(%s)", file.c_str());
-
-    // Save ImGui stuff
-    ImGui::SaveIniSettingsToDisk(file.c_str());
-
-    // Append our own stuff
-    for (int ix = 0; ix < _NUM_COLOURS; ix++)
+    std::vector<std::string> list;
+    for (int n = 1; n <= maxNum; n++)
     {
-        _confFile.Set(std::string("Colour.") + kColourNames[ix], colours[ix], true);
+        std::string str = GetValue(key + std::to_string(n));
+        if (!str.empty())
+        {
+            list.push_back(str);
+        }
     }
-    _confFile.Save(file, "cfggui", true);
+    return list;
+}
+
+std::vector<std::string> GuiSettings::GetValueList(const std::string &key, const std::string &sep, const int maxNum)
+{
+    const std::vector<std::string> strs = Ff::StrSplit(GetValue(key), sep);
+
+    if ((int)strs.size() > maxNum)
+    {
+        return std::vector<std::string>(strs.begin(), strs.begin() + maxNum);
+    }
+    else
+    {
+        return strs;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+#define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
 #define _SETTINGS_COLOUR_LABEL(_str, _enum, _col) _str,
 #define _SETTINGS_COLOUR_NAME(_str, _enum, _col) STRINGIFY(_enum),
 
-const char * const GuiSettings::kColourLabels[GuiSettings::_NUM_COLOURS] =
+/* static */ImU32 GuiSettings::colours[_NUM_COLOURS] =
 {
-    SETTINGS_COLOURS(_SETTINGS_COLOUR_LABEL)
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
 };
 
-const char * const GuiSettings::kColourNames[GuiSettings::_NUM_COLOURS] =
+const char * const GuiSettings::COLOUR_LABELS[GuiSettings::_NUM_COLOURS] =
 {
-    SETTINGS_COLOURS(_SETTINGS_COLOUR_NAME)
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_LABEL)
 };
 
-ImU32 GuiSettings::kColourDefaults[_NUM_COLOURS] =
+const char * const GuiSettings::COLOUR_NAMES[GuiSettings::_NUM_COLOURS] =
 {
-    SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_NAME)
+};
+
+ImU32 GuiSettings::COLOUR_DEFAULTS[_NUM_COLOURS] =
+{
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-const char * const GuiSettings::fontNames[NUM_FONTS] =
+bool GuiSettings::_UpdateFont()
 {
-    [GuiSettings::FONT_PROGGY_IX] = "ProggyClean",
-    [GuiSettings::FONT_DEJAVU_IX] = "DejaVu Mono",
-};
-
-bool GuiSettings::_UpdateFont(const bool force)
-{
-    if (!force && !_fontDirty)
+    if (!_fontDirty)
     {
         return false;
     }
@@ -348,28 +473,31 @@ bool GuiSettings::_UpdateFont(const bool force)
     //builder.AddText("σ");
     //builder.BuildRanges(&glyphs);
 
-    // Load font
-    ImFontConfig config;
-    switch (fontIx)
+    // Monospace font, the default
     {
-        case FONT_DEJAVU_IX:
-            snprintf(config.Name, sizeof(config.Name), "DejaVu Mono %.1f", fontSize);
-            config.GlyphOffset = ImVec2(0, -fontSize / 10.0);
-            io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSansMono(), fontSize, &config/*, glyphs.Data*/);
-            break;
-        case FONT_PROGGY_IX:
-            snprintf(config.Name, sizeof(config.Name), "ProggyClean %.1f", fontSize);
-            io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontProggyClean(), fontSize, &config/*, glyphs.Data*/);
-            break;
-        case NUM_FONTS:
-            break;
+        ImFontConfig config;
+        snprintf(config.Name, sizeof(config.Name), "DejaVu Mono %.1f", fontSize);
+        config.FontBuilderFlags = _ftBuilderFlags;
+        config.RasterizerMultiply = _ftRasterizerMultiply;
+        fontMono = io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSansMono(), fontSize, &config/*, glyphs.Data*/);
+
+        // Add icons (https://forkaweso.me/Fork-Awesome/icons/)
+        snprintf(config.Name, sizeof(config.Name), "Fork Awesome %.1f", fontSize);
+        static const ImWchar icons[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
+        config.MergeMode = true;
+        // config.GlyphOffset = ImVec2(0.0f, std::floor(fontSize / 10.0f));
+        config.GlyphOffset = ImVec2(0,0);
+        io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontForkAwesome(), fontSize, &config, icons);
     }
 
-    // Add icons (https://forkaweso.me/Fork-Awesome/icons/)
-    static const ImWchar icons[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
-    config.MergeMode = true;
-    config.GlyphOffset = ImVec2(0, fontSize / 10.0);
-    io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontForkAwesome(), fontSize, &config, icons);
+    // Normal font
+    {
+        ImFontConfig config;
+        snprintf(config.Name, sizeof(config.Name), "DejaVu Sans %.1f", fontSize + 1.0f);
+        config.FontBuilderFlags = _ftBuilderFlags;
+        config.RasterizerMultiply = _ftRasterizerMultiply;
+        fontSans = io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSans(), fontSize + 1.0f, &config/*, glyphs.Data*/);
+    }
 
     // Build font atlas
     io.Fonts->Build();
@@ -383,9 +511,9 @@ bool GuiSettings::_UpdateFont(const bool force)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiSettings::_UpdateSizes(const bool force)
+bool GuiSettings::_UpdateSizes()
 {
-    if (!force && !_sizesDirty)
+    if (!_sizesDirty)
     {
         return false;
     }
@@ -434,87 +562,182 @@ ImU32 GuiSettings::GetFixColour(const EPOCH_t *epoch)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiSettings::DrawSettingsEditor()
+void GuiSettings::_DrawSettingsEditor()
 {
-    // Font selection
+    if (ImGui::BeginTabBar("Settings"))
     {
-        bool changed = false;
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted("Font");
-        ImGui::SameLine(_widgetOffs);
-        ImGui::PushItemWidth(15 * charSize.x);
-        Font_e newFontIx = fontIx;
-        if (ImGui::Combo("##Font", (int *)&newFontIx, fontNames, GuiSettings::NUM_FONTS))
-        {
-            changed = true;
-        }
-        ImGui::PopItemWidth();
-        ImGui::SameLine();
-        ImGui::PushItemWidth(12 * charSize.x);
-        float newFontSize = fontSize;
-        if (ImGui::InputFloat("##FontSize", &newFontSize, 1.0, 1.0, "%.1f", ImGuiInputTextFlags_EnterReturnsTrue))
-        {
-            changed = true;
-        }
-        ImGui::PopItemWidth();
-        if ( changed && ( (newFontIx != fontIx) || (std::fabs(newFontSize - fontSize) > 0.05) ) )
-        {
-            DEBUG("new font: %s %.1f", fontNames[newFontIx], newFontSize);
-
-            switch (newFontIx)
-            {
-                case FONT_DEJAVU_IX: fontIx = FONT_DEJAVU_IX; break;
-                case FONT_PROGGY_IX:
-                default:             fontIx = FONT_PROGGY_IX; break;
-            }
-            if (newFontSize < fontSizeMin)
-            {
-                fontSize = fontSizeMin;
-            }
-            else if (newFontSize > fontSizeMax)
-            {
-                fontSize = fontSizeMax;
-            }
-            else
-            {
-                fontSize = newFontSize;
-            }
-            fontSize = std::floor(fontSize * 10.0f) / 10.0f;
-            _fontDirty = true; // trigger change in main()
-        }
-    }
-
-    // Colours
-    for (int ix = 0; ix < _NUM_COLOURS; ix++)
-    {
-        ImGui::Separator();
-
-        ImGui::PushID(kColourLabels[ix]);
-
+        // Font
+        if (ImGui::BeginTabItem("Font"))
         {
             ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(kColourLabels[ix]);
-        }
-        ImGui::SameLine(_widgetOffs);
-        {
-            if (ImGui::Button(colours[ix] != kColourDefaults[ix] ? "#" : " ", iconButtonSize))
+
+            ImGui::TextUnformatted("Font size");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushItemWidth(12 * charSize.x);
+            float newFontSize = fontSize;
+            if (ImGui::InputFloat("##FontSize", &newFontSize, 1.0, 1.0, "%.1f", ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                colours[ix] = kColourDefaults[ix];
-            }
-        }
-        ImGui::SameLine();
-        {
-            ImVec4 col = ImGui::ColorConvertU32ToFloat4(colours[ix]);
-            float col4[4] = { col.x, col.y, col.z, col.w };
-            ImGui::PushItemWidth(charSize.x * 40);
-            if (ImGui::ColorEdit4("##ColourEdit", col4, ImGuiColorEditFlags_AlphaPreviewHalf))
-            {
-                colours[ix] = ImGui::ColorConvertFloat4ToU32(ImVec4(col4[0], col4[1], col4[2], col4[3]));
+                if (std::fabs(newFontSize - fontSize) > 0.05)
+                {
+                    newFontSize = std::floor(newFontSize * 10.0f) / 10.0f;
+                    fontSize = CLIP(newFontSize, FONT_SIZE_MIN, FONT_SIZE_MAX);
+                    _fontDirty = true; // trigger change in main()
+                }
             }
             ImGui::PopItemWidth();
-        }
 
-        ImGui::PopID();
+#ifdef IMGUI_ENABLE_FREETYPE
+            ImGui::Separator();
+
+            ImGui::TextUnformatted("Font renderer");
+            ImGui::SameLine(_widgetOffs);
+
+            const float offs = charSize.x * 16;
+
+            if (ImGui::CheckboxFlags("NoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoHinting))
+            {
+                _fontDirty = true;
+            }
+            ImGui::SameLine(_widgetOffs + offs);
+            if (ImGui::CheckboxFlags("NoAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoAutoHint))
+            {
+                _fontDirty = true;
+            }
+            ImGui::SameLine(_widgetOffs + offs + offs);
+            if (ImGui::CheckboxFlags("ForceAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_ForceAutoHint))
+            {
+                _fontDirty = true;
+            }
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            if (ImGui::CheckboxFlags("LightHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_LightHinting))
+            {
+                _fontDirty = true;
+            }
+            ImGui::SameLine(_widgetOffs + offs);
+            if (ImGui::CheckboxFlags("MonoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_MonoHinting))
+            {
+                _fontDirty = true;
+            }
+            // if (ImGui::CheckboxFlags("Bold", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Bold))
+            // {
+            //     _fontDirty = true;
+            // }
+            // if (ImGui::CheckboxFlags("Oblique", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Oblique))
+            // {
+            //     _fontDirty = true;
+            // }
+            ImGui::SameLine(_widgetOffs + offs + offs);
+            if (ImGui::CheckboxFlags("Monochrome", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Monochrome))
+            {
+                _fontDirty = true;
+            }
+
+            ImGui::Separator();
+
+            ImGui::TextUnformatted("Rasterizer multiply");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushItemWidth(12 * charSize.x);
+            float newMultiply = _ftRasterizerMultiply;
+            if (ImGui::DragFloat("##RasterizerMultiply", &newMultiply, 0.01f, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX, "%.2f"))
+            {
+                if (std::fabs(newMultiply - _ftRasterizerMultiply) > 0.01)
+                {
+                    newMultiply = std::floor(newMultiply * 100.0f) / 100.0f;
+                    _ftRasterizerMultiply = CLIP(newMultiply, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX);
+                    _fontDirty = true;
+                }
+            }
+#endif
+            // ImFontAtlas *atlas = ImGui::GetIO().Fonts;
+            // if (ImGui::DragInt("TexGlyphPadding", &atlas->TexGlyphPadding, 0.1f, 1, 16))
+            // {
+            //     _fontDirty = true;
+            // }
+            // if (ImGui::DragFloat("RasterizerMultiply", &_ftRasterizerMultiply, 0.001f, 0.0f, 2.0f))
+            // {
+            //     _fontDirty = true;
+            // }
+
+            ImGui::EndTabItem();
+        }
+        // Colours
+        if (ImGui::BeginTabItem("Colours"))
+        {
+            if (ImGui::BeginChild("Colours"))
+            {
+                for (int ix = 0; ix < _NUM_COLOURS; ix++)
+                {
+                    ImGui::Separator();
+
+                    ImGui::PushID(COLOUR_LABELS[ix]);
+
+                    {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted(COLOUR_LABELS[ix]);
+                    }
+                    ImGui::SameLine(_widgetOffs);
+                    {
+                        if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconButtonSize))
+                        {
+                            colours[ix] = COLOUR_DEFAULTS[ix];
+                        }
+                    }
+                    ImGui::SameLine();
+                    {
+                        ImVec4 col = ImGui::ColorConvertU32ToFloat4(colours[ix]);
+                        float col4[4] = { col.x, col.y, col.z, col.w };
+                        ImGui::PushItemWidth(charSize.x * 40);
+                        if (ImGui::ColorEdit4("##ColourEdit", col4, ImGuiColorEditFlags_AlphaPreviewHalf))
+                        {
+                            colours[ix] = ImGui::ColorConvertFloat4ToU32(ImVec4(col4[0], col4[1], col4[2], col4[3]));
+                        }
+                        ImGui::PopItemWidth();
+                    }
+
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        // Maps
+        if (ImGui::BeginTabItem("Maps"))
+        {
+            if (ImGui::BeginChild("Maps"))
+            {
+                for (auto &map: maps)
+                {
+                    char str[100];
+                    std::snprintf(str, sizeof(str), "%s (%s)##%p", map.title.c_str(), map.name.c_str(), &map);
+                    ImGui::Checkbox(str, &map.enabled);
+                    ImGui::Separator();
+                }
+            }
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+        // Tools
+        if (ImGui::BeginTabItem("Allencheibs"))
+        {
+            ImGui::BeginDisabled(_clearSettingsOnExit);
+            if (ImGui::Button("Clear settings on exit"))
+            {
+                _clearSettingsOnExit = true;
+            }
+            ImGui::EndDisabled();
+            if (_clearSettingsOnExit)
+            {
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel"))
+                {
+                    _clearSettingsOnExit = false;
+                }
+                ImGui::TextUnformatted("Config file will be wiped on exit!");
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
     }
 }
 

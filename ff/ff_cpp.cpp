@@ -1,4 +1,4 @@
-// flipflip's c++ stuff for flipflip's c stuff
+// flipflip's c++ stuff: c++ wrappers for flipflip's c stuff
 //
 // Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
@@ -16,408 +16,87 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include <cstdarg>
-#include <cerrno>
-#include <vector>
-#include <algorithm>
-#include <cinttypes>
-#include <time.h>
+#include <stdexcept>
+#include <cstring>
 
 #include "ff_cpp.hpp"
-#include "ff_debug.h"
 
 /* ****************************************************************************************************************** */
 
-// By Douglas Daseeco from https://stackoverflow.com/a/49812018/13355523 (CC BY-SA 4.0)
-std::string Ff::Sprintf(const char * const zcFormat, ...)
+Ff::ParserMsg::ParserMsg(const PARSER_MSG_t *_msg) :
+    type{}, data{}, size{_msg->size}, seq{_msg->seq}, ts{_msg->ts}, name{}, info{}
 {
-    // initialize use of the variable argument array
-    va_list vaArgs;
-    va_start(vaArgs, zcFormat);
-
-    // reliably acquire the size
-    // from a copy of the variable argument array
-    // and a functionally reliable call to mock the formatting
-    va_list vaArgsCopy;
-    va_copy(vaArgsCopy, vaArgs);
-    const int iLen = std::vsnprintf(NULL, 0, zcFormat, vaArgsCopy);
-    va_end(vaArgsCopy);
-
-    // return a formatted string without risking memory mismanagement
-    // and without assuming any compiler or platform specific behavior
-    std::vector<char> zc(iLen + 1);
-    std::vsnprintf(zc.data(), zc.size(), zcFormat, vaArgs);
-    va_end(vaArgs);
-    return std::string(zc.data(), iLen);
+    switch (_msg->type)
+    {
+        case PARSER_MSGTYPE_UBX:     type = UBX;     typeStr = "UBX";     break;
+        case PARSER_MSGTYPE_NMEA:    type = NMEA;    typeStr = "NMEA";    break;
+        case PARSER_MSGTYPE_RTCM3:   type = RTCM3;   typeStr = "RTCM3";   break;
+        case PARSER_MSGTYPE_GARBAGE: type = GARBAGE; typeStr = "GARBAGE"; break;
+    }
+    switch (_msg->src)
+    {
+        case PARSER_MSGSRC_UNKN:    src = UNKN;    srcStr = "UNKN";    break;
+        case PARSER_MSGSRC_FROM_RX: src = FROM_RX; srcStr = "FROM_RX"; break;
+        case PARSER_MSGSRC_TO_RX:   src = TO_RX;   srcStr = "TO_RX";   break;
+        case PARSER_MSGSRC_VIRTUAL: src = VIRTUAL; srcStr = "VIRTUAL"; break;
+        case PARSER_MSGSRC_USER:    src = USER;    srcStr = "USER";    break;
+        case PARSER_MSGSRC_LOG:     src = LOG;     srcStr = "LOG";     break;
+    }
+    std::memcpy(data, _msg->data, size > PARSER_MAX_ANY_SIZE ? PARSER_MAX_ANY_SIZE : size);
+    name = _msg->name;
+    if (_msg->info != NULL)
+    {
+        info = _msg->info;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-std::string Ff::Strftime(const int64_t ts, const char * const fmt)
+Ff::Epoch::Epoch(const EPOCH_t *_epoch) :
+    seq{_epoch->seq}, str{_epoch->str}, epoch{*_epoch}
 {
-    std::vector<char> str(1000);
-    struct tm now;
-    int len = 0;
-    const time_t t = (ts <= 0 ? time(NULL) : ts);
-    if (localtime_r(&t, &now) == &now)
-    {
-        len = strftime(str.data(), str.size(), fmt, &now);
-    }
-    return std::string(str.data(), len);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int Ff::StrReplace(std::string &str, const std::string &search, const std::string &replace)
+Ff::Rx::Rx(const std::string &port, const RX_ARGS_t *args) :
+    rx{NULL}
 {
-    int count = 0;
-    std::size_t pos = 0;
-    while ( (pos = str.find(search, pos)) != std::string::npos )
+    rx = rxInit(port.c_str(), args);
+    if (rx == NULL)
     {
-        str.replace(pos, search.size(), replace);
-        pos += replace.size();
-        count++;
+        throw std::runtime_error("rxInit() fail");
     }
-    return count;
+}
+
+Ff::Rx::~Rx()
+{
+    if (rx != NULL)
+    {
+        rxClose(rx);
+        free(rx);
+        rx = NULL;
+    }
+}
+
+void Ff::Rx::Abort()
+{
+    if (rx != NULL)
+    {
+        rxAbort(rx);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Ff::StrTrimLeft(std::string &str)
+Ff::KeyVal::KeyVal(const UBLOXCFG_LAYER_t _layer, const UBLOXCFG_KEYVAL_t *_kv, const int numKv) :
+    layer{_layer}, kv{}
 {
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](const int c) { return std::isspace(c) == 0; }));
-}
-
-void Ff::StrTrimRight(std::string &str)
-{
-    str.erase(std::find_if(str.rbegin(), str.rend(), [](const int c) { return std::isspace(c) == 0; }).base(), str.end());
-}
-
-void Ff::StrTrim(std::string &str)
-{
-    StrTrimLeft(str);
-    StrTrimRight(str);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-std::vector<std::string> Ff::StrSplit(const std::string &str, const std::string &sep)
-{
-    std::vector<std::string> out;
-    std::string strCopy = str;
-    std::size_t pos = 0;
-    while ((pos = strCopy.find(sep)) != std::string::npos)
+    if (numKv > 0)
     {
-        std::string part = strCopy.substr(0, pos);
-        strCopy.erase(0, pos + sep.length());
-        if (!part.empty())
-        {
-            out.push_back(part);
-        }
+        kv.resize(numKv);
+        std::memcpy(kv.data(), _kv, sizeof(*_kv) * kv.size());
     }
-    if (!strCopy.empty())
-    {
-        out.push_back(strCopy);
-    }
-    return out;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-std::string Ff::StrJoin(const std::vector<std::string> &strs, const std::string &sep)
-{
-    std::string res = "";
-    for (auto &str: strs)
-    {
-        res += sep;
-        res += str;
-    }
-    return res.empty() ? res : res.substr(1);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-Ff::ConfFile::ConfFile() :
-    _keyVal{}, _lastLine{0}, _file{}
-{
-}
-
-void Ff::ConfFile::Set(const std::string &key, const std::string &val)
-{
-    //DEBUG("Ff::ConfFile::Set() %s=%s", key.c_str(), val.c_str());
-    _keyVal[key] = val;
-}
-
-void Ff::ConfFile::Set(const std::string &key, const int32_t val)
-{
-    Set(key, std::to_string(val));
-}
-
-void Ff::ConfFile::Set(const std::string &key, const uint32_t val, const bool hex)
-{
-    Set(key, hex ? Sprintf("0x%08x", val) : std::to_string(val));
-}
-
-void Ff::ConfFile::Set(const std::string &key, const double val)
-{
-    Set(key, std::to_string(val));
-}
-
-void Ff::ConfFile::Set(const std::string &key, const bool val)
-{
-    Set(key, val ? std::string("true") : std::string("false"));
-}
-
-bool Ff::ConfFile::Get(const std::string &key, std::string &val)
-{
-    const auto entry = _keyVal.find(key);
-    if (entry != _keyVal.end())
-    {
-        val = entry->second;
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-    //return res;
-}
-
-bool Ff::ConfFile::Get(const std::string &key, int32_t &val)
-{
-    bool res = false;
-    std::string str;
-    if (Get(key, str))
-    {
-        std::size_t num;
-        val = std::stol(str, &num, 0);
-        res = num > 0;
-    }
-    return res;
-}
-
-bool Ff::ConfFile::Get(const std::string &key, uint32_t &val)
-{
-    bool res = false;
-    std::string str;
-    if (Get(key, str))
-    {
-        std::size_t num;
-        val = std::stoul(str, &num, 0);
-        res = num > 0;
-    }
-    return res;
-}
-
-bool Ff::ConfFile::Get(const std::string &key, float &val)
-{
-    bool res = false;
-    std::string str;
-    if (Get(key, str))
-    {
-        std::size_t num;
-        val = std::stof(str, &num);
-        res = num > 0;
-    }
-    return res;
-}
-
-bool Ff::ConfFile::Get(const std::string &key, double &val)
-{
-    bool res = false;
-    std::string str;
-    if (Get(key, str))
-    {
-        std::size_t num;
-        val = std::stod(str, &num);
-        res = num > 0;
-    }
-    return res;
-}
-
-bool Ff::ConfFile::Get(const std::string &key, bool &val)
-{
-    bool res = false;
-    std::string str;
-    if (Get(key, str))
-    {
-        val = (str == "true");
-        res = true;
-    }
-    return res;
-}
-
-void Ff::ConfFile::Clear()
-{
-    _keyVal.clear();
-}
-
-bool Ff::ConfFile::Load(const std::string &file, const std::string &section)
-{
-    // Different file, start looking for section from the beginning
-    if (file != _file)
-    {
-        _file = file;
-        _lastLine = 0;
-    }
-
-    bool res = true;
-    std::ifstream in;
-    in.exceptions(/*std::ifstream::failbit |*/ std::ifstream::badbit);
-    try
-    {
-        in.open(file.c_str());
-        if (!in.good())
-        {
-            throw std::runtime_error("Failed reading");
-        }
-        int lineNo = 0;
-        std::string line;
-        while (lineNo < _lastLine)
-        {
-            std::getline(in, line);
-            lineNo++;
-        }
-        // Find section begin
-        {
-            const std::string marker = "[" + section + "]";
-            bool haveSection = false;
-            while (res)
-            {
-                if (!std::getline(in, line))
-                {
-                    break;
-                }
-                lineNo++;
-                if (line.substr(0, 8) == marker)
-                {
-                    haveSection = true;
-                    break;
-                }
-            }
-            if (!haveSection)
-            {
-                res = false;
-            }
-        }
-        while (res)
-        {
-            if (!std::getline(in, line))
-            {
-                break;
-            }
-            lineNo++;
-            if (line.empty() || line.substr(0, 1) == "#")
-            {
-                continue;
-            }
-            else if ( !section.empty() && (line.substr(0, 1) == "[") )
-            {
-                break;
-            }
-            std::string key;
-            std::string val;
-            std::size_t pos = line.find("=");
-            if ( (pos != std::string::npos) && (pos > 0) && (pos < line.size()) )
-            {
-                key = line.substr(0, pos);
-                val = line.substr(pos + 1);
-                StrTrim(key);
-                StrTrim(val);
-                //DEBUG("%s:%d: key=[%s] val=[%s]", file.c_str(), lineNo, key.c_str(), val.c_str());
-                if (!key.empty())
-                {
-                    _keyVal[key] = val;
-                    continue;
-                }
-            }
-            WARNING("Bad line %s:%d: %s", file.c_str(), lineNo, line.c_str());
-        }
-        in.close();
-        _lastLine = lineNo - 1;
-    }
-    catch (std::ifstream::failure &e)
-    {
-        (void)e;
-        WARNING("Failed reading %s: %s", file.c_str(), std::strerror(errno));
-        res = false;
-    }
-    catch (std::runtime_error &e)
-    {
-        WARNING("%s (%s)!", e.what(), file.c_str());
-        res = false;
-    }
-    return res;
-}
-
-bool Ff::ConfFile::Save(const std::string &file, const std::string &section, const bool append)
-{
-    bool res = true;
-    std::ofstream out;
-    out.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try
-    {
-        std::ios_base::openmode mode = (append ? std::ofstream::app : (std::ios_base::openmode)0);
-        out.open(file, mode);
-        if (!section.empty())
-        {
-            out << "\n[" + section + "]\n";
-        }
-        for (const auto &t: _keyVal)
-        {
-            out << t.first << "=" << t.second << "\n";
-        }
-        out.close();
-    }
-    catch (...)
-    {
-        ERROR("Failed writing %s: %s", file.c_str(), std::strerror(errno));
-        res = false;
-    }
-    return res;
-}
-
-std::vector<std::string> Ff::HexDump(const std::vector<uint8_t> data)
-{
-    return HexDump(data.data(), (int)data.size());
-}
-
-std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
-{
-    std::vector<std::string> hexdump;
-    const char i2hex[] = "0123456789abcdef";
-    const uint8_t *pData = data;
-    for (int ix = 0; ix < size; )
-    {
-        char str[70];
-        memset(str, ' ', sizeof(str));
-        str[50] = '|';
-        str[67] = '|';
-        str[68] = '\0';
-        for (int ix2 = 0; (ix2 < 16) && ((ix + ix2) < size); ix2++)
-        {
-            //           1         2         3         4         5         6
-            // 012345678901234567890123456789012345678901234567890123456789012345678
-            // xx xx xx xx xx xx xx xx  xx xx xx xx xx xx xx xx  |................|\0
-            // 0  1  2  3  4  5  6  7   8  9  10 11 12 13 14 15
-            const uint8_t c = pData[ix + ix2];
-            int pos1 = 3 * ix2;
-            int pos2 = 51 + ix2;
-            if (ix2 > 7)
-            {
-                   pos1++;
-            }
-            str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
-            str[pos1 + 1] = i2hex[  c       & 0xf ];
-
-            str[pos2] = isprint((int)c) ? c : '.';
-        }
-        char buf[1024];
-        std::snprintf(buf, sizeof(buf), "0x%04" PRIx8 " %05d  %s", ix, ix, str);
-        hexdump.push_back(buf);
-        ix += 16;
-    }
-    return hexdump;
 }
 
 /* ****************************************************************************************************************** */

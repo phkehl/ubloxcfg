@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_H__
-#define __GUI_WIN_DATA_H__
+#ifndef __GUI_WIN_DATA_HPP__
+#define __GUI_WIN_DATA_HPP__
 
 #include <cinttypes>
 
@@ -35,10 +35,11 @@ class GuiWinData : public GuiWin
         GuiWinData(const std::string &name, std::shared_ptr<Database> database);
         virtual ~GuiWinData();
 
-        virtual void Loop(const uint32_t &frame, const double &now);
-        virtual void ProcessData(const Data &data);
-        virtual void ClearData();
-        virtual void DrawWindow();
+        void Loop(const uint32_t &frame, const double &now) final;
+        void DrawWindow() final;
+
+        void ProcessData(const Data &data);
+        void ClearData();
 
         void SetReceiver(std::shared_ptr<Receiver> receiver);
         void SetLogfile(std::shared_ptr<Logfile> logfile);
@@ -48,7 +49,22 @@ class GuiWinData : public GuiWin
         std::shared_ptr<Receiver> _receiver;  // either we get data from a receiver
         std::shared_ptr<Logfile>  _logfile;   // ..or from a logfile
         std::shared_ptr<Database> _database;
+
+        // Common functionality
+        bool                       _toolbarEna;               // Use common buttons toolbar?
+        bool                       _latestEpochEna;           // Use latest epoch functionality?
+        std::shared_ptr<Ff::Epoch> _latestEpoch;              // Latest epoch (or nullptr if n/a or expired)
+        double                     _latestEpochTs;            // Latest epoch timestamp
+        double                     _latestEpochAge;           // Age of latest epoch
+        static constexpr double    _latestEpochExpire = 5.0;  // Max age to keep epoch (if _receiver)
+
+        // Specific implementation
+        virtual void _Loop(const uint32_t &frame, const double &now);
+        virtual void _ProcessData(const Data &data);
+        virtual void _DrawToolbar();
+        virtual void _DrawContent();
+        virtual void _ClearData();
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_H__
+#endif // __GUI_WIN_DATA_HPP__

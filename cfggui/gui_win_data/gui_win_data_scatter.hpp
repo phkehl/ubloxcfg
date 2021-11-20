@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_DATA_SCATTER_H__
-#define __GUI_WIN_DATA_SCATTER_H__
+#ifndef __GUI_WIN_DATA_SCATTER_HPP__
+#define __GUI_WIN_DATA_SCATTER_HPP__
 
 #include "gui_win_data.hpp"
 
@@ -28,12 +28,11 @@ class GuiWinDataScatter : public GuiWinData
         GuiWinDataScatter(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataScatter();
 
-      //void                 Loop(const uint32_t &frame, const double &now) final;
-      //void                 ProcessData(const Data &data) final;
-        void                 ClearData() final;
-        void                 DrawWindow() final;
-
     protected:
+
+        void _ClearData() final;
+        void _DrawContent() final;
+
         float                _plotRadius;
         bool                 _havePoints;
         bool                 _showStats;
@@ -52,4 +51,4 @@ class GuiWinDataScatter : public GuiWinData
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_DATA_SCATTER_H__
+#endif // __GUI_WIN_DATA_SCATTER_HPP__

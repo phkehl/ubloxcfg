@@ -18,7 +18,8 @@ dependencies).
 
 The configuration tool and the other libraries use some gcc/libc stuff ("GNU99").
 
-This is tested in Linux ([GCC](https://gcc.gnu.org/)). It should work in Windows ([Mingw-w64](http://mingw-w64.org)).
+This is tested in Linux ([GCC](https://gcc.gnu.org/)).
+Some of it might work on Windows (using [Mingw-w64](http://mingw-w64.org)). I wouldn't know...
 
 [![CI](/../../workflows/CI/badge.svg?branch=master)](/../../actions)
 
@@ -135,7 +136,7 @@ Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 
 ## GUI
 
-A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. `sudo apt-get install libcurl4-dev libglfw3-dev`.
+A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. `sudo apt-get install libcurl4-dev libglfw3-dev libfreetype-dev`.
 
 YMMV.
 

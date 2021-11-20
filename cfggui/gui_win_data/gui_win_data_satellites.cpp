@@ -16,10 +16,11 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <cmath>
+#include <cstring>
+
+#include "gui_inc.hpp"
 
 #include "gui_win_data_satellites.hpp"
-
-#include "gui_win_data_inc.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -43,51 +44,18 @@ GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name, std::shared_
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataSatellites::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataSatellites::ProcessData(const Data &data)
+void GuiWinDataSatellites::_ProcessData(const Data &data)
 {
-    switch (data.type)
+    if (data.type == Data::Type::DATA_EPOCH)
     {
-        case Data::Type::DATA_EPOCH:
-            if (data.epoch->epoch.numSatellites > 0)
-            {
-                _epoch = data.epoch;
-                _epochTs = ImGui::GetTime();
-            }
-            _UpdateSatellites();
-            // TODO: drop epoch if satellites info gets too old
-            break;
-        default:
-            break;
+        _UpdateSatellites();
     }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSatellites::Loop(const uint32_t &frame, const double &now)
+void GuiWinDataSatellites::_ClearData()
 {
-    (void)frame;
-    // Expire data
-    if (_epoch && !_receiver->IsIdle())
-    {
-        _epochAge = now - _epochTs;
-        if (_epochAge > 5.0)
-        {
-            ClearData();
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataSatellites::ClearData()
-{
-    _epoch = nullptr;
     _UpdateSatellites();
 }
 
@@ -148,13 +116,13 @@ void GuiWinDataSatellites::_UpdateSatellites()
     _countGal.Reset();
     _countSbas.Reset();
     _countQzss.Reset();
-    if (!_epoch)
+    if (!_latestEpoch)
     {
         return;
     }
-    for (int ix = 0; ix < _epoch->epoch.numSatellites; ix++)
+    for (int ix = 0; ix < _latestEpoch->epoch.numSatellites; ix++)
     {
-        SatInfo info(&_epoch->epoch.satellites[ix]);
+        SatInfo info(&_latestEpoch->epoch.satellites[ix]);
         const double a = (360.0 + 90 - (float)info.satInfo->azim) * (M_PI / 180.0);
         info.dX = std::cos(a);
         info.dY = -std::sin(a);
@@ -162,9 +130,9 @@ void GuiWinDataSatellites::_UpdateSatellites()
         _satInfo.push_back(info);
     }
     // Add signal levels
-    for (int ix = 0; ix < _epoch->epoch.numSignals; ix++)
+    for (int ix = 0; ix < _latestEpoch->epoch.numSignals; ix++)
     {
-        const EPOCH_SIGINFO_t *sig = &_epoch->epoch.signals[ix];
+        const EPOCH_SIGINFO_t *sig = &_latestEpoch->epoch.signals[ix];
         for (auto &sat: _satInfo)
         {
             if ( (sat.satInfo->sv == sig->sv) && (sat.satInfo->gnss == sig->gnss) )
@@ -208,32 +176,8 @@ void GuiWinDataSatellites::_UpdateSatellites()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSatellites::DrawWindow()
+void GuiWinDataSatellites::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    // Controls
-    {
-        // Clear
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
-        {
-            ClearData();
-        }
-        Gui::ItemTooltip("Clear all data");
-
-        // Age
-        if (_epoch && _receiver && !_receiver->IsIdle())
-        {
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x - (3 * _winSettings->charSize.x) );
-            ImGui::Text("%.1f", _epochAge);
-        }
-    }
-
-    ImGui::Separator();
-
     bool doSky = false;
     bool doList = false;
     EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
@@ -252,6 +196,8 @@ void GuiWinDataSatellites::DrawWindow()
         }
         ImGui::EndTabBar();
     }
+
+    Gui::VerticalSeparator();
 
     if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyScroll /*ImGuiTabBarFlags_FittingPolicyResizeDown*/))
     {
@@ -273,8 +219,6 @@ void GuiWinDataSatellites::DrawWindow()
     {
         _DrawList(filter);
     }
-
-    _DrawWindowEnd();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -285,10 +229,10 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     // Canvas
-    const ImVec2 canvasOffs = ImGui::GetCursorScreenPos();
-    const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const ImVec2 canvasCent = ImVec2(
-        canvasOffs.x + std::floor(canvasSize.x * 0.5), canvasOffs.y + std::floor(canvasSize.y * 0.5));
+    const FfVec2 canvasOffs = ImGui::GetCursorScreenPos();
+    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
+    const FfVec2 canvasCent {
+        canvasOffs.x + std::floor(canvasSize.x * 0.5f), canvasOffs.y + std::floor(canvasSize.y * 0.5f) };
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(canvasOffs, canvasOffs + canvasSize);
@@ -309,20 +253,20 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
             const float r2 = radiusPx * (1.0f - (float)(elev + (step/2))/90.f);
             draw->AddCircle(canvasCent, r2, GUI_COLOUR(PLOT_GRID_MINOR), 0);
         }
-        draw->AddLine(canvasCent - ImVec2(radiusPx, 0), canvasCent + ImVec2(radiusPx, 0), GUI_COLOUR(PLOT_GRID_MAJOR));
-        draw->AddLine(canvasCent - ImVec2(0, radiusPx), canvasCent + ImVec2(0, radiusPx), GUI_COLOUR(PLOT_GRID_MAJOR));
-        draw->AddLine(canvasCent - ImVec2(f * radiusPx, f * radiusPx), canvasCent + ImVec2(f * radiusPx, f * radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
-        draw->AddLine(canvasCent - ImVec2(f * radiusPx, -f * radiusPx), canvasCent + ImVec2(f * radiusPx, f * -radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
+        draw->AddLine(canvasCent - FfVec2(radiusPx, 0), canvasCent + FfVec2(radiusPx, 0), GUI_COLOUR(PLOT_GRID_MAJOR));
+        draw->AddLine(canvasCent - FfVec2(0, radiusPx), canvasCent + FfVec2(0, radiusPx), GUI_COLOUR(PLOT_GRID_MAJOR));
+        draw->AddLine(canvasCent - FfVec2(f * radiusPx, f * radiusPx), canvasCent + FfVec2(f * radiusPx, f * radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
+        draw->AddLine(canvasCent - FfVec2(f * radiusPx, -f * radiusPx), canvasCent + FfVec2(f * radiusPx, f * -radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
     }
 
     // Draw satellites
     {
-        const ImVec2 textOffs(-1.5f * _winSettings->charSize.x, -0.5f * _winSettings->charSize.y);
+        const FfVec2 textOffs(-1.5f * _winSettings->charSize.x, -0.5f * _winSettings->charSize.y);
         const float svR = 2.0f * _winSettings->charSize.x;
-        const ImVec2 barOffs1(-svR, (0.5f * _winSettings->charSize.y) );
-        const ImVec2 barOffs2(-svR, (0.5f * _winSettings->charSize.y) + 3 + 2);
-        const ImVec2 buttonSize(2 * svR, 2 * svR);
-        const ImVec2 buttonOffs(-svR, -svR);
+        const FfVec2 barOffs1(-svR, (0.5f * _winSettings->charSize.y) );
+        const FfVec2 barOffs2(-svR, (0.5f * _winSettings->charSize.y) + 3 + 2);
+        const FfVec2 buttonSize(2 * svR, 2 * svR);
+        const FfVec2 buttonOffs(-svR, -svR);
         const float barScale = svR / 25.0f;
         for (const auto &sat: _satInfo)
         {
@@ -333,7 +277,7 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
 
             // Circle
             const float r = sat.fR * radiusPx;
-            const ImVec2 svPos = canvasCent + ImVec2(r * sat.dX, r * sat.dY);
+            const FfVec2 svPos = canvasCent + FfVec2(r * sat.dX, r * sat.dY);
             draw->AddCircleFilled(svPos, svR, GUI_COLOUR(SKY_VIEW_SAT));
 
             // Tooltip
@@ -351,16 +295,16 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
             // Signal level bars
             if (sat.sigL1 && (sat.sigL1->use > EPOCH_SIGUSE_NONE))
             {
-                const ImVec2 barPos = svPos + barOffs1;
+                const FfVec2 barPos = svPos + barOffs1;
                 const int colIx = sat.sigL1->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL1->cno > 0 ? (sat.sigL1->cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + ImVec2(sat.sigL1->cno * barScale, 3),
+                draw->AddRectFilled(barPos, barPos + FfVec2(sat.sigL1->cno * barScale, 3),
                     sat.sigL1->prUsed || sat.sigL1->crUsed || sat.sigL1->doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
             }
             if (sat.sigL2 && (sat.sigL2->use > EPOCH_SIGUSE_NONE))
             {
-                const ImVec2 barPos = svPos + barOffs2;
+                const FfVec2 barPos = svPos + barOffs2;
                 const int colIx = sat.sigL2->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL2->cno > 0 ? (sat.sigL2->cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + ImVec2(sat.sigL2->cno * barScale, 3),
+                draw->AddRectFilled(barPos, barPos + FfVec2(sat.sigL2->cno * barScale, 3),
                     sat.sigL2->prUsed || sat.sigL2->crUsed || sat.sigL2->doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
             }
 
@@ -380,7 +324,7 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
 void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
 {
     const float lineHeight = ImGui::GetTextLineHeight();
-    const ImVec2 barOffs(_winSettings->style.ItemSpacing.x + (9 * _winSettings->charSize.x), -_winSettings->style.ItemSpacing.y);
+    const FfVec2 barOffs(_winSettings->style.ItemSpacing.x + (9 * _winSettings->charSize.x), -_winSettings->style.ItemSpacing.y);
 
     _table.BeginDraw();
 
@@ -432,10 +376,10 @@ void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
         {
             //_table.ColTextF("%-4s %.1f", L1->signalStr, L1->cno);
             ImGui::Text("%-4s %4.1f", L1->signalStr, L1->cno);
-            const ImVec2 offs = ImGui::GetCursorScreenPos() + barOffs;
+            const FfVec2 offs = FfVec2(ImGui::GetCursorScreenPos()) + barOffs;
             const int colIx = L1->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (L1->cno > 0 ? (L1->cno / 5) : 0 );
-            draw->AddRectFilled(offs, offs + ImVec2(L1->cno * 2, -lineHeight), L1used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
+            draw->AddRectFilled(offs, offs + FfVec2(L1->cno * 2, -lineHeight), L1used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+            draw->AddLine(offs + FfVec2(42 * 2, 0), offs + FfVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
             ImGui::NextColumn();
         }
         else
@@ -447,10 +391,10 @@ void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
         {
             //_table.ColTextF("%-4s %.1f", L2->signalStr, L2->cno);
             ImGui::Text("%-4s %4.1f", L2->signalStr, L2->cno);
-            const ImVec2 offs = ImGui::GetCursorScreenPos() + barOffs;
+            const FfVec2 offs = FfVec2(ImGui::GetCursorScreenPos()) + barOffs;
             const int colIx = L2->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (L2->cno > 0 ? (L2->cno / 5) : 0 );
-            draw->AddRectFilled(offs, offs + ImVec2(L2->cno * 2, -lineHeight), L2used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-            draw->AddLine(offs + ImVec2(42 * 2, 0), offs + ImVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
+            draw->AddRectFilled(offs, offs + FfVec2(L2->cno * 2, -lineHeight), L2used ?  GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+            draw->AddLine(offs + FfVec2(42 * 2, 0), offs + FfVec2(42 * 2, -lineHeight), GUI_COLOUR(C_GREY));
             ImGui::NextColumn();
         }
         else

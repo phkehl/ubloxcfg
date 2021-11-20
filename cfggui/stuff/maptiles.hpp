@@ -15,11 +15,10 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __MAPTILES_H__
-#define __MAPTILES_H__
+#ifndef __MAPTILES_HPP__
+#define __MAPTILES_HPP__
 
-#include <cinttypes>
-#include <cmath>
+#include <string>
 #include <memory>
 #include <thread>
 #include <mutex>
@@ -27,33 +26,13 @@
 #include <vector>
 #include <atomic>
 #include <condition_variable>
-#include <filesystem>
-#include <unordered_map>
+#include <cstdint>
+#include <cinttypes>
+#include <cmath>
+
+#include "mapparams.hpp"
 
 /* ****************************************************************************************************************** */
-
-struct MapParams
-{
-    MapParams();
-    std::string               name;
-    std::string               title;
-    std::string               attribution;
-    std::string               link;
-    int                       zoomMin;
-    int                       zoomMax;
-    int                       tileSizeX;
-    int                       tileSizeY;
-    std::string               downloadUrl;
-    std::vector<std::string>  subDomains;
-    uint32_t                  downloadTimeout;
-    std::string               cachePath;
-    std::string               referer;
-    double                    minLat; // S
-    double                    maxLat; // N
-    double                    minLon; // W
-    double                    maxLon; // E
-    uint32_t                  threads;
-};
 
 class MapTiles
 {
@@ -72,13 +51,9 @@ class MapTiles
         static double        TyToLat(const double ty,  const int tz); // tile y coordinate (real!) to latitude [rad]
         static double        TxToLon(const double tx,  const int tz); // tile x coordinate (real!) to longitude [rad]
 
-        static constexpr double kMinLat =  -85.0511 * (M_PI / 180.0);
-        static constexpr double kMaxLat =   85.0511 * (M_PI / 180.0);
-        static constexpr double kMinLon = -180.0    * (M_PI / 180.0);
-        static constexpr double kMaxLon =  180.0    * (M_PI / 180.0);
-        static constexpr double kWgs84a = 6378137.0;                   // Semi-major axis
-        static constexpr double kWgs84c = 2 * M_PI * kWgs84a;          // Circumference at equator
-        static constexpr int    kMaxtilesInQueue = 250;
+        static constexpr double WGS84_A = 6378137.0;                   // Semi-major axis
+        static constexpr double WGS84_C = 2 * M_PI * WGS84_A;          // Circumference at equator
+        static constexpr int    MAX_TILES_IN_QUEUE = 250;
 
         int                   NumTilesInQueue();
 
@@ -113,8 +88,14 @@ class MapTiles
         std::atomic<int>        _subDomainIx;
         void                 _ThreadWrapper(std::string name);
         void                 _Thread(std::string name);
-        bool                 _DownloadTile(const std::string &url, const std::filesystem::path &path, uint32_t timeout, const std::string &referer);
+        bool                 _DownloadTile(const std::string &url, const std::string &path, uint32_t timeout, const std::string &referer);
+
+        // Built-in tiles
+        static const uint8_t TILE_LOAD_PNG[929];  // "tileload.png"
+        static const uint8_t TILE_FAIL_PNG[2276]; // "tilefail.png"
+        static const uint8_t TILE_NOPE_PNG[786];  // "tilenope.png"
+        static const uint8_t TILE_TEST_PNG[914];  // "tiletest.png"
 };
 
 /* ****************************************************************************************************************** */
-#endif // __MAPTILES_H__
+#endif // __MAPTILES_HPP__

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_NAV_COV_H__
-#define __GUI_MSG_UBX_NAV_COV_H__
+#ifndef __GUI_MSG_UBX_NAV_COV_HPP__
+#define __GUI_MSG_UBX_NAV_COV_HPP__
 
 #include <memory>
 
@@ -30,7 +30,7 @@ class GuiMsgUbxNavCov : public GuiMsg
     public:
         GuiMsgUbxNavCov(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
 
     protected:
 
@@ -38,4 +38,4 @@ class GuiMsgUbxNavCov : public GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_NAV_COV_H__
+#endif // __GUI_MSG_UBX_NAV_COV_HPP__

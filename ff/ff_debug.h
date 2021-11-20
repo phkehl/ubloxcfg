@@ -69,11 +69,15 @@ void PRINT(const char *fmt, ...)    PRINTF_ATTR(1);
 void DEBUG(const char *fmt, ...)    PRINTF_ATTR(1);
 void TRACE(const char *fmt, ...)    PRINTF_ATTR(1);
 
+void PANIC_AND_EXIT(const char *fmt, ...) PRINTF_ATTR(1);
+
 bool isDEBUG(void);
 bool isTRACE(void);
 
 void DEBUG_HEXDUMP(const void *data, const int size, const char *fmt, ...) PRINTF_ATTR(3);
 void TRACE_HEXDUMP(const void *data, const int size, const char *fmt, ...) PRINTF_ATTR(3);
+
+void DEBUGGER_BREAK(void);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

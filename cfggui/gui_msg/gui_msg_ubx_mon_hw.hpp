@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_MSG_UBX_MON_HW_H__
-#define __GUI_MSG_UBX_MON_HW_H__
+#ifndef __GUI_MSG_UBX_MON_HW_HPP__
+#define __GUI_MSG_UBX_MON_HW_HPP__
 
 #include <memory>
 
@@ -30,7 +30,7 @@ class GuiMsgUbxMonHw : public GuiMsg
     public:
         GuiMsgUbxMonHw(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
 
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
 
         // As seen in u-center... (by feeding it fake UBX-MON-HW messages...)
         static constexpr const char * const _virtFuncs[] =
@@ -83,4 +83,4 @@ class GuiMsgUbxMonHw : public GuiMsg
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_MSG_UBX_MON_HW_H__
+#endif // __GUI_MSG_UBX_MON_HW_HPP__

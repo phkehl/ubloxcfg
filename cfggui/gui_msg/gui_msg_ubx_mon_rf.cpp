@@ -20,12 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
-
-#include "gui_settings.hpp"
-#include "gui_widget.hpp"
+#include "gui_inc.hpp"
 
 #include "gui_msg_ubx_mon_rf.hpp"
 
@@ -104,7 +99,7 @@ void GuiMsgUbxMonRf::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const ImVec2 &sizeAvail)
+bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     if ( (UBX_MON_RF_VERSION_GET(msg->data) != UBX_MON_RF_V0_VERSION) || (UBX_MON_RF_V0_SIZE(msg->data) != msg->size) )
     {

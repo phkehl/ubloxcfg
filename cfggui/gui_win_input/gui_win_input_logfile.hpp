@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __GUI_WIN_INPUT_LOGFILE_H__
-#define __GUI_WIN_INPUT_LOGFILE_H__
+#ifndef __GUI_WIN_INPUT_LOGFILE_HPP__
+#define __GUI_WIN_INPUT_LOGFILE_HPP__
 
 #include <memory>
 #include <map>
@@ -35,9 +35,7 @@ class GuiWinInputLogfile : public GuiWinInput
         GuiWinInputLogfile(const std::string &name);
        ~GuiWinInputLogfile();
 
-        void Loop(const uint32_t &frame, const double &now);
-
-        void ProcessData(const Data &data);
+        void Loop(const uint32_t &frame, const double &now) final;
 
     protected:
 
@@ -61,4 +59,4 @@ class GuiWinInputLogfile : public GuiWinInput
 };
 
 /* ****************************************************************************************************************** */
-#endif // __GUI_WIN_INPUT_LOGFILE_H__
+#endif // __GUI_WIN_INPUT_LOGFILE_HPP__

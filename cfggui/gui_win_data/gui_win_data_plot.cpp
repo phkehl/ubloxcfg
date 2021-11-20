@@ -17,10 +17,13 @@
 
 #include <cinttypes>
 
-#include "gui_win_data_plot.hpp"
-#include "gui_win_data_inc.hpp"
+#include "ff_trafo.h"
+
+#include "gui_inc.hpp"
 #include "implot.h"
 #include "implot_internal.h"
+
+#include "gui_win_data_plot.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -33,9 +36,10 @@ GuiWinDataPlot::GuiWinDataPlot(const std::string &name, std::shared_ptr<Database
 {
     _winSize = { 80, 25 };
 
+    _latestEpochEna = false;
+
     std::snprintf(_dndType, sizeof(_dndType), "PlotVar_%016" PRIx64, _winUid & 0xffffffffffffffff);
     _InitPlotVars();
-    ClearData();
     _LoadPlots();
 }
 
@@ -46,13 +50,7 @@ GuiWinDataPlot::~GuiWinDataPlot()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//void GuiWinDataPlot::Loop(const std::unique_ptr<Receiver> &receiver)
-//{
-//}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataPlot::ProcessData(const Data &data)
+void GuiWinDataPlot::_ProcessData(const Data &data)
 {
     if (data.type == Data::Type::DATA_EPOCH)
     {
@@ -72,10 +70,15 @@ void GuiWinDataPlot::ProcessData(const Data &data)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::ClearData()
+void GuiWinDataPlot::_ClearData()
 {
     _epochPeriod = 1.0;
     _epochPrevTs = 0;
+    for (auto &d: _plotData)
+    {
+        _RemoveFromPlot(d.plotVarY);
+    }
+    _plotVarX = nullptr;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -169,18 +172,8 @@ void GuiWinDataPlot::_InitPlotVars()
 
 constexpr float VAR_WIDTH = 15.0f;
 
-void GuiWinDataPlot::DrawWindow()
+void GuiWinDataPlot::_DrawContent()
 {
-    if (!_DrawWindowBegin())
-    {
-        return;
-    }
-
-    // Controls
-    _DrawControls();
-
-    ImGui::Separator();
-
     // List of variables
     ImGui::BeginChild("##Vars", ImVec2(_winSettings->charSize.x * VAR_WIDTH, 0.0f));
     _DrawVars();
@@ -191,14 +184,14 @@ void GuiWinDataPlot::DrawWindow()
 
     // Plot
     _DrawPlot();
-
-    _DrawWindowEnd();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_DrawControls()
+void GuiWinDataPlot::_DrawToolbar()
 {
+    ImGui::SameLine();
+
     // Help
     if (ImGui::Button(ICON_FK_QUESTION "###Help", _winSettings->iconButtonSize))
     {

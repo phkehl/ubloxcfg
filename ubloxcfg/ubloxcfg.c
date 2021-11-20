@@ -25,6 +25,11 @@
 #include <inttypes.h>
 #include <ctype.h>
 
+// Passed in by cmake or loaded from file
+#if !defined(CONFIG_VERSION_MAJOR) || !defined(CONFIG_VERSION_MINOR)
+#  include "config.h"
+#endif
+
 #include "ubloxcfg.h"
 
 /* ****************************************************************************************************************** */
@@ -1172,11 +1177,7 @@ bool ubloxcfg_layerFromName(const char *name, UBLOXCFG_LAYER_t *layer)
 
 uint16_t ubloxcfg_getVersion(void)
 {
-#if defined(CONFIG_VERSION_MAJOR) && defined(CONFIG_VERSION_MINOR)
-    return (CONFIG_VERSION_MAJOR << 8 | CONFIG_VERSION_MINOR);
-#else
-    return 0;
-#endif
+    return ((uint16_t)CONFIG_VERSION_MAJOR << 8 | ((uint16_t)CONFIG_VERSION_MINOR & 0xff));
 }
 
 const char **ubloxcfg_getSources(int *numSources)

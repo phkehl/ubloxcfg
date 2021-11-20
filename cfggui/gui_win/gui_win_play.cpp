@@ -19,9 +19,7 @@
 #include <cmath>
 #include <chrono>
 
-#include "imgui.h"
-#include "implot.h"
-#include "IconsForkAwesome.h"
+#include "gui_inc.hpp"
 
 #include "platform.hpp"
 
@@ -37,7 +35,7 @@ GuiWinPlay::GuiWinPlay() :
     _tetrisMove { TM_NONE }
 {
     _winSize = { 100, 50 };
-    _winFlags = ImGuiWindowFlags_AlwaysAutoResize;
+    _winFlags |= ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoDocking;
 }
 
 GuiWinPlay::~GuiWinPlay()
@@ -85,11 +83,11 @@ void GuiWinPlay::_DrawTetris()
 
     const float lineHeight = _winSettings->charSize.y + _winSettings->style.ItemSpacing.y;
     const float cellSize = 2 * _winSettings->charSize.x;
-    const ImVec2 cell { cellSize, cellSize };
+    const FfVec2 cell { cellSize, cellSize };
     const float padding = cellSize;
-    const ImVec2 boardSize { cellSize * _tetrisCols, cellSize * _tetrisRows };
-    const ImVec2 nextSize  { cellSize * 4, cellSize * 4 };
-    const ImVec2 canvasSize { padding + boardSize.x + padding + nextSize.x + padding, padding + boardSize.y + padding };
+    const FfVec2 boardSize { cellSize * _tetrisCols, cellSize * _tetrisRows };
+    const FfVec2 nextSize  { cellSize * 4, cellSize * 4 };
+    const FfVec2 canvasSize { padding + boardSize.x + padding + nextSize.x + padding, padding + boardSize.y + padding };
 
     if (!ImGui::BeginChild("Board", canvasSize))
     {
@@ -100,36 +98,36 @@ void GuiWinPlay::_DrawTetris()
     ImDrawList *draw = ImGui::GetWindowDrawList();
 
     // Canvas
-    const ImVec2 canvas0 = ImGui::GetCursorScreenPos();
-    const ImVec2 canvasS = ImGui::GetContentRegionAvail();
-    const ImVec2 canvas1 = canvas0 + canvasS;
+    const FfVec2 canvas0 = ImGui::GetCursorScreenPos();
+    const FfVec2 canvasS = ImGui::GetContentRegionAvail();
+    const FfVec2 canvas1 = canvas0 + canvasS;
     draw->AddRect(canvas0, canvas1, GUI_COLOUR(C_GREY));
 
     // Board
-    const ImVec2 board0 = canvas0 + ImVec2(padding, padding);
-    const ImVec2 board1 = board0 + boardSize;
-    draw->AddRect(board0 - ImVec2(2, 2), board1 + ImVec2(2, 2), GUI_COLOUR(C_WHITE));
+    const FfVec2 board0 = canvas0 + FfVec2(padding, padding);
+    const FfVec2 board1 = board0 + boardSize;
+    draw->AddRect(board0 - FfVec2(2, 2), board1 + FfVec2(2, 2), GUI_COLOUR(C_WHITE));
 
     // Next block
-    const ImVec2 next0 { board1.x + padding, board0.y + lineHeight };
-    const ImVec2 next1 = next0 + nextSize;
-    draw->AddRect(next0 - ImVec2(2, 2), next1 + ImVec2(2, 2), GUI_COLOUR(C_WHITE));
+    const FfVec2 next0 { board1.x + padding, board0.y + lineHeight };
+    const FfVec2 next1 = next0 + nextSize;
+    draw->AddRect(next0 - FfVec2(2, 2), next1 + FfVec2(2, 2), GUI_COLOUR(C_WHITE));
     ImGui::SetCursorScreenPos(ImVec2(next0.x, next0.y - lineHeight));
     ImGui::TextUnformatted("Next:");
 
     // Stored block
-    const ImVec2 stored0 { board1.x + padding, next1.y + padding + lineHeight };
-    const ImVec2 stored1 = stored0 + nextSize;
+    const FfVec2 stored0 { board1.x + padding, next1.y + padding + lineHeight };
+    const FfVec2 stored1 = stored0 + nextSize;
 #if USE_TM_HOLD
-    draw->AddRect(stored0 - ImVec2(2, 2), stored1 + ImVec2(2, 2), GUI_COLOUR(C_WHITE));
-    ImGui::SetCursorScreenPos(ImVec2(stored0.x, stored0.y - lineHeight));
+    draw->AddRect(stored0 - FfVec2(2, 2), stored1 + FfVec2(2, 2), GUI_COLOUR(C_WHITE));
+    ImGui::SetCursorScreenPos(FfVec2(stored0.x, stored0.y - lineHeight));
     ImGui::TextUnformatted("Stored:");
 #endif
 
     // Score
     float y0 = stored1.y + padding;
-    const ImVec2 score0 { board1.x + padding, y0 };
-    const ImVec2 score1 { score0.x, score0.y + lineHeight };
+    const FfVec2 score0 { board1.x + padding, y0 };
+    const FfVec2 score1 { score0.x, score0.y + lineHeight };
     ImGui::SetCursorScreenPos(score0);
     ImGui::TextUnformatted("Score:");
     ImGui::SetCursorScreenPos(score1);
@@ -137,8 +135,8 @@ void GuiWinPlay::_DrawTetris()
     y0 += padding + lineHeight + lineHeight;
 
     // Level
-    const ImVec2 level0 { board1.x + padding, y0 };
-    const ImVec2 level1 { level0.x, level0.y + lineHeight };
+    const FfVec2 level0 { board1.x + padding, y0 };
+    const FfVec2 level1 { level0.x, level0.y + lineHeight };
     ImGui::SetCursorScreenPos(level0);
     ImGui::TextUnformatted("Level:");
     ImGui::SetCursorScreenPos(level1);
@@ -146,8 +144,8 @@ void GuiWinPlay::_DrawTetris()
     y0 += padding + lineHeight + lineHeight;
 
     // Lines
-    const ImVec2 lines0 { board1.x + padding, y0 };
-    const ImVec2 lines1 { lines0.x, lines0.y + lineHeight };
+    const FfVec2 lines0 { board1.x + padding, y0 };
+    const FfVec2 lines1 { lines0.x, lines0.y + lineHeight };
     ImGui::SetCursorScreenPos(lines0);
     ImGui::TextUnformatted("Lines:");
     ImGui::SetCursorScreenPos(lines1);
@@ -167,7 +165,7 @@ void GuiWinPlay::_DrawTetris()
             const tetris_cell c = (tetris_cell)tg_get(_tetrisGame, row, col);
             if (c != TC_EMPTY)
             {
-                const ImVec2 block0 { board0.x + (col * cell.x), board0.y + (row * cell.y) };
+                const FfVec2 block0 { board0.x + (col * cell.x), board0.y + (row * cell.y) };
                 const tetris_type type = (tetris_type)(c - 1);
                 draw->AddRectFilled(block0, block0 + cell, _TetrominoColour(type));
                 draw->AddRect(block0, block0 + cell, _TetrominoColour(type, true));
@@ -260,11 +258,11 @@ ImU32 GuiWinPlay::_TetrominoColour(const tetris_type type, const bool dim)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinPlay::_DrawTetromino(ImDrawList *draw, const ImVec2 &p0, const ImVec2 &cell, const tetris_block &block)
+void GuiWinPlay::_DrawTetromino(ImDrawList *draw, const FfVec2 &p0, const FfVec2 &cell, const tetris_block &block)
 {
     if (block.typ >= 0)
     {
-        ImVec2 offs { 0, 0 };
+        FfVec2 offs { 0, 0 };
         switch (block.typ)
         {
             case TET_I: offs.y = cell.y / 2; break;
@@ -278,7 +276,7 @@ void GuiWinPlay::_DrawTetromino(ImDrawList *draw, const ImVec2 &p0, const ImVec2
         for (int b = 0; b < TETRIS; b++)
         {
             const tetris_location c = TETROMINOS[block.typ][block.ori][b];
-            const ImVec2 block0 = p0 + offs + ImVec2(cell.x * c.col, cell.y * c.row);
+            const FfVec2 block0 = p0 + offs + FfVec2(cell.x * c.col, cell.y * c.row);
             draw->AddRectFilled(block0, block0 + cell, _TetrominoColour((tetris_type)block.typ));
             draw->AddRect(block0, block0 + cell, _TetrominoColour((tetris_type)block.typ, true));
         }
