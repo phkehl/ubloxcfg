@@ -23,21 +23,24 @@
 #include <vector>
 #include <cstdint>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
-/* ***** UBX-RXM-RTCM renderer ************************************************************************************** */
+/* ***** UBX-RXM-SFRBX renderer ************************************************************************************* */
 
 class GuiMsgUbxRxmSfrbx : public GuiMsg
 {
     public:
-        GuiMsgUbxRxmSfrbx(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxRxmSfrbx(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
-    protected:
+    private:
 
         struct SfrbxInfo
         {
@@ -47,6 +50,7 @@ class GuiMsgUbxRxmSfrbx : public GuiMsg
             uint32_t              lastTs;
             uint8_t               gnssId;
             uint8_t               svId;
+            uint32_t              uid;
             uint8_t               sigId;
             uint8_t               freqId;
             std::vector<uint32_t> dwrds;
@@ -55,11 +59,9 @@ class GuiMsgUbxRxmSfrbx : public GuiMsg
         };
 
         std::map<uint32_t, SfrbxInfo> _sfrbxInfos;
-        uint32_t _selected;
+        GuiWidgetTable _table;
 
         static std::string GetNavMsg(const SfrbxInfo &info);
-
-    private:
 };
 
 /* ****************************************************************************************************************** */

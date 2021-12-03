@@ -38,19 +38,30 @@ GuiWin::GuiWin(const std::string &name) :
     _winSize          { 30, 30 }, // > 0: units of fontsize, < 0: = fraction of screen width/height
     _winSizeMin       { 0, 0 },
     _winUid           { reinterpret_cast<std::uintptr_t>(this) },
-    _winSettings      { GuiApp::GetInstance().GetSettings() },
     _winClass         { std::make_unique<ImGuiWindowClass>() }
 {
     _winUidStr = Ff::Sprintf("%016lx", _winUid);
     _winName = name;
+    _newWinInitPos = NEW_WIN_POS[_newWinPosIx++];
+    _newWinPosIx %= NEW_WIN_POS.size();
     SetTitle(name); // by default the (internal) name (= ID) is also the displayed title
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ const std::vector<FfVec2> GuiWin::NEW_WIN_POS =
+{
+    { 20, 20 }, { 40, 40 }, { 60, 60 }, { 80, 80 }, { 100, 100 }, { 120, 120 }, { 140, 140 }, { 160, 160 }, { 180, 180 },
+};
+
+/*static*/ int GuiWin::_newWinPosIx = 0;
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWin::Open()
 {
     _winOpen = true;
+    Focus();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -153,6 +164,7 @@ bool GuiWin::_DrawWindowBegin()
     }
 
     ImGui::SetNextWindowClass(_winClass.get());
+    ImGui::SetNextWindowPos(_newWinInitPos, ImGuiCond_FirstUseEver);
 
     _winDrawn = ImGui::Begin(_winImguiName.c_str(), &_winOpen, _winFlags);
 
@@ -169,10 +181,10 @@ bool GuiWin::_DrawWindowBegin()
 ImVec2 GuiWin::_WinSizeToVec(ImVec2 size)
 {
     auto &io = ImGui::GetIO();
-    size.x *= size.x < 0.0 ? -io.DisplaySize.x : _winSettings->charSize.x;
+    size.x *= size.x < 0.0 ? -io.DisplaySize.x : GuiSettings::charSize.x;
     if (size.y != 0.0f)
     {
-        size.y *= size.y < 0.0 ? -io.DisplaySize.y : _winSettings->charSize.y;
+        size.y *= size.y < 0.0 ? -io.DisplaySize.y : GuiSettings::charSize.y;
     }
     else
     {
@@ -186,54 +198,6 @@ ImVec2 GuiWin::_WinSizeToVec(ImVec2 size)
 void GuiWin::_DrawWindowEnd()
 {
     ImGui::End();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-bool GuiWin::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff)
-{
-    bool res = false;
-    const bool enabled = *toggle;
-    if (labelOff == NULL)
-    {
-        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY)); }
-        if (ImGui::Button(labelOn, _winSettings->iconButtonSize))
-        {
-            *toggle = !*toggle;
-            res = true;
-        }
-        if (!enabled) { ImGui::PopStyleColor(); }
-        if (tooltipOff == NULL)
-        {
-            Gui::ItemTooltip(tooltipOn);
-        }
-        else
-        {
-            Gui::ItemTooltip(enabled ? tooltipOn : tooltipOff);
-        }
-    }
-    else
-    {
-        if (enabled)
-        {
-            if (ImGui::Button(labelOn,  _winSettings->iconButtonSize))
-            {
-                *toggle = false;
-                res = true;
-            }
-            Gui::ItemTooltip(tooltipOn);
-        }
-        else
-        {
-            if (ImGui::Button(labelOff,  _winSettings->iconButtonSize))
-            {
-                *toggle = true;
-                res = true;
-            }
-            Gui::ItemTooltip(tooltipOff != NULL ? tooltipOff : tooltipOn);
-        }
-    }
-    return res;
 }
 
 /* ****************************************************************************************************************** */

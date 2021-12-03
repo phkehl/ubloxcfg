@@ -49,7 +49,7 @@ void GuiWinAppAbout::DrawWindow()
         return;
     }
 
-    ImGui::PushFont(_winSettings->fontSans);
+    ImGui::PushFont(GuiSettings::fontSans);
 
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
     ImGui::TextUnformatted( "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
@@ -79,8 +79,11 @@ void GuiWinAppAbout::DrawWindow()
     ImGui::SameLine(); Gui::TextLink("https://forkaweso.me");
     ImGui::TextUnformatted( "- Tetris by Stephen Brennan, under a Revised BSD license");
     ImGui::SameLine(); Gui::TextLink("https://brennan.io/2015/06/12/tetris-reimplementation/");
+    ImGui::TextUnformatted( "- NanoVG, under a Zlib License");
+    ImGui::SameLine(); Gui::TextLink("https://github.com/memononen/nanovg");
+    ImGui::SameLine(); Gui::TextLink("https://github.com/inniyah/nanovg");
     ImGui::Separator();  // -----------------------------------------------------------------------------
-    ImGui::TextUnformatted("Third-party libraries (the important ones, use ldd to see all):");
+    ImGui::TextUnformatted("Third-party libraries (first level dependencies, use ldd to see all):");
     ImGui::TextUnformatted( "- GLFW");
     ImGui::SameLine(); Gui::TextLink("https://www.glfw.org");
     ImGui::TextUnformatted( "- libcurl");
@@ -102,8 +105,9 @@ void GuiWinAppAbout::DrawWindow()
 
 /* ****************************************************************************************************************** */
 
-GuiWinAppSettings::GuiWinAppSettings() :
-    GuiWinApp("Settings")
+GuiWinAppSettings::GuiWinAppSettings(std::function<void()> drawCb) :
+    GuiWinApp("Settings"),
+    _drawCb { drawCb }
 {
     _winSize    = { 72, 25 };
     _winSizeMin = { 72, 15 };
@@ -116,7 +120,10 @@ void GuiWinAppSettings::DrawWindow()
         return;
     }
 
-    _winSettings->_DrawSettingsEditor();
+    if (_drawCb)
+    {
+        _drawCb();
+    }
 
     _DrawWindowEnd();
 }
@@ -141,18 +148,24 @@ void GuiWinAppHelp::DrawWindow()
     {
         if (ImGui::BeginTabItem("cfggui"))
         {
+            ImGui::PushFont(GuiSettings::fontSans);
             ImGui::TextUnformatted("Yeah, right, ...");
             ImGui::EndTabItem();
+            ImGui::PopFont();
         }
         if (ImGui::BeginTabItem("ImGui"))
         {
+            ImGui::PushFont(GuiSettings::fontSans);
             ImGui::ShowUserGuide();
             ImGui::BulletText("Hold SHIFT while moving window to dock into other windows");
+            ImGui::PopFont();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("ImPlot"))
         {
+            ImGui::PushFont(GuiSettings::fontSans);
             ImPlot::ShowUserGuide();
+            ImGui::PopFont();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -203,8 +216,8 @@ void GuiWinAppLegend::_DrawFixColourLegend(const int value, const ImU32 colour, 
 {
     ImDrawList *draw = ImGui::GetWindowDrawList();
     FfVec2 offs = ImGui::GetCursorScreenPos();
-    const FfVec2 size { _winSettings->charSize.x * 1.5f, _winSettings->charSize.y };
-    const float textOffs = (2 * size.x) + (2 * _winSettings->style.ItemSpacing.x);
+    const FfVec2 size { GuiSettings::charSize.x * 1.5f, GuiSettings::charSize.y };
+    const float textOffs = (2 * size.x) + (2 * GuiSettings::style->ItemSpacing.x);
     draw->AddRectFilled(offs, offs + size, colour | ((ImU32)(0xff) << IM_COL32_A_SHIFT) );
     offs.x += size.x;
     draw->AddRectFilled(offs, offs + size, colour);

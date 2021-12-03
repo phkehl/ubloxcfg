@@ -29,6 +29,9 @@
 #include "platform.hpp"
 
 #include "gui_inc.hpp"
+#include "imgui_internal.h"
+#include "implot_internal.h"
+
 #ifdef IMGUI_ENABLE_FREETYPE
 #  include "imgui_freetype.h"
 #endif
@@ -41,18 +44,7 @@
 
 //#define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
 
-GuiSettings::GuiSettings(const std::string &cfgFile) :
-    // Settings
-    fontSize                  { FONT_SIZE_DEF },
-    fontMono                  { nullptr },
-    fontSans                  { nullptr },
-    cachePath                 { },
-    maps                      { },
-    // Helpers
-    style                     { ImGui::GetStyle() },
-    plotStyle                 { ImPlot::GetStyle() },
-
-    // Private
+GuiSettings::GuiSettings() :
     _fontDirty                { true },
     _sizesDirty               { true },
     _ftBuilderFlags           { FT_BUILDER_FLAGS_DEF },
@@ -79,40 +71,66 @@ GuiSettings::GuiSettings(const std::string &cfgFile) :
         ImGuiColorEditFlags_PickerHueBar | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreview |
         ImGuiColorEditFlags_AlphaPreviewHalf);
 
-    // Tune colours
+    // Select ImGui and ImPlot styles
     ImGui::StyleColorsDark();
-    style.Colors[ImGuiCol_PopupBg] = ImColor(IM_COL32(0x34, 0x34, 0x34, 0xf8));
-
-    // Tune style
-    style.FrameBorderSize          = 1.0f;
-    style.TabBorderSize            = 1.0f;
-    style.WindowTitleAlign.x       = 0.5f;
-    style.WindowMenuButtonPosition = ImGuiDir_Left;
-    style.FrameRounding            = 3.0f;
-    //style.WindowBorderSize         = 5.0f;
-    style.WindowRounding           = 5.0f;
-
     ImPlot::StyleColorsAuto();
-    plotStyle.LineWeight           = 2.0;
-    //plotStyle.AntiAliasedLines   = true;
-    plotStyle.UseLocalTime         = false;
-    plotStyle.UseISO8601           = true;
-    plotStyle.Use24HourClock       = true;
-    plotStyle.FitPadding           = ImVec2(0.1, 0.1);
 
-    const std::string baseDir = std::filesystem::weakly_canonical( std::filesystem::path(cfgFile).parent_path() ).string();
+    // Tune ImGui styles
+    ImGuiStyle *imguiStyle = &(ImGui::GetCurrentContext()->Style);
+    imguiStyle->Colors[ImGuiCol_PopupBg] = ImColor(IM_COL32(0x34, 0x34, 0x34, 0xf8));
+    imguiStyle->FrameBorderSize          = 1.0f;
+    imguiStyle->TabBorderSize            = 1.0f;
+    imguiStyle->WindowTitleAlign.x       = 0.5f;
+    imguiStyle->WindowMenuButtonPosition = ImGuiDir_Left;
+    imguiStyle->FrameRounding            = 3.0f;
+    //imguiStyle->WindowBorderSize         = 5.0f;
+    imguiStyle->WindowRounding           = 5.0f;
+
+    // Tune ImPlot styles
+    ImPlotStyle *implotStyle = &(ImPlot::GetCurrentContext()->Style);
+    implotStyle->LineWeight              = 2.0;
+    //implotStyle->AntiAliasedLines      = true;
+    implotStyle->UseLocalTime            = false;
+    implotStyle->UseISO8601              = true;
+    implotStyle->Use24HourClock          = true;
+    implotStyle->FitPadding              = ImVec2(0.1, 0.1);
+
+    // Store style shortcuts
+    style     = imguiStyle;
+    plotStyle = implotStyle;
+
     cachePath = Platform::CacheDir("tiles");
-
-    if (!cfgFile.empty())
-    {
-        LoadConf(cfgFile);
-    }
 }
 
 GuiSettings::~GuiSettings()
 {
     DEBUG("~GuiSettings()");
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// Static member variables, set/updated at run-time
+
+/*static*/ float   GuiSettings::fontSize = GuiSettings::FONT_SIZE_DEF;
+/*static*/ ImFont *GuiSettings::fontMono = nullptr;
+/*static*/ ImFont *GuiSettings::fontSans = nullptr;
+/*static*/ FfVec2  GuiSettings::charSize = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+/*static*/ FfVec2  GuiSettings::iconSize = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+
+/* static */ImU32 GuiSettings::colours[_NUM_COLOURS] =
+{
+#  define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
+};
+
+/*static*/ const ImGuiStyle   *GuiSettings::style = nullptr;
+/*static*/ const ImPlotStyle  *GuiSettings::plotStyle = nullptr;
+
+/*static*/ std::string GuiSettings::cachePath = "";
+
+/*static*/ std::vector<MapParams> GuiSettings::maps = { };
+
+/*static*/ Ff::ConfFile GuiSettings::_confFile;
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -284,38 +302,38 @@ void GuiSettings::SaveConf(const std::string &file)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiSettings::SetValue(const std::string &key, const bool value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const bool value)
 {
     _confFile.Set(key, value);
 }
 
-void GuiSettings::SetValue(const std::string &key, const int value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const int value)
 {
     _confFile.Set(key, value);
 }
 
-void GuiSettings::SetValue(const std::string &key, const uint32_t value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const uint32_t value)
 {
     _confFile.Set(key, value, true);
 }
 
-void GuiSettings::SetValue(const std::string &key, const double value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const double value)
 {
     _confFile.Set(key, value);
 }
 
-void GuiSettings::SetValue(const std::string &key, const float value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const float value)
 {
     const double dbl = value;
     _confFile.Set(key, dbl);
 }
 
-void GuiSettings::SetValue(const std::string &key, const std::string &value)
+/*static*/ void GuiSettings::SetValue(const std::string &key, const std::string &value)
 {
     _confFile.Set(key, value);
 }
 
-void GuiSettings::SetValueMult(const std::string &key, const std::vector<std::string> &list, const int maxNum)
+/*static*/ void GuiSettings::SetValueMult(const std::string &key, const std::vector<std::string> &list, const int maxNum)
 {
     for (int n = 1; n <= maxNum; n++)
     {
@@ -323,7 +341,7 @@ void GuiSettings::SetValueMult(const std::string &key, const std::vector<std::st
     }
 }
 
-void GuiSettings::SetValueList(const std::string &key, const std::vector<std::string> &list, const std::string &sep, const int maxNum)
+/*static*/ void GuiSettings::SetValueList(const std::string &key, const std::vector<std::string> &list, const std::string &sep, const int maxNum)
 {
     if (!list.empty())
     {
@@ -337,7 +355,7 @@ void GuiSettings::SetValueList(const std::string &key, const std::vector<std::st
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -345,7 +363,7 @@ void GuiSettings::GetValue(const std::string &key, bool &value, const bool def)
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, int &value, const int def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, int &value, const int def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -353,7 +371,7 @@ void GuiSettings::GetValue(const std::string &key, int &value, const int def)
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, uint32_t &value, const uint32_t def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, uint32_t &value, const uint32_t def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -361,7 +379,7 @@ void GuiSettings::GetValue(const std::string &key, uint32_t &value, const uint32
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, double &value, const double def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, double &value, const double def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -369,7 +387,7 @@ void GuiSettings::GetValue(const std::string &key, double &value, const double d
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, float &value, const float def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, float &value, const float def)
 {
     double dbl;
     if (!_confFile.Get(key, dbl))
@@ -382,7 +400,7 @@ void GuiSettings::GetValue(const std::string &key, float &value, const float def
     }
 }
 
-void GuiSettings::GetValue(const std::string &key, std::string &value, const std::string &def)
+/*static*/ void GuiSettings::GetValue(const std::string &key, std::string &value, const std::string &def)
 {
     if (!_confFile.Get(key, value))
     {
@@ -390,14 +408,14 @@ void GuiSettings::GetValue(const std::string &key, std::string &value, const std
     }
 }
 
-std::string GuiSettings::GetValue(const std::string &key)
+/*static*/ std::string GuiSettings::GetValue(const std::string &key)
 {
     std::string value;
     GetValue(key, value, "");
     return value;
 }
 
-std::vector<std::string> GuiSettings::GetValueMult(const std::string &key, const int maxNum)
+/*static*/ std::vector<std::string> GuiSettings::GetValueMult(const std::string &key, const int maxNum)
 {
     std::vector<std::string> list;
     for (int n = 1; n <= maxNum; n++)
@@ -411,7 +429,7 @@ std::vector<std::string> GuiSettings::GetValueMult(const std::string &key, const
     return list;
 }
 
-std::vector<std::string> GuiSettings::GetValueList(const std::string &key, const std::string &sep, const int maxNum)
+/*static*/ std::vector<std::string> GuiSettings::GetValueList(const std::string &key, const std::string &sep, const int maxNum)
 {
     const std::vector<std::string> strs = Ff::StrSplit(GetValue(key), sep);
 
@@ -427,39 +445,13 @@ std::vector<std::string> GuiSettings::GetValueList(const std::string &key, const
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
-#define _SETTINGS_COLOUR_LABEL(_str, _enum, _col) _str,
-#define _SETTINGS_COLOUR_NAME(_str, _enum, _col) STRINGIFY(_enum),
-
-/* static */ImU32 GuiSettings::colours[_NUM_COLOURS] =
-{
-    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
-};
-
-const char * const GuiSettings::COLOUR_LABELS[GuiSettings::_NUM_COLOURS] =
-{
-    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_LABEL)
-};
-
-const char * const GuiSettings::COLOUR_NAMES[GuiSettings::_NUM_COLOURS] =
-{
-    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_NAME)
-};
-
-ImU32 GuiSettings::COLOUR_DEFAULTS[_NUM_COLOURS] =
-{
-    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
-};
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-bool GuiSettings::_UpdateFont()
+bool GuiSettings::UpdateFonts()
 {
     if (!_fontDirty)
     {
         return false;
     }
-    DEBUG("GuiSettings::_UpdateFont()");
+    DEBUG("GuiSettings::UpdateFonts()");
 
     ImGuiIO &io = ImGui::GetIO();
 
@@ -485,8 +477,7 @@ bool GuiSettings::_UpdateFont()
         snprintf(config.Name, sizeof(config.Name), "Fork Awesome %.1f", fontSize);
         static const ImWchar icons[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
         config.MergeMode = true;
-        // config.GlyphOffset = ImVec2(0.0f, std::floor(fontSize / 10.0f));
-        config.GlyphOffset = ImVec2(0,0);
+        config.GlyphOffset = ImVec2(0.0f, std::floor(fontSize / 10.0f));
         io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontForkAwesome(), fontSize, &config, icons);
     }
 
@@ -511,25 +502,24 @@ bool GuiSettings::_UpdateFont()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiSettings::_UpdateSizes()
+bool GuiSettings::UpdateSizes()
 {
     if (!_sizesDirty)
     {
         return false;
     }
-    DEBUG("GuiSettings::_UpdateSizes()");
+    DEBUG("GuiSettings::UpdateSizes()");
     const float frameHeight = ImGui::GetFrameHeight();
-    iconButtonSize = ImVec2(frameHeight, frameHeight);
+    iconSize = ImVec2(frameHeight, frameHeight);
     charSize = ImGui::CalcTextSize("X");
     _widgetOffs = 25 * charSize.x;
-
     _sizesDirty = false;
     return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-ImU32 GuiSettings::GetFixColour(const EPOCH_t *epoch)
+/*static*/ ImU32 GuiSettings::GetFixColour(const EPOCH_t *epoch)
 {
     if (!epoch || !epoch->haveFix)
     {
@@ -559,10 +549,26 @@ ImU32 GuiSettings::GetFixColour(const EPOCH_t *epoch)
     return colours[FIX_INVALID];
 }
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiSettings::_DrawSettingsEditor()
+#define _SETTINGS_COLOUR_LABEL(_str, _enum, _col) _str,
+#define _SETTINGS_COLOUR_NAME(_str, _enum, _col) STRINGIFY(_enum),
+/*static*/ const char * const GuiSettings::COLOUR_LABELS[GuiSettings::_NUM_COLOURS] =
+{
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_LABEL)
+};
+
+/*static*/ const char * const GuiSettings::COLOUR_NAMES[GuiSettings::_NUM_COLOURS] =
+{
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_NAME)
+};
+
+/*static*/ ImU32 GuiSettings::COLOUR_DEFAULTS[_NUM_COLOURS] =
+{
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
+};
+
+/*static*/ void GuiSettings::DrawSettingsEditor()
 {
     if (ImGui::BeginTabBar("Settings"))
     {
@@ -678,7 +684,7 @@ void GuiSettings::_DrawSettingsEditor()
                     }
                     ImGui::SameLine(_widgetOffs);
                     {
-                        if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconButtonSize))
+                        if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconSize))
                         {
                             colours[ix] = COLOUR_DEFAULTS[ix];
                         }

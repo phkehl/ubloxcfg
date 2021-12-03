@@ -21,6 +21,9 @@
 #include <string>
 #include <memory>
 #include <filesystem>
+#include <regex>
+
+#include "gui_widget_filter.hpp"
 
 #include "gui_win.hpp"
 
@@ -43,10 +46,13 @@ class GuiWinFileDialog : public GuiWin
         void SetFilename(const std::string &fileName);
 
         // Set confirm dialog, default is true for mode = FILE_SAVE, false for mode = FILE_OPEN
-        void ConfirmSelect(const bool confirm);
+        void SetConfirmSelect(const bool confirm);
 
         // Set confirm dialog, for mode = FILE_SAVE if file exists, default true
-        void ConfirmOverwrite(const bool confirm);
+        void SetConfirmOverwrite(const bool confirm);
+
+        // Set file filter
+        void SetFileFilter(const std::string regex, const bool highlightOnly = false);
 
         // True if dialog is inited and we should continue calling DrawDialog()
         bool IsInit();
@@ -67,14 +73,19 @@ class GuiWinFileDialog : public GuiWin
             std::string           fileName;   // "file_or_dir"
             std::string           fileDate;   // date string
             std::string           fileSize;   // size string
+            float                 fileSizeWidth;
+            float                 fileSizeLeftPad;
             std::string           linkTarget; // "/path/to/link/target/file_or_dir", or "" if not a symlink
 
             bool                  isFile;
             bool                  isDir;
+            bool                  isHidden;
 
             std::uintmax_t        sortSize;
             int                   sortType;
             std::time_t           sortDate;
+
+            bool                  highlight;
         };
 
         Mode_e                _dialogMode;
@@ -85,8 +96,7 @@ class GuiWinFileDialog : public GuiWin
 
         std::string           _currentDir;
         std::vector<std::string> _currentDirParts;
-        std::vector<DirEntry> _currentDirFiles;
-        bool                  _updatePathScroll;
+        std::vector<DirEntry> _currentDirEntries;
 
         bool                  _showHidden;
         bool                  _dirsFirst;
@@ -95,6 +105,8 @@ class GuiWinFileDialog : public GuiWin
 
         bool                  _confirmSelect;
         bool                  _confirmOverwrite;
+        GuiWidgetFilter       _fileFilter;
+        std::string           _confirmWinName;
 
         std::string           _selectedFileName;
         bool                  _selectedFileValid;
@@ -113,7 +125,7 @@ class GuiWinFileDialog : public GuiWin
         std::vector<SortInfo> _sortInfo;
 
         void _Done();
-        bool _DrawWindow();
+        bool _DrawDialog();
         void _Check();
 
         void _ChangeDir(const std::string &path = "");

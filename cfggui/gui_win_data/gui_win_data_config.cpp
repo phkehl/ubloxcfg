@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include <functional>
+
 #include "ff_ubx.h"
 #include "ff_cpp.hpp"
 
 #include "gui_inc.hpp"
-
+#include "gui_notify.hpp"
 #include "gui_win_data_config.hpp"
 
 /* ****************************************************************************************************************** */
@@ -47,7 +49,7 @@ GuiWinDataConfig::GuiWinDataConfig(const std::string &name, std::shared_ptr<Data
     _dbItemOrder{DB_ORDER_BY_NAME}, _dbShowUnknown{false},
     _chValueRef{REF_DEFAULT}, _dbItemDispCount{},
     _dbFilterWidget{kDbItemsFilterHelp}, _dbFilterUpdate{false},
-    _cfgFileName{}, _cfgFileSaveResultTo{-1.0}, _cfgFileSaveError{}
+    _cfgSaveFileDialog{_winName + "SaveCfgFileDialog"}
 {
     _winSize = { 155, 40 };
 
@@ -123,12 +125,13 @@ void GuiWinDataConfig::_Loop(const uint32_t &frame, const double &now)
             _dbPollState = POLL_POLL;
             _DbClear();
             break;
-        case POLL_POLL:
+        case POLL_POLL: // poll a layer
         {
             _dbPollState = POLL_WAIT;
             _dbPollTime = ImGui::GetTime();
             std::vector<uint32_t> keys = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
-            _receiver->GetConfig(_dbPollLayers[_dbPollLayerIx], keys, _winUid);
+            _receiver->GetConfig(_dbPollLayers[_dbPollLayerIx], keys,
+                std::bind(&GuiWinDataConfig::_DbSet, this, std::placeholders::_1));
             break;
         }
         case POLL_WAIT:
@@ -159,7 +162,8 @@ void GuiWinDataConfig::_Loop(const uint32_t &frame, const double &now)
         case SET_START:
             if (_receiver->IsReady() && !_cfgChangedKv.empty())
             {
-                _receiver->SetConfig(_dbSetRam, _dbSetBbr, _dbSetFlash, _dbSetApply, _cfgChangedKv, _winUid);
+                _receiver->SetConfig(_dbSetRam, _dbSetBbr, _dbSetFlash, _dbSetApply, _cfgChangedKv,
+                    std::bind(&GuiWinDataConfig::_ApplyCfgAck, this, std::placeholders::_1));
                 // Work out how many UBX-CFG-VALSET will be needed
                 int nMsgs = 0;
                 UBX_CFG_VALSET_MSG_t *msgs = ubxKeyValToUbxCfgValset(_cfgChangedKv.data(), (int)_cfgChangedKv.size(), false, true, true, &nMsgs);
@@ -186,7 +190,52 @@ void GuiWinDataConfig::_Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataConfig::_ProcessData(const Data &data)
+void GuiWinDataConfig::_DbSet(const Ff::KeyVal &keyval)
+{
+    int layerIx = -1;
+    for (int ix = 0; ix < NUM_LAYERS; ix++)
+    {
+        if (_cfgLayers[ix] == keyval.layer)
+        {
+            layerIx = ix;
+            break;
+        }
+    }
+    if (layerIx != -1)
+    {
+        // Process all key-value pairs in the response and store to the database
+        for (auto &kv: keyval.kv)
+        {
+            // Create/add new item
+            auto dbitem = _DbGetItem(kv.id);
+            if (dbitem == _dbItems.end())
+            {
+                auto newDbitem = DbItem(kv.id);
+                _dbItems.push_back(newDbitem);
+                dbitem = _dbItems.end() - 1;
+            }
+            // Store key-value for this layer
+            dbitem->SetValue(kv.val, static_cast<enum DbItemLayer_e>(layerIx));
+        }
+
+        _DbSync();
+    }
+
+    _dbPollLayerIx++;
+    _dbPollProgress = 0;
+    if (_dbPollLayerIx < NUM_LAYERS)
+    {
+        _dbPollState = POLL_POLL;
+    }
+    else
+    {
+        _dbPollState = POLL_DONE;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataConfig::_ProcessData(const InputData &data)
 {
     if (_dbPollState == POLL_WAIT)
     {
@@ -198,53 +247,9 @@ void GuiWinDataConfig::_ProcessData(const Data &data)
             _dbPollState = POLL_FAIL;
         }
 
-        // Handle response
-        else if ( (data.type == Data::Type::DATA_KEYVAL) && (data.uid == _winUid) )
-        {
-            int layerIx = -1;
-            for (int ix = 0; ix < NUM_LAYERS; ix++)
-            {
-                if (_cfgLayers[ix] == data.keyval->layer)
-                {
-                    layerIx = ix;
-                    break;
-                }
-            }
-            if (layerIx != -1)
-            {
-                // Process all key-value pairs in the response and store to the database
-                for (auto &kv: data.keyval->kv)
-                {
-                    // Create/add new item
-                    auto dbitem = _DbGetItem(kv.id);
-                    if (dbitem == _dbItems.end())
-                    {
-                        auto newDbitem = DbItem(kv.id);
-                        _dbItems.push_back(newDbitem);
-                        dbitem = _dbItems.end() - 1;
-                    }
-                    // Store key-value for this layer
-                    dbitem->SetValue(kv.val, static_cast<enum DbItemLayer_e>(layerIx));
-                }
-
-                _DbSync();
-            }
-
-            _dbPollLayerIx++;
-            _dbPollProgress = 0;
-            if (_dbPollLayerIx < NUM_LAYERS)
-            {
-                _dbPollState = POLL_POLL;
-            }
-            else
-            {
-                _dbPollState = POLL_DONE;
-            }
-        }
-
         // Count number of received UBX-CFG-VALGET (assuming they're ours..) to make the progress
         // indicator a bit more interesting
-        else if (data.type == Data::Type::DATA_MSG)
+        else if (data.type == InputData::DATA_MSG)
         {
             if ( (data.msg->name == "UBX-CFG-VALGET") && (_dbPollProgress < _dbPollProgressMax) )
             {
@@ -257,15 +262,19 @@ void GuiWinDataConfig::_ProcessData(const Data &data)
     {
         // Count UBX-ACK-ACK that we receive while applying the configuration
         // FIXME: should perhaps check message content as there could be other stuff ongoing..
-        if ( (data.type == Data::Type::DATA_MSG) && (data.msg->name == "UBX-ACK-ACK") )
+        if ( (data.type == InputData::DATA_MSG) && (data.msg->name == "UBX-ACK-ACK") )
         {
             _dbSetNumValset++;
         }
-        else if ( (data.type == Data::Type::ACK) && (data.uid == _winUid) )
-        {
-            _dbSetState = SET_DONE;
-        }
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataConfig::_ApplyCfgAck(const bool ack)
+{
+    UNUSED(ack);
+    _dbSetState = SET_DONE;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -842,7 +851,7 @@ bool GuiWinDataConfig::_DrawControls()
     // Refresh items
     {
         ImGui::BeginDisabled(!ctrlEnabled);
-        if (ImGui::Button(ICON_FK_REFRESH "##RefreshItems", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_REFRESH "##RefreshItems", GuiSettings::iconSize))
         {
             _dbPollState = POLL_INIT;
         }
@@ -856,7 +865,7 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool dataAvail = _dbPollDataAvail;
         ImGui::BeginDisabled(!ctrlEnabled || !dataAvail);
-        if (ImGui::Button(ICON_FK_TIMES "##ClearItems", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_TIMES "##ClearItems", GuiSettings::iconSize))
         {
             _DbClear();
         }
@@ -873,14 +882,14 @@ bool GuiWinDataConfig::_DrawControls()
         switch (_chValueRef)
         {
             case REF_DEFAULT:
-                if (ImGui::Button(ICON_FK_ARROW_DOWN "###RefLayer", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_ARROW_DOWN "###RefLayer", GuiSettings::iconSize))
                 {
                     ref = REF_CURRENT;
                 }
                 Gui::ItemTooltip("Reference is default configuration (Default layer)");
                 break;
             case REF_CURRENT:
-                if (ImGui::Button(ICON_FK_ARROW_UP "###RefLayer", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_ARROW_UP "###RefLayer", GuiSettings::iconSize))
                 {
                     ref = REF_DEFAULT;
                 }
@@ -910,7 +919,7 @@ bool GuiWinDataConfig::_DrawControls()
         switch (_dbItemOrder)
         {
             case DB_ORDER_BY_NAME:
-                if (ImGui::Button(ICON_FK_SORT_ALPHA_ASC   "###SortOrder", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_SORT_ALPHA_ASC   "###SortOrder", GuiSettings::iconSize))
                 {
                     order = DB_ORDER_BY_ID_IGN_SIZE;
                     _DbSync();
@@ -918,7 +927,7 @@ bool GuiWinDataConfig::_DrawControls()
                 Gui::ItemTooltip("Items are ordered by name");
                 break;
             case DB_ORDER_BY_ID_IGN_SIZE:
-                if (ImGui::Button(ICON_FK_SORT_AMOUNT_ASC  "###SortOrder", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_SORT_AMOUNT_ASC  "###SortOrder", GuiSettings::iconSize))
                 {
                     order = DB_ORDER_BY_ID;
                     _DbSync();
@@ -926,7 +935,7 @@ bool GuiWinDataConfig::_DrawControls()
                 Gui::ItemTooltip("Items are ordered by ID (ignoring size)");
                 break;
             case DB_ORDER_BY_ID:
-                if (ImGui::Button(ICON_FK_SORT_NUMERIC_ASC "###SortOrder", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_SORT_NUMERIC_ASC "###SortOrder", GuiSettings::iconSize))
                 {
                     order = DB_ORDER_BY_NAME;
                     _DbSync();
@@ -952,7 +961,7 @@ bool GuiWinDataConfig::_DrawControls()
         // Show unknown (undocumented)
         if (_dbShowUnknown)
         {
-            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###ShowUnknown", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###ShowUnknown", GuiSettings::iconSize))
             {
                 _dbShowUnknown = false;
             }
@@ -960,7 +969,7 @@ bool GuiWinDataConfig::_DrawControls()
         }
         else
         {
-            if (ImGui::Button(ICON_FK_CIRCLE_O "###ShowUnknown", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_CIRCLE_O "###ShowUnknown", GuiSettings::iconSize))
             {
                 _dbShowUnknown = true;
             }
@@ -979,7 +988,7 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool disable = (_dbSetState != SET_IDLE);
         ImGui::BeginDisabled(disable);
-        if (ImGui::Button(ICON_FK_BARS "##Layers", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_BARS "##Layers", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("Layers");
         }
@@ -1002,7 +1011,7 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool disable = !ctrlEnabled || _cfgChangedKv.empty() || (_dbSetState != SET_IDLE);
         ImGui::BeginDisabled(disable);
-        if (ImGui::Button(ICON_FK_THUMBS_UP "##ApplyConfig", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_THUMBS_UP "##ApplyConfig", GuiSettings::iconSize))
         {
             _dbSetState = SET_START;
         }
@@ -1016,7 +1025,7 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool disable = _cfgChangedKv.empty() || (_dbSetState != SET_IDLE);
         ImGui::BeginDisabled(disable);
-        if (ImGui::Button(ICON_FK_THUMBS_DOWN "##DiscardConfig", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_THUMBS_DOWN "##DiscardConfig", GuiSettings::iconSize))
         {
             for (auto &dbitem: _dbItems)
             {
@@ -1035,7 +1044,7 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool disable = _cfgChangedKv.empty();
         ImGui::BeginDisabled(disable);
-        if (ImGui::Button(ICON_FK_FILES_O "##CopyChanges", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_FILES_O "##CopyChanges", GuiSettings::iconSize))
         {
             ImGui::LogToClipboard();
             for (auto &str: _cfgChangedStrs)
@@ -1054,9 +1063,19 @@ bool GuiWinDataConfig::_DrawControls()
     {
         const bool disable = _cfgChangedKv.empty();
         ImGui::BeginDisabled(disable);
-        if (ImGui::Button(ICON_FK_FLOPPY_O "##Save", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_FLOPPY_O "##Save", GuiSettings::iconSize))
         {
-            ImGui::OpenPopup("SaveToFilePopup");
+            if (!_cfgSaveFileDialog.IsInit())
+            {
+                _cfgSaveFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
+                _cfgSaveFileDialog.SetFilename( Ff::Strftime("config_%Y%m%d_%H%M.cfg") );
+                _cfgSaveFileDialog.SetTitle(_winTitle + " - Save configuration...");
+                _cfgSaveFileDialog.SetFileFilter("\\.(cfg)", true);
+            }
+            else
+            {
+                _cfgSaveFileDialog.Focus();
+            }
         }
         Gui::ItemTooltip("Save configuration to file");
         ImGui::EndDisabled();
@@ -1067,7 +1086,7 @@ bool GuiWinDataConfig::_DrawControls()
     // Clear everything
     {
         ImGui::BeginDisabled(!ctrlEnabled);
-        if (ImGui::Button(ICON_FK_ERASER "##ClearAll", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ERASER "##ClearAll", GuiSettings::iconSize))
         {
             _ClearData();
         }
@@ -1140,60 +1159,28 @@ bool GuiWinDataConfig::_DrawControls()
     }
 
     // Handle save to file
-    if (ImGui::BeginPopup("SaveToFilePopup"))
+    if (_cfgSaveFileDialog.IsInit() && _cfgSaveFileDialog.DrawDialog())
     {
-        const bool showMessage = (_cfgFileSaveResultTo > 0.0f) && (ImGui::GetTime() < _cfgFileSaveResultTo);
-        ImGui::BeginDisabled(showMessage);
-        ImGui::PushItemWidth(400.0f);
-        ImGui::InputTextWithHint("##FileName", "File name", &_cfgFileName);
-        ImGui::PopItemWidth();
-        ImGui::EndDisabled();
-        if (_cfgFileSaveResultTo < 0.0f)
+        const auto cfgFile = _cfgSaveFileDialog.GetPath();
+        std::ofstream out;
+        out.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        try
         {
-            ImGui::BeginDisabled(_cfgFileName.empty());
-            if (ImGui::Button(ICON_FK_CHECK " Save"))
+            out.open(cfgFile, std::ofstream::binary);
+            PRINT("Writing to %s", cfgFile.c_str());
+            for (auto &str: _cfgChangedStrs)
             {
-                _cfgFileSaveError.clear();
-                std::ofstream out;
-                out.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-                try
-                {
-                    out.open(_cfgFileName, std::ofstream::binary);
-                    PRINT("Writing to %s", _cfgFileName.c_str());
-                    for (auto &str: _cfgChangedStrs)
-                    {
-                        out << str;
-                        out << "\n";
-                    }
-                    PRINT("Configuration written to %s", _cfgFileName.c_str());
-                }
-                catch (...)
-                {
-                    ERROR("Failed writing %s: %s", _cfgFileName.c_str(), std::strerror(errno));
-                    _cfgFileSaveError = Ff::Sprintf("Error saving: %s!", std::strerror(errno));
-                }
-                _cfgFileSaveResultTo = ImGui::GetTime() + 2.0;
+                out << str;
+                out << "\n";
             }
-            ImGui::SameLine();
-            ImGui::EndDisabled();
-            if (ImGui::Button(ICON_FK_TIMES " Cancel"))
-            {
-                ImGui::CloseCurrentPopup();
-            }
+            PRINT("Configuration written to %s", cfgFile.c_str());
+            GuiNotify::Success("Configuration file written", cfgFile);
         }
-        else
+        catch (...)
         {
-            ImGui::AlignTextToFramePadding();
-            ImGui::PushStyleColor(ImGuiCol_Text, _cfgFileSaveError.size() > 0 ? GUI_COLOUR(C_BRIGHTRED) : GUI_COLOUR(C_BRIGHTGREEN));
-            ImGui::TextUnformatted(_cfgFileSaveError.size() > 0 ? _cfgFileSaveError.c_str() : "Configuration saved to file");
-            ImGui::PopStyleColor();
-            if (!showMessage)
-            {
-                _cfgFileSaveResultTo = -1.0;
-            }
+            ERROR("Failed writing %s: %s", cfgFile.c_str(), std::strerror(errno));
+            GuiNotify::Error("Failed writing configuration file", std::strerror(errno));
         }
-
-        ImGui::EndPopup();
     }
 
     return somethingChanged;
@@ -1204,7 +1191,7 @@ bool GuiWinDataConfig::_DrawControls()
 void GuiWinDataConfig::_DrawDb()
 {
     // TODO: Switch this to the new ImGui table API, once it's available..
-    const float charWidth = _winSettings->charSize.x;
+    const float charWidth = GuiSettings::charSize.x;
     const float wItem  = 36 * charWidth;
     const float wId    = 12 * charWidth;
     const float wType  =  4 * charWidth;
@@ -1293,7 +1280,7 @@ void GuiWinDataConfig::_DrawDb()
 
         // Draw list of items
         const bool highlight = _dbFilterWidget.IsActive() && _dbFilterWidget.IsHighlight();
-        const float dimVal = _winSettings->style.Alpha * 0.5f;
+        const float dimVal = GuiSettings::style->Alpha * 0.5f;
 
         // Displayed items count
         std::memset(&_dbItemDispCount, 0, sizeof(_dbItemDispCount));
@@ -1371,13 +1358,13 @@ void GuiWinDataConfig::_DrawDb()
 
 bool GuiWinDataConfig::_DrawPorts()
 {
-    const float charWidth = _winSettings->charSize.x;
+    const float charWidth = GuiSettings::charSize.x;
     const float wPort =  10 * charWidth;
     const float wBaud =  15 * charWidth;
     const float wProt =  42 * charWidth;
     const float width = wPort + wBaud + (2 * wProt);
     const float currWidth = ImGui::GetContentRegionAvail().x;
-    const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
+    const float itemSpacing = GuiSettings::style->ItemInnerSpacing.x;
 
     // Child window of fixed width with horizontal scrolling
     ImGui::SetNextWindowContentSize(ImVec2(currWidth > width ? currWidth : width, 0.0f));
@@ -1503,7 +1490,7 @@ bool GuiWinDataConfig::_DrawPorts()
                 // Revert to current/default
                 const bool dirty = baudDbitem->chDirty;
                 if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
-                if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
+                if (ImGui::Button(dirty ? "#" : " ", GuiSettings::iconSize))
                 {
                     baudDbitem->chValue._raw = baudDbitem->chReference._raw;
                     baudDbitem->ChSync();
@@ -1555,7 +1542,7 @@ bool GuiWinDataConfig::_DrawPorts()
                         // Revert to current/default
                         const bool dirty2 = dbitem->chDirty;
                         if (dirty2) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
-                        if (ImGui::Button(dirty2 ? "#" : " ", _winSettings->iconButtonSize))
+                        if (ImGui::Button(dirty2 ? "#" : " ", GuiSettings::iconSize))
                         {
                             dbitem->chValue._raw = dbitem->chReference._raw;
                             dbitem->ChSync();
@@ -1600,14 +1587,14 @@ bool GuiWinDataConfig::_DrawMsgRates()
     // Columns:
     // 0              1     2       3       4     5     6
     // Message name | ALL | UART1 | UART2 | SPI | I2C | USB |
-    const float charWidth = _winSettings->charSize.x;
+    const float charWidth = GuiSettings::charSize.x;
     const float wName = 30 * charWidth;
     const float wRate = 20 * charWidth;
 
     const float width = wName + ((1 + NUM_PORTS) * wRate);
     const int nColumns = 1 + (1 + NUM_PORTS);
     const float currWidth = ImGui::GetContentRegionAvail().x;
-    const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
+    const float itemSpacing = GuiSettings::style->ItemInnerSpacing.x;
 
     bool somethingChanged = false;
 
@@ -1723,7 +1710,7 @@ bool GuiWinDataConfig::_DrawMsgRates()
         }
 
         const bool highlight = _dbFilterWidget.IsActive() && _dbFilterWidget.IsHighlight();
-        const float dimVal = _winSettings->style.Alpha * 0.5f;
+        const float dimVal = GuiSettings::style->Alpha * 0.5f;
 
         for (auto entry: _msgrateItems)
         {
@@ -1779,7 +1766,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 {
     const float inputWidth  = 30.0f;
     const float dragSpeed   = 0.1f;
-    const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
+    const float itemSpacing = GuiSettings::style->ItemInnerSpacing.x;
 
     auto items = msgrates.items;
 
@@ -1887,7 +1874,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
         // Revert to current/default
         const bool dirty = port < 0 ? anyPortDirty : (item ? item->chDirty : false);
         if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
-        if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
+        if (ImGui::Button(dirty ? "#" : " ", GuiSettings::iconSize))
         {
             somethingChanged = true;
             if (port < 0)
@@ -1913,7 +1900,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
         ImGui::SameLine(0.0f, itemSpacing);
 
         // Toggle enable/disable
-        if (ImGui::Button("T", _winSettings->iconButtonSize))
+        if (ImGui::Button("T", GuiSettings::iconSize))
         {
             somethingChanged = true;
             if (port < 0)
@@ -1994,7 +1981,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 
         // Increment rate
         ImGui::BeginDisabled(!canInc);
-        if (ImGui::Button("+", _winSettings->iconButtonSize))
+        if (ImGui::Button("+", GuiSettings::iconSize))
         {
             somethingChanged = true;
             if (port < 0)
@@ -2021,7 +2008,7 @@ bool GuiWinDataConfig::_DrawMsgRate(const std::string &msgName, Msgrates &msgrat
 
         // Decrement rate
         ImGui::BeginDisabled(!canDec);
-        if (ImGui::Button("-", _winSettings->iconButtonSize))
+        if (ImGui::Button("-", GuiSettings::iconSize))
         {
             somethingChanged = true;
             if (port < 0)
@@ -2062,7 +2049,7 @@ bool GuiWinDataConfig::_DrawItems()
 {
     const float currWidth = ImGui::GetContentRegionAvail().x;
 
-    const float charWidth = _winSettings->charSize.x;
+    const float charWidth = GuiSettings::charSize.x;
     const float wItem  = 36 * charWidth;
     const float wType  =  4 * charWidth;
     const float wScale = 14 * charWidth;
@@ -2123,7 +2110,7 @@ bool GuiWinDataConfig::_DrawItems()
         ImGui::SetColumnWidth(4, wValue);
 
         const bool highlight = _dbFilterWidget.IsActive() && _dbFilterWidget.IsHighlight();
-        const float dimVal = _winSettings->style.Alpha * 0.5f;
+        const float dimVal = GuiSettings::style->Alpha * 0.5f;
 
         // Draw list of items
         for (auto &dbitem: _dbItems)
@@ -2169,7 +2156,7 @@ bool GuiWinDataConfig::_DrawItems()
 bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
 {
     //const float dragSpeed   = 0.1f;
-    const float itemSpacing = _winSettings->style.ItemInnerSpacing.x;
+    const float itemSpacing = GuiSettings::style->ItemInnerSpacing.x;
 
     ImGui::PushID(dbitem.name.c_str());
 
@@ -2228,7 +2215,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
     // Revert to current/default value
     const bool dirty = dbitem.chDirty;
     if (dirty) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTMAGENTA)); } else { ImGui::BeginDisabled(); };
-    if (ImGui::Button(dirty ? "#" : " ", _winSettings->iconButtonSize))
+    if (ImGui::Button(dirty ? "#" : " ", GuiSettings::iconSize))
     {
         dbitem.chValue._raw = dbitem.chReference._raw;
         dbitem.ChSync();
@@ -2271,7 +2258,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Increment
             const bool canInc = val < max;
             ImGui::BeginDisabled(!canInc);
-            if (ImGui::Button("+", _winSettings->iconButtonSize))
+            if (ImGui::Button("+", GuiSettings::iconSize))
             {
                 val++;
                 somethingChanged = true;
@@ -2284,7 +2271,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Decrement
             const bool canDec = val > min;
             ImGui::BeginDisabled(!canDec);
-            if (ImGui::Button("-", _winSettings->iconButtonSize))
+            if (ImGui::Button("-", GuiSettings::iconSize))
             {
                 val--;
                 somethingChanged = true;
@@ -2297,7 +2284,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Value
-            ImGui::PushItemWidth((_winSettings->charSize.x * dig) + 5.0f);
+            ImGui::PushItemWidth((GuiSettings::charSize.x * dig) + 5.0f);
             if (ImGui::InputScalar("##Value", ImGuiDataType_S64, &val, NULL, NULL, "%" PRIi64))
             {
                 somethingChanged = true;
@@ -2406,7 +2393,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Increment
             const bool canInc = val < max;
             ImGui::BeginDisabled(!canInc);
-            if (ImGui::Button("+", _winSettings->iconButtonSize))
+            if (ImGui::Button("+", GuiSettings::iconSize))
             {
                 val++;
                 somethingChanged = true;
@@ -2419,7 +2406,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Decrement
             const bool canDec = val > min;
             ImGui::BeginDisabled(!canDec);
-            if (ImGui::Button("-", _winSettings->iconButtonSize))
+            if (ImGui::Button("-", GuiSettings::iconSize))
             {
                 val--;
                 somethingChanged = true;
@@ -2432,7 +2419,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Value
-            ImGui::PushItemWidth((_winSettings->charSize.x * dig) + 5.0f);
+            ImGui::PushItemWidth((GuiSettings::charSize.x * dig) + 5.0f);
             if ( hex ?
                  ImGui::InputScalar("##Value", ImGuiDataType_U64, &val, NULL, NULL, &fmt[2], ImGuiInputTextFlags_CharsHexadecimal) : // FIXME: doesn't work with fmt "0x..."
                  ImGui::InputScalar("##Value", ImGuiDataType_U64, &val, NULL, NULL, fmt)
@@ -2527,7 +2514,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Increment
             const bool canInc = val < max;
             ImGui::BeginDisabled(!canInc);
-            if (ImGui::Button("+", _winSettings->iconButtonSize))
+            if (ImGui::Button("+", GuiSettings::iconSize))
             {
                 val += step;
                 val = std::floor(val + 0.5);
@@ -2541,7 +2528,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             // Decrement
             const bool canDec = val > min;
             ImGui::BeginDisabled(!canDec);
-            if (ImGui::Button("-", _winSettings->iconButtonSize))
+            if (ImGui::Button("-", GuiSettings::iconSize))
             {
                 val -= step;
                 val = std::floor(val - 0.5);
@@ -2555,7 +2542,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
             ImGui::SameLine(0.0f, itemSpacing);
 
             // Value
-            ImGui::PushItemWidth((_winSettings->charSize.x * 15) + 5.0f);
+            ImGui::PushItemWidth((GuiSettings::charSize.x * 15) + 5.0f);
             if (ImGui::InputScalar("##Value", ImGuiDataType_Double, &val, NULL, NULL, "%g"))
             {
                 somethingChanged = true;
@@ -2589,7 +2576,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
                 {
                     uint64_t valHex;
                     memcpy(&valHex, &val, sizeof(valHex));
-                    ImGui::PushItemWidth((_winSettings->charSize.x * 16) + 5.0f);
+                    ImGui::PushItemWidth((GuiSettings::charSize.x * 16) + 5.0f);
                     if (ImGui::InputScalar("##DoubleHex", ImGuiDataType_U64, &valHex, NULL, NULL, "%016llx", ImGuiInputTextFlags_CharsHexadecimal))
                     {
                         memcpy(&val, &valHex, sizeof(val));
@@ -2602,7 +2589,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
                     float valFloat = (float)val;
                     uint32_t valHex;
                     memcpy(&valHex, &valFloat, sizeof(valHex));
-                    ImGui::PushItemWidth((_winSettings->charSize.x * 8) + 5.0f);
+                    ImGui::PushItemWidth((GuiSettings::charSize.x * 8) + 5.0f);
                     if (ImGui::InputScalar("##FloatHex", ImGuiDataType_U32, &valHex, NULL, NULL, "%08lx", ImGuiInputTextFlags_CharsHexadecimal))
                     {
                         memcpy(&valFloat, &valHex, sizeof(valFloat));
@@ -2627,7 +2614,7 @@ bool GuiWinDataConfig::_DrawItem(DbItem &dbitem)
         }
         case UBLOXCFG_TYPE_L:
         {
-            ImGui::SameLine(0.0f, (3 * itemSpacing) + (2 * _winSettings->iconButtonSize.x));
+            ImGui::SameLine(0.0f, (3 * itemSpacing) + (2 * GuiSettings::iconSize.x));
             if (ImGui::Checkbox("##L", &dbitem.chValue.L))
             {
                 somethingChanged = true;

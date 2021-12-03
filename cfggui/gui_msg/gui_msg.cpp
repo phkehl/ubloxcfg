@@ -31,14 +31,14 @@
 #include "gui_msg_ubx_mon_span.hpp"
 #include "gui_msg_ubx_mon_ver.hpp"
 #include "gui_msg_ubx_nav_cov.hpp"
+#include "gui_msg_ubx_nav_dop.hpp"
 #include "gui_msg_ubx_rxm_rawx.hpp"
 #include "gui_msg_ubx_rxm_rtcm.hpp"
 #include "gui_msg_ubx_rxm_sfrbx.hpp"
 
 /* ****************************************************************************************************************** */
 
-GuiMsg::GuiMsg(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
-    _winSettings  { GuiApp::GetInstance().GetSettings() },
+GuiMsg::GuiMsg(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     _receiver     { receiver },
     _logfile      { logfile }
 {
@@ -76,7 +76,7 @@ void GuiMsg::Clear()
 
 ImVec2 GuiMsg::_CalcTopSize(const int nLinesOfTopText)
 {
-    const float topHeight = nLinesOfTopText * (_winSettings->charSize.y + _winSettings->style.ItemSpacing.y);
+    const float topHeight = nLinesOfTopText * (GuiSettings::charSize.y + GuiSettings::style->ItemSpacing.y);
     return ImVec2(0.0f, topHeight);
 }
 
@@ -121,7 +121,7 @@ void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int 
     {
         if (value == f.value)
         {
-            const bool colour = (f.colour != GUI_COLOUR(C_NONE));
+            const bool colour = (f.colour != GUI_COLOUR_NONE);
             if (colour) { ImGui::PushStyleColor(ImGuiCol_Text, f.colour); }
             ImGui::TextUnformatted(f.text);
             if (colour) { ImGui::PopStyleColor(); }
@@ -138,7 +138,7 @@ void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int 
 /* ****************************************************************************************************************** */
 
 /* static */ std::unique_ptr<GuiMsg> GuiMsg::GetRenderer(const std::string &msgName,
-    std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile)
+    std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile)
 {
     if      (msgName == "UBX-ESF-MEAS")      { return std::make_unique<GuiMsgUbxEsfMeas>(receiver, logfile);     }
     else if (msgName == "UBX-ESF-STATUS")    { return std::make_unique<GuiMsgUbxEsfStatus>(receiver, logfile);   }
@@ -150,6 +150,7 @@ void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int 
     else if (msgName == "UBX-MON-SPAN")      { return std::make_unique<GuiMsgUbxMonSpan>(receiver, logfile);     }
     else if (msgName == "UBX-MON-VER")       { return std::make_unique<GuiMsgUbxMonVer>(receiver, logfile);      }
     else if (msgName == "UBX-NAV-COV")       { return std::make_unique<GuiMsgUbxNavCov>(receiver, logfile);      }
+    else if (msgName == "UBX-NAV-DOP")       { return std::make_unique<GuiMsgUbxNavDop>(receiver, logfile);      }
     else if (msgName == "UBX-RXM-RAWX")      { return std::make_unique<GuiMsgUbxRxmRawx>(receiver, logfile);     }
     else if (msgName == "UBX-RXM-RTCM")      { return std::make_unique<GuiMsgUbxRxmRtcm>(receiver, logfile);     }
     else if (msgName == "UBX-RXM-SFRBX")     { return std::make_unique<GuiMsgUbxRxmSfrbx>(receiver, logfile);    }

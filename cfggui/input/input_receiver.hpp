@@ -15,13 +15,12 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __RECEIVER_HPP__
-#define __RECEIVER_HPP__
+#ifndef __INPUT_RECEIVER_HPP__
+#define __INPUT_RECEIVER_HPP__
 
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <thread>
 #include <atomic>
 #include <vector>
 #include <string>
@@ -29,11 +28,9 @@
 
 #include "ubloxcfg.h"
 #include "ff_parser.h"
-#include "ff_epoch.h"
 #include "ff_cpp.hpp"
-#include "ff_rx.h"
 
-#include "data.hpp"
+#include "input.hpp"
 #include "database.hpp"
 
 /* ****************************************************************************************************************** */
@@ -41,11 +38,11 @@
 struct ReceiverEvent;
 struct ReceiverCommand;
 
-class Receiver
+class InputReceiver : public Input
 {
     public:
-        Receiver(const std::string &name, std::shared_ptr<Database> database);
-       ~Receiver();
+        InputReceiver(const std::string &name, std::shared_ptr<Database> database);
+       ~InputReceiver();
 
         bool Start(const std::string &port, const int baudrate = 0);
         void Stop();
@@ -53,27 +50,21 @@ class Receiver
         bool IsBusy();
         bool IsReady();
 
-        void Send(const uint8_t *data, const int size, const uint64_t uid = 0);
-        void Reset(const RX_RESET_t reset, const uint64_t uid = 0);
-        void GetConfig(const UBLOXCFG_LAYER_t layer, const std::vector<uint32_t> &_keys, const uint64_t uid = 0);
-        void SetConfig(const bool ram, const bool bbr, const bool flash, const bool apply, const std::vector<UBLOXCFG_KEYVAL_t> &keys, const uint64_t uid = 0);
-        void SetBaudrate(const int baudrate, const uint64_t uid = 0);
+        void Send(const uint8_t *data, const int size);
+        void Reset(const RX_RESET_t reset);
+        using GetConfigCb_t = std::function<void(Ff::KeyVal)>;
+        void GetConfig(const UBLOXCFG_LAYER_t layer, const std::vector<uint32_t> &_keys, GetConfigCb_t cb = nullptr);
+        using SetConfigCb_t = std::function<void(const bool)>;
+        void SetConfig(const bool ram, const bool bbr, const bool flash, const bool apply, const std::vector<UBLOXCFG_KEYVAL_t> &keys, SetConfigCb_t cb = nullptr);
+        void SetBaudrate(const int baudrate);
         int GetBaudrate();
 
-        void Loop(const double &now);
-
-        void SetDataCb(std::function<void(const Data &)> cb);
+        void Loop(const double &now) final;
 
     protected:
 
     private:
         enum State_e { IDLE, BUSY, READY };
-
-        // Main thread stuff
-        std::string          _name;
-        std::unique_ptr<std::thread> _thread;
-
-        std::function<void(const Data &)> _dataCb;
 
         void _SendCommand(std::unique_ptr<ReceiverCommand> command);
         std::unique_ptr<ReceiverEvent> _GetEvent();
@@ -84,23 +75,25 @@ class Receiver
         std::mutex           _eventMutex;
         std::queue< std::unique_ptr<ReceiverCommand> > _commandQueue;
         std::mutex           _commandMutex;
-        std::atomic<enum State_e>
-                             _state;
+        std::atomic<enum State_e> _state;
         std::atomic<int>     _baudrate;
+        std::string          _port;
         std::unique_ptr<Ff::Rx> _rx;
 
-        // Receiver thread stuff
+        GetConfigCb_t _getConfigCb;
+        SetConfigCb_t _setConfigCb;
+
+        // InputReceiver thread stuff
         bool                 _eventQueueSaturation;
-        EPOCH_t              _epochColl;
-        EPOCH_t              _epochRes;
-        std::shared_ptr<Database> _database;
-        void                 _ReceiverThreadWrap();
-        void                 _ReceiverThread();
-        std::unique_ptr<ReceiverCommand> _GetCommand();
+
+        void _ThreadPrepare() final;
+        void _Thread() final;
+        void _ThreadCleanup() final;
+
         static void _ReceiverMsgCb(PARSER_MSG_t *msg, void *arg);
-        uint32_t             _msgSeq;
-        void                 _SendEvent(std::unique_ptr<ReceiverEvent> event);
+        uint32_t _msgSeq;
+        void _SendEvent(std::unique_ptr<ReceiverEvent> event);
 };
 
 /* ****************************************************************************************************************** */
-#endif // __RECEIVER_HPP__
+#endif // __INPUT_RECEIVER_HPP__

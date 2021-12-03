@@ -26,7 +26,7 @@ jobs:
     - name: install packages
       run: |
         sudo apt-get -y update
-        sudo apt-get -y install gcc gcc-multilib perl libpath-tiny-perl libdata-float-perl mingw-w64 doxygen libglfw3-dev libglx-dev libcurl4-gnutls-dev libfreetype-dev
+        sudo apt-get -y install gcc gcc-multilib perl libpath-tiny-perl libdata-float-perl mingw-w64 doxygen libglfw3-dev libglx-dev libcurl4-gnutls-dev libfreetype-dev libglu1-mesa-dev
     # Runs a single command using the runners shell
     - name: make ci
       run: make ci

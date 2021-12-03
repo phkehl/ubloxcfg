@@ -20,6 +20,7 @@
 
 #include "gui_inc.hpp"
 #include "gui_widget_filter.hpp"
+#include "gui_win_filedialog.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -33,7 +34,7 @@ class GuiWinDataConfig : public GuiWinData
     protected:
 
         void _Loop(const uint32_t &frame, const double &now) final;
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;
 
@@ -137,14 +138,15 @@ class GuiWinDataConfig : public GuiWinData
         void                 _DbUpdCh();
         std::vector<DbItem>::iterator _DbGetItem(const std::string &name);
         std::vector<DbItem>::iterator _DbGetItem(const uint32_t id);
+        void                 _DbSet(const Ff::KeyVal &keyval);
+
+        void                 _ApplyCfgAck(const bool ack);
 
         std::vector<UBLOXCFG_KEYVAL_t> _cfgChangedKv;
         std::vector<std::string> _cfgChangedStrs;
         void                 _UpdateChanges();
 
-        std::string          _cfgFileName;
-        double               _cfgFileSaveResultTo;
-        std::string          _cfgFileSaveError;
+        GuiWinFileDialog     _cfgSaveFileDialog;
 
         // Draw window
         bool                 _DrawControls();

@@ -25,10 +25,17 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxRxmRawx::GuiMsgUbxRxmRawx(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
-    GuiMsg(receiver, logfile),
-    _selected{0}
+GuiMsgUbxRxmRawx::GuiMsgUbxRxmRawx(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
+    GuiMsg(receiver, logfile)
+
 {
+    _table.AddColumn("SV");
+    _table.AddColumn("Signal");
+    _table.AddColumn("CNo", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Pseudo range [m]", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Carrier phase [cycles]", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Doppler [Hz]", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Lock [s]", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -37,6 +44,7 @@ void GuiMsgUbxRxmRawx::Clear()
 {
     _rawInfos.clear();
     _valid = false;
+    _table.ClearRows();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -67,10 +75,10 @@ GuiMsgUbxRxmRawx::RawInfo::RawInfo(const uint8_t *groupData)
         signal = ubxSigStr(meas.gnssId, meas.sigId);
     }
 
-    cno = Ff::Sprintf("%2u", meas.cno);
-    pseudoRange = Ff::Sprintf("%11.2f %6.2f", meas.prMeas, UBX_RXM_RAWX_V1_PRSTD_SCALE(UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(meas.prStdev)));
-    carrierPhase = Ff::Sprintf("%12.2f %5.3f", meas.cpMeas, UBX_RXM_RAWX_V1_CPSTD_SCALE(UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(meas.cpStdev)));
-    doppler = Ff::Sprintf("%7.1f %5.3f", meas.doMeas, UBX_RXM_RAWX_V1_DOSTD_SCALE(UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(meas.doStdev)));
+    cno = Ff::Sprintf("%u", meas.cno);
+    pseudoRange = Ff::Sprintf("%.2f %6.2f", meas.prMeas, UBX_RXM_RAWX_V1_PRSTD_SCALE(UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(meas.prStdev)));
+    carrierPhase = Ff::Sprintf("%.2f %6.3f", meas.cpMeas, UBX_RXM_RAWX_V1_CPSTD_SCALE(UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(meas.cpStdev)));
+    doppler = Ff::Sprintf("%.1f %6.3f", meas.doMeas, UBX_RXM_RAWX_V1_DOSTD_SCALE(UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(meas.doStdev)));
     lockTime = Ff::Sprintf("%.3f", (double)meas.locktime * UBX_RXM_RAWX_V1_LOCKTIME_SCALE);
 }
 
@@ -102,6 +110,22 @@ void GuiMsgUbxRxmRawx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
     }
 
     std::sort(_rawInfos.begin(), _rawInfos.end(), [](const RawInfo &a, const RawInfo &b) { return a.uid < b.uid; });
+
+    _table.ClearRows();
+    for (const auto &info: _rawInfos)
+    {
+        _table.AddCellText(info.sv + "##" + std::to_string(info.uid));
+        _table.AddCellText(info.signal);
+        _table.AddCellText(info.cno);
+        _table.AddCellText(info.pseudoRange);
+        if (!info.prValid) { _table.SetCellColour(GUI_COLOUR(TEXT_DIM)); }
+        _table.AddCellText(info.carrierPhase);
+        if (!info.cpValid) { _table.SetCellColour(GUI_COLOUR(TEXT_DIM)); }
+        _table.AddCellText(info.doppler);
+        _table.AddCellText(info.lockTime);
+
+        // TODO: info.halfCyc, info.subHalfCyc
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -109,13 +133,14 @@ void GuiMsgUbxRxmRawx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
+
     if (!_valid)
     {
         return false;
     }
 
     const ImVec2 topSize = _CalcTopSize(3);
-    const float dataOffs = 25 * _winSettings->charSize.x;
+    const float dataOffs = 25 * GuiSettings::charSize.x;
 
     if (ImGui::BeginChild("##Status", topSize))
     {
@@ -131,66 +156,10 @@ bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
         ImGui::EndChild();
     }
 
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "SV",                      .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Signal",                  .flags = 0 },
-        { .label = "CNo",                     .flags = 0 },
-        { .label = "Pseudo range [m]",        .flags = 0 },
-        { .label = "Carrier phase [cycles]",  .flags = 0 },
-        { .label = "Doppler [Hz]",            .flags = 0 },
-        { .label = "Lock time [s]",           .flags = 0 },
-    };
-
-    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
-    {
-        ImGui::TableSetupScrollFreeze(0, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
-
-        for (const auto &info: _rawInfos)
-        {
-            ImGui::TableNextRow();
-            int colIx = 0;
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (ImGui::Selectable(info.sv.c_str(), _selected == info.uid, ImGuiSelectableFlags_SpanAllColumns))
-            {
-                _selected = (_selected == info.uid) ? 0 : info.uid;
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(info.signal.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(info.cno.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (!info.prValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
-            ImGui::TextUnformatted(info.pseudoRange.c_str());
-            if (!info.prValid) { ImGui::PopStyleColor(); }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (!info.cpValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
-            ImGui::TextUnformatted(info.carrierPhase.c_str());
-            if (!info.cpValid) { ImGui::PopStyleColor(); }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(info.doppler.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(info.lockTime.c_str());
-
-            // TODO: info.halfCyc, info.subHalfCyc
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable(sizeAvail - topSize);
 
     return true;
+
 }
 
 /* ****************************************************************************************************************** */

@@ -34,7 +34,7 @@ class GuiWinDataPlot : public GuiWinData
 
     protected:
 
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;
         void _DrawToolbar();
@@ -80,6 +80,7 @@ class GuiWinDataPlot : public GuiWinData
         bool                 _dndHovered;
         ImPlotFlags          _plotFlags;
         std::string          _yLabels[3];
+        ImPlotColormap       _colormap;
 
         void _SetVarX(PlotVar *plotVar);
         void _AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis = ImPlotYAxis_1);

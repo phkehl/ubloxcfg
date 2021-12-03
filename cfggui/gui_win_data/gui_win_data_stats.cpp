@@ -150,10 +150,10 @@ GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Databa
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataStats::_ProcessData(const Data &data)
+void GuiWinDataStats::_ProcessData(const InputData &data)
 {
     // New epoch means database stats have updated, render row contents
-    if (data.type == Data::Type::DATA_EPOCH)
+    if (data.type == InputData::DATA_EPOCH)
     {
         const auto stats = _database->GetStats();
         for (auto &row: _rows)

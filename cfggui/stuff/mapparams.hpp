@@ -56,7 +56,7 @@ struct MapParams
     static constexpr double MIN_LON = -180.0    * (M_PI / 180.0);
     static constexpr double MAX_LON =  180.0    * (M_PI / 180.0);
 
-    static const std::vector<MapParams> BUILTIN_MAPS;;
+    static const std::vector<MapParams> BUILTIN_MAPS;
 };
 
 /* ****************************************************************************************************************** */

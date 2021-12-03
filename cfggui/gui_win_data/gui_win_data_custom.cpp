@@ -120,11 +120,11 @@ std::vector<uint8_t> GuiWinDataCustom::_HexToBin(const std::string &hex)
 
 void GuiWinDataCustom::_DrawContent()
 {
-    const float  sepPadding   = (2 * _winSettings->style.ItemSpacing.y) + 1;
+    const float  sepPadding   = (2 * GuiSettings::style->ItemSpacing.y) + 1;
     const ImVec2 sizeAvail    = ImGui::GetContentRegionAvail();
-    const ImVec2 hexDumpSize  { 0, 10 * _winSettings->charSize.y };
+    const ImVec2 hexDumpSize  { 0, 10 * GuiSettings::charSize.y };
     const float  remHeight    = sizeAvail.y - hexDumpSize.y - sepPadding;
-    const float  minHeight    = 10 * _winSettings->charSize.y;
+    const float  minHeight    = 10 * GuiSettings::charSize.y;
     const ImVec2 editSize     { 0, MAX(remHeight, minHeight) };
 
     if (ImGui::BeginChild("##Edit", editSize))
@@ -233,7 +233,7 @@ enum GuiWinDataCustom::Action_e GuiWinDataCustom::_DrawActionButtons()
 {
     Action_e action = ACTION_NONE;
 
-    if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+    if (ImGui::Button(ICON_FK_ERASER "##Clear", GuiSettings::iconSize))
     {
         action = ACTION_CLEAR;
     }
@@ -243,9 +243,9 @@ enum GuiWinDataCustom::Action_e GuiWinDataCustom::_DrawActionButtons()
 
     const bool canSend = !_data.empty() && _receiver && _receiver->IsReady();
     ImGui::BeginDisabled(!canSend);
-    if (ImGui::Button(ICON_FK_THUMBS_UP "##Send", _winSettings->iconButtonSize))
+    if (ImGui::Button(ICON_FK_THUMBS_UP "##Send", GuiSettings::iconSize))
     {
-        _receiver->Send(_data.data(), (int)_data.size(), _winUid);
+        _receiver->Send(_data.data(), (int)_data.size());
     }
     ImGui::EndDisabled();
 
@@ -261,7 +261,8 @@ void GuiWinDataCustom::_DrawEditText(const bool refresh)
     // Buttons
     const auto action = _DrawActionButtons();
     ImGui::SameLine();
-    if (ToggleButton(ICON_FK_PARAGRAPH "##Crlf", NULL, &_textLfToCrLf, "Replacing LF (0x0a) with CRLF (0x0a 0x0d)", "Not replacing LF (0x0a) with CRLF (0x0a 0x0d)"))
+    if (Gui::ToggleButton(ICON_FK_PARAGRAPH "##Crlf", NULL, &_textLfToCrLf,
+        "Replacing LF (0x0a) with CRLF (0x0a 0x0d)", "Not replacing LF (0x0a) with CRLF (0x0a 0x0d)", GuiSettings::iconSize))
     {
         dirty = true;
     }
@@ -383,7 +384,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Message");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth(_winSettings->charSize.x * 25);
+    ImGui::SetNextItemWidth(GuiSettings::charSize.x * 25);
     if (ImGui::BeginCombo("##msgName", _ubxMessage ? _ubxMessage : "", ImGuiComboFlags_HeightLarge))
     {
         if (ImGui::Selectable("##None", !_ubxMessage))
@@ -417,7 +418,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Class ID");
     ImGui::SameLine();
-    ImGui::PushItemWidth((_winSettings->charSize.x * 2) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::PushItemWidth((GuiSettings::charSize.x * 2) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (ImGui::InputScalar("##ClsId", ImGuiDataType_U8, &_ubxClsId, NULL, NULL, "%02x", ImGuiInputTextFlags_CharsHexadecimal))
     {
         idsDirty = true;
@@ -425,7 +426,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Messsage ID");
     ImGui::SameLine();
-    ImGui::PushItemWidth((_winSettings->charSize.x * 2) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::PushItemWidth((GuiSettings::charSize.x * 2) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (ImGui::InputScalar("##MsgId", ImGuiDataType_U8, &_ubxMsgId, NULL, NULL, "%02x", ImGuiInputTextFlags_CharsHexadecimal))
     {
         idsDirty = true;
@@ -433,7 +434,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Length");
     ImGui::SameLine();
-    ImGui::PushItemWidth((_winSettings->charSize.x * 5) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::PushItemWidth((GuiSettings::charSize.x * 5) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (_ubxLengthBad) { ImGui::PushStyleColor(ImGuiCol_Border, GUI_COLOUR(TEXT_ERROR)); }
     if (ImGui::InputScalar("##Length", ImGuiDataType_U16, &_ubxLength, NULL, NULL, "%u", ImGuiInputTextFlags_CharsDecimal))
     {
@@ -444,7 +445,7 @@ void GuiWinDataCustom::_DrawEditUbx(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Checksum");
     ImGui::SameLine();
-    ImGui::PushItemWidth((_winSettings->charSize.x * 4) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::PushItemWidth((GuiSettings::charSize.x * 4) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (_ubxChecksumBad) { ImGui::PushStyleColor(ImGuiCol_Border, GUI_COLOUR(TEXT_ERROR)); }
     if (ImGui::InputScalar("##Checksum", ImGuiDataType_U16, &_ubxChecksum, NULL, NULL, "%04x", ImGuiInputTextFlags_CharsHexadecimal))
     {
@@ -552,7 +553,7 @@ void GuiWinDataCustom::_DrawEditNmea(const bool refresh)
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Talker");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth((_winSettings->charSize.x * 3) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::SetNextItemWidth((GuiSettings::charSize.x * 3) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (ImGui::InputText("##Talker", &_nmeaTalker, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank))
     {
         talkerDirty = true;
@@ -579,7 +580,7 @@ void GuiWinDataCustom::_DrawEditNmea(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Formatter");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth((_winSettings->charSize.x * 4) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::SetNextItemWidth((GuiSettings::charSize.x * 4) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (ImGui::InputText("##Formatter", &_nmeaFormatter, ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank))
     {
         formatterDirty = true;
@@ -606,7 +607,7 @@ void GuiWinDataCustom::_DrawEditNmea(const bool refresh)
     Gui::VerticalSeparator();
     ImGui::TextUnformatted("Checksum");
     ImGui::SameLine();
-    ImGui::SetNextItemWidth((_winSettings->charSize.x * 2) + (_winSettings->style.ItemInnerSpacing.x * 2));
+    ImGui::SetNextItemWidth((GuiSettings::charSize.x * 2) + (GuiSettings::style->ItemInnerSpacing.x * 2));
     if (_nmeaChecksumBad) { ImGui::PushStyleColor(ImGuiCol_Border, GUI_COLOUR(TEXT_ERROR)); }
     if (ImGui::InputText("##Checksum", &_nmeaChecksum, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsNoBlank))
     {

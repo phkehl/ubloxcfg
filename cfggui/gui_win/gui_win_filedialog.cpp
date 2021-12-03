@@ -35,15 +35,16 @@ GuiWinFileDialog::GuiWinFileDialog(const std::string &name) :
     GuiWin(name),
     _dialogMode          { FILE_OPEN },
     _dialogState         { UNINIT },
-    _updatePathScroll    { false },
     _showHidden          { false },
     _dirsFirst           { true },
     _editCurrentDir      { false },
     _selectedFileValid   { false },
     _sortInfo            { { NAME, ASC }, /* and because _dirsFirst=true: */{ TYPE, ASC } }
 {
-    _winSize = { 100, 30 };
+    _winSize    = { 100, 30 };
+    _winSizeMin = {  80, 20 };
     _winFlags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking; //ImGuiWindowFlags_NoTitleBar;
+    _confirmWinName = std::string("Confirm##") + _winName;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -53,7 +54,7 @@ void GuiWinFileDialog::InitDialog(const Mode_e mode)
     _dialogMode  = mode;
     _dialogState = SELECT;
     _selectedPath.clear();
-    _resultPath.clear();
+    _fileFilter.SetFilterStr("");
     if (_currentDir.empty())
     {
         _ChangeDir(std::filesystem::current_path());
@@ -106,15 +107,24 @@ void GuiWinFileDialog::SetDirectory(const std::string &directory)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinFileDialog::ConfirmSelect(const bool confirm)
+void GuiWinFileDialog::SetConfirmSelect(const bool confirm)
 {
     _confirmSelect = confirm;
 }
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinFileDialog::ConfirmOverwrite(const bool confirm)
+void GuiWinFileDialog::SetConfirmOverwrite(const bool confirm)
 {
     _confirmOverwrite = confirm;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinFileDialog::SetFileFilter(const std::string regex, const bool highlight)
+{
+    _fileFilter.SetFilterStr(regex);
+    _fileFilter.SetHightlight(highlight);
+    _ChangeDir(_currentDirInput);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -135,73 +145,91 @@ bool GuiWinFileDialog::DrawDialog()
 
     if (_dialogState == SELECT)
     {
-        if (_DrawWindow())
+        if (_DrawWindowBegin())
         {
-            if (!_selectedFileValid)
+            if (_DrawDialog())
             {
-                _Done();
-                return true;
-            }
+                if (!_selectedFileValid)
+                {
+                    _Done();
+                    return true;
+                }
 
-            _selectedPath = _currentDir + "/" + _selectedFileName;
+                _selectedPath = _currentDir + "/" + _selectedFileName;
 
-            switch (_dialogMode)
-            {
-                case FILE_OPEN:
-                    break;
-                case FILE_SAVE:
-                    if (!Platform::FileExists(_selectedPath) && _confirmOverwrite)
-                    {
-                        _confirmOverwrite = false;
-                    }
-                    break;
+                switch (_dialogMode)
+                {
+                    case FILE_OPEN:
+                        break;
+                    case FILE_SAVE:
+                        if (!Platform::FileExists(_selectedPath) && _confirmOverwrite)
+                        {
+                            _confirmOverwrite = false;
+                        }
+                        break;
+                }
+                if (_confirmSelect || _confirmOverwrite)
+                {
+                    _dialogState = CONFIRM;
+                }
+                else
+                {
+                    _dialogState = DONE;
+                }
             }
-            if (_confirmSelect || _confirmOverwrite)
-            {
-                _dialogState = CONFIRM;
-            }
-            else
-            {
-                _dialogState = DONE;
-            }
+            _DrawWindowEnd();
         }
     }
 
     else if (_dialogState == CONFIRM)
     {
-        _DrawWindow();
-        const char *modalName = "Confirm";
-        ImGui::OpenPopup(modalName);
 
-        if (ImGui::BeginPopupModal(modalName, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+        if (_DrawWindowBegin())
         {
-            switch (_dialogMode)
-            {
-                case FILE_OPEN:
-                    ImGui::TextUnformatted("Really open this file?");
-                    break;
-                case FILE_SAVE:
-                    ImGui::TextUnformatted(_confirmOverwrite ? "Really overwrite this file?" : "Really save this file?");
-                    break;
-            }
-            ImGui::TextUnformatted(_selectedPath.c_str());
-            ImGui::NewLine();
+            const FfVec2 winPos  = ImGui::GetCursorPos();
+            const FfVec2 winSize = ImGui::GetContentRegionAvail();
 
-            if (ImGui::Button(ICON_FK_CHECK " Yes, sure thing!"))
+            // Draw dialog with all stuff disabled (unclickable)
+            ImGui::BeginDisabled();
+            _DrawDialog();
+            ImGui::EndDisabled();
+
+            // Confirmation dialog (inspired by ImGui::BeginChildFrame())
+            const FfVec2 dialogSize = GuiSettings::charSize * FfVec2(43, 11);
+            ImGui::SetCursorPos(winPos + (winSize * 0.5f) - (dialogSize * 0.5f));
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, GuiSettings::style->Colors[ImGuiCol_WindowBg]);
+            if (ImGui::BeginChild("Confirm", dialogSize, true, ImGuiWindowFlags_NoMove))
             {
-                ImGui::CloseCurrentPopup();
-                _dialogState = DONE;
+                switch (_dialogMode)
+                {
+                    case FILE_OPEN:
+                        ImGui::TextUnformatted("Really open this file?");
+                        break;
+                    case FILE_SAVE:
+                        ImGui::TextUnformatted(_confirmOverwrite ? "Really overwrite this file?" : "Really save this file?");
+                        break;
+                }
+
+                ImGui::NewLine();
+                ImGui::TextWrapped("%s", _selectedPath.c_str());
+                ImGui::NewLine();
+
+                if (ImGui::Button(ICON_FK_CHECK " Yes, sure thing!"))
+                {
+                    ImGui::CloseCurrentPopup();
+                    _dialogState = DONE;
+                }
+                ImGui::SetItemDefaultFocus();
+                ImGui::SameLine();
+                if (ImGui::Button(ICON_FK_TIMES " No, better not!"))
+                {
+                    _dialogState = SELECT;
+                }
             }
-            ImGui::SetItemDefaultFocus();
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FK_TIMES " No, better not!"))
-            {
-                ImGui::CloseCurrentPopup();
-                _dialogState = SELECT;
-                // _selectedFileValid = false;
-                // _dialogState = DONE;
-            }
-            ImGui::EndPopup();
+            ImGui::PopStyleColor();
+            ImGui::EndChildFrame();
+
+            _DrawWindowEnd();
         }
     }
     else if (_dialogState == DONE)
@@ -285,8 +313,6 @@ void GuiWinFileDialog::_ChangeDir(const std::string &path)
                 break;
         }
 
-        _updatePathScroll = true;
-
         // Load list of files
         _RefreshDir();
     }
@@ -306,7 +332,7 @@ void GuiWinFileDialog::_Check()
        // In open file mode, only selected/entered file names that exist in the current directory are valid options
         case FILE_OPEN:
             _selectedFileValid = false;
-            for (const auto &entry: _currentDirFiles)
+            for (const auto &entry: _currentDirEntries)
             {
                 if (entry.fileName == _selectedFileName)
                 {
@@ -324,19 +350,15 @@ void GuiWinFileDialog::_Check()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWinFileDialog::_DrawWindow()
+bool GuiWinFileDialog::_DrawDialog()
 {
     bool res = false;
-    if (!_DrawWindowBegin())
-    {
-        return res;
-    }
 
     // Controls
     bool forceSort = false;
     {
         // Options
-        if (ImGui::Button(ICON_FK_BARS "##Options", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_BARS "##Options", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("Options");
         }
@@ -357,7 +379,7 @@ bool GuiWinFileDialog::_DrawWindow()
         ImGui::SameLine();
 
         // Home
-        if (ImGui::Button(ICON_FK_HOME "##Home", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_HOME "##Home", GuiSettings::iconSize))
         {
             _ChangeDir("");
             _Check();
@@ -367,7 +389,7 @@ bool GuiWinFileDialog::_DrawWindow()
         ImGui::SameLine();
 
         // One up
-        if (ImGui::Button(ICON_FK_ARROW_UP "##Up", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ARROW_UP "##Up", GuiSettings::iconSize))
         {
             _ChangeDir("..");
             _Check();
@@ -378,9 +400,12 @@ bool GuiWinFileDialog::_DrawWindow()
 
     Gui::VerticalSeparator();
 
+    const float remWidth = ImGui::GetContentRegionAvail().x;
+
     // Current directory path
+    if (ImGui::BeginChild("currentDir", ImVec2(0.75f * remWidth, GuiSettings::iconSize.y), false, ImGuiWindowFlags_NoScrollbar))
     {
-        if (ImGui::Button(ICON_FK_PENCIL_SQUARE_O "##EditPath", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_PENCIL_SQUARE_O "##EditPath", GuiSettings::iconSize))
         {
             _editCurrentDir = !_editCurrentDir;
         }
@@ -390,7 +415,7 @@ bool GuiWinFileDialog::_DrawWindow()
 
         if (_editCurrentDir)
         {
-            ImGui::PushItemWidth(-1);
+            ImGui::PushItemWidth(-1.0f);
             if (ImGui::InputTextWithHint("##Path", "Path...", &_currentDirInput, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
             {
                 _ChangeDir(_currentDirInput);
@@ -404,40 +429,42 @@ bool GuiWinFileDialog::_DrawWindow()
         }
         else
         {
-            if (ImGui::BeginChild("currentDirParts", ImVec2(-1, _winSettings->iconButtonSize.y), false, ImGuiWindowFlags_NoScrollbar))
+            for (int ix = 0; ix < (int)_currentDirParts.size(); ix++)
             {
-                for (int ix = 0; ix < (int)_currentDirParts.size(); ix++)
+                const auto &part = _currentDirParts[ix];
+                if (ix > 0)
                 {
-                    const auto &part = _currentDirParts[ix];
-                    if (ix > 0)
+                    ImGui::SameLine(0.0f, GuiSettings::style->ItemInnerSpacing.x);
+                }
+                ImGui::PushID(ix + 1);
+                if (ImGui::Button(part.c_str()))
+                {
+                    std::filesystem::path newPath { _currentDirParts[0] };
+                    for (int iix = 1; iix <= ix; iix++)
                     {
-                        ImGui::SameLine();
+                        newPath /= _currentDirParts[iix];
                     }
-                    ImGui::PushID(ix + 1);
-                    if (ImGui::Button(part.c_str()))
-                    {
-                        std::filesystem::path newPath { _currentDirParts[0] };
-                        for (int iix = 1; iix <= ix; iix++)
-                        {
-                            newPath /= _currentDirParts[iix];
-                        }
-                        _ChangeDir(newPath);
-                        _Check();
-                    }
-                    ImGui::PopID();
+                    _ChangeDir(newPath);
+                    _Check();
                 }
-                if (_currentDirParts.empty())
-                {
-                    ImGui::NewLine();
-                }
-                if (_updatePathScroll)
-                {
-                    ImGui::SetScrollHereX(1.0);
-                    _updatePathScroll = false;
-                }
-                ImGui::EndChild();
+                ImGui::PopID();
             }
+            if (_currentDirParts.empty())
+            {
+                ImGui::NewLine();
+            }
+
+            ImGui::SetScrollHereX(1.0);
         }
+    }
+    ImGui::EndChild();
+
+    Gui::VerticalSeparator();
+
+    // Filter
+    if (_fileFilter.DrawWidget())
+    {
+        _ChangeDir(_currentDir);
     }
 
     ImGui::Separator();
@@ -445,10 +472,10 @@ bool GuiWinFileDialog::_DrawWindow()
     // Selected file/dir
     {
         // Size of Cancel and Open/Save buttons
-        const ImVec2 buttonSize { 10 * _winSettings->charSize.x, 0 };
+        const ImVec2 buttonSize { 10 * GuiSettings::charSize.x, 0 };
 
         // Input for showing (and editing) selected file name
-        ImGui::PushItemWidth(-2 * (buttonSize.x + _winSettings->style.ItemSpacing.x));
+        ImGui::PushItemWidth(-2 * (buttonSize.x + GuiSettings::style->ItemSpacing.x));
         if (!_selectedFileValid) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_ERROR)); }
 
         if (ImGui::InputTextWithHint("##Selected", "Name...", &_selectedFileName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
@@ -498,16 +525,19 @@ bool GuiWinFileDialog::_DrawWindow()
     // File list
     {
         constexpr ImGuiTableFlags tableFlags =
-            ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_Sortable |
-            /*ImGuiTableFlags_SortMulti |*/ ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV |
-            /* ImGuiTableFlags_NoBordersInBody | */ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
-        const float typeWidth = 1.5f * _winSettings->charSize.x;
+            ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Hideable |
+            ImGuiTableFlags_Sortable | /* ImGuiTableFlags_SortMulti | ImGuiTableFlags_SortTristate | */
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV |
+            /* ImGuiTableFlags_NoBordersInBody | */ImGuiTableFlags_ScrollY |
+            ImGuiTableFlags_SizingStretchProp;
+
+        const float typeWidth = 1.5f * GuiSettings::charSize.x;
         const struct { const char *label; float width; ImGuiTableColumnFlags flags; } columns[] =
         {
             { .label = "##Type", .width = typeWidth, .flags = ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoReorder | ImGuiTableColumnFlags_NoResize },
-            { .label = "Name",   .width = 0.0f,      .flags = ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_DefaultSort },
-            { .label = "Size",   .width = 0.0f,      .flags = ImGuiTableColumnFlags_None },
-            { .label = "Date",   .width = 0.0f,      .flags = ImGuiTableColumnFlags_None },
+            { .label = "Name",   .width = 10.0f,     .flags = ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthStretch},
+            { .label = "Size",   .width =  2.0f,     .flags = ImGuiTableColumnFlags_WidthStretch },
+            { .label = "Date",   .width =  4.0f,     .flags = ImGuiTableColumnFlags_WidthStretch },
         };
 
         if (ImGui::BeginTable(_winName.c_str(), NUMOF(columns), tableFlags))
@@ -516,9 +546,7 @@ bool GuiWinFileDialog::_DrawWindow()
             ImGui::TableSetupScrollFreeze(0, 1);
             for (int ix = 0; ix < NUMOF(columns); ix++)
             {
-                ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags
-                    | (columns[ix].width > 0.0f ? ImGuiTableColumnFlags_WidthFixed : 0),
-                    columns[ix].width);
+                ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags, columns[ix].width);
             }
             ImGui::TableHeadersRow();
 
@@ -550,17 +578,21 @@ bool GuiWinFileDialog::_DrawWindow()
                 _RefreshDir();
             }
 
+            const DirEntry *changeDirEntry = nullptr;
+
             // Table body (entries)
             ImGuiListClipper clipper;
-            clipper.Begin(_currentDirFiles.size());
+            clipper.Begin(_currentDirEntries.size());
             while (clipper.Step())
             {
                 for (int ix = clipper.DisplayStart; ix < clipper.DisplayEnd; ix++)
                 {
-                    const DirEntry &entry = _currentDirFiles[ix];
+                    const DirEntry &entry = _currentDirEntries[ix];
 
                     ImGui::TableNextRow();
                     int colIx = 0;
+
+                    if (entry.highlight) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_HIGHLIGHT)); }
 
                     ImGui::TableSetColumnIndex(colIx++);
                     ImGui::PushID(entry.fileName.c_str());
@@ -599,8 +631,7 @@ bool GuiWinFileDialog::_DrawWindow()
                                 case FILE_SAVE:
                                     if (doubleClick)
                                     {
-                                        _ChangeDir(entry.fullPath);
-                                        _Check();
+                                        changeDirEntry = &entry;
                                     }
                             }
                         }
@@ -612,27 +643,47 @@ bool GuiWinFileDialog::_DrawWindow()
                     if (!entry.linkTarget.empty())
                     {
                         ImGui::SameLine();
-                        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+                        // ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
                         ImGui::TextUnformatted(entry.linkTarget.c_str());
-                        ImGui::PopStyleColor();
+                        // ImGui::PopStyleColor();
                     }
 
+                    if (!entry.fileSize.empty())
+                    {
+                        ImGui::TableSetColumnIndex(colIx++);
+                        // Right align
+                        // if (ix == clipper.DisplayStart)
+                        // {
+                        //     ImGui::PushItemWidth(-FLT_MIN); // FIXME: doesn't work it seems, but it does in imgui_demo.cpp
+                        // }
+                        const float columnWidth = ImGui::GetColumnWidth();
+                        if (entry.fileSizeWidth < columnWidth)
+                        {
+                            ImGui::Dummy(ImVec2(entry.fileSizeLeftPad + columnWidth - entry.fileSizeWidth, 1.0f));
+                            ImGui::SameLine(0, 0);
+                        }
+                        ImGui::TextUnformatted(entry.fileSize.c_str());
+                    }
+                    else
+                    {
+                        colIx++;
+                    }
                     ImGui::TableSetColumnIndex(colIx++);
-                    // if (ix == clipper.DisplayStart)
-                    // {
-                    //     ImGui::PushItemWidth(-FLT_MIN); // FIXME: doesn't work it seems, but it does in imgui_demo.cpp
-                    // }
-                    ImGui::Text("%s", entry.fileSize.c_str());
+                    ImGui::TextUnformatted(entry.fileDate.c_str());
 
-                    ImGui::TableSetColumnIndex(colIx++);
-                    ImGui::Text("%s", entry.fileDate.c_str());
+                    if (entry.highlight) { ImGui::PopStyleColor(); }
                 }
             }
             ImGui::EndTable();
+
+            // Change dir after iterating _currentDirEntries as _ChangeDir() modifies that!
+            if (changeDirEntry)
+            {
+                _ChangeDir(changeDirEntry->fullPath);
+                _Check();
+            }
         }
     }
-
-    _DrawWindowEnd();
 
     return res;
 }
@@ -652,7 +703,7 @@ std::time_t to_time_t(TP tp)
 namespace fs = std::filesystem;
 
 GuiWinFileDialog::DirEntry::DirEntry(const std::filesystem::directory_entry &entry) :
-    fullPath{entry.path().string()}, isFile{false}, isDir{false}
+    fullPath{entry.path().string()}, fileSizeLeftPad{0.0f}, isFile{false}, isDir{false}, isHidden{false}, highlight{false}
 {
     if (entry.is_regular_file())
     {
@@ -680,6 +731,8 @@ GuiWinFileDialog::DirEntry::DirEntry(const std::filesystem::directory_entry &ent
         linkTarget = "-> " + std::filesystem::read_symlink(fullPath).string();
     }
 
+    isHidden = fileName.substr(0, 1) == ".";
+
     sortDate = to_time_t(entry.last_write_time());
     fileDate = std::asctime(std::localtime(&sortDate));
 
@@ -698,19 +751,19 @@ GuiWinFileDialog::DirEntry::DirEntry(const std::filesystem::directory_entry &ent
     {
         if (sortSize > (1024 * 1024 * 1024))
         {
-            fileSize = Ff::Sprintf("%6.1f GiB", (double)sortSize / (1024.0 * 1024.0 * 1024.0));
+            fileSize = Ff::Sprintf("%.1f GiB", (double)sortSize / (1024.0 * 1024.0 * 1024.0));
         }
         else if (sortSize > (1024 * 1024))
         {
-            fileSize = Ff::Sprintf("%6.1f MiB", (double)sortSize / (1024.0 * 1024.0));
+            fileSize = Ff::Sprintf("%.1f MiB", (double)sortSize / (1024.0 * 1024.0));
         }
         else if (sortSize > 1024)
         {
-            fileSize = Ff::Sprintf("%6.1f KiB", (double)sortSize / 1024.0);
+            fileSize = Ff::Sprintf("%.1f KiB", (double)sortSize / 1024.0);
         }
         else
         {
-            fileSize = Ff::Sprintf("%8lu B", sortSize);
+            fileSize = Ff::Sprintf("%lu B", sortSize);
         }
     }
 }
@@ -719,33 +772,67 @@ GuiWinFileDialog::DirEntry::DirEntry(const std::filesystem::directory_entry &ent
 
 void GuiWinFileDialog::_RefreshDir()
 {
-    _currentDirFiles.clear();
+    _currentDirEntries.clear();
     if (_currentDir.empty())
     {
         return;
     }
+
+    const bool filterActive    = _fileFilter.IsActive();
+    const bool filterHighlight = _fileFilter.IsHighlight();
 
     // Find files in directory
     for (const auto &entry: std::filesystem::directory_iterator{_currentDir})
     {
         try
         {
-            if (entry.is_directory() || entry.is_regular_file())
+            DirEntry dirEntry { entry };
+            const bool filterMatch = _fileFilter.Match(dirEntry.fileName);
+
+            if (_showHidden || !dirEntry.isHidden)
             {
-                if ( _showHidden || (entry.path().filename().string().substr(0, 1) != ".") )
+                // Always add directories to the list
+                if (dirEntry.isDir)
                 {
-                    _currentDirFiles.emplace_back(entry);
+                    dirEntry.highlight = filterActive && filterMatch;
+                    _currentDirEntries.push_back(dirEntry);
+                }
+                // Add file entries only depending on filter settings
+                else if (dirEntry.isFile)
+                {
+                    if (!filterActive || filterHighlight || filterMatch)
+                    {
+                        dirEntry.highlight = filterActive && filterMatch;
+                        _currentDirEntries.push_back(dirEntry);
+                    }
                 }
             }
         }
+        // Not a dir or regular file (fifo, device, etc.)
         catch (std::exception &e)
         {
-            WARNING("%s", e.what());
+            //WARNING("%s", e.what());
         }
     }
 
+    // Calculate padding for size string (to right-align it)
+    float maxWidth = 0.0f;
+    for (auto &entry: _currentDirEntries)
+    {
+        entry.fileSizeWidth = ImGui::CalcTextSize(entry.fileSize.c_str()).x;
+        if (entry.fileSizeWidth > maxWidth)
+        {
+            maxWidth = entry.fileSizeWidth;
+        }
+    }
+    for (auto &entry: _currentDirEntries)
+    {
+        entry.fileSizeLeftPad = maxWidth - entry.fileSizeWidth;
+        entry.fileSizeWidth += entry.fileSizeLeftPad;
+    }
+
     // Sort
-    std::sort(_currentDirFiles.begin(), _currentDirFiles.end(),
+    std::sort(_currentDirEntries.begin(), _currentDirEntries.end(),
         [&](const DirEntry &a, const DirEntry &b)
         {
             //for (const auto &sort: _sortInfo)
@@ -783,7 +870,7 @@ void GuiWinFileDialog::_RefreshDir()
             return false;
         });
 
-    DEBUG("_RefreshDir() %s, %d entries", _currentDir.c_str(), (int)_currentDirFiles.size());
+    DEBUG("_RefreshDir() %s, %d entries", _currentDir.c_str(), (int)_currentDirEntries.size());
 }
 
 /* ****************************************************************************************************************** */

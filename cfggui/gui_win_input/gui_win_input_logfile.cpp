@@ -32,16 +32,17 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
 
     _dataWinCaps = DataWinDef::Cap_e::PASSIVE;
 
-    _logfile = std::make_shared<Logfile>(name, _database);
+    _logfile = std::make_shared<InputLogfile>(name, _database);
     _logfile->SetDataCb( std::bind(&GuiWinInputLogfile::_ProcessData, this, std::placeholders::_1) );
-
-    _limitPlaySpeed = true;
-    _playSpeed = _logfile->GetPlaySpeed();
 
     if (_recentLogs.empty())
     {
-        _recentLogs = _winSettings->GetValueMult("LogfileRecentLogs", MAX_RECENT_LOGS);
+        _recentLogs = GuiSettings::GetValueMult("LogfileRecentLogs", MAX_RECENT_LOGS);
     }
+    GuiSettings::GetValue(_winName + ".playSpeed", _playSpeed, 1.0f);
+    GuiSettings::GetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed, true);
+    _logfile->SetPlaySpeed(_playSpeed);
+    _playSpeed = _logfile->GetPlaySpeed();
 
     _ClearData();
 };
@@ -52,13 +53,21 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
 {
     DEBUG("~GuiWinInputLogfile(%s)", _winName.c_str());
 
-    _winSettings->SetValueMult("LogfileRecentLogs", _recentLogs, MAX_RECENT_LOGS);
+    GuiSettings::SetValueMult("LogfileRecentLogs", _recentLogs, MAX_RECENT_LOGS);
+    GuiSettings::SetValue(_winName + ".playSpeed", _playSpeed);
+    GuiSettings::SetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed);
+
+    if (_logfile)
+    {
+        _logfile->Close();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinInputLogfile::Loop(const uint32_t &frame, const double &now)
 {
+    GuiWinInput::Loop(frame, now);
     UNUSED(frame);
 
     // Pump receiver events and dispatch
@@ -67,7 +76,7 @@ void GuiWinInputLogfile::Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinInputLogfile::_ProcessData(const Data &data)
+void GuiWinInputLogfile::_ProcessData(const InputData &data)
 {
     GuiWinInput::_ProcessData(data);
 }
@@ -110,12 +119,13 @@ void GuiWinInputLogfile::_DrawControls()
     {
         ImGui::BeginDisabled(!canOpen);
 
-        if (ImGui::Button(ICON_FK_FOLDER_OPEN "##Open", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_FOLDER_OPEN "##Open", GuiSettings::iconSize))
         {
             if (!_fileDialog.IsInit())
             {
                 _fileDialog.InitDialog(GuiWinFileDialog::FILE_OPEN);
                 _fileDialog.SetTitle(_winTitle + " - Open logfile...");
+                _fileDialog.SetFileFilter("\\.(ubx|raw)", true);
             }
             else
             {
@@ -165,7 +175,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Close log
     {
         ImGui::BeginDisabled(!canClose);
-        if (ImGui::Button(ICON_FK_EJECT "##Close", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_EJECT "##Close", GuiSettings::iconSize))
         {
             _logfile->Close();
         }
@@ -178,7 +188,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Play
     {
         ImGui::BeginDisabled(!canPlay);
-        if (ImGui::Button(ICON_FK_PLAY "##Play", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_PLAY "##Play", GuiSettings::iconSize))
         {
             _logfile->Play();
         }
@@ -191,7 +201,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Pause
     {
         ImGui::BeginDisabled(!canPause);
-        if (ImGui::Button(ICON_FK_PAUSE "##Pause", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_PAUSE "##Pause", GuiSettings::iconSize))
         {
             _logfile->Pause();
         }
@@ -204,7 +214,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Stop
     {
         ImGui::BeginDisabled(!canStop);
-        if (ImGui::Button(ICON_FK_STOP "##Stop", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_STOP "##Stop", GuiSettings::iconSize))
         {
             _logfile->Stop();
             _ClearData();
@@ -218,7 +228,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Step epoch
     {
         ImGui::BeginDisabled(!canStep);
-        if (ImGui::Button(ICON_FK_FORWARD "##StepEpoch", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_FORWARD "##StepEpoch", GuiSettings::iconSize))
         {
             _logfile->StepEpoch();
         }
@@ -231,7 +241,7 @@ void GuiWinInputLogfile::_DrawControls()
     // Step message
     {
         ImGui::BeginDisabled(!canStep);
-        if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", GuiSettings::iconSize))
         {
             _logfile->StepMsg();
         }
@@ -245,15 +255,15 @@ void GuiWinInputLogfile::_DrawControls()
     {
         if (ImGui::Checkbox("##SpeedLimit", &_limitPlaySpeed))
         {
-            _logfile->SetPlaySpeed(_limitPlaySpeed ? _playSpeed : Logfile::PLAYSPEED_INF);
+            _logfile->SetPlaySpeed(_limitPlaySpeed ? _playSpeed : InputLogfile::PLAYSPEED_INF);
         }
         Gui::ItemTooltip("Limit play speed");
 
         ImGui::SameLine(0,0);
 
         ImGui::BeginDisabled(!_limitPlaySpeed);
-        ImGui::SetNextItemWidth(_winSettings->charSize.x * 6);
-        if (ImGui::DragFloat("##Speed", &_playSpeed, 0.1f, Logfile::PLAYSPEED_MIN, Logfile::PLAYSPEED_MAX,
+        ImGui::SetNextItemWidth(GuiSettings::charSize.x * 6);
+        if (ImGui::DragFloat("##Speed", &_playSpeed, 0.1f, InputLogfile::PLAYSPEED_MIN, InputLogfile::PLAYSPEED_MAX,
             _limitPlaySpeed ? "%.1f" : "inf", ImGuiSliderFlags_AlwaysClamp))
         /*if (!ImGui::IsItemActive()) { Gui::ItemTooltip("Play speed [epochs/s]"); }
         if (ImGui::IsItemDeactivatedAfterEdit())*/
@@ -301,7 +311,7 @@ void GuiWinInputLogfile::_DrawControls()
     }
     else
     {
-        ImGui::InvisibleButton("##PlayProgress", _winSettings->iconButtonSize);
+        ImGui::InvisibleButton("##PlayProgress", GuiSettings::iconSize);
     }
     ImGui::Separator();
 }

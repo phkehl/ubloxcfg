@@ -20,7 +20,8 @@
 
 #include <memory>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-MON-VER renderer *************************************************************************************** */
@@ -28,11 +29,9 @@
 class GuiMsgUbxMonVer : public GuiMsg
 {
     public:
-        GuiMsgUbxMonVer(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxMonVer(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
-
-    protected:
 
     private:
 };

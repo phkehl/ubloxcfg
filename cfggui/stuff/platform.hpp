@@ -32,7 +32,7 @@ const std::string &CacheBaseDir();
 const std::string &HomeDir();
 
 std::string ConfigFile(const std::string &name);
-std::string CacheDir(const std::string &name);
+std::string CacheDir(const std::string &name = "");
 
 
 bool FileExists(const std::string &file);
@@ -49,6 +49,8 @@ struct Port
 const std::vector<Port> &EnumeratePorts(const bool enumerate = true);
 
 void SetThreadName(const std::string &name);
+
+void WipeCache(const std::string &path, const double maxAge);
 
 /* ****************************************************************************************************************** */
 } // namespace Platform

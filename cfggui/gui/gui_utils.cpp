@@ -279,5 +279,53 @@ bool Gui::ClickableText(const char *text)
     return res;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff, const ImVec2 &size)
+{
+    bool res = false;
+    const bool enabled = *toggle;
+    if (labelOff == NULL)
+    {
+        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY)); }
+        if (ImGui::Button(labelOn, size))
+        {
+            *toggle = !*toggle;
+            res = true;
+        }
+        if (!enabled) { ImGui::PopStyleColor(); }
+        if (tooltipOff == NULL)
+        {
+            Gui::ItemTooltip(tooltipOn);
+        }
+        else
+        {
+            Gui::ItemTooltip(enabled ? tooltipOn : tooltipOff);
+        }
+    }
+    else
+    {
+        if (enabled)
+        {
+            if (ImGui::Button(labelOn, size))
+            {
+                *toggle = false;
+                res = true;
+            }
+            Gui::ItemTooltip(tooltipOn);
+        }
+        else
+        {
+            if (ImGui::Button(labelOff, size))
+            {
+                *toggle = true;
+                res = true;
+            }
+            Gui::ItemTooltip(tooltipOff != NULL ? tooltipOff : tooltipOn);
+        }
+    }
+    return res;
+}
+
 /* ****************************************************************************************************************** */
 // eof

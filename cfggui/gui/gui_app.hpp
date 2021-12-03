@@ -32,7 +32,7 @@
 #include "gui_settings.hpp"
 #include "gui_win_input_receiver.hpp"
 #include "gui_win_input_logfile.hpp"
-
+#include "gui_notify.hpp"
 
 struct GuiAppEarlyLog
 {
@@ -65,20 +65,20 @@ class GuiApp
         void ConfirmClose(bool &display, bool &done);
         ImVec4 BackgroundColour();
 
-        // Get settings instance
-        std::shared_ptr<GuiSettings> GetSettings();
-
         // Performance monitor
-        enum Perf_e { NEWFRAME = 0, LOOP, DRAW, RENDER_IM, RENDER_GL, _NUM_PERF };
+        enum Perf_e { NEWFRAME = 0, LOOP, DRAW, RENDER_IM, RENDER_GL, CPU, TOTAL, _NUM_PERF };
         void PerfTic(const enum Perf_e perf);
         void PerfToc(const enum Perf_e perf);
+
+        void Shutdown();
 
     private:
 
         void _MainMenu();
 
-        std::string                          _settingsFile;
-        std::shared_ptr<GuiSettings>         _settings;
+        std::string _settingsFile;
+        GuiSettings _settings;
+        void _DrawSettingsEditor();
 
         // Application windows
         enum
@@ -89,6 +89,7 @@ class GuiApp
             _NUM_APP_WIN
         };
         std::vector< std::unique_ptr<GuiWin> > _appWindows;
+        GuiNotify _notifications;
 
         // Receiver and logfile windows
         std::vector< std::unique_ptr<GuiWinInputReceiver> > _receiverWindows;
@@ -108,6 +109,7 @@ class GuiApp
         bool                 _debugWinOpen;
         bool                 _debugWinDim;
         GuiWidgetLog         _debugLog;
+        float                _menuBarHeight;
         std::vector<std::string> _versionInfos;
         void _DrawDebugWin();
         static void _DebugLogCb(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG_t *cfg);
@@ -119,10 +121,10 @@ class GuiApp
             PerfData();
             PerfMeas_t data;
             int        ix;
-            int        num;
             std::chrono::system_clock::time_point t0;
             void Tic();
             void Toc();
+            void Add(const float value);
         };
         std::array<PerfData, _NUM_PERF> _perfData;
 };

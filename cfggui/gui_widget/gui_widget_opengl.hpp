@@ -15,9 +15,47 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include "data.hpp"
+#ifndef __GUI_WIDGET_OPENGL_HPP__
+#define __GUI_WIDGET_OPENGL_HPP__
+
+#include "imgui.h"
 
 /* ****************************************************************************************************************** */
 
+class GuiWidgetOpenGl
+{
+    public:
+        GuiWidgetOpenGl();
+       ~GuiWidgetOpenGl();
+
+        // Setup and bind OpenGL frambuffer that you can draw into
+        bool BeginDraw(const int width = 0, const int height = 0);
+
+        // Get framebuffer size (after BeginDraw()!)
+        FfVec2 GetSize();
+        int    GetWidth();
+        int    GetHeight();
+
+        // Draw debugging (after BeginDraw()!)
+        void *NanoVgBeginFrame(); // returns a NVGcontext *
+        void NanoVgDebug();
+        void NanoVgEndFrame();
+
+        // Unbind framebuffer, switch back to default one
+        void EndDraw();
+
+    protected:
+
+        int          _width;
+        int          _height;
+        bool         _canDraw;
+        unsigned int _framebuffer;
+        unsigned int _renderbuffer;
+        unsigned int _texture;
+        float        _clearColour[4];
+        void        *_nvgContext;
+};
 
 /* ****************************************************************************************************************** */
+
+#endif // __GUI_WIDGET_OPENGL_HPP__

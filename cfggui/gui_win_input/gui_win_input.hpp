@@ -25,7 +25,7 @@
 
 #include "ff_epoch.h"
 
-#include "data.hpp"
+#include "input_data.hpp"
 #include "database.hpp"
 
 #include "gui_widget_log.hpp"
@@ -48,6 +48,7 @@ class GuiWinInput : public GuiWin
         void DrawWindow() final;
 
         void DrawDataWindows();
+        void DataWinMenu();
 
     protected:
 
@@ -63,7 +64,7 @@ class GuiWinInput : public GuiWin
         const char                *_fixStr;
         //double                     _fixTime; TODO
 
-        virtual void _ProcessData(const Data &data);
+        virtual void _ProcessData(const InputData &data);
         virtual void _ClearData();
         virtual void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin);
 

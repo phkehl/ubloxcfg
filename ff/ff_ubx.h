@@ -1202,6 +1202,26 @@ typedef struct UBX_NAV_VELECEF_V0_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+//! UBX-NAV-DOP payload (Note: packed struct!)
+typedef struct UBX_NAV_DOP_V0_GROUP0_s
+{
+    uint32_t iTOW;
+    uint16_t gDOP;
+    uint16_t pDOP;
+    uint16_t tDOP;
+    uint16_t vDOP;
+    uint16_t hDOP;
+    uint16_t nDOP;
+    uint16_t eDOP;
+} __attribute__((packed)) UBX_NAV_DOP_V0_GROUP0_t;
+
+#define UBX_NAV_DOP_V0_ITOW_SCALE                     1e-3
+#define UBX_NAV_DOP_V0_XDOP_SCALE                     1e-2
+
+#define UBX_NAV_DOP_V0_SIZE       ((int)(sizeof(UBX_NAV_DOP_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 #define UBX_RXM_RAWX_VERSION_GET(msg)     (((uint8_t *)(msg))[UBX_HEAD_SIZE + 13])
 
 //! UBX-RXM-RAWX (version 1, output) payload head

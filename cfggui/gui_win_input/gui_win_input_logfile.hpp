@@ -23,7 +23,7 @@
 #include <vector>
 #include <mutex>
 
-#include "logfile.hpp"
+#include "input_logfile.hpp"
 #include "gui_win_filedialog.hpp"
 #include "gui_win_input.hpp"
 
@@ -45,7 +45,7 @@ class GuiWinInputLogfile : public GuiWinInput
         static constexpr int MAX_RECENT_LOGS = 20;
         static void _AddRecentLog(const std::string &path);
 
-        std::shared_ptr<Logfile>  _logfile;
+        std::shared_ptr<InputLogfile>  _logfile;
         GuiWinFileDialog          _fileDialog;
         float                     _seekProgress;
         float                     _playSpeed;
@@ -53,7 +53,7 @@ class GuiWinInputLogfile : public GuiWinInput
 
         void _DrawActionButtons() final;
         void _DrawControls() final;
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _ClearData() final;
         void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
 };

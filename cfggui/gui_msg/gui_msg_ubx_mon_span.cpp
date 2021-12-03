@@ -10,7 +10,7 @@
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
 // even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU General Public License for more details.
+// See the GNU General Public License for more detailspect.
 //
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
@@ -25,25 +25,23 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxMonSpan::GuiMsgUbxMonSpan(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxMonSpan::GuiMsgUbxMonSpan(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile),
-    _plotFlags{ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs}, _labels{}, _resetPlotRange{true}
+    _resetPlotRange{true}
 {
-    _labels.push_back(Label(1575.420000, "GPS/SBAS L1CA, GAL E1, QZSS L1CA/S"));
-    _labels.push_back(Label(1561.098000, "BDS B1I"));
-    _labels.push_back(Label(1602.000000, "GLO L1OF"));
-    _labels.push_back(Label(1207.140000, "BDS B2I, GAL E5B"));
-    _labels.push_back(Label(1227.600000, "GPS/QZSS L2C"));
-    _labels.push_back(Label(1246.000000, "GLO L2OF"));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiMsgUbxMonSpan::Label::Label(const double _freq, const char *_title) :
-    freq{_freq}, title{_title}
+/*static*/ const std::vector<GuiMsgUbxMonSpan::Label> GuiMsgUbxMonSpan::FREQ_LABELS =
 {
-    id = Ff::Sprintf("##%p", this);
-}
+    { 1575.420000, "##1", "GPS/SBAS L1CA, GAL E1, QZSS L1CA/S" },
+    { 1561.098000, "##2", "BDS B1I" },
+    { 1602.000000, "##3", "GLO L1OF" },
+    { 1207.140000, "##4", "BDS B2I, GAL E5B" },
+    { 1227.600000, "##5", "GPS/QZSS L2C" },
+    { 1246.000000, "##6", "GLO L2OF" },
+};
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -79,40 +77,58 @@ void GuiMsgUbxMonSpan::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         UBX_MON_SPAN_V0_GROUP1_t block;
         std::memcpy(&block, &msg->data[offs], sizeof(block));
         const int numBins = NUMOF(block.spectrum);
-        auto &s = _spects[spectIx];
-        s.freq.resize(numBins, NAN);
-        s.ampl.resize(numBins, NAN);
-        s.min.resize(numBins, NAN);
-        s.max.resize(numBins, NAN);
-        s.mean.resize(numBins, NAN);
-        s.center = (double)block.center * 1e-6; // [MHz]
-        s.span   = (double)block.span   * 1e-6; // [MHz]
-        s.res    = (double)block.res    * 1e-6; // [MHz]
-        s.pga    = (double)block.pga;
+        auto &spect = _spects[spectIx];
+        spect.freq.resize(numBins, NAN);
+        spect.ampl.resize(numBins, NAN);
+        spect.min.resize(numBins, NAN);
+        spect.max.resize(numBins, NAN);
+        spect.mean.resize(numBins, NAN);
+        spect.center = (double)block.center * 1e-6; // [MHz]
+        spect.span   = (double)block.span   * 1e-6; // [MHz]
+        spect.res    = (double)block.res    * 1e-6; // [MHz]
+        spect.pga    = (double)block.pga;
         for (int binIx = 0; binIx < numBins; binIx++)
         {
-            s.freq[binIx] = (UBX_MON_SPAN_BIN_CENT_FREQ(block, binIx) * 1e-6) - s.center; // [MHz]
+            spect.freq[binIx] = (UBX_MON_SPAN_BIN_CENT_FREQ(block, binIx) * 1e-6) - spect.center; // [MHz]
             const double ampl = (double)block.spectrum[binIx] * (100.0/255.0); // [%]
-            s.ampl[binIx] = ampl;
-            if (std::isnan(s.min[binIx]) || (ampl < s.min[binIx]))
+            spect.ampl[binIx] = ampl;
+            if (std::isnan(spect.min[binIx]) || (ampl < spect.min[binIx]))
             {
-                s.min[binIx] = ampl;
+                spect.min[binIx] = ampl;
             }
-            if (std::isnan(s.max[binIx]) || (ampl > s.max[binIx]))
+            if (std::isnan(spect.max[binIx]) || (ampl > spect.max[binIx]))
             {
-                s.max[binIx] = ampl;
+                spect.max[binIx] = ampl;
             }
-            if (s.count > 0.0)
+            if (spect.count > 0.0)
             {
-                s.mean[binIx] += (ampl - s.mean[binIx]) / s.count;
+                spect.mean[binIx] += (ampl - spect.mean[binIx]) / spect.count;
             }
             else
             {
-                s.mean[binIx] = ampl;
+                spect.mean[binIx] = ampl;
             }
         }
-        s.count += 1.0;
+        spect.count += 1.0;
+
+        spect.tab = Ff::Sprintf("RF%d (%.6fMHz)", spectIx, spect.center);
+        spect.title = Ff::Sprintf("RF%d (PGA %.0fdB)##%p", spectIx, spect.pga, std::addressof(spect));
+        spect.xlabel = Ff::Sprintf("Frequency (center %.6fMHz)", spect.center);
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxMonSpan::Buttons()
+{
+    ImGui::SameLine();
+    ImGui::BeginDisabled(_spects.empty());
+    if (ImGui::Button(ICON_FK_ARROWS_ALT "###ResetPlotRange"))
+    {
+        _resetPlotRange = true;
+    }
+    ImGui::EndDisabled();
+    Gui::ItemTooltip("Reset plot range");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -120,107 +136,96 @@ void GuiMsgUbxMonSpan::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
-    if (!ImGui::BeginChild("##spectra", sizeAvail))
+    if (_spects.empty())
     {
-        return true;
+        return false;
     }
-
-    // Controls
-    {
-        if (ImGui::Button(ICON_FK_ARROWS_ALT "###ResetPlotRange"))
-        {
-            _resetPlotRange = true;
-        }
-        Gui::ItemTooltip("Reset plot range");
-
-        ImGui::SameLine();
-
-        // Clear
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
-        {
-            Clear();
-        }
-        Gui::ItemTooltip("Clear all data");
-    }
-
-    // Plots
-    if (!_spects.empty())
+    if (ImGui::BeginChild("##spects", sizeAvail))
     {
         const int numSpects = _spects.size();
-        const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-        const float plotHeight = (canvasSize.y - ((numSpects - 1) * _winSettings->style.ItemSpacing.y)) / numSpects;
-        for (int spectIx = 0; spectIx < numSpects; spectIx++)
+        int spectIx0 = 0;
+        int spectIx1 = numSpects - 1;
+
+        if (ImGui::BeginTabBar("tabs"))
         {
-            auto &s = _spects[spectIx];
-            char title[100];
-            std::snprintf(title, sizeof(title), "RF%d (PGA %.0fdB)##%p", spectIx, s.pga, std::addressof(s));
-            char xlabel[100];
-            std::snprintf(xlabel, sizeof(xlabel), "Frequency (center %.6fMHz)", s.center);
-
-            if (_resetPlotRange)
+            if (ImGui::BeginTabItem("All"))
             {
-                ImPlot::SetNextPlotLimitsX(-0.5 * s.span, 0.5 * s.span, ImGuiCond_Always);
-                ImPlot::SetNextPlotLimitsY(1.0, 99.0, ImGuiCond_Always);
+                ImGui::EndTabItem();
             }
-
-            if (ImPlot::BeginPlot(title, xlabel, "Amplitude", ImVec2(-1, plotHeight), _plotFlags))
+            for (int spectIx = 0; spectIx < numSpects; spectIx++)
             {
-                // Labels
-                const ImPlotLimits limits = ImPlot::GetPlotLimits();
-                for (auto &label: _labels)
+                if (ImGui::BeginTabItem(_spects[spectIx].tab.c_str()))
                 {
-                    if (std::fabs(s.center - label.freq) < s.span)
-                    {
-                        double freq = s.center - label.freq;
-                        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(0));
-                        ImPlot::PlotVLines(label.id.c_str(), &freq, 1);
-                        ImPlot::PopStyleColor();
-
-                        const ImVec2 offs = ImGui::CalcTextSize(label.title.c_str());
-                        ImPlot::PushStyleColor(ImPlotCol_InlayText, ImPlot::GetColormapColor(0));
-                        ImPlot::PlotText(label.title.c_str(), freq, limits.Y.Min, true, ImVec2(offs.y, (-0.5f * offs.x) - 5.0f));
-                        ImPlot::PopStyleColor();
-                    }
+                    spectIx0 = spectIx;
+                    spectIx1 = spectIx;
+                    ImGui::EndTabItem();
                 }
-
-                // Aplitude with min/max
-                ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(1));
-                ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.3f);
-                ImPlot::PlotShaded("##Amplitude", s.freq.data(), s.max.data(), s.min.data(), s.freq.size());
-                ImPlot::PlotLine("##Amplitude", s.freq.data(), s.ampl.data(), s.freq.size());
-                ImPlot::PopStyleVar();
-                ImPlot::PopStyleColor();
-                // Mean, initially hidden
-                ImPlot::HideNextItem();
-                ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(2));
-                ImPlot::PlotLine("Mean", s.freq.data(), s.mean.data(), s.freq.size());
-                ImPlot::PopStyleColor();
-
-                ImPlot::EndPlot();
             }
+            ImGui::EndTabBar();
+        }
+
+        FfVec2 plotSize = ImGui::GetContentRegionAvail();
+        plotSize.y -= (float)(spectIx1 - spectIx0 + 1 - 1) * GuiSettings::style->ItemInnerSpacing.y;
+        plotSize.y /= (float)(spectIx1 - spectIx0 + 1);
+        for (int spectIx = spectIx0; spectIx <= spectIx1; spectIx++)
+        {
+            _DrawSpect(_spects[spectIx], plotSize);
         }
         _resetPlotRange = false;
-    }
-    // Dummy plots if no data is available
-    else
-    {
-        const ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-        const float plotHeight = (canvasSize.y - _winSettings->style.ItemSpacing.y) / 2;
-        if (ImPlot::BeginPlot("RF0", "Frequency", "Amplitude", ImVec2(-1, plotHeight), _plotFlags))
-        {
-            ImPlot::PlotDummy("##dummy0");
-            ImPlot::EndPlot();
-        }
-        if (ImPlot::BeginPlot("RF1", "Frequency", "Amplitude", ImVec2(-1, plotHeight), _plotFlags))
-        {
-            ImPlot::PlotDummy("##dummy1");
-            ImPlot::EndPlot();
-        }
-    }
 
+    }
     ImGui::EndChild();
 
     return true;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
+{
+    if (_resetPlotRange)
+    {
+        ImPlot::SetNextPlotLimitsX(-0.5 * spect.span, 0.5 * spect.span, ImGuiCond_Always);
+        ImPlot::SetNextPlotLimitsY(1.0, 99.0, ImGuiCond_Always);
+    }
+
+    const ImPlotFlags plotFlags = ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs;
+    if (ImPlot::BeginPlot(spect.title.c_str(), spect.xlabel.c_str(), "Amplitude", size, plotFlags))
+    {
+        // Labels
+        const ImPlotLimits limits = ImPlot::GetPlotLimits();
+        for (auto &label: FREQ_LABELS)
+        {
+            if (std::fabs(spect.center - label.freq) < spect.span)
+            {
+                double freq = spect.center - label.freq;
+                ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(0));
+                ImPlot::PlotVLines(label.id.c_str(), &freq, 1);
+                ImPlot::PopStyleColor();
+
+                const ImVec2 offs = ImGui::CalcTextSize(label.title.c_str());
+                ImPlot::PushStyleColor(ImPlotCol_InlayText, ImPlot::GetColormapColor(0));
+                ImPlot::PlotText(label.title.c_str(), freq, limits.Y.Min, true, ImVec2(offs.y, (-0.5f * offs.x) - 5.0f));
+                ImPlot::PopStyleColor();
+            }
+        }
+
+        // Aplitude with min/max
+        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(1));
+        ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.3f);
+        ImPlot::PlotShaded("##Amplitude", spect.freq.data(), spect.max.data(), spect.min.data(), spect.freq.size());
+        ImPlot::PlotLine("##Amplitude", spect.freq.data(), spect.ampl.data(), spect.freq.size());
+        ImPlot::PopStyleVar();
+        ImPlot::PopStyleColor();
+        // Mean, initially hidden
+        ImPlot::HideNextItem();
+        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(2));
+        ImPlot::PlotLine("Mean", spect.freq.data(), spect.mean.data(), spect.freq.size());
+        ImPlot::PopStyleColor();
+
+        ImPlot::EndPlot();
+    }
+}
+
 
 /* ****************************************************************************************************************** */

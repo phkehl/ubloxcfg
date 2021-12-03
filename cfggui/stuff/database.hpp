@@ -35,9 +35,9 @@ class Database
     public:
         Database(const int size);
 
-        void                 Clear();
-        void                 AddEpoch(const EPOCH_t *raw);
-        void                 AddMsg(const PARSER_MSG_t *msg);
+        void Clear();
+        void AddEpoch(const EPOCH_t *raw);
+        void AddMsg(const PARSER_MSG_t *msg);
 
         enum PosIx_e { _X_   = 0, _Y_   = 1, _Z_      = 2,
                        _LAT_ = 0, _LON_ = 1, _HEIGHT_ = 2,

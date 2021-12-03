@@ -29,17 +29,20 @@
 
 GuiWinDataMessages::GuiWinDataMessages(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _showList{true}, _showSubSec{false}, _showHexDump{true},
-    _selectedEntry{_messages.end()}, _displayedEntry{_messages.end()}, _classNames{}
+    _showList       { true },
+    _showSubSec     { false },
+    _showHexDump    { true },
+    _selectedEntry  {_messages.end() },
+    _displayedEntry {_messages.end() }
 {
     _winSize = { 130, 25 };
 
     _latestEpochEna = false;
     _toolbarEna = false;
 
-    _selectedName = _winSettings->GetValue(_winName + ".selectedMessage");
-    _winSettings->GetValue(_winName + ".showHexDump", _showHexDump, false);
-    _winSettings->GetValue(_winName + ".showList",    _showList,    false);
+    _selectedName = GuiSettings::GetValue(_winName + ".selectedMessage");
+    GuiSettings::GetValue(_winName + ".showHexDump", _showHexDump, true);
+    GuiSettings::GetValue(_winName + ".showList",    _showList,    true);
 
     _InitMsgRatesAndPolls();
     ClearData();
@@ -48,9 +51,9 @@ GuiWinDataMessages::GuiWinDataMessages(const std::string &name, std::shared_ptr<
 GuiWinDataMessages::~GuiWinDataMessages()
 {
     const std::string selName = _selectedEntry != _messages.end() ? _selectedEntry->second.msg->name : "";
-    _winSettings->SetValue(_winName + ".selectedMessage", selName);
-    _winSettings->SetValue(_winName + ".showHexDump", _showHexDump);
-    _winSettings->SetValue(_winName + ".showList", _showList);
+    GuiSettings::SetValue(_winName + ".selectedMessage", selName);
+    GuiSettings::SetValue(_winName + ".showHexDump", _showHexDump);
+    GuiSettings::SetValue(_winName + ".showList", _showList);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -131,11 +134,11 @@ void GuiWinDataMessages::_InitMsgRatesAndPolls()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMessages::_ProcessData(const Data &data)
+void GuiWinDataMessages::_ProcessData(const InputData &data)
 {
     switch (data.type)
     {
-        case Data::Type::DATA_MSG:
+        case InputData::DATA_MSG:
         {
             // Get message info entry, create new as necessary
             MsgInfo *info = nullptr;
@@ -143,7 +146,7 @@ void GuiWinDataMessages::_ProcessData(const Data &data)
             if (entry == _messages.end())
             {
                 auto foo = _messages.insert(
-                    { data.msg->name, GuiMsg::GetRenderer(data.msg->name, _receiver, _logfile) });
+                    { data.msg->name, MsgInfo(data.msg->name, GuiMsg::GetRenderer(data.msg->name, _receiver, _logfile)) });
                 info = &foo.first->second;
             }
             else
@@ -174,10 +177,13 @@ void GuiWinDataMessages::_Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataMessages::MsgInfo::MsgInfo(std::unique_ptr<GuiMsg> _renderer) :
-    msg{nullptr}, count{0}, dt{}, dtIx{0}, rate{0.0}, age{0.0}, flag{false},
+GuiWinDataMessages::MsgInfo::MsgInfo(const std::string &_name, std::unique_ptr<GuiMsg> _renderer) :
+    name{_name}, msg{nullptr}, count{0}, dt{}, dtIx{0}, rate{0.0}, age{0.0}, flag{false},
     hexdump{}, renderer{std::move(_renderer)}
 {
+    const auto offs = name.rfind("-");
+    group = offs != std::string::npos ? name.substr(0, offs) : std::string("Other");
+    groupId = ImGui::GetID(group.c_str());
 }
 
 void GuiWinDataMessages::MsgInfo::Clear()
@@ -294,17 +300,19 @@ void GuiWinDataMessages::_DrawContent()
 {
     _UpdateInfo();
 
-    const float listWidth = 40 * _winSettings->charSize.x;
+    const float listWidth = 40 * GuiSettings::charSize.x;
+
+    const bool showList = _showList || (_displayedEntry == _messages.end());
 
     // Controls
     _DrawListButtons();
-    Gui::VerticalSeparator(_showList ? listWidth + (2 * _winSettings->style.ItemSpacing.x) : 0);
+    Gui::VerticalSeparator(showList ? listWidth + (2 * GuiSettings::style->ItemSpacing.x) : 0);
     _DrawMessageButtons();
 
     ImGui::Separator();
 
     // Messsages list (left side of window)
-    if (_showList)
+    if (showList)
     {
         if (ImGui::BeginChild("##List", ImVec2(listWidth, 0.0f)))
         {
@@ -330,8 +338,8 @@ void GuiWinDataMessages::_DrawContent()
 
 void GuiWinDataMessages::_DrawListButtons()
 {
-    ToggleButton(ICON_FK_LIST "###ShowList", NULL, &_showList,
-        "Showing message list", "Not showing message list");
+    Gui::ToggleButton(ICON_FK_LIST "###ShowList", NULL, &_showList,
+        "Showing message list", "Not showing message list", GuiSettings::iconSize);
 
     if (!_showList)
     {
@@ -340,8 +348,8 @@ void GuiWinDataMessages::_DrawListButtons()
 
     ImGui::SameLine();
 
-    ToggleButton(ICON_FK_DOT_CIRCLE_O "###ShowSubSec", ICON_FK_CIRCLE_O " ###ShowSubSec", &_showSubSec,
-        "Showing sub-second delta times", "Not showing sub-second delta times");
+    Gui::ToggleButton(ICON_FK_DOT_CIRCLE_O "###ShowSubSec", ICON_FK_CIRCLE_O " ###ShowSubSec", &_showSubSec,
+        "Showing sub-second delta times", "Not showing sub-second delta times", GuiSettings::iconSize);
 
     ImGui::SameLine();
 
@@ -350,7 +358,7 @@ void GuiWinDataMessages::_DrawListButtons()
     // Quick message enable/disable
     {
         ImGui::BeginDisabled(!ctrlEnabled);
-        if (ImGui::Button(ICON_FK_BARS "##Quick", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_BARS "##Quick", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("Quick");
         }
@@ -371,7 +379,7 @@ void GuiWinDataMessages::_DrawListButtons()
 
     // Clear
     {
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ERASER "##Clear", GuiSettings::iconSize))
         {
             ClearData();
         }
@@ -465,7 +473,7 @@ void GuiWinDataMessages::_SetRate(const GuiWinDataMessages::MsgRate &def, const 
         if (def.rate->itemUsb   != NULL) { keyVal.push_back({ .id = def.rate->itemUsb->id,   .val = { .U1 = (uint8_t)MIN(rate, 0xff) } }); }
         if (!keyVal.empty())
         {
-            _receiver->SetConfig(true, false, false, false, keyVal, _winUid);
+            _receiver->SetConfig(true, false, false, false, keyVal);
         }
     }
 }
@@ -476,7 +484,7 @@ void GuiWinDataMessages::_PollMsg(const MsgPoll &def)
     const int size = ubxMakeMessage(def.clsId, def.msgId, poll, 0, poll);
     if (size > 0)
     {
-        _receiver->Send(poll, size, _winUid);
+        _receiver->Send(poll, size);
     }
 }
 
@@ -486,15 +494,15 @@ void GuiWinDataMessages::_DrawMessageButtons()
 {
     const bool haveDispEntry = (_displayedEntry != _messages.end());
 
-    ToggleButton(ICON_FK_FILE_CODE_O "###ShowHexdump", NULL, &_showHexDump,
-        "Showing hexdump", "Not showing hexdump");
+    Gui::ToggleButton(ICON_FK_FILE_CODE_O "###ShowHexdump", NULL, &_showHexDump,
+        "Showing hexdump", "Not showing hexdump", GuiSettings::iconSize);
 
     ImGui::SameLine();
 
     // Clear
     {
         ImGui::BeginDisabled(!haveDispEntry);
-        if (ImGui::Button(ICON_FK_ERASER "##ClearMsg", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ERASER "##ClearMsg", GuiSettings::iconSize))
         {
             _displayedEntry->second.Clear();
         }
@@ -508,7 +516,7 @@ void GuiWinDataMessages::_DrawMessageButtons()
     {
         ImGui::BeginDisabled( !haveDispEntry || !_receiver || !_receiver->IsReady() ||
             (_msgPolls.find(_displayedEntry->first) == _msgPolls.end()) );
-        if (ImGui::Button(ICON_FK_REFRESH "##PollMsg", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_REFRESH "##PollMsg", GuiSettings::iconSize))
         {
             _PollMsg(_msgPolls.find(_displayedEntry->first)->second);
         }
@@ -521,7 +529,7 @@ void GuiWinDataMessages::_DrawMessageButtons()
     // Step
     {
         ImGui::BeginDisabled( !haveDispEntry || !_logfile || !_logfile->CanStep() );
-        if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", GuiSettings::iconSize))
         {
             _logfile->StepMsg(_displayedEntry->first);
         }
@@ -548,13 +556,53 @@ void GuiWinDataMessages::_DrawList()
     ImGui::TextUnformatted("  Count: Age: Rate: Name:");
     ImGui::PopStyleColor();
 
+    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    // if (ImGui::TreeNode("Foo1"))
+    // {
+    //     ImGui::TextUnformatted("blabla");
+    //     ImGui::TextUnformatted("blabla");
+    //     ImGui::TreePop();
+    // }
+    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    // if (ImGui::TreeNode("Foo2"))
+    // {
+    //     ImGui::TreePop();
+    // }
+    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    // if (ImGui::TreeNode("Foo3"))
+    // {
+    //     ImGui::TextUnformatted("blabla");
+    //     ImGui::TextUnformatted("blabla");
+    //     ImGui::TreePop();
+    // }
+
+
     _displayedEntry = _selectedEntry;
+    uint64_t prevGroupId = 0;
+    bool drawNodes = false;
     for (auto entry = _messages.begin(); entry != _messages.end(); entry++)
     {
         auto &name = entry->first;
         auto &info = entry->second;
-        char str[100];
 
+        if (prevGroupId != info.groupId)
+        {
+            if (drawNodes && (prevGroupId != 0))
+            {
+                ImGui::TreePop();
+            }
+            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+            drawNodes = ImGui::TreeNode(info.group.c_str());
+
+            prevGroupId = info.groupId;
+        }
+
+        if (!drawNodes)
+        {
+            continue;
+        }
+
+        char str[100];
         if (showDeltaTime)
         {
             char dtStr[10];
@@ -606,6 +654,10 @@ void GuiWinDataMessages::_DrawList()
             _displayedEntry = entry;
         }
     }
+    if (drawNodes && (prevGroupId != 0))
+    {
+        ImGui::TreePop();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -620,12 +672,12 @@ void GuiWinDataMessages::_DrawMessage()
     const auto &info = _displayedEntry->second;
     const auto &msg  = _displayedEntry->second.msg;
 
-    const float sepPadding     = (2 * _winSettings->style.ItemSpacing.y) + 1;
+    const float sepPadding     = (2 * GuiSettings::style->ItemSpacing.y) + 1;
     const ImVec2 sizeAvail     = ImGui::GetContentRegionAvail();
-    const ImVec2 msgInfoSize   { 0, (2 * _winSettings->charSize.y) + (1 * _winSettings->style.ItemSpacing.y) };
-    const ImVec2 hexDumpSize   { 0, _showHexDump ? (info.hexdump.size(), 10) * _winSettings->charSize.y : 0 };
+    const ImVec2 msgInfoSize   { 0, (2 * GuiSettings::charSize.y) + (1 * GuiSettings::style->ItemSpacing.y) };
+    const ImVec2 hexDumpSize   { 0, _showHexDump ? (info.hexdump.size(), 10) * GuiSettings::charSize.y : 0 };
     const float remHeight      = sizeAvail.y - msgInfoSize.y - hexDumpSize.y - sepPadding - (_showHexDump ? sepPadding : 0);
-    const float minHeight      = 10 * _winSettings->charSize.y;
+    const float minHeight      = 10 * GuiSettings::charSize.y;
     const ImVec2 msgDetailSize { 0, MAX(remHeight, minHeight) };
 
     // Message info
@@ -635,9 +687,18 @@ void GuiWinDataMessages::_DrawMessage()
         //                      12345678901234567890 12345678 12345678 12345 12345 12345 12345 12345
         ImGui::TextUnformatted("Name:                  Type:    Source:  Seq:  Cnt:  Age:  Rate: Size:");
         ImGui::PopStyleColor();
-        ImGui::Text("%-20s %c %-8s %-8s %5u %5u %5.1f %5.1f %5d",
-            msg->name.c_str(), info.flag ? '*' : ' ', msg->typeStr.c_str(), msg->srcStr.c_str(),
-            msg->seq, info.count, info.age, info.rate, msg->size);
+        if (_receiver && !_receiver->IsIdle())
+        {
+            ImGui::Text("%-20s %c %-8s %-8s %5u %5u %5.1f %5.1f %5d",
+                msg->name.c_str(), info.flag ? '*' : ' ', msg->typeStr.c_str(), msg->srcStr.c_str(),
+                msg->seq, info.count, info.age, info.rate, msg->size);
+        }
+        else
+        {
+            ImGui::Text("%-20s %c %-8s %-8s %5u %5u     -     - %5d",
+                msg->name.c_str(), info.flag ? '*' : ' ', msg->typeStr.c_str(), msg->srcStr.c_str(),
+                msg->seq, info.count, msg->size);
+        }
     }
     ImGui::EndChild();
 

@@ -31,14 +31,16 @@ class GuiWinDataSignals : public GuiWinData
     public:
         GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database);
 
+        static void DrawSignalLevelWithBar(const EPOCH_SIGINFO_t *sig, const ImVec2 charSize);
+
     protected:
 
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawToolbar() final;
         void _DrawContent() final;
         void _ClearData() final;
 
-        std::vector<const EPOCH_SIGINFO_t *> _sigInfo;
+        std::vector<EPOCH_SIGINFO_t> _sigInfo;
         struct Count
         {
             Count(const char *_name);
@@ -62,6 +64,7 @@ class GuiWinDataSignals : public GuiWinData
         std::map<uint32_t, bool> _selSigs;
 
         void _UpdateSignals();
+        void _DrawSignalLevelCb(void *arg);
 };
 
 /* ****************************************************************************************************************** */

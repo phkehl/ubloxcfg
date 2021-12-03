@@ -26,7 +26,7 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxNavCov::GuiMsgUbxNavCov(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxNavCov::GuiMsgUbxNavCov(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile)
 {
 }
@@ -68,7 +68,7 @@ bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     const float           scaleMax   = 0; //1e3 * 1e3;    // km
     const ImPlotColormap  colMap     = ImPlotColormap_Cool; // ImPlotColormap_Plasma
     const char           *numFmt     = "%.1e";
-    const float           plotWidth  = 0.5f * (sizeAvail.x - _winSettings->style.ItemSpacing.x);
+    const float           plotWidth  = 0.5f * (sizeAvail.x - GuiSettings::style->ItemSpacing.x);
     const ImVec2          plotSize   { MIN(plotWidth, sizeAvail.y), MIN(plotWidth, sizeAvail.y) };
 
     ImPlot::PushColormap(colMap);

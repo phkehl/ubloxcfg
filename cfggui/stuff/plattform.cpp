@@ -20,20 +20,15 @@
 #include <fstream>
 #include <cstring>
 #include <cerrno>
+#include <exception>
+#include <chrono>
 
-#ifdef _WIN32
-#  ifndef NOGDI
-#    define NOGDI
-#  endif
-#endif
+#include <sys/prctl.h>
+
+#include "ff_debug.h"
 
 #include "platform_folders.hpp"
 
-#ifndef _WIN32
-#  include <sys/prctl.h>
-#endif
-
-#include "ff_debug.h"
 #include "platform.hpp"
 
 namespace Platform {
@@ -127,7 +122,10 @@ std::string ConfigFile(const std::string &name)
 std::string CacheDir(const std::string &name)
 {
     std::filesystem::path path( CacheBaseDir() );
-    path /= name;
+    if (!name.empty())
+    {
+        path /= name;
+    }
     return path.string();
 }
 
@@ -172,9 +170,6 @@ const std::vector<Port> &EnumeratePorts(const bool enumerate)
 
     ports.clear();
 
-#ifdef _WIN32
-// TODO...
-#else
     const std::filesystem::path devSerialByIdDir("/dev/serial/by-id");
 
     if (!std::filesystem::exists(devSerialByIdDir))
@@ -196,7 +191,6 @@ const std::vector<Port> &EnumeratePorts(const bool enumerate)
         {
             return a.port < b.port;
         });
-#endif
 
     return ports;
 }
@@ -205,7 +199,6 @@ const std::vector<Port> &EnumeratePorts(const bool enumerate)
 
 void SetThreadName(const std::string &name)
 {
-#ifndef _WIN32
     // FIXME: refactor...
     char currName[16];
     char threadName[32]; // max 16 cf. prctl(2)
@@ -216,10 +209,142 @@ void SetThreadName(const std::string &name)
         std::snprintf(threadName, sizeof(threadName), "%s:%s", currName, name.c_str());
         prctl(PR_SET_NAME, threadName, 0, 0, 0);
     }
-#else
-    UNUSED(name);
-#endif
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+class CacheWiper
+{
+    public:
+        CacheWiper(const std::string &path, const double maxAge) :
+            _basePath{path}, _maxAge{maxAge},
+            _numFilesTotal{0}, _numDirsTotal{0}, _numFilesWiped{0}, _numDirsWiped{0}, _sizeTotal{0}, _sizeWiped{0}
+
+        {
+            if (path.empty() || (maxAge < 0.0) )
+            {
+                throw std::runtime_error("Bad parameters!");
+            }
+        }
+
+        void Wipe()
+        {
+            _refTime = std::filesystem::file_time_type::clock::now();
+            _Wipe(_basePath);
+            DEBUG("CacheWiper: wiped %d/%d files and %d/%d dirs (%.1f/%.1fMiB) in %s",
+                _numFilesWiped, _numFilesTotal, _numDirsWiped, _numDirsTotal,
+                (double)_sizeWiped / 1024.0 / 1024.0, (double)_sizeTotal / 1024.0 / 1024.0,
+                _basePath.c_str());
+        }
+
+    private:
+        std::filesystem::path _basePath;
+        double      _maxAge;
+        std::filesystem::file_time_type _refTime;
+        int         _numFilesTotal;
+        int         _numDirsTotal;
+        int         _numFilesWiped;
+        int         _numDirsWiped;
+        std::size_t _sizeTotal;
+        std::size_t _sizeWiped;
+
+        bool _Wipe(const std::filesystem::path &path)
+        {
+            bool dirEmpty = true;
+            for (const auto &entry: std::filesystem::directory_iterator(path))
+            {
+                // Check files
+                if (entry.is_regular_file())
+                {
+                    _numFilesTotal++;
+                    const auto size = entry.file_size();
+                    _sizeTotal += size;
+                    if ( (_Age(entry) > _maxAge) && _Remove(entry.path()) )
+                    {
+                        _numFilesWiped++;
+                        _sizeWiped += size;
+                    }
+                    else
+                    {
+                        dirEmpty = false;
+                    }
+                }
+                // Iterate directories
+                else if (entry.is_directory())
+                {
+                    _numDirsTotal++;
+                    if (!_Wipe(entry.path()))
+                    {
+                        dirEmpty = false;
+                    }
+                }
+                // There should be no special files here (hmmm...?)
+                else
+                {
+                    WARNING("CacheWiper: Ignoring '%s'!", entry.path().string().c_str());
+                }
+            }
+            // Remove this directory if it's empty now, and if it's not the base dir
+            if ( dirEmpty && (path != _basePath) )
+            {
+                if (_Remove(path))
+                {
+                    _numDirsWiped++;
+                }
+            }
+
+            return dirEmpty;
+        }
+
+        double _Age(const std::filesystem::directory_entry &entry)
+        {
+            return std::chrono::duration<double, std::ratio<86400> /*std::chrono::hours*/>(
+                _refTime - entry.last_write_time() ).count();
+        }
+
+        bool _Remove(const std::filesystem::path &path)
+        {
+            std::error_code err;
+            std::filesystem::remove(path, err);
+            if (err)
+            {
+                WARNING("Failed wiping %s: %s", path.c_str(), err.message().c_str());
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+
+};
+
+// static void _WipeCache(const std::string &path, const double maxAge, const int maxDepth, WipeCacheState &state)
+// {
+//     for (const auto &entry: std::filesystem::directory_iterator{path})
+//     {
+//         UNUSED(entry);
+//     }
+
+//     UNUSED(maxAge);
+//     UNUSED(maxDepth);
+//     UNUSED(state);
+
+// }
+
+void WipeCache(const std::string &path, const double maxAge)
+{
+    if (path.empty())
+    {
+        ERROR("Won't wipe empty path!");
+        return;
+    }
+
+    CacheWiper wiper(path, maxAge);
+    wiper.Wipe();
+}
+
 
 /* ****************************************************************************************************************** */
 } // namespace Platform

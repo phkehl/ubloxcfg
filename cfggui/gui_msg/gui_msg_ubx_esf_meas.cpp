@@ -26,9 +26,21 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxEsfMeas::GuiMsgUbxEsfMeas(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
-    GuiMsg(receiver, logfile)
+GuiMsgUbxEsfMeas::GuiMsgUbxEsfMeas(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
+    GuiMsg(receiver, logfile),
+    _resetPlotRange { true },
+    _autoPlotRange  { true }
 {
+    _table.AddColumn("Measurement");
+    _table.AddColumn("Value", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Raw");
+    _table.AddColumn("Ttag sensor", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Ttag rx", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    //_table.AddColumn("Source"); // TODO: u-center shows "1" for source. What's that? Perhaps a);    _table.AddColumn("Provider");
+    _table.AddColumn("Provider");
+    _table.AddColumn("Count", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Age", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+
     Clear();
 }
 
@@ -37,7 +49,8 @@ GuiMsgUbxEsfMeas::GuiMsgUbxEsfMeas(std::shared_ptr<Receiver> receiver, std::shar
 void GuiMsgUbxEsfMeas::Clear()
 {
     _measInfos.clear();
-    _selected.clear();
+    _table.ClearRows();
+    _resetPlotRange = true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -48,24 +61,24 @@ void GuiMsgUbxEsfMeas::Clear()
 /*static*/ const std::vector<GuiMsgUbxEsfMeas::MeasDef> GuiMsgUbxEsfMeas::MEAS_DEFS =
 {
     /*  0 */ { "No data",                GuiMsgUbxEsfMeas::MeasDef::UNSIGNED, "", 0.0,  "" },
-    /*  1 */ { "Front wheel angle",      GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.3f", 1e-3, "deg" },
-    /*  2 */ { "Rear Wheel angle",       GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.3f", 1e-3, "deg" },
-    /*  3 */ { "Pitch",                  GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.3f", 1e-3, "deg" },
-    /*  4 */ { "Steering wheel angle",   GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.3f", 1e-3, "deg" },
-    /*  5 */ { "Gyroscope Z",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 2.44140625e-04 /* 2**-12 */, "deg/s" },
-    /*  6 */ { "Wheel tick FL",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f", 1.0,  "ticks" },
-    /*  7 */ { "Wheel tick FR",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f", 1.0,  "ticks" },
-    /*  8 */ { "Wheel tick RL",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f", 1.0,  "ticks" },
-    /*  9 */ { "Wheel tick RR",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f", 1.0,  "ticks" },
-    /* 10 */ { "Single tick",            GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f", 1.0,  "ticks" },
-    /* 11 */ { "Speed",                  GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.3f", 1e-3, "m/s" },
-    /* 12 */ { "Gyroscope temp.",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.2f", 1e-2, "C" },
-    /* 13 */ { "Gyroscope Y",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 2.44140625e-04 /* 2**-12 */, "deg/s" },
-    /* 14 */ { "Gyroscope X",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 2.44140625e-04 /* 2**-12 */, "deg/s" },
-    /* 15 */ { nullptr,                  GuiMsgUbxEsfMeas::MeasDef::UNSIGNED, "",     0.0, nullptr },
-    /* 16 */ { "Accelerometer X",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 9.765625e-4 /* 2**-10 */, "m/s^2" },
-    /* 17 */ { "Accelerometer Y",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 9.765625e-4 /* 2**-10 */, "m/s^2" },
-    /* 18 */ { "Accelerometer Z",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.4f", 9.765625e-4 /* 2**-10 */, "m/s^2" },
+    /*  1 */ { "Front wheel angle",      GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.3f",  1e-3, "deg" },
+    /*  2 */ { "Rear Wheel angle",       GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.3f",  1e-3, "deg" },
+    /*  3 */ { "Pitch",                  GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.3f",  1e-3, "deg" },
+    /*  4 */ { "Steering wheel angle",   GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.3f",  1e-3, "deg" },
+    /*  5 */ { "Gyroscope Z",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.4f",  0x1p-12 /*perl -e ' printf "%a", 2**-12' */, "deg/s" },
+    /*  6 */ { "Wheel tick FL",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f",   1.0,  "ticks" },
+    /*  7 */ { "Wheel tick FR",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f",   1.0,  "ticks" },
+    /*  8 */ { "Wheel tick RL",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f",   1.0,  "ticks" },
+    /*  9 */ { "Wheel tick RR",          GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f",   1.0,  "ticks" },
+    /* 10 */ { "Single tick",            GuiMsgUbxEsfMeas::MeasDef::TICK,     "%.0f",   1.0,  "ticks" },
+    /* 11 */ { "Speed",                  GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.3f",  1e-3, "m/s" },
+    /* 12 */ { "Gyroscope temp.",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%.2f",   1e-2, "C" },
+    /* 13 */ { "Gyroscope Y",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.4f",  0x1p-12 /*perl -e ' printf "%a", 2**-12' */, "deg/s" },
+    /* 14 */ { "Gyroscope X",            GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+.4f",  0x1p-12 /*perl -e ' printf "%a", 2**-12' */, "deg/s" },
+    /* 15 */ { nullptr,                  GuiMsgUbxEsfMeas::MeasDef::UNSIGNED, "",       0.0, nullptr },
+    /* 16 */ { "Accelerometer X",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+8.4f", 0x1p-10 /*perl -e ' printf "%a", 2**-10' */, "m/s^2" },
+    /* 17 */ { "Accelerometer Y",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+8.4f", 0x1p-10 /*perl -e ' printf "%a", 2**-10' */, "m/s^2" },
+    /* 18 */ { "Accelerometer Z",        GuiMsgUbxEsfMeas::MeasDef::SIGNED,   "%+8.4f", 0x1p-10 /*perl -e ' printf "%a", 2**-10' */, "m/s^2" },
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -108,26 +121,26 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
         auto *measDef = (dataType < (int)MEAS_DEFS.size()) && MEAS_DEFS[dataType].name ? &MEAS_DEFS[dataType] : nullptr;
 
-        // UID for this entry
-        const std::string uid = measDef ? measDef->name : std::to_string(dataType);
+        // (Unique) name for this entry
+        const std::string name = Ff::Sprintf("%s (%d)##%d", measDef ? measDef->name : "Unknown", dataType, dataType);
 
         // Find entry, create new one if necessary
         MeasInfo *info = nullptr;
-        auto entry = _measInfos.find(uid);
+        auto entry = _measInfos.find(name);
         if (entry != _measInfos.end())
         {
             info = &entry->second;
         }
         else
         {
-            auto foo = _measInfos.insert({ uid, MeasInfo() });
+            auto foo = _measInfos.insert({ name, MeasInfo() });
             info = &foo.first->second;
         }
 
         // Populate/update info
         info->nMeas++;
         info->lastTs   = msg->ts;
-        info->name     = Ff::Sprintf("%s (%d)", measDef ? measDef->name : "Unknown", dataType);
+        info->name     = name;
         info->rawHex   = Ff::Sprintf("0x%06x", dataField);
         info->ttagSens = Ff::Sprintf("%.3f", (double)head.timeTag * UBX_ESF_MEAS_V0_CALIBTTAG_SCALE);
         info->ttagRx   = calibTtagValid ? Ff::Sprintf("%.3f", (double)calibTtag * UBX_ESF_MEAS_V0_CALIBTTAG_SCALE) : "";
@@ -135,6 +148,7 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
         if (measDef)
         {
+            double value = 0.0f;
             switch (measDef->type)
             {
                 case MeasDef::SIGNED:
@@ -143,16 +157,19 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
                     struct { signed int x: 24; } s;
                     s.x = dataField;
                     const int32_t v = s.x;
-                    info->value = Ff::Sprintf(measDef->fmt, (double)v * measDef->scale);
+                    value = (double)v * measDef->scale;
+                    info->value = Ff::Sprintf(measDef->fmt, value);
                     break;
                 }
                 case MeasDef::UNSIGNED:
-                    info->value = Ff::Sprintf(measDef->fmt, (double)dataField * measDef->scale);
+                    value = (double)dataField * measDef->scale;
+                    info->value = Ff::Sprintf(measDef->fmt, value);
                     break;
                 case MeasDef::TICK:
                 {
                     const int32_t v = (int32_t)(dataField & 0x007fffff) * (CHKBITS(dataField, 0x00800000) ? -1 : 1);
-                    info->value = Ff::Sprintf(measDef->fmt, (double)v * measDef->scale);
+                    value = (double)v * measDef->scale;
+                    info->value = Ff::Sprintf(measDef->fmt, value);
                     break;
                 }
             }
@@ -161,10 +178,70 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
                 info->value += " ";
                 info->value += measDef->unit;
             }
+
+            info->plotData.push_back(value);
+            while (info->plotData.size() > MAX_PLOT_DATA)
+            {
+                info->plotData.pop_front();
+            }
         }
 
         UNUSED(timeMarkSent); // TODO
     }
+
+    _table.ClearRows();
+
+    for (auto &entry: _measInfos)
+    {
+        auto &info = entry.second;
+        _table.AddCellText(info.name);
+        _table.AddCellText(info.value);
+        _table.AddCellText(info.rawHex);
+        _table.AddCellText(info.ttagSens);
+        _table.AddCellText(info.ttagRx);
+        // _table.AddCellText(info.source);
+        _table.AddCellText(info.provider);
+        _table.AddCellTextF("%u", info.nMeas);
+        if (_receiver)
+        {
+            _table.AddCellCb([](void *arg)
+                {
+                    const float dt = (TIME() - ((MeasInfo *)arg)->lastTs) * 1e-3f;
+                    if (dt < 1000.0f)
+                    {
+                        ImGui::Text("%5.1f", dt);
+                    }
+                    else
+                    {
+                        ImGui::TextUnformatted("oo");
+                    }
+                }, &info);
+        }
+        else
+        {
+            _table.AddCellEmpty();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxEsfMeas::Buttons()
+{
+    ImGui::SameLine();
+
+    ImGui::BeginDisabled(_measInfos.empty() || _autoPlotRange);
+    if (ImGui::Button(ICON_FK_ARROWS_ALT "###ResetPlotRange"))
+    {
+        _resetPlotRange = true;
+    }
+    Gui::ItemTooltip("Reset plot range");
+    ImGui::EndDisabled();
+
+    ImGui::SameLine();
+    Gui::ToggleButton(ICON_FK_CROP "###AutoPlotRange", NULL, &_autoPlotRange,
+        "Automatically adjusting plot range", "Not automatically adjusting plot range", GuiSettings::iconSize);
+
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -172,68 +249,44 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
-    const uint32_t now = TIME();
 
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
+    const float tableReqHeight = (_table.GetNumRows() + 1) * (GuiSettings::charSize.y + GuiSettings::style->ItemSpacing.y + 2.0f);
+    FfVec2 tableSize { sizeAvail.x, (0.5f * sizeAvail.y) - GuiSettings::style->ItemSpacing.y };
+    if (tableSize.y > tableReqHeight)
     {
-        { .label = "Measurement",  .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Value",        .flags = 0 },
-        { .label = "Raw ",         .flags = 0 },
-        { .label = "Ttag sensor",  .flags = 0 },
-        { .label = "Ttag rx",      .flags = 0 },
-        //{ .label = "Source",       .flags = 0 }, // TODO: u-center shows "1" for source. What's that? Perhaps a u-center internal thing...
-        { .label = "Provider",     .flags = 0 },
-        { .label = "Count",        .flags = 0 },
-        { .label = "Age",          .flags = 0 },
-    };
+        tableSize.y = tableReqHeight;
+    }
 
-    if (ImGui::BeginTable("meas", NUMOF(columns), TABLE_FLAGS, sizeAvail))
+    _table.DrawTable(tableSize);
+
+    if (_resetPlotRange || _autoPlotRange)
     {
-        ImGui::TableSetupScrollFreeze(4, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
+        ImPlot::SetNextPlotLimitsX(0, MAX_PLOT_DATA, ImGuiCond_Always);
+        ImPlot::FitNextPlotAxes(false, true);
+        _resetPlotRange = false;
+    }
 
+    const ImPlotFlags plotFlags = ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs;
+    const ImPlotAxisFlags xAxisFlags = ImPlotAxisFlags_NoTickLabels;
+//    ImPlot:: SetNextPlotLimitsX(0, MAX_PLOT_DATA, ImGuiCond_Once);
+    if (ImPlot::BeginPlot("##meas", nullptr, nullptr,
+        ImVec2(sizeAvail.x, sizeAvail.y - tableSize.y - GuiSettings::style->ItemSpacing.y), plotFlags, xAxisFlags))
+    {
         for (auto &entry: _measInfos)
         {
-            int ix = 0;
-            auto &info = entry.second;
-            ImGui::TableNextRow();
-
-            ImGui::TableSetColumnIndex(ix++);
-            if (ImGui::Selectable(info.name.c_str(), _selected == entry.first, ImGuiSelectableFlags_SpanAllColumns))
+            if (!_table.IsSelected(entry.first))
             {
-                _selected = (_selected == entry.first ? 0 : entry.first);
+                continue;
             }
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.value.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.rawHex.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.ttagSens.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.ttagRx.c_str());
-
-            // ImGui::TableSetColumnIndex(ix++);
-            // ImGui::TextUnformatted(info.source.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.provider.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%u", info.nMeas);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
+            auto &info = entry.second;
+            ImPlot::PlotLineG(info.name.c_str(), [](void *arg, int ix)
+                {
+                    const std::deque<double> *pd = (const std::deque<double> *)arg;
+                    return ImPlotPoint( ix, pd->at(ix) );
+                }, &info.plotData, info.plotData.size());
         }
 
-        ImGui::EndTable();
+        ImPlot::EndPlot();
     }
 
     return true;

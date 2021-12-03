@@ -20,19 +20,18 @@
 
 #include <memory>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
 #include "gui_msg.hpp"
 
-/* ***** UBX-MON-VER renderer *************************************************************************************** */
+/* ***** UBX-NAV-COV renderer *************************************************************************************** */
 
 class GuiMsgUbxNavCov : public GuiMsg
 {
     public:
-        GuiMsgUbxNavCov(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxNavCov(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
-
-    protected:
 
     private:
 };

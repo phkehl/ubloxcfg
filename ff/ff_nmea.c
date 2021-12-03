@@ -168,7 +168,7 @@ bool nmeaMessageInfo(char *info, const int size, const uint8_t *msg, const int m
     }
 
     // For TXT the info is the text, with type stringified
-    if ( (msg[3] == 'T') && (msg[4] == 'X') && (msg[5] == 'T') )
+    if ( (msg[3] == 'T') && (msg[4] == 'X') && (msg[5] == 'T') && (msg[13] == '0') )
     {
         char other[5];
         const char *prefix = "";
@@ -179,6 +179,8 @@ bool nmeaMessageInfo(char *info, const int size, const uint8_t *msg, const int m
             case '0': prefix = "ERROR: ";   break;
             case '1': prefix = "WARNING: "; break;
             case '2': prefix = "NOTICE: ";  break;
+            case '3': prefix = "TEST: ";    break;
+            case '4': prefix = "DEBUG: ";   break;
             default:
                 other[0] = msg[13];
                 other[1] = msg[14];
@@ -314,7 +316,7 @@ static int sGetFields(const char **fields, const int maxFields, char *payload)
     const char *sep = ",";
     int nTok = 0;
     int nFields = 0;
-    for (char *tok = strsep(&payload, sep); tok != NULL; tok = strsep(&payload, sep))
+    for (char *save = NULL, *tok = strtok_r(payload, sep, &save); tok != NULL; tok = strtok_r(NULL, sep, &save))
     {
         nTok++;
         //NMEA_DEBUG("tok %d [%s]", nTok, tok);
@@ -508,7 +510,6 @@ static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
     {
         if (!sStrToInt(&gga->diffStation, fields[13], true, 0, false, 0))
         {
-            WARNING("ouch2");
             res = false;
         }
     }

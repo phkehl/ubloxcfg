@@ -23,18 +23,12 @@
 #include <chrono>
 
 #include <sys/time.h>
-
-#ifndef _WIN32
-#  include <sys/resource.h>
-#endif
-
-#include "IconsForkAwesome.h"
-
-#include "implot.h"
+#include <sys/resource.h>
 
 #include "platform.hpp"
-
 #include "config.h"
+
+#include "gui_inc.hpp"
 
 #include "gui_win_app.hpp"
 #include "gui_win_data.hpp"
@@ -101,14 +95,14 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     // -c <configfile>
     // ...
 
-    // Create settings instance, will be used by all windows
+    // Load settings
     _settingsFile = Platform::ConfigFile("cfggui.conf");
-    _settings = std::make_shared<GuiSettings>(_settingsFile);
+    _settings.LoadConf(_settingsFile);
 
     // Create application windows
     _appWindows.resize(_NUM_APP_WIN);
     _appWindows[APP_WIN_ABOUT]            = std::make_unique<GuiWinAppAbout>();
-    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinAppSettings>();
+    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinAppSettings>(std::bind(&GuiApp::_DrawSettingsEditor, this));
     _appWindows[APP_WIN_HELP]             = std::make_unique<GuiWinAppHelp>();
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
     _appWindows[APP_WIN_IMGUI_DEMO]       = std::make_unique<GuiWinAppImguiDemo>();
@@ -125,15 +119,17 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _appWindows[APP_WIN_LEGEND]           = std::make_unique<GuiWinAppLegend>();
 
     // Load settings
-    _settings->GetValue("App.debugWindow", _debugWinOpen, false);
-    _settings->GetValue("App.aboutWindow",    *_appWindows[APP_WIN_ABOUT]->GetOpenFlag(), false);
-    _settings->GetValue("App.settingsWindow", *_appWindows[APP_WIN_SETTINGS]->GetOpenFlag(), false);
-    _settings->GetValue("App.helpWindow",     *_appWindows[APP_WIN_HELP]->GetOpenFlag(), false);
-    _settings->GetValue("App.playWindow",     *_appWindows[APP_WIN_PLAY]->GetOpenFlag(), false);
-    _settings->GetValue("App.legendWindow",   *_appWindows[APP_WIN_LEGEND]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.debugWindow", _debugWinOpen, false);
+    GuiSettings::GetValue("App.settingsWindow",   *_appWindows[APP_WIN_SETTINGS]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.aboutWindow",      *_appWindows[APP_WIN_ABOUT]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.helpWindow",       *_appWindows[APP_WIN_HELP]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.playWindow",       *_appWindows[APP_WIN_PLAY]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.legendWindow",     *_appWindows[APP_WIN_LEGEND]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.experimentWindow", *_appWindows[APP_WIN_EXPERIMENT]->GetOpenFlag(), false);
+    _debugLog.SetSettings(GuiSettings::GetValue("App.debugLog"));
 
     // Load previous receiver and logfile windows
-    const std::vector<std::string> receiverWinNames = _settings->GetValueList("App.receiverWindows", ",", MAX_SAVED_WINDOWS);
+    const std::vector<std::string> receiverWinNames = GuiSettings::GetValueList("App.receiverWindows", ",", MAX_SAVED_WINDOWS);
     if (!receiverWinNames.empty())
     {
         for (auto &winName: receiverWinNames)
@@ -141,7 +137,7 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
             _CreateInputWindow("Receiver", _receiverWindows, winName);
         }
     }
-    const std::vector<std::string> logfileWinNames = _settings->GetValueList("App.logfileWindows", ",", MAX_SAVED_WINDOWS);
+    const std::vector<std::string> logfileWinNames = GuiSettings::GetValueList("App.logfileWindows", ",", MAX_SAVED_WINDOWS);
     if (!logfileWinNames.empty())
     {
         for (auto &winName: logfileWinNames)
@@ -152,38 +148,49 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
 
     // Say hello
     NOTICE("cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
+    GuiNotify::Notice("Hello, hello", "Good morning, good evening!");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 GuiApp::~GuiApp()
 {
+    DEBUG("GuiApp::~GuiApp()");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::Shutdown()
+{
     // Reconfigure debug output to terminal only
     debugSetup(&_debugCfgOrig);
 
-    DEBUG("GuiApp::~GuiApp()");
+    DEBUG("GuiApp::Shutdown()");
 
     // Remember some settings
-    _settings->SetValue("App.debugWindow", _debugWinOpen);
-    _settings->SetValue("App.aboutWindow",    _appWindows[APP_WIN_ABOUT]->IsOpen());
-    _settings->SetValue("App.settingsWindow", _appWindows[APP_WIN_SETTINGS]->IsOpen());
-    _settings->SetValue("App.helpWindow",     _appWindows[APP_WIN_HELP]->IsOpen());
-    _settings->SetValue("App.playWindow",     _appWindows[APP_WIN_PLAY]->IsOpen());
-    _settings->SetValue("App.legendWindow",   _appWindows[APP_WIN_LEGEND]->IsOpen());
+    GuiSettings::SetValue("App.debugWindow",      _debugWinOpen);
+    GuiSettings::SetValue("App.settingsWindow",   _appWindows[APP_WIN_SETTINGS]->IsOpen());
+    GuiSettings::SetValue("App.aboutWindow",      _appWindows[APP_WIN_ABOUT]->IsOpen());
+    GuiSettings::SetValue("App.helpWindow",       _appWindows[APP_WIN_HELP]->IsOpen());
+    GuiSettings::SetValue("App.playWindow",       _appWindows[APP_WIN_PLAY]->IsOpen());
+    GuiSettings::SetValue("App.legendWindow",     _appWindows[APP_WIN_LEGEND]->IsOpen());
+    GuiSettings::SetValue("App.experimentWindow", _appWindows[APP_WIN_EXPERIMENT]->IsOpen());
+    GuiSettings::SetValue("App.debugLog", _debugLog.GetSettings());
+
 
     std::vector<std::string> openReceiverWinNames;
     for (auto &receiver: _receiverWindows)
     {
         openReceiverWinNames.push_back(receiver->GetName());
     }
-    _settings->SetValueList("App.receiverWindows", openReceiverWinNames, ",", MAX_SAVED_WINDOWS);
+    GuiSettings::SetValueList("App.receiverWindows", openReceiverWinNames, ",", MAX_SAVED_WINDOWS);
 
     std::vector<std::string> openLogfileWinNames;
     for (auto &logfile: _logfileWindows)
     {
         openLogfileWinNames.push_back(logfile->GetName());
     }
-    _settings->SetValueList("App.logfileWindows", openLogfileWinNames, ",", MAX_SAVED_WINDOWS);
+    GuiSettings::SetValueList("App.logfileWindows", openLogfileWinNames, ",", MAX_SAVED_WINDOWS);
 
     // Destroy child windows, so that they can save their settings before we save the file below
     _appWindows.clear();
@@ -193,36 +200,36 @@ GuiApp::~GuiApp()
     // Save settings file
     if (_settingsFile.size() > 0)
     {
-        _settings->SaveConf(_settingsFile);
+        _settings.SaveConf(_settingsFile);
     }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-std::shared_ptr<GuiSettings> GuiApp::GetSettings()
-{
-    return _settings;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 bool GuiApp::PrepFrame()
 {
-    return _settings->_UpdateFont();
+    return _settings.UpdateFonts();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiApp::NewFrame()
 {
-    _settings->_UpdateSizes();
+    _settings.UpdateSizes();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 ImVec4 GuiApp::BackgroundColour()
 {
-    return ImGui::ColorConvertU32ToFloat4(_settings->colours[GuiSettings::APP_BACKGROUND]);
+    return ImGui::ColorConvertU32ToFloat4(GUI_COLOUR(APP_BACKGROUND));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::_DrawSettingsEditor()
+{
+    _settings.DrawSettingsEditor();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -245,6 +252,8 @@ void GuiApp::Loop()
     {
         win->Loop(frame, now);
     }
+
+    _notifications.Loop(now);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -294,11 +303,16 @@ void GuiApp::DrawFrame()
         }
     }
 
+    _perfData[Perf_e::CPU].Add(_statsCpu);
+
     // Debug window
     if (_debugWinOpen)
     {
         _DrawDebugWin();
     }
+
+    // Notifications
+    _notifications.Draw();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -367,9 +381,9 @@ void GuiApp::_MainMenu()
     if (ImGui::BeginMainMenuBar())
     {
         // Store menu bar height FIXME: is there a better way than doing this here for every frame?
-        _settings->menuBarHeight = ImGui::GetWindowSize().y;
+        _menuBarHeight = ImGui::GetWindowSize().y;
 
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, _settings->style.Colors[ImGuiCol_MenuBarBg]);
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, GuiSettings::style->Colors[ImGuiCol_MenuBarBg]);
 
         if (ImGui::BeginMenu(ICON_FK_HEART " Receiver"))
         {
@@ -382,9 +396,10 @@ void GuiApp::_MainMenu()
                 ImGui::Separator();
                 for (auto &receiverWin: _receiverWindows)
                 {
-                    if (ImGui::MenuItem(receiverWin->GetTitle().c_str()))
+                    if (ImGui::BeginMenu(receiverWin->GetTitle().c_str()))
                     {
-                        receiverWin->Focus();
+                        receiverWin->DataWinMenu();
+                        ImGui::EndMenu();
                     }
                 }
             }
@@ -402,9 +417,10 @@ void GuiApp::_MainMenu()
                 ImGui::Separator();
                 for (auto &logfileWin: _logfileWindows)
                 {
-                    if (ImGui::MenuItem(logfileWin->GetTitle().c_str()))
+                    if (ImGui::BeginMenu(logfileWin->GetTitle().c_str()))
                     {
-                        logfileWin->Focus();
+                        logfileWin->DataWinMenu();
+                        ImGui::EndMenu();
                     }
                 }
             }
@@ -413,12 +429,20 @@ void GuiApp::_MainMenu()
 
         if (ImGui::BeginMenu(ICON_FK_COG " Tools"))
         {
-            ImGui::MenuItem("About",       NULL, _appWindows[APP_WIN_ABOUT]->GetOpenFlag());
-            ImGui::MenuItem("Settings",    NULL, _appWindows[APP_WIN_SETTINGS]->GetOpenFlag());
-            ImGui::MenuItem("Help",        NULL, _appWindows[APP_WIN_HELP]->GetOpenFlag());
-            ImGui::MenuItem("Legend",      NULL, _appWindows[APP_WIN_LEGEND]->GetOpenFlag());
-            ImGui::MenuItem("Play",        NULL, _appWindows[APP_WIN_PLAY]->GetOpenFlag());
-            ImGui::MenuItem("Debug",       NULL, &_debugWinOpen);
+            const int toolMenuEntries[] =
+            {
+                APP_WIN_ABOUT, APP_WIN_SETTINGS, APP_WIN_HELP, APP_WIN_PLAY
+            };
+            for (int ix = 0; ix < NUMOF(toolMenuEntries); ix++)
+            {
+                auto &win = _appWindows[toolMenuEntries[ix]];
+                if (ImGui::MenuItem(win->GetName().c_str()))
+                {
+                    win->Open();
+                }
+            }
+            ImGui::Separator();
+            ImGui::MenuItem("Debug", NULL, &_debugWinOpen);
             ImGui::EndMenu();
         }
 
@@ -430,13 +454,11 @@ void GuiApp::_MainMenu()
         if (delta >= 1.0)
         {
             _statsLast = now;
-#ifndef _WIN32
             struct rusage usage;
             if (getrusage(RUSAGE_SELF, &usage) == 0)
             {
                 _statsRss = (float)usage.ru_maxrss / 1024.0f;
             }
-#endif
             struct timespec time;
             double cpu = 0.0;
             if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time) == 0)
@@ -445,7 +467,7 @@ void GuiApp::_MainMenu()
                     + ((double)(time.tv_nsec - _statsTime.tv_nsec) * 1e-9);
                 _statsTime = time;
             }
-            _statsCpu = 1e2 * cpu / delta;
+            _statsCpu = cpu / delta;
         }
 
         // Draw performance info
@@ -456,7 +478,7 @@ void GuiApp::_MainMenu()
             io.Framerate, // io.Framerate > FLT_EPSILON ? 1000.0f / io.Framerate : 0.0f,
             //io.DeltaTime > FLT_EPSILON ? 1.0 / io.DeltaTime : 0.0, io.DeltaTime * 1e3,
             ImGui::GetTime(), ImGui::GetFrameCount(),
-            _statsRss, _statsCpu);
+            _statsRss, _statsCpu * 1e2);
         const float w = ImGui::CalcTextSize(text).x + ImGui::GetStyle().WindowPadding.x;
         ImGui::SameLine(ImGui::GetWindowWidth() - w);
         ImGui::PushStyleColor(ImGuiCol_Text, io.DeltaTime < 99e-3 ? GUI_COLOUR(C_BRIGHTWHITE) : GUI_COLOUR(C_WHITE));
@@ -513,14 +535,14 @@ void GuiApp::_DrawDebugWin()
 {
     // Always position window at NE corner, constrain min/max size
     auto &io = ImGui::GetIO();
-    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, _settings->menuBarHeight), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-    ImGui::SetNextWindowSizeConstraints(ImVec2(500,200), ImVec2(io.DisplaySize.x, io.DisplaySize.y - _settings->menuBarHeight));
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, _menuBarHeight), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500,200), ImVec2(io.DisplaySize.x, io.DisplaySize.y - _menuBarHeight));
 
     // Style window (no border, no round corners, no alpha if focused/active, bg colour same as menubar)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, _debugWinDim ? 0.75f * _settings->style.Alpha : 1.0f);
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, _settings->style.Colors[ImGuiCol_MenuBarBg]);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, _debugWinDim ? 0.75f * GuiSettings::style->Alpha : 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, GuiSettings::style->Colors[ImGuiCol_MenuBarBg]);
 
     // Start window
     constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
@@ -545,7 +567,7 @@ void GuiApp::_DrawDebugWin()
             }
             if (ImGui::BeginTabItem("Tools"))
             {
-                const ImVec2 buttonSize { _settings->charSize.x * 20, 0 };
+                const ImVec2 buttonSize { GuiSettings::charSize.x * 20, 0 };
 
                 const struct { const char *label; int win; bool newline; } buttons[] =
                 {
@@ -576,10 +598,10 @@ void GuiApp::_DrawDebugWin()
                 }
 
                 ImGui::Separator();
-                ImGui::PushFont(_settings->fontMono);
+                ImGui::PushFont(GuiSettings::fontMono);
                 ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
                 ImGui::PopFont();
-                ImGui::PushFont(_settings->fontSans);
+                ImGui::PushFont(GuiSettings::fontSans);
                 ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
                 ImGui::PopFont();
                 ImGui::EndTabItem();
@@ -587,8 +609,8 @@ void GuiApp::_DrawDebugWin()
             if (ImGui::BeginTabItem("Perf"))
             {
                 const ImVec2 sizeAvail = ImGui::GetContentRegionAvail();
-                const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - _settings->style.ItemSpacing.y };
-                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * _settings->style.ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y - _settings->style.ItemSpacing.y };
+                const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - GuiSettings::style->ItemSpacing.y };
+                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * GuiSettings::style->ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y - GuiSettings::style->ItemSpacing.y };
 
                 const struct { const char *title; const char *label; enum Perf_e perf; } plots[] =
                 {
@@ -597,13 +619,14 @@ void GuiApp::_DrawDebugWin()
                     { "##Draw",         "Draw",          Perf_e::DRAW },
                     { "##RenderImGui",  "Render ImGui",  Perf_e::RENDER_IM },
                     { "##RenderOpenGL", "Render OpenGL", Perf_e::RENDER_IM },
+                    { "##Total",        "Total",         Perf_e::TOTAL },
+                    { "##CPU",          "CPU load",      Perf_e::CPU },
                 };
 
-                ImPlot::SetNextPlotLimitsY(0, 5, ImGuiCond_Once);
+                ImPlot::SetNextPlotLimitsY(0, 100, ImGuiCond_Once);
+                ImPlot::SetNextPlotLimitsX(0, _perfData[0].data.size(), ImGuiCond_Always);
                 if (ImPlot::BeginPlot("##Performance", nullptr, nullptr, plotSize1,
-                    ImPlotFlags_Crosshairs,
-                    ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoTickLabels,
-                    ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale))
+                    ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale))
                 {
                     ImPlot::SetLegendLocation(ImPlotLocation_South, ImPlotOrientation_Horizontal, true);
                     for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
@@ -613,30 +636,23 @@ void GuiApp::_DrawDebugWin()
                         ImPlot::PlotLineG(plots[plotIx].label, [](void *arg, int ix)
                             {
                                 const PerfData *perf = (PerfData *)arg;
-                                // TODO
-                                // int iix = perf->ix - perf->num + ix;
-                                // if (iix < 0)
-                                // {
-                                //     iix += perf->data.size();
-                                // }
-                                int iix = ix;
-                                return ImPlotPoint( iix, iix >= perf->num ? NAN : perf->data[iix] );
+                                return ImPlotPoint( ix, perf->data[ (perf->ix + ix) % perf->data.size() ] );
                             }, pd, pd->data.size());
                     }
-                    ImPlot::PlotVLines("##VLines", &_perfData[0].ix, 1);
                     ImPlot::EndPlot();
                 }
 
+                const ImPlotRange range; // (0.0, 2.0);
                 for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
                 {
                     if (ImPlot::BeginPlot(plots[plotIx].title, nullptr, nullptr, plotSize2,
                         ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend,
-                        ImPlotAxisFlags_AutoFit,
-                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines))
+                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks,
+                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks))
                     {
                         PerfData &pd = _perfData[plots[plotIx].perf];
                         ImPlot::SetNextFillStyle(ImPlot::GetColormapColor(plotIx));
-                        ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.num, ImPlotBin_Sturges);
+                        ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.data.size(), ImPlotBin_Sturges, false, false, range, true, 0.8);
                         ImPlot::EndPlot();
                     }
                     if (plotIx < (NUMOF(plots) - 1))
@@ -721,8 +737,12 @@ void GuiApp::_DrawDebugWin()
 // ---------------------------------------------------------------------------------------------------------------------
 
 GuiApp::PerfData::PerfData() :
-    data{0.0}, ix{0}, num{0}
+    ix{0}
 {
+    for (int i = 0; i < (int)data.size(); i++)
+    {
+        data[i] = NAN;
+    }
 }
 
 void GuiApp::PerfData::Tic()
@@ -733,14 +753,15 @@ void GuiApp::PerfData::Tic()
 void GuiApp::PerfData::Toc()
 {
     const auto t1 = std::chrono::system_clock::now();
-    std::chrono::duration<float, std::milli> dt = t1 - t0;
-    data[ix] = dt.count();
+    const std::chrono::duration<float, std::milli> dt = t1 - t0;
+    Add(dt.count());
+}
+
+void GuiApp::PerfData::Add(const float value)
+{
+    data[ix] = value;
     ix++;
     ix %= data.size();
-    if (num < (int)data.size())
-    {
-        num++;
-    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

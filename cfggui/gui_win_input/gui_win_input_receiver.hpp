@@ -26,7 +26,8 @@
 
 #include "ff_cpp.hpp"
 
-#include "receiver.hpp"
+#include "input_receiver.hpp"
+#include "gui_win_filedialog.hpp"
 #include "gui_win_input.hpp"
 
 /* ***** Receiver data input **************************************************************************************** */
@@ -43,7 +44,7 @@ class GuiWinInputReceiver : public GuiWinInput
 
     protected:
 
-        std::shared_ptr<Receiver> _receiver;
+        std::shared_ptr<InputReceiver> _receiver;
 
         std::string          _port;
         int                  _baudrate;
@@ -73,9 +74,11 @@ class GuiWinInputReceiver : public GuiWinInput
 
         void _DrawActionButtons() final;
         void _DrawControls() final;
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _ClearData() final;
         void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
+        void _LogOpen(const std::string &path);
+        void _LogClose();
 };
 
 /* ****************************************************************************************************************** */

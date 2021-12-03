@@ -24,8 +24,8 @@
 
 #include "imgui.h"
 
-#include "receiver.hpp"
-#include "logfile.hpp"
+#include "input_receiver.hpp"
+#include "input_logfile.hpp"
 #include "gui_settings.hpp"
 
 #include "ff_cpp.hpp"
@@ -35,7 +35,7 @@
 class GuiMsg
 {
     public:
-        GuiMsg(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsg(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         virtual void Update(const std::shared_ptr<Ff::ParserMsg> &msg);
         virtual void Buttons();
@@ -43,12 +43,11 @@ class GuiMsg
         virtual void Clear();
 
         static std::unique_ptr<GuiMsg> GetRenderer(const std::string &msgName,
-            std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+            std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
     protected:
-        std::shared_ptr<GuiSettings> _winSettings;
-        std::shared_ptr<Receiver>    _receiver;
-        std::shared_ptr<Logfile>     _logfile;
+        std::shared_ptr<InputReceiver>    _receiver;
+        std::shared_ptr<InputLogfile>     _logfile;
 
         static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
             ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |

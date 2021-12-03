@@ -15,22 +15,18 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __LOGFILE_HPP__
-#define __LOGFILE_HPP__
+#ifndef __INPUT_LOGFILE_HPP__
+#define __INPUT_LOGFILE_HPP__
 
 #include <memory>
 #include <string>
 #include <functional>
 #include <fstream>
-#include <thread>
 #include <mutex>
 #include <atomic>
 #include <queue>
-#include <condition_variable>
 
-#include "ff_parser.h"
-
-#include "data.hpp"
+#include "input.hpp"
 #include "database.hpp"
 
 /* ****************************************************************************************************************** */
@@ -38,14 +34,13 @@
 struct LogfileEvent;
 struct LogfileCommand;
 
-class Logfile
+class InputLogfile : public Input
 {
     public:
-        Logfile(const std::string &name, std::shared_ptr<Database> database);
-       ~Logfile();
+        InputLogfile(const std::string &name, std::shared_ptr<Database> database);
+       ~InputLogfile();
 
-        void SetDataCb(std::function<void(const Data &)> cb);
-        void Loop(const double &now);
+        void Loop(const double &now) final;
 
         bool Open(const std::string &path);
         void Close();
@@ -75,9 +70,6 @@ class Logfile
     protected:
 
     private:
-        std::string _name;
-        std::shared_ptr<Database> _database;
-        std::function<void(const Data &)> _dataCb;
 
         // Shared between main thread and logfile thread
         std::queue< std::unique_ptr<LogfileEvent> > _eventQueue;
@@ -91,20 +83,15 @@ class Logfile
         enum State_e { CLOSED, STOPPED, PLAYING, PAUSED };
         std::atomic<enum State_e>      _playState;
 
-        // Fake a semaphore to wake up sleeping player thread
-        std::mutex                     _playThreadMutex;
-        std::condition_variable        _playThreadCondVar;
-
-        // Logfile player thread
+        // InputLogfile player thread
         std::string                    _logfilePath;
         std::unique_ptr<std::ifstream> _logfileHandle;
-        std::unique_ptr<std::thread>   _playThread;
-        std::atomic<bool>              _playThreadAbort;
-        PARSER_t                       _playParser;
+
         static constexpr uint32_t      EVENT_QUEUE_MAX_SIZE = 1000; // FIXME: ??
-        void _LogfileThreadWrap();
-        void _LogfileThread();
+        void _ThreadPrepare() final;
+        void _Thread() final;
+        void _ThreadCleanup() final;
 };
 
 /* ****************************************************************************************************************** */
-#endif // __LOGFILE_HPP__
+#endif // __INPUT_LOGFILE_HPP__

@@ -20,7 +20,10 @@
 
 #include <memory>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-MON-HW3 renderer *************************************************************************************** */
@@ -28,8 +31,9 @@
 class GuiMsgUbxMonHw3 : public GuiMsg
 {
     public:
-        GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxMonHw3(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
+        void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
 
     private:
@@ -38,6 +42,7 @@ class GuiMsgUbxMonHw3 : public GuiMsg
         static const std::vector<StatusFlags> _xtalFlags;
         static const std::vector<StatusFlags> _safebootFlags;
 
+        GuiWidgetTable _table;
 };
 
 /* ****************************************************************************************************************** */

@@ -43,6 +43,8 @@ namespace Gui
 
     void TextLink(const char *url, const char *text = nullptr);
     bool ClickableText(const char *text);
+
+    bool ToggleButton(const char *label, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff, const ImVec2 &size = ImVec2(0, 0));
 };
 
 /* ****************************************************************************************************************** */

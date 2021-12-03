@@ -26,7 +26,7 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxMonRf::GuiMsgUbxMonRf(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxMonRf::GuiMsgUbxMonRf(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile)
 {
 }
@@ -75,8 +75,8 @@ void GuiMsgUbxMonRf::Clear()
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_aStatusFlags =
 {
-    { UBX_MON_RF_V0_ANTSTATUS_INIT,     "init",           GUI_COLOUR(C_NONE) },
-    { UBX_MON_RF_V0_ANTSTATUS_DONTKNOW, "unknown",        GUI_COLOUR(C_NONE) },
+    { UBX_MON_RF_V0_ANTSTATUS_INIT,     "init",           GUI_COLOUR_NONE },
+    { UBX_MON_RF_V0_ANTSTATUS_DONTKNOW, "unknown",        GUI_COLOUR_NONE },
     { UBX_MON_RF_V0_ANTSTATUS_OK,       "OK",             GUI_COLOUR(TEXT_OK) },
     { UBX_MON_RF_V0_ANTSTATUS_SHORT,    "short",          GUI_COLOUR(TEXT_WARNING) },
     { UBX_MON_RF_V0_ANTSTATUS_OPEN,     "open",           GUI_COLOUR(TEXT_WARNING)  },
@@ -84,14 +84,14 @@ void GuiMsgUbxMonRf::Clear()
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_aPowerFlags =
 {
-    { UBX_MON_HW_V0_APOWER_OFF,       "off",            GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_APOWER_OFF,       "off",            GUI_COLOUR_NONE },
     { UBX_MON_HW_V0_APOWER_ON,        "on",             GUI_COLOUR(TEXT_OK) },
-    { UBX_MON_HW_V0_APOWER_UNKNOWN,   "unknown",        GUI_COLOUR(C_NONE) },
+    { UBX_MON_HW_V0_APOWER_UNKNOWN,   "unknown",        GUI_COLOUR_NONE },
 };
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonRf::_jammingFlags =
 {
-    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_UNKN,   "unknown",   GUI_COLOUR(C_NONE) },
+    { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_UNKN,   "unknown",   GUI_COLOUR_NONE },
     { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_OK,     "ok",        GUI_COLOUR(TEXT_OK) },
     { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_WARN,   "warning",   GUI_COLOUR(TEXT_WARNING) },
     { UBX_MON_RF_V0_FLAGS_JAMMINGSTATE_CRIT,   "critical",  GUI_COLOUR(TEXT_ERROR) },
@@ -106,13 +106,13 @@ bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfV
         return false;
     }
 
-    const ImVec2 blockSize { 0.5f * (sizeAvail.x - _winSettings->style.ItemSpacing.x), sizeAvail.y };
+    const ImVec2 blockSize { 0.5f * (sizeAvail.x - GuiSettings::style->ItemSpacing.x), sizeAvail.y };
 
     UBX_MON_RF_V0_GROUP0_t rf;
     std::memcpy(&rf, &msg->data[UBX_HEAD_SIZE], sizeof(rf));
     const int nBlocks = CLIP(rf.nBlocks, 0, 3);
 
-    const float dataOffs = _winSettings->charSize.x * 16;
+    const float dataOffs = GuiSettings::charSize.x * 16;
 
     for (int blockIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_MON_RF_V0_GROUP0_t); blockIx < nBlocks;
             blockIx++, offs += (int)sizeof(UBX_MON_RF_V0_GROUP1_t))

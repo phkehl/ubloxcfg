@@ -22,12 +22,6 @@
 #include <cinttypes>
 #include <string>
 
-#ifdef _WIN32
-#  ifndef NOGDI
-#    define NOGDI
-#  endif
-#endif
-
 #include "imgui.h"
 
 #include "gui_settings.hpp"
@@ -55,8 +49,6 @@ class GuiWin
 
         virtual void         DrawWindow();
 
-        bool                 ToggleButton(const char *label, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff);
-
     protected:
 
         std::string          _winTitle;
@@ -69,7 +61,6 @@ class GuiWin
         ImVec2               _winSizeMin;
         uint64_t             _winUid;
         std::string          _winUidStr;
-        std::shared_ptr<GuiSettings> _winSettings;
         std::unique_ptr<ImGuiWindowClass> _winClass;
 
         bool                 _DrawWindowBegin();
@@ -80,6 +71,9 @@ class GuiWin
             ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
              ImGuiTableFlags_ScrollY;
 
+        static const std::vector<FfVec2> NEW_WIN_POS;
+        static int _newWinPosIx;
+        FfVec2     _newWinInitPos;
 
     private:
 };

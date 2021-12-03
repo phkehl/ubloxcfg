@@ -20,6 +20,9 @@
 
 #include "ff_stuff.h"
 
+#include "GL/gl3w.h"
+#include "nanovg.h"
+
 #include "gui_inc.hpp"
 
 #include "gui_win_experiment.hpp"
@@ -29,7 +32,8 @@
 GuiWinExperiment::GuiWinExperiment() :
     GuiWin("Experiments"),
     _openFileDialog{_winName + "OpenFileDialog"},
-    _saveFileDialog{_winName + "SaveFileDialog"}
+    _saveFileDialog{_winName + "SaveFileDialog"},
+    _running{false}
 {
     _winSize = { 100, 50 };
     _winFlags |= ImGuiWindowFlags_NoDocking;
@@ -44,6 +48,33 @@ void GuiWinExperiment::DrawWindow()
         return;
     }
 
+    if (ImGui::BeginTabBar("Tabs"))
+    {
+        if (ImGui::BeginTabItem("GuiWinFileDialog"))
+        {
+            _DrawGuiWinFileDialog();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("GuiWidgetOpenGl"))
+        {
+            _DrawGuiWidgetOpenGl();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("GuiNotify"))
+        {
+            _DrawGuiNotify();
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+
+    _DrawWindowEnd();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinExperiment::_DrawGuiWinFileDialog()
+{
     if (ImGui::Button("Open a file..."))
     {
         if (!_openFileDialog.IsInit())
@@ -67,7 +98,7 @@ void GuiWinExperiment::DrawWindow()
             _saveFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
             _saveFileDialog.SetFilename("saveme.txt");
             _saveFileDialog.SetTitle("blablabla...");
-            //_saveFileDialog->ConfirmOverwrite(false);
+            //_saveFileDialog->SetConfirmOverwrite(false);
         }
         else
         {
@@ -94,8 +125,88 @@ void GuiWinExperiment::DrawWindow()
             DEBUG("save file done");
         }
     }
+}
 
-    _DrawWindowEnd();
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinExperiment::_DrawGuiWidgetOpenGl()
+{
+    // https://learnopengl.com/Advanced-OpenGL/Framebuffers
+
+    if (ImGui::Button(_running ? "stop##running" : "start##running"))
+    {
+        if (!_running)
+        {
+            _running = true;
+        }
+        else
+        {
+            _running = false;
+        }
+    }
+
+    if (_running)
+    {
+        if (_gl.BeginDraw())
+        {
+            NVGcontext *vg = (NVGcontext *)_gl.NanoVgBeginFrame();
+
+            nvgBeginPath(vg);
+            nvgRect(vg, 100,100, 120,30);
+            nvgFillColor(vg, nvgRGBA(255,192,0,255));
+            nvgFill(vg);
+
+            _gl.NanoVgDebug();
+
+            _gl.NanoVgEndFrame();
+
+            // more OpenGL here...
+
+            _gl.EndDraw();
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinExperiment::_DrawGuiNotify()
+{
+    if (ImGui::Button("Notice: title, text"))
+    {
+        GuiNotify::Notice("Hear, hear!", "blabla");
+    }
+    if (ImGui::Button("Notice: title, no text"))
+    {
+        GuiNotify::Notice("Hear, hear!", "");
+    }
+    if (ImGui::Button("Error: title, text"))
+    {
+        GuiNotify::Error("Ouch!", "blabla");
+    }
+    if (ImGui::Button("Warning: no title, text"))
+    {
+        GuiNotify::Warning("", "blabla", 10);
+    }
+    if (ImGui::Button("Success: title, looooong text"))
+    {
+        GuiNotify::Success("That worked!", "blabla blabla blabla blablablablablablablablablablablablablablablablablablablabla blabla blabla blabla blabla blabla blabla blabla blablablabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blablablabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla blabla");
+    }
+    if (ImGui::Button("Message: title, no text"))
+    {
+        GuiNotify::Message("message", "");
+    }
+    if (ImGui::Button("Message: title, text"))
+    {
+        GuiNotify::Message("message", "text");
+    }
+    if (ImGui::Button("Message: no title, text"))
+    {
+        GuiNotify::Message("", "message");
+    }
+    if (ImGui::Button("Warning: no title, no text"))
+    {
+        GuiNotify::Warning("", "");
+    }
 }
 
 /* ****************************************************************************************************************** */

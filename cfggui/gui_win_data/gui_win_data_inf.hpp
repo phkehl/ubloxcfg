@@ -27,10 +27,11 @@ class GuiWinDataInf : public GuiWinData
 {
     public:
         GuiWinDataInf(const std::string &name, std::shared_ptr<Database> database);
+       ~GuiWinDataInf();
 
     protected:
 
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawToolbar() final;
         void _DrawContent() final;
         void _ClearData() final;

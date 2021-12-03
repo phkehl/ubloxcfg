@@ -1861,7 +1861,7 @@ void ShowPlotContextMenu(ImPlotPlot& plot) {
         if (i == 2 && !ImHasFlag(plot.Flags, ImPlotFlags_YAxis3)) {
             continue;
         }
-        char buf[10] = {};
+        char buf[50] = {};
         if (i == 0) {
             snprintf(buf, sizeof(buf) - 1, "Y-Axis");
         } else {

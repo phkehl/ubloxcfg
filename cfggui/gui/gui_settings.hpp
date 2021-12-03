@@ -40,63 +40,66 @@
 class GuiSettings
 {
     public:
-        GuiSettings(const std::string &cfgFile);
+
+        // ---- Main control instance -----
+
+        GuiSettings();
        ~GuiSettings();
 
         void LoadConf(const std::string &file);
         void SaveConf(const std::string &file);
 
+        bool UpdateFonts();
+        bool UpdateSizes();
+        void DrawSettingsEditor();
+
+        // ---- Globally available functions and variables
+        //      (read-only, resp. set/updated at run-time by the control instance ) -----
+
         // Generic settings storage
-        void SetValue(const std::string &key, const bool     value);
-        void SetValue(const std::string &key, const int      value);
-        void SetValue(const std::string &key, const uint32_t value);
-        void SetValue(const std::string &key, const float    value);
-        void SetValue(const std::string &key, const double   value);
-        void SetValue(const std::string &key, const std::string &value);
-        void SetValueMult(const std::string &key, const std::vector<std::string> &list, const int maxNum);
-        void SetValueList(const std::string &key, const std::vector<std::string> &list, const std::string &sep, const int maxNum);
-        void GetValue(const std::string &key, bool     &value, const bool     def);
-        void GetValue(const std::string &key, int      &value, const int      def);
-        void GetValue(const std::string &key, uint32_t &value, const uint32_t def);
-        void GetValue(const std::string &key, float    &value, const float    def);
-        void GetValue(const std::string &key, double   &value, const double   def);
-        void GetValue(const std::string &key, std::string &value, const std::string &def);
-        std::string GetValue(const std::string &key);
-        std::vector<std::string> GetValueMult(const std::string &key, const int maxNum);
-        std::vector<std::string> GetValueList(const std::string &key, const std::string &sep, const int maxNum);
+        static void SetValue(const std::string &key, const bool     value);
+        static void SetValue(const std::string &key, const int      value);
+        static void SetValue(const std::string &key, const uint32_t value);
+        static void SetValue(const std::string &key, const float    value);
+        static void SetValue(const std::string &key, const double   value);
+        static void SetValue(const std::string &key, const std::string &value);
+        static void SetValueMult(const std::string &key, const std::vector<std::string> &list, const int maxNum);
+        static void SetValueList(const std::string &key, const std::vector<std::string> &list, const std::string &sep, const int maxNum);
+        static void GetValue(const std::string &key, bool     &value, const bool     def);
+        static void GetValue(const std::string &key, int      &value, const int      def);
+        static void GetValue(const std::string &key, uint32_t &value, const uint32_t def);
+        static void GetValue(const std::string &key, float    &value, const float    def);
+        static void GetValue(const std::string &key, double   &value, const double   def);
+        static void GetValue(const std::string &key, std::string &value, const std::string &def);
+        static std::string GetValue(const std::string &key);
+        static std::vector<std::string> GetValueMult(const std::string &key, const int maxNum);
+        static std::vector<std::string> GetValueList(const std::string &key, const std::string &sep, const int maxNum);
 
         // Font
-        float                fontSize;
-        ImFont              *fontMono; // default
-        ImFont              *fontSans;
+        static float     fontSize; // Current font size
+        static ImFont   *fontMono; // Default monospace font
+        static ImFont   *fontSans; // Alternative font
+        static FfVec2    charSize; // Char size (of a fontMono character)
+        static FfVec2    iconSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
 
         // Colours
         enum Colour_e : int { _DUMMY = -1, GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_ENUM) _NUM_COLOURS };
-        static ImU32         colours[_NUM_COLOURS]; // use GUI_COLOUR() macro to access
-
-        // GNSS fix colour
-        ImU32                GetFixColour(const EPOCH_t *epoch);
+        static ImU32 colours[_NUM_COLOURS]; // See GUI_SETTINGS_COLOURS (and GUI_COLOUR_NONE), use GUI_COLOUR() macro to access
+        static ImU32 GetFixColour(const EPOCH_t *epoch); // GNSS fix colour
 
         // Paths
-        std::string          cachePath;
+        static std::string cachePath;
 
         // Maps
-        std::vector<MapParams> maps;
+        static std::vector<MapParams> maps;
 
         // Helpers
-        float                menuBarHeight;  // Height of main window menu bar (and probably any other menu bar...)
-        ImVec2               iconButtonSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
-        ImGuiStyle          &style;          // Shortcut to ImGui styles
-        ImVec2               charSize;       // Char size (of a fontMono character)
-        ImPlotStyle         &plotStyle;      // Shortcut to ImPlot styles
-
-        // See main()
-        bool                 _UpdateFont();
-        bool                 _UpdateSizes();
-
-        void                 _DrawSettingsEditor(); // for GuiWinSettings
+        static const ImGuiStyle   *style;     // Shortcut to ImGui styles
+        static const ImPlotStyle  *plotStyle; // Shortcut to ImPlot styles
 
     private:
+
+        // For DrawSettingsEditor(), LoadConf(), SaveConf()
         static const char * const COLOUR_LABELS[_NUM_COLOURS];
         static const char * const COLOUR_NAMES[_NUM_COLOURS];
         static ImU32              COLOUR_DEFAULTS[_NUM_COLOURS];
@@ -117,11 +120,13 @@ class GuiSettings
         static constexpr float    FT_RASTERIZER_MULTIPLY_MIN = 0.2f;
         static constexpr float    FT_RASTERIZER_MULTIPLY_MAX = 2.0f;
 
-        Ff::ConfFile              _confFile;
+        static Ff::ConfFile       _confFile;
         bool                      _clearSettingsOnExit;
 };
 
 #define GUI_COLOUR(which) GuiSettings::colours[GuiSettings::which]
+#define GUI_COLOUR_NONE   IM_COL32(0x00, 0x00, 0x00, 0x00)
+
 
 /* ****************************************************************************************************************** */
 #endif // __GUI_SETTINGS_HPP__

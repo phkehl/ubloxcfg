@@ -30,15 +30,37 @@ GuiWidgetFilter::GuiWidgetFilter(const std::string help) :
     _filterCaseSensitive{false},
     _filterHighlight{false},
     _filterInvert{false},
+    _filterChanged{true},
     _filterHelp(help)
 {
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+std::string GuiWidgetFilter::GetFilterSettings()
+{
+    return Ff::Sprintf("%d:%d:%d:%s",
+        _filterCaseSensitive ? 1 : 0, _filterHighlight ? 1 : 0, _filterInvert ? 1 : 0, _filterStr.c_str());
+}
+
+void GuiWidgetFilter::SetFilterSettings(const std::string &settings)
+{
+    const auto set = Ff::StrSplit(settings, ":", 4);
+    if (set.size() == 4)
+    {
+        _filterCaseSensitive = (set[0] == "1");
+        _filterHighlight     = (set[1] == "1");
+        _filterInvert        = (set[2] == "1");
+        _filterStr = set[3];
+        _filterChanged = true;
+    }
+    _UpdateFilter();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 bool GuiWidgetFilter::DrawWidget(const float width)
 {
-    bool filterChanged = false;
     ImGui::PushID(this);
 
     // Filter menu button
@@ -52,22 +74,22 @@ bool GuiWidgetFilter::DrawWidget(const float width)
         if (ImGui::MenuItem("Clear filter", NULL, false, _filterStr[0] != '\0'))
         {
             _filterStr[0] = '\0';
-            filterChanged = true;
+            _filterChanged = true;
         }
 
         ImGui::Separator();
 
         if (ImGui::Checkbox("Filter case sensitive", &_filterCaseSensitive))
         {
-            filterChanged = true;
+            _filterChanged = true;
         }
         if (ImGui::Checkbox("Filter highlights", &_filterHighlight))
         {
-            filterChanged = true;
+            _filterChanged = true;
         }
         if (ImGui::Checkbox("Invert match", &_filterInvert))
         {
-            filterChanged = true;
+            _filterChanged = true;
         }
 
         if (_filterHelp.size() > 0)
@@ -89,7 +111,7 @@ bool GuiWidgetFilter::DrawWidget(const float width)
     ImGui::PushItemWidth(width);
     if (ImGui::InputTextWithHint("##Filter", "Filter (regex)", &_filterStr))
     {
-        filterChanged = true;
+        _filterChanged = true;
     }
     ImGui::PopItemWidth();
     if (_filterState == FILTER_BAD)
@@ -109,9 +131,10 @@ bool GuiWidgetFilter::DrawWidget(const float width)
 
     // Let caller know if the filter has changed
     const double now = ImGui::GetTime();
-    if (filterChanged)
+    if (_filterChanged)
     {
         _filterUpdated = now;
+        _filterChanged = false;
     }
     else
     {
@@ -198,6 +221,13 @@ bool GuiWidgetFilter::IsActive()
 bool GuiWidgetFilter::IsHighlight()
 {
     return _filterHighlight;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetFilter::SetHightlight(const bool highlight)
+{
+    _filterHighlight = highlight;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

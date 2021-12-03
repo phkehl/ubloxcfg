@@ -22,7 +22,10 @@
 #include <map>
 #include <cstdint>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-RXM-RTCM renderer ************************************************************************************** */
@@ -30,13 +33,13 @@
 class GuiMsgUbxRxmRtcm : public GuiMsg
 {
     public:
-        GuiMsgUbxRxmRtcm(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxRxmRtcm(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
-    protected:
+    private:
 
         struct RtcmInfo
         {
@@ -45,6 +48,7 @@ class GuiMsgUbxRxmRtcm : public GuiMsg
             int         msgType;
             int         subType;
             int         refStation;
+            uint32_t    uid;
             uint32_t    nUsed;
             uint32_t    nUnused;
             uint32_t    nUnknown;
@@ -54,8 +58,7 @@ class GuiMsgUbxRxmRtcm : public GuiMsg
         };
 
         std::map<uint32_t, RtcmInfo> _rtcmInfos;
-
-    private:
+        GuiWidgetTable _table;
 };
 
 /* ****************************************************************************************************************** */

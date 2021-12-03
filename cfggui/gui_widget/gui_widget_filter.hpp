@@ -24,17 +24,22 @@
 
 /* ****************************************************************************************************************** */
 
-struct GuiWidgetFilter
+class GuiWidgetFilter
 {
-    GuiWidgetFilter(const std::string help = "");
+    public:
+        GuiWidgetFilter(const std::string help = "");
 
-    bool        DrawWidget(const float width = -1.0f);
-    bool        Match(const std::string &str);
-    bool        IsActive();
-    bool        IsHighlight();
-    void        SetUserMsg(const std::string &msg);
-    std::string GetFilterStr();
-    void        SetFilterStr(const std::string &str);
+        bool        DrawWidget(const float width = -1.0f);
+        bool        Match(const std::string &str);
+        bool        IsActive();
+        bool        IsHighlight();
+        void        SetHightlight(const bool highlight = true);
+        void        SetUserMsg(const std::string &msg);
+        std::string GetFilterStr();
+        void        SetFilterStr(const std::string &str);
+
+        std::string GetFilterSettings();
+        void        SetFilterSettings(const std::string &settings);
 
     protected:
         enum FILTER_e { FILTER_NONE, FILTER_BAD, FILTER_OK };
@@ -46,6 +51,7 @@ struct GuiWidgetFilter
         bool                 _filterCaseSensitive;
         bool                 _filterHighlight;
         bool                 _filterInvert;
+        bool                 _filterChanged;
         std::unique_ptr<std::regex> _filterRegex;
         bool                 _filterMatch;
         std::string          _filterHelp;

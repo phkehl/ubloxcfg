@@ -41,14 +41,14 @@ GuiWinData::~GuiWinData()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::SetReceiver(std::shared_ptr<Receiver> receiver)
+void GuiWinData::SetReceiver(std::shared_ptr<InputReceiver> receiver)
 {
     _receiver = receiver;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::SetLogfile(std::shared_ptr<Logfile> logfile)
+void GuiWinData::SetLogfile(std::shared_ptr<InputLogfile> logfile)
 {
     _logfile = logfile;
 }
@@ -78,9 +78,9 @@ void GuiWinData::_Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinData::ProcessData(const Data &data)
+void GuiWinData::ProcessData(const InputData &data)
 {
-    if ( _latestEpochEna && (data.type == Data::Type::DATA_EPOCH) )
+    if ( _latestEpochEna && (data.type == InputData::DATA_EPOCH) )
     {
         _latestEpoch = data.epoch;
         _latestEpochTs = (double)data.epoch->epoch.ts * 1e-3;
@@ -88,7 +88,7 @@ void GuiWinData::ProcessData(const Data &data)
     _ProcessData(data);
 }
 
-void GuiWinData::_ProcessData(const Data &data)
+void GuiWinData::_ProcessData(const InputData &data)
 {
     UNUSED(data);
 }
@@ -118,7 +118,7 @@ void GuiWinData::DrawWindow()
     if (_toolbarEna)
     {
         // Clear
-        if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ERASER "##Clear", GuiSettings::iconSize))
         {
             ClearData();
         }
@@ -129,7 +129,7 @@ void GuiWinData::DrawWindow()
         // Age of latest epoch
         if (_latestEpochEna && _receiver && !_receiver->IsIdle())
         {
-                ImGui::SameLine(ImGui::GetContentRegionAvail().x - (4 * _winSettings->charSize.x));
+                ImGui::SameLine(ImGui::GetContentRegionAvail().x - (4 * GuiSettings::charSize.x));
             ImGui::AlignTextToFramePadding();
             if (_latestEpoch)
             {

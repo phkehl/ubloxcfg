@@ -40,7 +40,7 @@ class GuiWinDataMessages : public GuiWinData
     protected:
 
         void _Loop(const uint32_t &frame, const double &now) final;
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;
 
@@ -50,26 +50,29 @@ class GuiWinDataMessages : public GuiWinData
 
         struct MsgInfo
         {
-            MsgInfo(std::unique_ptr<GuiMsg> _renderer);
+            MsgInfo(const std::string &_name, std::unique_ptr<GuiMsg> _renderer);
             void Clear();
             void Update(const std::shared_ptr<Ff::ParserMsg> &_msg);
+            std::string name;
+            std::string group;
+            uint64_t    groupId;
             std::shared_ptr<Ff::ParserMsg> msg;
-            uint32_t count;
-            uint32_t dt[30];
-            int      dtIx;
-            float    rate;
-            float    age;
-            bool     flag;
+            uint32_t    count;
+            uint32_t    dt[30];
+            int         dtIx;
+            float       rate;
+            float       age;
+            bool        flag;
             std::vector<std::string> hexdump;
             std::unique_ptr<GuiMsg> renderer;
         };
 
-        using msgsMap_t = std::map< std::string, MsgInfo >;
+        using MsgsMap_t = std::map< std::string, MsgInfo >;
 
-        msgsMap_t           _messages;
-        msgsMap_t::iterator _selectedEntry;
+        MsgsMap_t           _messages;
+        MsgsMap_t::iterator _selectedEntry;
         std::string         _selectedName;
-        msgsMap_t::iterator _displayedEntry;
+        MsgsMap_t::iterator _displayedEntry;
         double   _nowIm;
         uint32_t _nowTs;
         std::vector<std::string> _classNames;

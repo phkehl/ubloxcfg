@@ -25,10 +25,15 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxRxmSfrbx::GuiMsgUbxRxmSfrbx(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
-    GuiMsg(receiver, logfile),
-    _selected{0}
+GuiMsgUbxRxmSfrbx::GuiMsgUbxRxmSfrbx(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
+    GuiMsg(receiver, logfile)
 {
+    _table.AddColumn("SV");
+    _table.AddColumn("Signal");
+    _table.AddColumn("Age");
+    _table.AddColumn("Nav msg");
+    _table.AddColumn("Words");
+    _table.SetTableScrollFreeze(2, 1);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -70,6 +75,7 @@ void GuiMsgUbxRxmSfrbx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             auto foo = _sfrbxInfos.insert({ uid, SfrbxInfo(sfrbx.gnssId, sfrbx.svId, sfrbx.sigId, sfrbx.freqId) });
             info = &foo.first->second;
+            info->uid = uid;
         }
 
         const uint32_t *dwrds = (uint32_t *)&msg->data[UBX_HEAD_SIZE + sizeof(sfrbx)];
@@ -85,6 +91,39 @@ void GuiMsgUbxRxmSfrbx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
         info->lastTs = msg->ts;
     }
+    else
+    {
+        return;
+    }
+
+    _table.ClearRows();
+    for (auto &entry: _sfrbxInfos)
+    {
+        auto &info = entry.second;
+        _table.AddCellText(info.svStr + "##" + std::to_string(info.uid));
+        _table.AddCellText(info.sigStr);
+        if (_receiver)
+        {
+            _table.AddCellCb([](void *arg)
+                {
+                    const float dt = (TIME() - ((SfrbxInfo *)arg)->lastTs) * 1e-3f;
+                    if (dt < 1000.0f)
+                    {
+                        ImGui::Text("%5.1f", dt);
+                    }
+                    else
+                    {
+                        ImGui::TextUnformatted("oo");
+                    }
+                }, &info);
+        }
+        else
+        {
+            _table.AddCellEmpty();
+        }
+        _table.AddCellText(info.navMsg);
+        _table.AddCellText(info.dwrdsHex);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -92,7 +131,7 @@ void GuiMsgUbxRxmSfrbx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 void GuiMsgUbxRxmSfrbx::Clear()
 {
     _sfrbxInfos.clear();
-    _selected = 0;
+    _table.ClearRows();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -100,56 +139,8 @@ void GuiMsgUbxRxmSfrbx::Clear()
 bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
     UNUSED(msg);
-    const uint32_t now = TIME();
 
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "SV  ",    .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Signal",  .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Age ",    .flags = 0 },
-        { .label = "Nav msg", .flags = 0 },
-        { .label = "Words",   .flags = ImGuiTableColumnFlags_NoHeaderWidth },
-    };
-
-    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail))
-    {
-        ImGui::TableSetupScrollFreeze(4, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
-
-        for (auto &entry: _sfrbxInfos)
-        {
-            int ix = 0;
-            auto &info = entry.second;
-            ImGui::TableNextRow();
-
-            ImGui::TableSetColumnIndex(ix++);
-            if (ImGui::Selectable(info.svStr.c_str(), _selected == entry.first, ImGuiSelectableFlags_SpanAllColumns))
-            {
-                _selected = (_selected == entry.first ? 0 : entry.first);
-            }
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%s", info.sigStr.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            if (_receiver)
-            {
-                ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
-            }
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%s", info.navMsg.c_str());
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.dwrdsHex.c_str());
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable(sizeAvail);
 
     return true;
 }

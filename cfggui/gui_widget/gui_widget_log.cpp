@@ -49,10 +49,29 @@ GuiWidgetLog::GuiWidgetLog(const int maxLines) :
     _lines          { },
     _logTimestamps  { true },
     _logAutoscroll  { true },
+    _scrollToBottom { true },
     _logCopy        { false },
     _filterNumMatch { 0 }
 {
     _maxLines = CLIP(maxLines, 10, 100000);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::string GuiWidgetLog::GetSettings()
+{
+    return Ff::Sprintf("%d:%d:", _logTimestamps ? 1 : 0, _logAutoscroll ? 1 : 0) + _filterWidget.GetFilterSettings();
+}
+
+void GuiWidgetLog::SetSettings(const std::string &settings)
+{
+    const auto set = Ff::StrSplit(settings, ":", 3);
+    if (set.size() == 3)
+    {
+        _logTimestamps = (set[0] == "1");
+        _logAutoscroll = (set[1] == "1");
+        _filterWidget.SetFilterSettings(set[2]);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -143,7 +162,10 @@ void GuiWidgetLog::DrawControls()
     Gui::ItemTooltip("Options");
     if (ImGui::BeginPopup("Options"))
     {
-        ImGui::Checkbox("Auto-scroll", &_logAutoscroll);
+        if (ImGui::Checkbox("Auto-scroll", &_logAutoscroll))
+        {
+            _scrollToBottom = _logAutoscroll;
+        }
         ImGui::Checkbox("Timestamps", &_logTimestamps);
         ImGui::EndPopup();
     }
@@ -219,7 +241,6 @@ void GuiWidgetLog::DrawLog()
     ImVec2 spacing = ImGui::GetStyle().ItemInnerSpacing;
     spacing.y *= 0.5;
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, spacing);
-    //ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
 
     const bool haveFilter = _filterWidget.IsActive();
     const bool highlight = haveFilter && _filterWidget.IsHighlight();
@@ -302,8 +323,13 @@ void GuiWidgetLog::DrawLog()
         }
     }
 
-    //ImGui::PopStyleColor();
     ImGui::PopStyleVar();
+
+    if (_scrollToBottom)
+    {
+        ImGui::SetScrollHereY();
+        _scrollToBottom = false;
+    }
 
     if (_logCopy)
     {
@@ -317,6 +343,22 @@ void GuiWidgetLog::DrawLog()
     }
 
     ImGui::EndChild();
+
+    if (ImGui::BeginPopupContextItem("RefLayerContext"))
+    {
+        if (ImGui::Checkbox("Auto-scroll", &_logAutoscroll))
+        {
+            _scrollToBottom = _logAutoscroll;
+        }
+        ImGui::Checkbox("Timestamps", &_logTimestamps);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Clear log"))
+        {
+            Clear();
+        }
+        ImGui::EndPopup();
+    }
+
 }
 
 /* ****************************************************************************************************************** */

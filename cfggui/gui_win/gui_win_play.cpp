@@ -81,8 +81,8 @@ void GuiWinPlay::_DrawTetris()
 {
     std::lock_guard<std::mutex> lock(_tetrisGameMutex);
 
-    const float lineHeight = _winSettings->charSize.y + _winSettings->style.ItemSpacing.y;
-    const float cellSize = 2 * _winSettings->charSize.x;
+    const float lineHeight = GuiSettings::charSize.y + GuiSettings::style->ItemSpacing.y;
+    const float cellSize = 2 * GuiSettings::charSize.x;
     const FfVec2 cell { cellSize, cellSize };
     const float padding = cellSize;
     const FfVec2 boardSize { cellSize * _tetrisCols, cellSize * _tetrisRows };
@@ -216,8 +216,8 @@ void GuiWinPlay::_DrawTetris()
     if (!_tetrisThread)
     {
         draw->AddRectFilled(board0, board1, GUI_COLOUR(C_GREY) & IM_COL32(0xff, 0xff, 0xff, 0x7f));
-        ImGui::SetCursorScreenPos(board0 + ((boardSize - _winSettings->iconButtonSize) * 0.5));
-        if (ImGui::Button(ICON_FK_PLAY "##Play", _winSettings->iconButtonSize))
+        ImGui::SetCursorScreenPos(board0 + ((boardSize - GuiSettings::iconSize) * 0.5));
+        if (ImGui::Button(ICON_FK_PLAY "##Play", GuiSettings::iconSize))
         {
             tg_init(_tetrisGame, _tetrisRows, _tetrisCols);
             _tetrisThreadAbort = false;

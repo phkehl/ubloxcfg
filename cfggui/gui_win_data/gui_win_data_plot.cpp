@@ -32,7 +32,8 @@
 GuiWinDataPlot::GuiWinDataPlot(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
     _plotVars{}, _plotVarX{nullptr}, _dndHovered{false},
-    _plotFlags{ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs}, _yLabels{"", "", ""}
+    _plotFlags{ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs}, _yLabels{"", "", ""},
+    _colormap { ImPlotColormap_Deep }
 {
     _winSize = { 80, 25 };
 
@@ -50,9 +51,9 @@ GuiWinDataPlot::~GuiWinDataPlot()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_ProcessData(const Data &data)
+void GuiWinDataPlot::_ProcessData(const InputData &data)
 {
-    if (data.type == Data::Type::DATA_EPOCH)
+    if (data.type == InputData::DATA_EPOCH)
     {
         // Learn epoch period (1/rate)
         const uint32_t ts = data.epoch->epoch.ts;
@@ -74,11 +75,11 @@ void GuiWinDataPlot::_ClearData()
 {
     _epochPeriod = 1.0;
     _epochPrevTs = 0;
-    for (auto &d: _plotData)
-    {
-        _RemoveFromPlot(d.plotVarY);
-    }
-    _plotVarX = nullptr;
+    // for (auto &d: _plotData)
+    // {
+    //     _RemoveFromPlot(d.plotVarY);
+    // }
+    // _plotVarX = nullptr;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -175,7 +176,7 @@ constexpr float VAR_WIDTH = 15.0f;
 void GuiWinDataPlot::_DrawContent()
 {
     // List of variables
-    ImGui::BeginChild("##Vars", ImVec2(_winSettings->charSize.x * VAR_WIDTH, 0.0f));
+    ImGui::BeginChild("##Vars", ImVec2(GuiSettings::charSize.x * VAR_WIDTH, 0.0f));
     _DrawVars();
     ImGui::EndChild();
 
@@ -193,7 +194,7 @@ void GuiWinDataPlot::_DrawToolbar()
     ImGui::SameLine();
 
     // Help
-    if (ImGui::Button(ICON_FK_QUESTION "###Help", _winSettings->iconButtonSize))
+    if (ImGui::Button(ICON_FK_QUESTION "###Help", GuiSettings::iconSize))
     {
         ImGui::OpenPopup("Help");
     }
@@ -207,37 +208,25 @@ void GuiWinDataPlot::_DrawToolbar()
     ImGui::SameLine();
 
     // Colormap
-    ImGui::Button(ICON_FK_PAINT_BRUSH "###Colormap", _winSettings->iconButtonSize);
-    Gui::ItemTooltip("Colours (click left/right to cycle maps, middle for settings)");
+    ImGui::Button(ICON_FK_PAINT_BRUSH "###Colormap", GuiSettings::iconSize);
+    Gui::ItemTooltip("Colours (click left/right to cycle maps)");
     if (ImGui::IsItemHovered())
     {
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
-            _winSettings->plotStyle.Colormap++;
-            _winSettings->plotStyle.Colormap %= ImPlot::GetColormapCount();
+            _colormap++;
+            _colormap %= ImPlot::GetColormapCount();
             ImPlot::BustColorCache(_PLOT_ID);
         }
         else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
         {
-            _winSettings->plotStyle.Colormap--;
-            if (_winSettings->plotStyle.Colormap < 0)
+            _colormap--;
+            if (_colormap < 0)
             {
-                _winSettings->plotStyle.Colormap = ImPlot::GetColormapCount() - 1;
+                _colormap = ImPlot::GetColormapCount() - 1;
             }
             ImPlot::BustColorCache(_PLOT_ID);
         }
-        else if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle))
-        {
-            ImGui::OpenPopup("Colormap");
-        }
-    }
-    if (ImGui::BeginPopup("Colormap"))
-    {
-        ImPlot::ShowColormapSelector("Colormap");
-        ImGui::Separator();
-        //ImPlot::ShowStyleSelector("###Style");
-        ImPlot::ShowStyleEditor();
-        ImGui::EndPopup();
     }
 }
 
@@ -294,7 +283,7 @@ void GuiWinDataPlot::_DrawVars()
             }
         }
 
-        ImGui::SameLine(_winSettings->charSize.x * (VAR_WIDTH - 4.0)); // reserve some space for vertical scrollbar
+        ImGui::SameLine(GuiSettings::charSize.x * (VAR_WIDTH - 4.0)); // reserve some space for vertical scrollbar
         ImGui::Text("y%d", data.axis + 1);
     }
 
@@ -397,6 +386,7 @@ void GuiWinDataPlot::_DrawPlot()
     ImPlot::SetNextPlotLimitsX(0, 60, ImGuiCond_Once);
     ImPlot::SetNextPlotLimitsY(-10, +10, ImGuiCond_Once);
     const char *xLabel = _plotVarX ? _plotVarX->tooltip.c_str() : NULL;
+    ImPlot::PushColormap(_colormap);
     if (ImPlot::BeginPlot(_PLOT_ID, xLabel, _yLabels[ImPlotYAxis_1].empty() ? NULL : _yLabels[ImPlotYAxis_1].data(),
         ImVec2(-1,-1), _plotFlags | hoverPlotFlags, 0, 0, 0, 0,
         _yLabels[ImPlotYAxis_2].empty() ? NULL : _yLabels[ImPlotYAxis_2].data(),
@@ -488,6 +478,7 @@ void GuiWinDataPlot::_DrawPlot()
 
         ImPlot::EndPlot();
     }
+    ImPlot::PopColormap();
 
     // Handle drops
     if (droppedVar)
@@ -641,7 +632,7 @@ void  GuiWinDataPlot::_SavePlots()
         plot += std::to_string(data.axis);
         plots.push_back(plot);
     }
-    _winSettings->SetValue(_winName + ".plots", Ff::StrJoin(plots, ","));
+    GuiSettings::SetValue(_winName + ".plots", Ff::StrJoin(plots, ","));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -649,7 +640,7 @@ void  GuiWinDataPlot::_SavePlots()
 void  GuiWinDataPlot::_LoadPlots()
 {
     std::string plots;
-    _winSettings->GetValue(_winName + ".plots", plots, "");
+    GuiSettings::GetValue(_winName + ".plots", plots, "");
     for (const auto &plot: Ff::StrSplit(plots, ","))
     {
         const auto parts = Ff::StrSplit(plot, "/"); // x var / y var / y axis

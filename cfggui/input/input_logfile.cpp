@@ -15,94 +15,56 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#include <chrono>
 #include <cfloat>
 
 #include "ff_debug.h"
+#include "ff_ubx.h"
 
 #include "platform.hpp"
 
-#include "logfile.hpp"
-
+#include "input_logfile.hpp"
 
 /* ****************************************************************************************************************** */
 
 // Events from the logfile (thread)
 struct LogfileEvent
 {
-    enum Event_e { NOOP, MSG, FAIL, ERROR, WARN, NOTICE, EPOCH, ACK };
-    LogfileEvent(const enum Event_e _event, const uint64_t _uid) :
-        event{_event}, uid{_uid}
-    {
-    }
-    virtual ~LogfileEvent()
-    {
-    }
+    enum Event_e { NOOP, MSG, ERROR, WARNING, NOTICE, EPOCH };
+    LogfileEvent(const enum Event_e _event) : event{_event} { }
     enum Event_e event;
-    uint64_t     uid;
 };
 
 struct LogfileEventMsg : public LogfileEvent
 {
-    LogfileEventMsg(const PARSER_MSG_t *_msg, const uint64_t _uid = 0) :
-        LogfileEvent(MSG, _uid), msg{ std::make_shared<Ff::ParserMsg>(_msg) }
-    {
-    }
+    LogfileEventMsg(const PARSER_MSG_t *_msg) : LogfileEvent(MSG), msg{ std::make_shared<Ff::ParserMsg>(_msg) } { }
     std::shared_ptr<Ff::ParserMsg> msg;
-};
-
-struct LogfileEventFail : public LogfileEvent
-{
-    LogfileEventFail(const std::string &_str, const uint64_t _uid = 0) :
-        LogfileEvent(FAIL, _uid), str{_str}
-    {
-    }
-    std::string str;
 };
 
 struct LogfileEventError : public LogfileEvent
 {
-    LogfileEventError(const std::string &_str, const uint64_t _uid = 0) :
-        LogfileEvent(ERROR, _uid), str{_str}
-    {
-    }
+    LogfileEventError(const std::string &_str) : LogfileEvent(ERROR), str{_str} { }
+    LogfileEventError(const char        *_str) : LogfileEvent(ERROR), str{_str} { }
     std::string str;
 };
 
-struct LogfileEventWarn : public LogfileEvent
+struct LogfileEventWarning : public LogfileEvent
 {
-    LogfileEventWarn(const std::string &_str, const uint64_t _uid = 0) :
-        LogfileEvent(WARN, _uid), str{_str}
-    {
-    }
+    LogfileEventWarning(const std::string &_str) : LogfileEvent(WARNING), str{_str} { }
+    LogfileEventWarning(const char        *_str) : LogfileEvent(WARNING), str{_str} { }
     std::string str;
 };
 
 struct LogfileEventNotice : public LogfileEvent
 {
-    LogfileEventNotice(const std::string &_str, const uint64_t _uid = 0) :
-        LogfileEvent(NOTICE, _uid), str{_str}
-    {
-    }
+    LogfileEventNotice(const std::string &_str) : LogfileEvent(NOTICE), str{_str} { }
+    LogfileEventNotice(const char        *_str) : LogfileEvent(NOTICE), str{_str} { }
     std::string str;
 };
 
 struct LogfileEventEpoch : public LogfileEvent
 {
-    LogfileEventEpoch(const EPOCH_t *_epoch, const uint64_t _uid = 0) :
-        LogfileEvent(EPOCH, _uid), epoch{ std::make_shared<Ff::Epoch>(_epoch) }
-    {
-    }
+    LogfileEventEpoch(const EPOCH_t *_epoch) : LogfileEvent(EPOCH), epoch{ std::make_shared<Ff::Epoch>(_epoch) } { }
     std::shared_ptr<Ff::Epoch> epoch;
-};
-
-struct LogfileEventAck : public LogfileEvent
-{
-    LogfileEventAck(const bool _ack, const uint64_t _uid = 0) :
-        LogfileEvent(ACK, _uid), ack{_ack}
-    {
-    }
-    bool ack;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -111,100 +73,68 @@ struct LogfileEventAck : public LogfileEvent
 struct LogfileCommand
 {
     enum Command_e { NOOP = 0, STOP, PAUSE, PLAY, STEP_EPOCH, STEP_MSG, SEEK };
-    LogfileCommand(enum Command_e _command, uint64_t _uid) :
-        command{_command}, uid{_uid}
-    {
-    }
-    virtual ~LogfileCommand() {};
+    LogfileCommand(enum Command_e _command) : command{_command} { }
     enum Command_e command;
-    uint64_t       uid;
 };
 
 struct LogfileCommandNoop : public LogfileCommand
 {
-    LogfileCommandNoop(const uint64_t _uid = 0) :
-        LogfileCommand(NOOP, _uid)
-    {
-    }
+    LogfileCommandNoop() : LogfileCommand(NOOP) { }
 };
 
 struct LogfileCommandStop : public LogfileCommand
 {
-    LogfileCommandStop(const uint64_t _uid = 0) :
-        LogfileCommand(STOP, _uid)
-    {
-    }
+    LogfileCommandStop() : LogfileCommand(STOP) { }
 };
 
 struct LogfileCommandPause : public LogfileCommand
 {
-    LogfileCommandPause(const uint64_t _uid = 0) :
-        LogfileCommand(PAUSE, _uid)
-    {
-    }
+    LogfileCommandPause() : LogfileCommand(PAUSE) { }
 };
 
 struct LogfileCommandPlay : public LogfileCommand
 {
-    LogfileCommandPlay(const uint64_t _uid = 0) :
-        LogfileCommand(PLAY, _uid)
-    {
-    }
+    LogfileCommandPlay() : LogfileCommand(PLAY) { }
 };
 
 struct LogfileCommandStepEpoch : public LogfileCommand
 {
-    LogfileCommandStepEpoch(const uint64_t _uid = 0) :
-        LogfileCommand(STEP_EPOCH, _uid)
-    {
-    }
+    LogfileCommandStepEpoch() : LogfileCommand(STEP_EPOCH) { }
 };
 
 struct LogfileCommandStepMsg : public LogfileCommand
 {
-    LogfileCommandStepMsg(const std::string &_msgName, const uint64_t _uid = 0) :
-        LogfileCommand(STEP_MSG, _uid), msgName{_msgName}
-    {
-    }
+    LogfileCommandStepMsg(const std::string &_msgName) : LogfileCommand(STEP_MSG), msgName{_msgName} { }
     std::string msgName;
 };
 
 struct LogfileCommandSeek : public LogfileCommand
 {
-    LogfileCommandSeek(const float _pos, const uint64_t _uid = 0) :
-        LogfileCommand(SEEK, _uid), pos{_pos}
-    {
-    };
+    LogfileCommandSeek(const float _pos) : LogfileCommand(SEEK), pos{_pos} { }
     float pos;
 };
 
-
 /* ****************************************************************************************************************** */
 
-Logfile::Logfile(const std::string &name, std::shared_ptr<Database> database) :
-    _name{name}, _database{database}, _dataCb{nullptr}, _playSpeed{1.0}, _playState{CLOSED}
+InputLogfile::InputLogfile(const std::string &name, std::shared_ptr<Database> database) :
+    Input(name, database),
+    _playSpeed { 1.0 },
+    _playState{ CLOSED }
 {
-    DEBUG("Logfile(%s)", _name.c_str());
+    DEBUG("InputLogfile(%s)", _inputName.c_str());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-Logfile::~Logfile()
+InputLogfile::~InputLogfile()
 {
-    DEBUG("~Logfile(%s)", _name.c_str());
+    DEBUG("~InputLogfile(%s)", _inputName.c_str());
     Close();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Logfile::SetDataCb(std::function<void(const Data &)> cb)
-{
-    _dataCb = cb;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void Logfile::Loop(const double &now)
+void InputLogfile::Loop(const double &now)
 {
     (void)now;
     // TODO: limit max. number of events handled in main thread? Though there is a check for that in Receivers...
@@ -225,20 +155,8 @@ void Logfile::Loop(const double &now)
             break;
         }
 
-        // // Internal events
-        // switch (event->event)
-        // {
-        //     case LogfileEvent::FAIL:
-        //     {
-        //         // TODO
-        //         break;
-        //     }
-        //     default:
-        //         break;
-        // }
-
         // No callback to pass the event to
-        if (!_dataCb)
+        if (!_HaveDataCb())
         {
             continue;
         }
@@ -250,39 +168,32 @@ void Logfile::Loop(const double &now)
 
             case LogfileEvent::NOTICE:
             {
-                auto e = static_cast<LogfileEventWarn *>( event.get() );
-                _dataCb( Data(Data::Type::INFO_NOTICE, e->str, e->uid) );
+                auto e = static_cast<LogfileEventNotice *>( event.get() );
+                _CallDataCb( InputData(InputData::INFO_NOTICE, e->str) );
                 break;
             }
-            case LogfileEvent::WARN:
+            case LogfileEvent::WARNING:
             {
-                auto e = static_cast<LogfileEventWarn *>( event.get() );
-                _dataCb( Data(Data::Type::INFO_WARN, e->str, e->uid) );
+                auto e = static_cast<LogfileEventWarning *>( event.get() );
+                _CallDataCb( InputData(InputData::INFO_WARNING, e->str) );
                 break;
             }
-            case LogfileEvent::FAIL:
             case LogfileEvent::ERROR:
             {
-                auto e = static_cast<LogfileEventWarn *>( event.get() );
-                _dataCb( Data(Data::Type::INFO_ERROR, e->str, e->uid) );
+                auto e = static_cast<LogfileEventError *>( event.get() );
+                _CallDataCb( InputData(InputData::INFO_ERROR, e->str) );
                 break;
             }
             case LogfileEvent::MSG:
             {
                 auto e = static_cast<LogfileEventMsg *>( event.get() );
-                _dataCb( Data(e->msg, e->uid) );
+                _CallDataCb( InputData(e->msg) );
                 break;
             }
             case LogfileEvent::EPOCH:
             {
                 auto e = static_cast<LogfileEventEpoch *>( event.get() );
-                _dataCb( Data(e->epoch, e->uid) );
-                break;
-            }
-            case LogfileEvent::ACK:
-            {
-                auto e = static_cast<LogfileEventAck *>( event.get() );
-                _dataCb( Data(e->ack, e->uid) );
+                _CallDataCb( InputData(e->epoch) );
                 break;
             }
         }
@@ -291,13 +202,13 @@ void Logfile::Loop(const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool Logfile::Open(const std::string &path)
+bool InputLogfile::Open(const std::string &path)
 {
     if (_logfileHandle)
     {
         Close();
     }
-
+    bool res = false;
     try
     {
         _logfileHandle = std::make_unique<std::ifstream>();
@@ -313,11 +224,9 @@ bool Logfile::Open(const std::string &path)
         _logfileHandle->seekg(0, std::ios::beg);
         _playPos = 0;
         _playPosRel = 0.0;
-        parserInit(&_playParser);
 
         // Hand over to play thread
-        _playThreadAbort = false;
-        _playThread = std::make_unique<std::thread>(&Logfile::_LogfileThreadWrap, this);
+        res = _ThreadStart();
     }
     catch (std::exception &e)
     {
@@ -326,20 +235,14 @@ bool Logfile::Open(const std::string &path)
         _logfilePath.clear();
     }
 
-    return _logfileHandle != nullptr;
+    return res;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Logfile::Close()
+void InputLogfile::Close()
 {
-    if ( _playThread && (std::this_thread::get_id() != _playThread->get_id()) )
-    {
-        _playThreadCondVar.notify_all();
-        _playThreadAbort = true;
-        _playThread->join();
-        _playThread = nullptr;
-    }
+    _ThreadStop();
 
     if (_logfileHandle)
     {
@@ -365,65 +268,65 @@ void Logfile::Close()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-float Logfile::GetPlayPos()
+float InputLogfile::GetPlayPos()
 {
     return _playPosRel;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-float Logfile::GetPlaySpeed()
+float InputLogfile::GetPlaySpeed()
 {
     return _playSpeed;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Logfile::SetPlaySpeed(const float speed)
+void InputLogfile::SetPlaySpeed(const float speed)
 {
     if ( (_playSpeed == PLAYSPEED_INF) || ( (_playSpeed >= PLAYSPEED_MIN) && (_playSpeed <= PLAYSPEED_MAX) ) )
     {
         _playSpeed = speed;
         if (_playState != CLOSED)
         {
-            _playThreadCondVar.notify_all();
+            _ThreadWakeup();
         }
     }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool Logfile::CanOpen()
+bool InputLogfile::CanOpen()
 {
     return _playState == CLOSED;
 }
 
-bool Logfile::CanClose()
+bool InputLogfile::CanClose()
 {
     return _playState != CLOSED;
 }
 
-bool Logfile::CanPlay()
+bool InputLogfile::CanPlay()
 {
     return (_playState == STOPPED) || (_playState == PAUSED);
 }
 
-bool Logfile::CanStop()
+bool InputLogfile::CanStop()
 {
     return (_playState == PLAYING) || (_playState == PAUSED);
 }
 
-bool Logfile::CanPause()
+bool InputLogfile::CanPause()
 {
     return (_playState == PLAYING) || (_playState == STOPPED);
 }
 
-bool Logfile::CanStep()
+bool InputLogfile::CanStep()
 {
     return (_playState == PLAYING) || (_playState == PAUSED);
 }
 
-bool Logfile::CanSeek()
+bool InputLogfile::CanSeek()
 {
     return /*(_playState == PLAYING) ||*/ (_playState == PAUSED) || (_playState == STOPPED);
 }
@@ -434,10 +337,10 @@ bool Logfile::CanSeek()
     { \
         std::lock_guard<std::mutex> lock(_commandMutex); \
         _commandQueue.emplace( std::make_unique<_cls_>(__VA_ARGS__) ); \
-        _playThreadCondVar.notify_all(); \
+        _ThreadWakeup(); \
     }
 
-void Logfile::Play()
+void InputLogfile::Play()
 {
     if (CanPlay())
     {
@@ -445,7 +348,7 @@ void Logfile::Play()
     }
 }
 
-void Logfile::Stop()
+void InputLogfile::Stop()
 {
     if (CanStop())
     {
@@ -453,7 +356,7 @@ void Logfile::Stop()
     }
 }
 
-void Logfile::Pause()
+void InputLogfile::Pause()
 {
     if (CanPause())
     {
@@ -461,7 +364,7 @@ void Logfile::Pause()
     }
 }
 
-void Logfile::StepMsg(const std::string &msgName)
+void InputLogfile::StepMsg(const std::string &msgName)
 {
     if (CanStep())
     {
@@ -469,7 +372,7 @@ void Logfile::StepMsg(const std::string &msgName)
     }
 }
 
-void Logfile::StepEpoch()
+void InputLogfile::StepEpoch()
 {
     if (CanStep())
     {
@@ -477,7 +380,7 @@ void Logfile::StepEpoch()
     }
 }
 
-void Logfile::Seek(const float pos)
+void InputLogfile::Seek(const float pos)
 {
     if (CanSeek())
     {
@@ -493,47 +396,34 @@ void Logfile::Seek(const float pos)
         _eventQueue.emplace( std::make_unique<_cls_>(__VA_ARGS__) ); \
     }
 
-#define _THREAD_DEBUG(fmt, args...) DEBUG("thread %s " fmt, _name.c_str(), ## args)
+#define _THREAD_DEBUG(fmt, args...) DEBUG("thread %s " fmt, _inputName.c_str(), ## args)
 
-void Logfile::_LogfileThreadWrap()
+void InputLogfile::_ThreadPrepare()
 {
     _playState = STOPPED;
-
-    Platform::SetThreadName(_name);
-    _THREAD_DEBUG("started");
-
-    _SEND_EVENT(LogfileEventNotice, "Logfile opened: " + _logfilePath);
-
-    try
-    {
-        _LogfileThread();
-    }
-    catch (const std::exception &e)
-    {
-        ERROR("thread %s crashed: %s", _name.c_str(), e.what());
-        Close();
-    }
-
-    _playThreadAbort = true;
-    _playState = STOPPED;
-
-    _SEND_EVENT(LogfileEventNotice, "Logfile closed: " + _logfilePath);
-
-    _THREAD_DEBUG("stopped");
+    _SEND_EVENT(LogfileEventNotice, "InputLogfile opened: " + _logfilePath);
 }
 
-void Logfile::_LogfileThread()
+void InputLogfile::_ThreadCleanup()
 {
+    _playState = CLOSED;
+    _SEND_EVENT(LogfileEventNotice, "InputLogfile closed: " + _logfilePath);
+}
+
+void InputLogfile::_Thread()
+{
+    PARSER_t parser;
     PARSER_MSG_t msg;
     EPOCH_t coll;
     EPOCH_t epoch;
-    epochInit(&coll);
     bool stepEpoch = false;
     bool stepMsg = false;
     std::string stepMsgName = "";
 
+    parserInit(&parser);
+    epochInit(&coll);
 
-    while (!_playThreadAbort)
+    while (!_ThreadAbort())
     {
         // Handle commands
         std::unique_ptr<LogfileCommand> command;
@@ -555,7 +445,7 @@ void Logfile::_LogfileThread()
                     _logfileHandle->seekg(0, std::ios::beg);
                     _playPos = 0;
                     _playPosRel = 0.0;
-                    parserInit(&_playParser);
+                    parserInit(&parser);
                     _playState = STOPPED;
                     break;
                 case LogfileCommand::PAUSE:
@@ -603,7 +493,7 @@ void Logfile::_LogfileThread()
                         }
                     }
                     _logfileHandle->seekg(_playPos, std::ios::beg);
-                    parserInit(&_playParser);
+                    parserInit(&parser);
                     break;
                 }
             }
@@ -613,25 +503,25 @@ void Logfile::_LogfileThread()
         // Player idle
         if ( (_playState == STOPPED) || (_playState == PAUSED) )
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            _ThreadSleep(10);
             continue;
         }
 
         // Process logfile data
         bool intr = false;
-        while (!intr && parserProcess(&_playParser, &msg, true) && !_playThreadAbort && _commandQueue.empty())
+        while (!intr && parserProcess(&parser, &msg, true) && !_ThreadAbort() && _commandQueue.empty())
         {
             _playPos += msg.size;
             _playPosRel = (double)_playPos / (double)_playSize;
 
             // Update database
-            _database->AddMsg(&msg);
+            _inputDatabase->AddMsg(&msg);
 
             // Collect epochs
             if (epochCollect(&coll, &msg, &epoch))
             {
                 // Update database
-                _database->AddEpoch(&epoch);
+                _inputDatabase->AddEpoch(&epoch);
 
                 // Send epoch
                 _SEND_EVENT(LogfileEventEpoch, &epoch);
@@ -648,25 +538,54 @@ void Logfile::_LogfileThread()
                 // Throttle playback
                 if ( (_playSpeed > 0.0) && !stepMsg && !stepEpoch )
                 {
-                    const uint32_t sleep = (1000.0 / _playSpeed);
-                    //std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
-
-                    // Sleep, but wake up early in case we're notified
-                    // FIXME: study this stuff further, this may not be fully right
-                    std::unique_lock<std::mutex> lock(_playThreadMutex);
-                    intr = _playThreadCondVar.wait_for(lock, std::chrono::milliseconds(sleep)) != std::cv_status::timeout;
+                    _ThreadSleep(1000.0 / _playSpeed);
 
                     // Message timestamp is no longer valid after sleeping
                     msg.ts = TIME();
                 }
             }
 
+            // Propagate UBX-INF-{ERROR,WARNING}
+            switch (msg.type)
+            {
+                case PARSER_MSGTYPE_UBX:
+                    switch (UBX_CLSID(msg.data))
+                    {
+                        case UBX_INF_CLSID:
+                            switch (UBX_MSGID(msg.data))
+                            {
+                                case UBX_INF_WARNING_MSGID:
+                                    _SEND_EVENT(LogfileEventWarning, msg.info);
+                                    break;
+                                case UBX_INF_ERROR_MSGID:
+                                    _SEND_EVENT(LogfileEventError, msg.info);
+                                    break;
+                            }
+                            break;
+                    }
+                    break;
+                case PARSER_MSGTYPE_NMEA:
+                    if ( (msg.data[3] == 'T') && (msg.data[4] == 'X') && (msg.data[5] == 'T') && (msg.data[13] == '0') )
+                    {
+                        switch (msg.data[14])
+                        {
+                            case '0':
+                                _SEND_EVENT(LogfileEventError, msg.info);
+                                break;
+                            case '1':
+                                _SEND_EVENT(LogfileEventWarning, msg.info);
+                                break;
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+
             // Wait a bit if the event queue is too long, to not overwhelm the main thread
             while (!intr && (_eventQueue.size() > EVENT_QUEUE_MAX_SIZE))
             {
-                std::unique_lock<std::mutex> lock(_playThreadMutex);
-                intr = _playThreadCondVar.wait_for(lock, std::chrono::milliseconds(25)) != std::cv_status::timeout;
-                //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                _ThreadSleep(25);
             }
 
             // Send message
@@ -692,9 +611,9 @@ void Logfile::_LogfileThread()
         const int num = _logfileHandle->readsome((char *)buf, sizeof(buf));
         if (num > 0)
         {
-            if (!parserAdd(&_playParser, buf, num))
+            if (!parserAdd(&parser, buf, num))
             {
-                WARNING("thread %s parser overflow!", _name.c_str());
+                WARNING("InputLogfile(%s) parser overflow!", _inputName.c_str());
             }
         }
         else

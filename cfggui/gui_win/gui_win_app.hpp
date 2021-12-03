@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 #include "gui_win.hpp"
 
@@ -46,8 +47,10 @@ class GuiWinAppAbout : public GuiWinApp
 class GuiWinAppSettings : public GuiWinApp
 {
     public:
-        GuiWinAppSettings();
+        GuiWinAppSettings(std::function<void()> drawCb);
         void DrawWindow() final;
+    private:
+        std::function<void()> _drawCb;
 };
 
 /* ***** Help ******************************************************************************************************* */

@@ -19,6 +19,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdarg>
 
 #include "ff_stuff.h"
 
@@ -29,8 +30,11 @@ namespace Ff
     // sprintf()
     std::string Sprintf(const char * const zcFormat, ...) PRINTF_ATTR(1);
 
+    // vsprintf()
+    std::string Vsprintf(const char *fmt, va_list args);
+
     // strftime()
-    std::string Strftime(const int64_t ts, const char * const fmt);
+    std::string Strftime(const char * const fmt, const int64_t ts = 0);
 
     // String search & replace
     int StrReplace(std::string &str, const std::string &search, const std::string &replace);
@@ -41,7 +45,7 @@ namespace Ff
     void StrTrim(std::string &str);
 
     // Split string
-    std::vector<std::string> StrSplit(const std::string &str, const std::string &sep);
+    std::vector<std::string> StrSplit(const std::string &str, const std::string &sep, const int maxNum = 0);
 
     // Join string
     std::string StrJoin(const std::vector<std::string> &strs, const std::string &sep);

@@ -54,20 +54,22 @@
     _P_("Map accuracy estimate", PLOT_MAP_ACC_EST,             IM_COL32(0x40, 0x40, 0x40, 0x55)) \
     _P_("Map baseline",          PLOT_MAP_BASELINE,            IM_COL32(0xff, 0x42, 0xf2, 0xcc)) /* hsla(304, 100%, 63%, 0.8) */ \
     _P_("Sky view satellite",    SKY_VIEW_SAT,                 IM_COL32(0x55, 0x86, 0xff, 0xa3)) \
+    _P_("Signal used (text)",    SIGNAL_USED_TEXT,             IM_COL32(0x55, 0xff, 0x55, 0xff)) \
+    _P_("Signal unused (text)",  SIGNAL_UNUSED_TEXT,           IM_COL32(0xaa, 0xaa, 0xaa, 0xff)) \
     _P_("Signal used",           SIGNAL_USED,                  IM_COL32(0x00, 0xaa, 0x00, 0xaf)) \
     _P_("Signal unused",         SIGNAL_UNUSED,                IM_COL32(0xaa, 0xaa, 0xaa, 0xaf)) \
-    _P_("Signal 0 - 5 dBHz",     SIGNAL_00_05,                 IM_COL32(0xe0, 0x52, 0x52, 0xff)) /* hsl(  0, 70%, 60%) */ \
-    _P_("Signal 5 - 10 dBHz",    SIGNAL_05_10,                 IM_COL32(0xe0, 0x69, 0x52, 0xff)) /* hsl( 10, 70%, 60%) */ \
-    _P_("Signal 10 - 15 dBHz",   SIGNAL_10_15,                 IM_COL32(0xe0, 0x81, 0x52, 0xff)) /* hsl( 20, 70%, 60%) */ \
-    _P_("Signal 15 - 20 dBHz",   SIGNAL_15_20,                 IM_COL32(0xe0, 0x99, 0x52, 0xff)) /* hsl( 30, 70%, 60%) */ \
-    _P_("Signal 20 - 25 dBHz",   SIGNAL_20_25,                 IM_COL32(0xe0, 0xb1, 0x52, 0xff)) /* hsl( 40, 70%, 60%) */ \
-    _P_("Signal 25 - 30 dBHz",   SIGNAL_25_30,                 IM_COL32(0xe0, 0xc9, 0x52, 0xff)) /* hsl( 50, 70%, 60%) */ \
-    _P_("Signal 30 - 35 dBHz",   SIGNAL_30_35,                 IM_COL32(0xe0, 0xe0, 0x52, 0xff)) /* hsl( 60, 70%, 60%) */ \
-    _P_("Signal 35 - 40 dBHz",   SIGNAL_35_40,                 IM_COL32(0xb3, 0xe0, 0x85, 0xff)) /* hsl( 90, 60%, 70%) */ \
-    _P_("Signal 40 - 45 dBHz",   SIGNAL_40_45,                 IM_COL32(0x06, 0xf9, 0x06, 0xff)) /* hsl(120, 95%, 50%) */ \
-    _P_("Signal 45 - 50 dBHz",   SIGNAL_45_50,                 IM_COL32(0x13, 0xec, 0x5b, 0xff)) /* hsl(140, 85%, 50%) */ \
-    _P_("Signal 50 - 55 dBHz",   SIGNAL_50_55,                 IM_COL32(0x13, 0xec, 0xa4, 0xff)) /* hsl(160, 85%, 50%) */ \
-    _P_("Signal 55 - oo dBHz",   SIGNAL_55_OO,                 IM_COL32(0x13, 0xec, 0xec, 0xff)) /* hsl(180, 85%, 50%) */ \
+    _P_("Signal 0 - 5 dBHz",     SIGNAL_00_05,                 IM_COL32(0xe0, 0x52, 0x52, 0xdf)) /* hsl(  0, 70%, 60%) */ \
+    _P_("Signal 5 - 10 dBHz",    SIGNAL_05_10,                 IM_COL32(0xe0, 0x69, 0x52, 0xdf)) /* hsl( 10, 70%, 60%) */ \
+    _P_("Signal 10 - 15 dBHz",   SIGNAL_10_15,                 IM_COL32(0xe0, 0x81, 0x52, 0xdf)) /* hsl( 20, 70%, 60%) */ \
+    _P_("Signal 15 - 20 dBHz",   SIGNAL_15_20,                 IM_COL32(0xe0, 0x99, 0x52, 0xdf)) /* hsl( 30, 70%, 60%) */ \
+    _P_("Signal 20 - 25 dBHz",   SIGNAL_20_25,                 IM_COL32(0xe0, 0xb1, 0x52, 0xdf)) /* hsl( 40, 70%, 60%) */ \
+    _P_("Signal 25 - 30 dBHz",   SIGNAL_25_30,                 IM_COL32(0xe0, 0xc9, 0x52, 0xdf)) /* hsl( 50, 70%, 60%) */ \
+    _P_("Signal 30 - 35 dBHz",   SIGNAL_30_35,                 IM_COL32(0xe0, 0xe0, 0x52, 0xdf)) /* hsl( 60, 70%, 60%) */ \
+    _P_("Signal 35 - 40 dBHz",   SIGNAL_35_40,                 IM_COL32(0xb3, 0xe0, 0x85, 0xdf)) /* hsl( 90, 60%, 70%) */ \
+    _P_("Signal 40 - 45 dBHz",   SIGNAL_40_45,                 IM_COL32(0x06, 0xf9, 0x06, 0xdf)) /* hsl(120, 95%, 50%) */ \
+    _P_("Signal 45 - 50 dBHz",   SIGNAL_45_50,                 IM_COL32(0x13, 0xec, 0x5b, 0xdf)) /* hsl(140, 85%, 50%) */ \
+    _P_("Signal 50 - 55 dBHz",   SIGNAL_50_55,                 IM_COL32(0x13, 0xec, 0xa4, 0xdf)) /* hsl(160, 85%, 50%) */ \
+    _P_("Signal 55 - oo dBHz",   SIGNAL_55_OO,                 IM_COL32(0x13, 0xec, 0xec, 0xdf)) /* hsl(180, 85%, 50%) */ \
     /* Generic colours (some from https://github.com/leiradel/ImGuiAl/blob/master/term/imguial_term.h) */ \
     _P_("Colour Black",          C_BLACK,                      IM_COL32(0x00, 0x00, 0x00, 0xff)) \
     _P_("Colour Grey",           C_GREY,                       IM_COL32(0x55, 0x55, 0x55, 0xff)) \
@@ -108,5 +110,6 @@
     _P_("Debug Notice",          DEBUG_NOTICE,                 IM_COL32(0xff, 0xff, 0xff, 0xff)) \
     _P_("Debug Warning",         DEBUG_WARNING,                IM_COL32(0xff, 0xff, 0x55, 0xff)) \
     _P_("Debug Error",           DEBUG_ERROR,                  IM_COL32(0xff, 0x55, 0x55, 0xff))
+
 
 #endif // __GUI_SETTINGS_COLOURS_HPP__

@@ -1011,7 +1011,7 @@ void ShowDemo_SubplotItemSharing() {
                 ImPlot::PlotLineG("common",SinewaveGetter,&fc,1000);
                 for (int j = 0; j < 6; ++j) {
                     if (id[j] == i) {
-                        char label[8];
+                        char label[50];
                         float fj = 0.01f * (j+2);
                         sprintf(label, "data%d", j);
                         ImPlot::PlotLineG(label,SinewaveGetter,&fj,1000);
@@ -1494,7 +1494,7 @@ void ShowDemo_OffsetAndStride() {
     ImGui::SliderInt("Offset", &offset, -2*k_points_per, 2*k_points_per);
     if (ImPlot::BeginPlot("##strideoffset",0,0,ImVec2(-1,0), ImPlotFlags_Equal)) {
         ImPlot::PushColormap(ImPlotColormap_Jet);
-        char buff[16];
+        char buff[50];
         for (int c = 0; c < k_circles; ++c) {
             sprintf(buff, "Circle %d", c);
             ImPlot::PlotLine(buff, &interleaved_data[c*2 + 0], &interleaved_data[c*2 + 1], k_points_per, offset, 2*k_circles*sizeof(double));

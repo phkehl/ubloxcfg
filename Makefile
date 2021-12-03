@@ -81,11 +81,11 @@ CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
 CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
 LDFLAGS_debug         := -ggdb -rdynamic
 
-# test
-CFILES_test_m32       := test.c
+# test (ubloxcfg)
+CFILES_test_m32       := test/test_ubloxcfg.c
 CFLAGS_test_m32       := -std=c99 -pedantic -Wno-pedantic-ms-format -m32
 LDFLAGS_test_m32      := -m32
-CFILES_test_m64       := test.c
+CFILES_test_m64       := test/test_ubloxcfg.c
 CFLAGS_test_m64       := -std=c99 -pedantic -Wno-pedantic-ms-format -m64
 LDFLAGS_test_m64      := -m64
 $(CFILES_test_m32): $(BUILDDIR)/config.h
@@ -104,7 +104,7 @@ $(CFILES_cfgtool): $(BUILDDIR)/config.h
 # cfggui
 CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
 CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) 3rdparty/stuff/platform_folders.cpp
-CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3rdparty/stuff/tetris.c
+CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3rdparty/stuff/tetris.c  3rdparty/stuff/gl3w.c $(wildcard 3rdparty/nanovg/*.c)
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
 LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++
@@ -114,16 +114,10 @@ CXXFLAGS_cfggui       += $(shell pkg-config --cflags freetype2 2>/dev/null)
 LDFLAGS_cfggui        += $(shell pkg-config --static --libs freetype2 2>/dev/null)
 CXXFLAGS_cfggui       += $(shell curl-config --cflags 2>/dev/null)
 LDFLAGS_cfggui        += $(shell curl-config --libs 2>/dev/null)
+LDFLAGS_cfggui        += -lGL
+#-lGLU -ldl
 $(CFILES_cfggui): $(BUILDDIR)/config.h
 $(CXXFILES_cfggui): $(BUILDDIR)/config.h
-
-
-ifeq ($(MSYSTEM),MINGW64)
-LDFLAGS_cfggui        += -lglu32 -lopengl32 -luuid -lole32 -lxinput
-CXXFLAGS_cfggui       += -DIMGUI_IMPL_OPENGL_ES2
-else
-LDFLAGS_cfggui        += -lGL -ldl
-endif
 
 # Binaries, makeTarget: name, .c/.cpp files, CFLAGS, CXXFLAGS, LDFLAGS -- The final CFLAGS, CXXFLAGS and LDFLAGS will be $(CFLAGS) etc. from the environment, + those given here
 $(eval $(call makeTarget, test_m32-release$(EXE), $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m32)))
@@ -203,7 +197,8 @@ help:
 	@echo "    cfggui-valgrind Run cfggui with valgrind"
 	@echo
 	@echo "To cross-compile for windows, use 'make <prog>-<build>.exe WIN=64'."
-	@echo "Note that not all programs compile for Windoze!"
+	@echo "Note that not all programs cross-compile for Windoze!"
+	@echo "Some stuff may compile (and even work) using native compilation in mingw-w64."
 	@echo
 	@echo "See README.md for more details"
 	@echo

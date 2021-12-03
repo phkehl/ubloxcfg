@@ -32,23 +32,23 @@ GuiWinDataSignals::GuiWinDataSignals(const std::string &name, std::shared_ptr<Da
 
     ClearData();
 
-    _table.AddColumn("SV", 40.0f);
-    _table.AddColumn("Signal", 60.0f);
-    _table.AddColumn("Bd.", 30.0f);
-    _table.AddColumn("Level", 155.0f);
-    _table.AddColumn("Use", 75.0f);
-    _table.AddColumn("Iono", 80.0f);
-    _table.AddColumn("Health", 80.0f);
-    _table.AddColumn("Used", 70.0f);
-    _table.AddColumn("PR res.", 60.0f);
-    _table.AddColumn("Corrections", 140.0f);
+    _table.AddColumn("SV");
+    _table.AddColumn("Signal");
+    _table.AddColumn("Bd.");
+    _table.AddColumn("Level");
+    _table.AddColumn("Use");
+    _table.AddColumn("Iono");
+    _table.AddColumn("Health");
+    _table.AddColumn("Used");
+    _table.AddColumn("PR res.");
+    _table.AddColumn("Corrections");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSignals::_ProcessData(const Data &data)
+void GuiWinDataSignals::_ProcessData(const InputData &data)
 {
-    if (data.type == Data::Type::DATA_EPOCH)
+    if (data.type == InputData::DATA_EPOCH)
     {
         _UpdateSignals();
     }
@@ -116,7 +116,7 @@ void GuiWinDataSignals::_UpdateSignals()
         {
             continue;
         }
-        _sigInfo.push_back(sig);
+        _sigInfo.push_back(*sig);
         _countAll.Add(sig);
         switch (sig->gnss)
         {
@@ -133,19 +133,19 @@ void GuiWinDataSignals::_UpdateSignals()
     // Sort searching signals to the end
     if (_minSigUse <= EPOCH_SIGUSE_SEARCH)
     {
-        std::sort(_sigInfo.begin(), _sigInfo.end(), [](const EPOCH_SIGINFO_t *a, const EPOCH_SIGINFO_t *b)
+        std::sort(_sigInfo.begin(), _sigInfo.end(), [](const EPOCH_SIGINFO_t &a, const EPOCH_SIGINFO_t &b)
         {
             // First, sort by signal quality groups (none/searching <--> tracked/used)
-            if ( (a->use > EPOCH_SIGUSE_SEARCH) && (b->use <= EPOCH_SIGUSE_SEARCH) )
+            if ( (a.use > EPOCH_SIGUSE_SEARCH) && (b.use <= EPOCH_SIGUSE_SEARCH) )
             {
                 return true; // a before b
             }
-            if ( (a->use <= EPOCH_SIGUSE_SEARCH) && (b->use > EPOCH_SIGUSE_SEARCH) )
+            if ( (a.use <= EPOCH_SIGUSE_SEARCH) && (b.use > EPOCH_SIGUSE_SEARCH) )
             {
                 return false; // b before a
             }
             // Second, sort by order from EPOCH_t (GNSS, SV, signal)
-            return a->_order < b->_order;
+            return a._order < b._order;
         });
     }
 
@@ -157,6 +157,101 @@ void GuiWinDataSignals::_UpdateSignals()
     _countGal.Update();
     _countSbas.Update();
     _countQzss.Update();
+
+
+    // Populate table
+    _table.ClearRows();
+
+    uint32_t prevSat = 0xffffffff;
+    for (auto &sig: _sigInfo)
+    {
+        const uint32_t thisSat = (sig.gnss << 8) | sig.sv;
+        const uint32_t uid  = (sig.signal << 16) | thisSat;
+
+        if (thisSat != prevSat)
+        {
+            _table.AddCellText(std::string(sig.svStr) + "##" + std::to_string(uid));
+        }
+        else
+        {
+            _table.AddCellText(std::string("##") + std::to_string(uid));
+        }
+        prevSat = thisSat;
+
+
+        _table.AddCellText(sig.signalStr);
+        _table.AddCellText(sig.bandStr);
+        if ( sig.valid && (sig.use > EPOCH_SIGUSE_SEARCH) )
+        {
+            _table.AddCellCb(std::bind(&GuiWinDataSignals::_DrawSignalLevelCb, this, std::placeholders::_1), &sig);
+        }
+        else
+        {
+            _table.AddCellText("-");
+        }
+        _table.AddCellText(sig.useStr);
+        _table.AddCellText(sig.ionoStr);
+        _table.AddCellText(sig.healthStr);
+        _table.AddCellTextF("%s %s %s",
+            sig.prUsed ? "PR" : "--",
+            sig.crUsed ? "CR" : "--",
+            sig.doUsed ? "DO" : "--");
+
+        if (sig.prUsed /*sig->prRes != 0.0*/)
+        {
+            _table.AddCellTextF("%6.1f", sig.prRes);
+        }
+        else
+        {
+            _table.AddCellText("-");
+        }
+        _table.AddCellTextF("%-9s %s %s %s",
+            sig.corrStr,
+            sig.prCorrUsed ? "PR" : "--",
+            sig.crCorrUsed ? "CR" : "--",
+            sig.doCorrUsed ? "DO" : "--");
+
+        if (sig.use <= EPOCH_SIGUSE_SEARCH)
+        {
+            _table.SetRowColour(GUI_COLOUR(SIGNAL_UNUSED_TEXT));
+        }
+        else if (sig.anyUsed)
+        {
+            _table.SetRowColour(GUI_COLOUR(SIGNAL_USED_TEXT));
+        }
+
+        _table.SetRowFilter(sig.gnss);
+    }
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ void GuiWinDataSignals::DrawSignalLevelWithBar(const EPOCH_SIGINFO_t *sig, const ImVec2 charSize)
+{
+    ImGui::Text("%-4s %4.1f", sig->signalStr, sig->cno);
+    ImGui::SameLine();
+
+    ImDrawList *draw = ImGui::GetWindowDrawList();
+
+    const float barMaxLen = 100.0f; // [px]
+    const float barMaxCno = 55.0f;  // [dbHz]
+    const FfVec2 bar0 = ImGui::GetCursorScreenPos();
+    const FfVec2 barSize = ImVec2(barMaxLen, charSize.y);
+    ImGui::Dummy(barSize);
+    const float barLen = sig->cno * barMaxLen / barMaxCno;
+    const FfVec2 bar1 = bar0 + FfVec2(barLen, barSize.y);
+    const int colIx = sig->cno > 55.0f ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0.0f ? (sig->cno / 5.0f) : 0);
+    draw->AddRectFilled(bar0, bar1, sig->anyUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+    const float offs42 = 42.0 * barMaxLen / barMaxCno;
+    draw->AddLine(bar0 + FfVec2(offs42, 0), bar0 + FfVec2(offs42, barSize.y), GUI_COLOUR(C_GREY));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataSignals::_DrawSignalLevelCb(void *arg)
+{
+    DrawSignalLevelWithBar((const EPOCH_SIGINFO_t *)arg, GuiSettings::charSize);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -170,7 +265,7 @@ void GuiWinDataSignals::_DrawToolbar()
         case EPOCH_SIGUSE_UNKNOWN:
         case EPOCH_SIGUSE_NONE:
         case EPOCH_SIGUSE_SEARCH:
-            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###MinSigUse", GuiSettings::iconSize))
             {
                 _minSigUse = EPOCH_SIGUSE_ACQUIRED;
                 _UpdateSignals();
@@ -181,7 +276,7 @@ void GuiWinDataSignals::_DrawToolbar()
         case EPOCH_SIGUSE_UNUSED:
         case EPOCH_SIGUSE_CODELOCK:
         case EPOCH_SIGUSE_CARRLOCK:
-            if (ImGui::Button(ICON_FK_CIRCLE_O "###MinSigUse", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_CIRCLE_O "###MinSigUse", GuiSettings::iconSize))
             {
                 _minSigUse = EPOCH_SIGUSE_SEARCH;
                 _UpdateSignals();
@@ -196,7 +291,7 @@ void GuiWinDataSignals::_DrawToolbar()
 void GuiWinDataSignals::_DrawContent()
 {
     EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
-    if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyScroll /*ImGuiTabBarFlags_FittingPolicyResizeDown*/))
+    if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton/*ImGuiTabBarFlags_FittingPolicyScroll*/))
     {
         if (ImGui::BeginTabItem(_countAll.label )) { filter = EPOCH_GNSS_UNKNOWN; ImGui::EndTabItem(); }
         if (ImGui::BeginTabItem(_countGps.label )) { filter = EPOCH_GNSS_GPS;     ImGui::EndTabItem(); }
@@ -208,90 +303,8 @@ void GuiWinDataSignals::_DrawContent()
         ImGui::EndTabBar();
     }
 
-    _table.BeginDraw();
-
-    ImDrawList *draw = ImGui::GetWindowDrawList();
-    const float lineHeight = ImGui::GetTextLineHeight();
-    const FfVec2 barOffs(_winSettings->style.ItemSpacing.x + (4 * _winSettings->charSize.x), -_winSettings->style.ItemSpacing.y);
-
-    uint32_t prevSat = 0xffffffff;
-    for (auto *sig: _sigInfo)
-    {
-        if ( ( (filter != EPOCH_GNSS_UNKNOWN) && (sig->gnss != filter) ) )
-        {
-            continue;
-        }
-
-        const bool sigUsed = sig->prUsed || sig->crUsed || sig->doUsed;
-        bool style = true;
-        if (sig->use <= EPOCH_SIGUSE_SEARCH)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-        }
-        else if (sigUsed)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_OK));
-        }
-        else
-        {
-            style = false;
-        }
-
-        const uint32_t thisSat = (sig->gnss << 8) | sig->sv;
-        const uint32_t uid = (sig->signal << 16) | thisSat;
-        auto selUid = _selSigs.find(uid);
-        const bool selected = selUid == _selSigs.end() ? false : selUid->second;
-        if (_table.ColSelectable(thisSat != prevSat ? sig->svStr : "", selected))
-        {
-            _selSigs[uid] = !selected;
-        }
-        prevSat = thisSat;
-
-        _table.ColText(sig->signalStr);
-
-        _table.ColText(sig->bandStr);
-        ImGui::Text("%4.1f", sig->cno);
-        const FfVec2 offs = FfVec2(ImGui::GetCursorScreenPos()) + barOffs;
-        const int colIx = sig->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0 ? (sig->cno / 5) : 0 );
-        draw->AddRectFilled(offs, offs + FfVec2(sig->cno * 2, -lineHeight), sigUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
-        draw->AddLine(offs + FfVec2(42 * 2, 0), offs + FfVec2(42 * 2, -lineHeight), GUI_COLOUR(PLOT_GRID_MAJOR));
-        ImGui::NextColumn();
-
-        _table.ColTextF("%s", sig->useStr);
-
-        _table.ColText(sig->ionoStr);
-
-        _table.ColText(sig->healthStr);
-
-        _table.ColTextF("%s %s %s",
-            sig->prUsed ? "PR" : "--",
-            sig->crUsed ? "CR" : "--",
-            sig->doUsed ? "DO" : "--");
-
-        if (sig->prUsed /*sig->prRes != 0.0*/)
-        {
-            _table.ColTextF("%6.1f", sig->prRes);
-        }
-        else
-        {
-            _table.ColSkip();
-        }
-
-        _table.ColTextF("%-9s %s %s %s",
-            sig->corrStr,
-            sig->prCorrUsed ? "PR" : "--",
-            sig->crCorrUsed ? "CR" : "--",
-            sig->doCorrUsed ? "DO" : "--");
-
-        if (style)
-        {
-            ImGui::PopStyleColor();
-        }
-
-        ImGui::Separator();
-    }
-
-    _table.EndDraw();
+    _table.SetTableRowFilter(filter != EPOCH_GNSS_UNKNOWN ? filter : 0);
+    _table.DrawTable();
 }
 
 /* ****************************************************************************************************************** */

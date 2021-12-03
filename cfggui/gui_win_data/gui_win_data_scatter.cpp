@@ -33,14 +33,14 @@ GuiWinDataScatter::GuiWinDataScatter(const std::string &name, std::shared_ptr<Da
     _winSizeMin = { 40.0, 0.0 };
     _winFlags  |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-    _winSettings->GetValue(_winName + ".showStats",     _showStats,     false);
-    _winSettings->GetValue(_winName + ".plotRadius",    _plotRadius,    10.0);
-    _winSettings->GetValue(_winName + ".showHistogram", _showHistogram, false);
-    _winSettings->GetValue(_winName + ".showAccEst",    _showAccEst,    true);
+    GuiSettings::GetValue(_winName + ".showStats",     _showStats,     false);
+    GuiSettings::GetValue(_winName + ".plotRadius",    _plotRadius,    10.0);
+    GuiSettings::GetValue(_winName + ".showHistogram", _showHistogram, false);
+    GuiSettings::GetValue(_winName + ".showAccEst",    _showAccEst,    true);
     for (int ix = 0; ix < NUM_SIGMA; ix++)
     {
         bool ena;
-        _winSettings->GetValue(_winName + ".sigmaEnabled" + std::to_string(ix), ena, false);
+        GuiSettings::GetValue(_winName + ".sigmaEnabled" + std::to_string(ix), ena, false);
         _sigmaEnabled[ix] = ena;
     }
 
@@ -49,13 +49,13 @@ GuiWinDataScatter::GuiWinDataScatter(const std::string &name, std::shared_ptr<Da
 
 GuiWinDataScatter::~GuiWinDataScatter()
 {
-    _winSettings->SetValue(_winName + ".showStats",     _showStats);
-    _winSettings->SetValue(_winName + ".plotRadius",    _plotRadius);
-    _winSettings->SetValue(_winName + ".showHistogram", _showHistogram);
-    _winSettings->SetValue(_winName + ".showAccEst",    _showAccEst);
+    GuiSettings::SetValue(_winName + ".showStats",     _showStats);
+    GuiSettings::SetValue(_winName + ".plotRadius",    _plotRadius);
+    GuiSettings::SetValue(_winName + ".showHistogram", _showHistogram);
+    GuiSettings::SetValue(_winName + ".showAccEst",    _showAccEst);
     for (int ix = 0; ix < NUM_SIGMA; ix++)
     {
-        _winSettings->SetValue(_winName + ".sigmaEnabled" + std::to_string(ix), _sigmaEnabled[ix]);
+        GuiSettings::SetValue(_winName + ".sigmaEnabled" + std::to_string(ix), _sigmaEnabled[ix]);
     }
 }
 
@@ -116,7 +116,7 @@ void GuiWinDataScatter::_DrawContent()
 
     // Draw scatter plot (draw list stuff is in screen coordinates)
     ImDrawList *draw = ImGui::GetWindowDrawList();
-    const float radiusPx = (MAX(size.x, size.y) / 2) - (3 * _winSettings->charSize.x);
+    const float radiusPx = (MAX(size.x, size.y) / 2) - (3 * GuiSettings::charSize.x);
     const float m2px = radiusM > FLT_EPSILON ? radiusPx / radiusM : 1.0;
     const float px2m = radiusPx > FLT_EPSILON ? radiusM / radiusPx : 1.0;
     const float top = offs.y;
@@ -161,7 +161,7 @@ void GuiWinDataScatter::_DrawContent()
             const float north = epoch.enuAbs[_N_];
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
-            draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), _winSettings->GetFixColour(&epoch.raw));
+            draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), GuiSettings::GetFixColour(&epoch.raw));
             _havePoints = true;
             _histNumPoints++;
 
@@ -209,16 +209,16 @@ void GuiWinDataScatter::_DrawContent()
         }
 
         //std::snprintf(label, sizeof(label), radiusM < 0.2 ? "%+.2f" : "%+.1f", pos[ix] * radiusM);
-        const float xOffs = ((float)strlen(label) - labelOffs) * _winSettings->charSize.x;
+        const float xOffs = ((float)strlen(label) - labelOffs) * GuiSettings::charSize.x;
         // x axis
-        ImVec2 cursor = cent + ImVec2((radiusPx * pos[ix]) - xOffs, -_winSettings->charSize.y - 2);
+        ImVec2 cursor = cent + ImVec2((radiusPx * pos[ix]) - xOffs, -GuiSettings::charSize.y - 2);
         ImGui::SetCursorScreenPos(cursor);
         ImGui::TextUnformatted(label);
         // y axis
         cursor = cent + ImVec2(-xOffs, radiusPx * -pos[ix]);
         if (pos[ix] > 0)
         {
-            cursor.y -= _winSettings->charSize.y + 2;
+            cursor.y -= GuiSettings::charSize.y + 2;
         }
         else
         {
@@ -252,7 +252,7 @@ void GuiWinDataScatter::_DrawContent()
         char label[20];
 
         std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_E_].min);
-        ImGui::SetCursorScreenPos(ImVec2(minEastX - (_winSettings->charSize.x * strlen(label)) - 2, top));
+        ImGui::SetCursorScreenPos(ImVec2(minEastX - (GuiSettings::charSize.x * strlen(label)) - 2, top));
         ImGui::TextUnformatted(label);
 
         std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_E_].max);
@@ -279,7 +279,7 @@ void GuiWinDataScatter::_DrawContent()
             ImGui::TextUnformatted(label);
 
             std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_N_].mean);
-            ImGui::SetCursorScreenPos(ImVec2(left + 2 + (_winSettings->charSize.x * 6), meanNorthY - lineHeight));
+            ImGui::SetCursorScreenPos(ImVec2(left + 2 + (GuiSettings::charSize.x * 6), meanNorthY - lineHeight));
             ImGui::TextUnformatted(label);
 
             ImGui::PopStyleColor();
@@ -363,21 +363,21 @@ void GuiWinDataScatter::_DrawContent()
         switch (refPos)
         {
             case Database::REFPOS_MEAN:
-                if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###RefPos", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###RefPos", GuiSettings::iconSize))
                 {
                     _database->SetRefPosLast();
                 }
                 Gui::ItemTooltip("Reference position is mean position");
                 break;
             case Database::REFPOS_LAST:
-                if (ImGui::Button(ICON_FK_CHECK_CIRCLE_O "###RefPos", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_CHECK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
                 {
                     _database->SetRefPosMean();
                 }
                 Gui::ItemTooltip("Reference position is last position");
                 break;
             case Database::REFPOS_USER:
-                if (ImGui::Button(ICON_FK_CIRCLE_O "###RefPos", _winSettings->iconButtonSize))
+                if (ImGui::Button(ICON_FK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
                 {
                     _database->SetRefPosMean();
                 }
@@ -392,7 +392,7 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::SameLine();
 
         // Fit data
-        if (ImGui::Button(ICON_FK_ARROWS_ALT "###Fit", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_ARROWS_ALT "###Fit", GuiSettings::iconSize))
         {
             _plotRadius = MIN(MAX(stats.enuAbs[_E_].max, stats.enuAbs[_N_].max), maxRadiusM);
             snapRadius = true;
@@ -403,12 +403,12 @@ void GuiWinDataScatter::_DrawContent()
         }
         Gui::ItemTooltip("Fit all points");
 
-        const float rightButtonsOffs = cursorMax.x - (2 * (_winSettings->iconButtonSize.x + _winSettings->style.ItemInnerSpacing.x));
+        const float rightButtonsOffs = cursorMax.x - (2 * (GuiSettings::iconSize.x + GuiSettings::style->ItemInnerSpacing.x));
         ImGui::SetCursorPos(ImVec2(rightButtonsOffs, cursorOrigin.y));
 
         // Error ellipse
         bool dummy = showingEllipses;
-        if (ToggleButton(ICON_FK_PERCENT "###ErrEll", NULL, &dummy, "Error ellipses", NULL))
+        if (Gui::ToggleButton(ICON_FK_PERCENT "###ErrEll", NULL, &dummy, "Error ellipses", NULL, GuiSettings::iconSize))
         {
             ImGui::OpenPopup("ErrEllSigma");
         }
@@ -428,7 +428,7 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::SameLine();
 
         // Show statistics?
-        ToggleButton(ICON_FK_CROP "###ShowStats", NULL, &_showStats, "Showing statistics", "Not showing statistics");
+        Gui::ToggleButton(ICON_FK_CROP "###ShowStats", NULL, &_showStats, "Showing statistics", "Not showing statistics", GuiSettings::iconSize);
         if (ImGui::IsItemHovered())
         {
             controlsHovered = true;
@@ -437,7 +437,7 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::SetCursorPosX(rightButtonsOffs);
 
         // Histogram
-        ToggleButton(ICON_FK_BAR_CHART "##Histogram", NULL, &_showHistogram, "Showing histogram", "Not showing histogram");
+        Gui::ToggleButton(ICON_FK_BAR_CHART "##Histogram", NULL, &_showHistogram, "Showing histogram", "Not showing histogram", GuiSettings::iconSize);
         if (ImGui::IsItemHovered())
         {
             controlsHovered = true;
@@ -446,7 +446,7 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::SameLine();
 
         // Accuracy estimate circle
-        if (ToggleButton(ICON_FK_CIRCLE "###AccEst", NULL, &_showAccEst, "Showing accuracy estimate (2d)", "Not showing accuracy estimate (2d)"))
+        if (Gui::ToggleButton(ICON_FK_CIRCLE "###AccEst", NULL, &_showAccEst, "Showing accuracy estimate (2d)", "Not showing accuracy estimate (2d)", GuiSettings::iconSize))
         {
 
         }
@@ -503,7 +503,7 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::TextUnformatted(label);
 
         std::snprintf(label, sizeof(label), "%+.3f", delta.y);
-        ImGui::SetCursorScreenPos(ImVec2(left + 2 + (_showStats ? (_winSettings->charSize.x * 13) : 0), io.MousePos.y - lineHeight));
+        ImGui::SetCursorScreenPos(ImVec2(left + 2 + (_showStats ? (GuiSettings::charSize.x * 13) : 0), io.MousePos.y - lineHeight));
         ImGui::TextUnformatted(label);
 
         ImGui::PopStyleColor();

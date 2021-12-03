@@ -26,7 +26,7 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxMonHw2::GuiMsgUbxMonHw2(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxMonHw2::GuiMsgUbxMonHw2(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile)
 {
 }

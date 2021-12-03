@@ -26,69 +26,50 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxMonComms::GuiMsgUbxMonComms(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
-    GuiMsg(receiver, logfile)
+GuiMsgUbxMonComms::GuiMsgUbxMonComms(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
+    GuiMsg(receiver, logfile),
+    _valid { false }
 {
+    _table.AddColumn("Port");
+    _table.AddColumn("TX pend", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("TX bytes", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("TX usage", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("RX pend", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("RX bytes", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("RX usage", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Overruns", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Skipped", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("UBX", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("NMEA", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("RTCM3", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("SPARTN", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Other", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+void GuiMsgUbxMonComms::Clear()
 {
+    _table.ClearRows();
+    _valid = false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxMonComms::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
+{
+    _table.ClearRows();
+
     if ( (UBX_MON_COMMS_VERSION_GET(msg->data) != UBX_MON_COMMS_V0_VERSION) || (UBX_MON_COMMS_V0_SIZE(msg->data) != msg->size) )
     {
-        return false;
+        return;
     }
 
     UBX_MON_COMMS_V0_GROUP0_t comms;
     std::memcpy(&comms, &msg->data[UBX_HEAD_SIZE], sizeof(comms));
 
-    const ImVec2 topSize = _CalcTopSize(1);
-
-    if (ImGui::BeginChild("##Status", topSize))
-    {
-        const bool memError   = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
-        const bool allocError = CHKBITS(comms.txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
-        if (memError || allocError)
-        {
-            ImGui::TextUnformatted("Errors:");
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
-            if (memError)
-            {
-                ImGui::SameLine();
-                ImGui::TextUnformatted("memory");
-            }
-            if (allocError)
-            {
-                ImGui::SameLine();
-                ImGui::TextUnformatted("txbuf");
-            }
-            ImGui::PopStyleColor();
-        }
-        else
-        {
-            ImGui::TextUnformatted("Errors: none");
-        }
-        ImGui::EndChild();
-    }
-
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "Port",     .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "TX pend",  .flags = 0 },
-        { .label = "TX bytes", .flags = 0 },
-        { .label = "TX usage", .flags = 0 },
-        { .label = "RX pend",  .flags = 0 },
-        { .label = "RX bytes", .flags = 0 },
-        { .label = "RX usage", .flags = 0 },
-        { .label = "Overruns", .flags = 0 },
-        { .label = "Skipped",  .flags = 0 },
-        { .label = "UBX",      .flags = 0 },
-        { .label = "NMEA",     .flags = 0 },
-        { .label = "RTCM3",    .flags = 0 },
-        { .label = "SPARTN",   .flags = 0 },
-        { .label = "Other",    .flags = 0 },
-    };
+    _valid = true;
+    _txErrors = comms.txErrors;
 
     int msgsIxUbx    = -1;
     int msgsIxNmea   = -1;
@@ -109,108 +90,105 @@ bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const 
         }
     }
 
-    if (ImGui::BeginTable("ports", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
+    _table.ClearRows();
+    for (int portIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_MON_COMMS_V0_GROUP0_t); portIx < (int)comms.nPorts;
+            portIx++, offs += (int)sizeof(UBX_MON_COMMS_V0_GROUP1_t))
     {
-        ImGui::TableSetupScrollFreeze(1, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
+        UBX_MON_COMMS_V0_GROUP1_t port;
+        std::memcpy(&port, &msg->data[offs], sizeof(port));
+
+        const uint8_t portBank = port.portId & 0xff;
+        const uint8_t portNo   = (port.portId >> 8) & 0xff;
+        const char * const portNames[] = { "I2C", "UART1", "UART2", "USB", "SPI" };
+
+        _table.AddCellTextF("%u %s", portBank, portNo < NUMOF(portNames) ? portNames[portNo] : "?");
+        _table.AddCellTextF("%u", port.txPending);
+        _table.AddCellTextF("%u", port.txBytes);
+        _table.AddCellTextF("%u%% (%3u%%)", port.txUsage, port.txPeakUsage);
+        _table.AddCellTextF("%u", port.rxPending);
+        _table.AddCellTextF("%u", port.rxBytes);
+        _table.AddCellTextF("%u%% (%3u%%)", port.rxUsage, port.rxPeakUsage);
+        _table.AddCellTextF("%u", port.overrunErrors);
+        _table.AddCellTextF("%u", port.skipped);
+        if (msgsIxUbx < 0)
         {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
+            _table.AddCellEmpty();
         }
-        ImGui::TableHeadersRow();
-
-        for (int portIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_MON_COMMS_V0_GROUP0_t); portIx < (int)comms.nPorts;
-                portIx++, offs += (int)sizeof(UBX_MON_COMMS_V0_GROUP1_t))
+        else
         {
-            UBX_MON_COMMS_V0_GROUP1_t port;
-            std::memcpy(&port, &msg->data[offs], sizeof(port));
-
-            ImGui::TableNextRow();
-            int colIx = 0;
-            char str[100];
-
-            ImGui::TableSetColumnIndex(colIx++);
-            const uint8_t portBank = port.portId & 0xff;
-            const uint8_t portNo   = (port.portId >> 8) & 0xff;
-            const char * const portNames[] = { "I2C", "UART1", "UART2", "USB", "SPI" };
-            snprintf(str, sizeof(str), "%u %s##%d", portBank, portNo < NUMOF(portNames) ? portNames[portNo] : "?", offs);
-            ImGui::Selectable(str, false, ImGuiSelectableFlags_SpanAllColumns);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.txPending);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.txBytes);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%3u%% (%3u%%)", port.txUsage, port.txPeakUsage);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.rxPending);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.rxBytes);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%3u%% (%3u%%)", port.rxUsage, port.rxPeakUsage);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.overrunErrors);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Text("%u", port.skipped);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (msgsIxUbx < 0)
-            {
-                ImGui::TextUnformatted("?");
-            }
-            else
-            {
-                ImGui::Text("%u", port.msgs[msgsIxUbx]);
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (msgsIxNmea < 0)
-            {
-                ImGui::TextUnformatted("?");
-            }
-            else
-            {
-                ImGui::Text("%u", port.msgs[msgsIxNmea]);
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (msgsIxRtcm3 < 0)
-            {
-                ImGui::TextUnformatted("?");
-            }
-            else
-            {
-                ImGui::Text("%u", port.msgs[msgsIxRtcm3]);
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (msgsIxOther < 0)
-            {
-                ImGui::TextUnformatted("?");
-            }
-            else
-            {
-                ImGui::Text("%u", port.msgs[msgsIxOther]);
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (msgsIxSpartn < 0)
-            {
-                ImGui::TextUnformatted("?");
-            }
-            else
-            {
-                ImGui::Text("%u", port.msgs[msgsIxSpartn]);
-            }
+            _table.AddCellTextF("%u", port.msgs[msgsIxUbx]);
         }
-        ImGui::EndTable();
+        if (msgsIxNmea < 0)
+        {
+            _table.AddCellEmpty();
+        }
+        else
+        {
+            _table.AddCellTextF("%u", port.msgs[msgsIxNmea]);
+        }
+        if (msgsIxRtcm3 < 0)
+        {
+            _table.AddCellEmpty();
+        }
+        else
+        {
+            _table.AddCellTextF("%u", port.msgs[msgsIxRtcm3]);
+        }
+        if (msgsIxOther < 0)
+        {
+            _table.AddCellEmpty();
+        }
+        else
+        {
+            _table.AddCellTextF("%u", port.msgs[msgsIxOther]);
+        }
+        if (msgsIxSpartn < 0)
+        {
+            _table.AddCellEmpty();
+        }
+        else
+        {
+            _table.AddCellTextF("%u", port.msgs[msgsIxSpartn]);
+        }
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+{
+    UNUSED(msg);
+    if (!_valid)
+    {
+        return false;
+    }
+
+    const ImVec2 topSize = _CalcTopSize(1);
+
+    const bool memError   = CHKBITS(_txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
+    const bool allocError = CHKBITS(_txErrors, UBX_MON_COMMS_V0_TXERRORS_MEM);
+    if (memError || allocError)
+    {
+        ImGui::TextUnformatted("Errors:");
+        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_WARNING));
+        if (memError)
+        {
+            ImGui::SameLine();
+            ImGui::TextUnformatted("memory");
+        }
+        if (allocError)
+        {
+            ImGui::SameLine();
+            ImGui::TextUnformatted("txbuf");
+        }
+        ImGui::PopStyleColor();
+    }
+    else
+    {
+        ImGui::TextUnformatted("Errors: none");
+    }
+
+    _table.DrawTable(sizeAvail - topSize);
 
     return true;
 }

@@ -22,9 +22,9 @@
 
 #include "gui_win.hpp"
 
-#include "data.hpp"
-#include "receiver.hpp"
-#include "logfile.hpp"
+#include "input_data.hpp"
+#include "input_receiver.hpp"
+#include "input_logfile.hpp"
 #include "database.hpp"
 
 /* ***** Receiver data window base class **************************************************************************** */
@@ -38,16 +38,16 @@ class GuiWinData : public GuiWin
         void Loop(const uint32_t &frame, const double &now) final;
         void DrawWindow() final;
 
-        void ProcessData(const Data &data);
+        void ProcessData(const InputData &data);
         void ClearData();
 
-        void SetReceiver(std::shared_ptr<Receiver> receiver);
-        void SetLogfile(std::shared_ptr<Logfile> logfile);
+        void SetReceiver(std::shared_ptr<InputReceiver> receiver);
+        void SetLogfile(std::shared_ptr<InputLogfile> logfile);
 
     protected:
 
-        std::shared_ptr<Receiver> _receiver;  // either we get data from a receiver
-        std::shared_ptr<Logfile>  _logfile;   // ..or from a logfile
+        std::shared_ptr<InputReceiver> _receiver;  // either we get data from a receiver
+        std::shared_ptr<InputLogfile>  _logfile;   // ..or from a logfile
         std::shared_ptr<Database> _database;
 
         // Common functionality
@@ -60,7 +60,7 @@ class GuiWinData : public GuiWin
 
         // Specific implementation
         virtual void _Loop(const uint32_t &frame, const double &now);
-        virtual void _ProcessData(const Data &data);
+        virtual void _ProcessData(const InputData &data);
         virtual void _DrawToolbar();
         virtual void _DrawContent();
         virtual void _ClearData();

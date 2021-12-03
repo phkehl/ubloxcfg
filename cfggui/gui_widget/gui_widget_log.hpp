@@ -47,6 +47,9 @@ class GuiWidgetLog
         std::string GetFilterStr();
         void        SetFilterStr(const std::string &str);
 
+        std::string GetSettings();
+        void        SetSettings(const std::string &settings);
+
     protected:
         struct LogLine
         {
@@ -63,6 +66,7 @@ class GuiWidgetLog
 
         bool                 _logTimestamps;
         bool                 _logAutoscroll;
+        bool                 _scrollToBottom;
 
         bool                 _logCopy;
 

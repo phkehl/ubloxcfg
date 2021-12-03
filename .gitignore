@@ -13,6 +13,7 @@ meier*
 /.vscode
 
 core
+core.[0-9]*
 
 /output
 /build

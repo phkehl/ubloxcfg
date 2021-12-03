@@ -26,9 +26,16 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxMonHw3::GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxMonHw3::GuiMsgUbxMonHw3(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile)
 {
+    _table.AddColumn("Pin");
+    _table.AddColumn("Direction");
+    _table.AddColumn("State");
+    _table.AddColumn("Peripheral");
+    _table.AddColumn("IRQ");
+    _table.AddColumn("Pull");
+    _table.AddColumn("Virtual");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -42,15 +49,66 @@ GuiMsgUbxMonHw3::GuiMsgUbxMonHw3(std::shared_ptr<Receiver> receiver, std::shared
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw3::_xtalFlags =
 {
     { true,      "absent",             GUI_COLOUR(TEXT_OK) },
-    { false,     "ok",                 GUI_COLOUR(C_NONE)  },
+    { false,     "ok",                 GUI_COLOUR_NONE  },
 };
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxMonHw3::_safebootFlags =
 {
     { true,      "active",             GUI_COLOUR(TEXT_WARNING) },
-    { false,     "inactive",           GUI_COLOUR(C_NONE) },
+    { false,     "inactive",           GUI_COLOUR_NONE },
 
 };
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiMsgUbxMonHw3::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
+{
+    if ( (UBX_MON_HW3_VERSION_GET(msg->data) != UBX_MON_HW3_V0_VERSION) || (UBX_MON_HW3_V0_SIZE(msg->data) != msg->size) )
+    {
+        return;
+    }
+    UBX_MON_HW3_V0_GROUP0_t hw;
+    std::memcpy(&hw, &msg->data[UBX_HEAD_SIZE], sizeof(hw));
+
+    _table.ClearRows();
+    for (int pinIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_MON_HW3_V0_GROUP0_t); pinIx < (int)hw.nPins;
+            pinIx++, offs += (int)sizeof(UBX_MON_HW3_V0_GROUP1_t))
+    {
+        UBX_MON_HW3_V0_GROUP1_t pin;
+        std::memcpy(&pin, &msg->data[offs], sizeof(pin));
+
+        const uint8_t pinBank = pin.pinId & 0xff;
+        const uint8_t pinNo   = (pin.pinId >> 8) & 0xff;
+        _table.AddCellTextF("%d %2d##%d", pinBank, pinNo, pinIx);
+        _table.AddCellText(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_DIRECTION) ? "output" : "input");
+        _table.AddCellText(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_VALUE) ? "high" : "low");
+        if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PERIPHPIO))
+        {
+            _table.AddCellText("PIO");
+        }
+        else
+        {
+            const uint8_t periph = UBX_MON_HW3_V0_PINMASK_PINBANK_GET(pin.pinMask);
+            const char periphChars[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
+            _table.AddCellTextF("%c", periph < NUMOF(periphChars) ? periphChars[periph] : '?');
+        }
+        _table.AddCellText(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOIRQ) ? "yes" : "no");
+        const bool pullLo = CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOPULLLOW);
+        const bool pullHi = CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOPULLHIGH);
+        _table.AddCellText(pullLo && pullHi ? "low high" : (pullLo ? "low" : (pullHi ? "high" : "")));
+        if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_VPMANAGER))
+        {
+            _table.AddCellTextF("%u - %s", pin.VP,
+                (pin.VP < NUMOF(GuiMsgUbxMonHw::_virtFuncs)) && GuiMsgUbxMonHw::_virtFuncs[pin.VP] ?
+                GuiMsgUbxMonHw::_virtFuncs[pin.VP] : "?");
+        }
+        else
+        {
+            _table.AddCellEmpty();
+        }
+    }
+
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -64,7 +122,7 @@ bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     std::memcpy(&hw, &msg->data[UBX_HEAD_SIZE], sizeof(hw));
 
     const ImVec2 topSize = _CalcTopSize(4);
-    const float dataOffs = 20 * _winSettings->charSize.x;
+    const float dataOffs = 20 * GuiSettings::charSize.x;
 
     ImGui::BeginChild("##Status", topSize);
     {
@@ -78,82 +136,7 @@ bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     }
     ImGui::EndChild();
 
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "Pin",         .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Direction",   .flags = 0 },
-        { .label = "State",       .flags = 0 },
-        { .label = "Peripheral",  .flags = 0 },
-        { .label = "IRQ",         .flags = 0 },
-        { .label = "Pull",        .flags = 0 },
-        { .label = "Virtual",     .flags = 0 },
-    };
-
-    if (ImGui::BeginTable("pins", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
-    {
-        ImGui::TableSetupScrollFreeze(1, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
-
-        for (int pinIx = 0, offs = UBX_HEAD_SIZE + (int)sizeof(UBX_MON_HW3_V0_GROUP0_t); pinIx < (int)hw.nPins;
-             pinIx++, offs += (int)sizeof(UBX_MON_HW3_V0_GROUP1_t))
-        {
-            UBX_MON_HW3_V0_GROUP1_t pin;
-            std::memcpy(&pin, &msg->data[offs], sizeof(pin));
-
-            ImGui::TableNextRow();
-            int colIx = 0;
-            char str[100];
-
-            ImGui::TableSetColumnIndex(colIx++);
-            const uint8_t pinBank = pin.pinId & 0xff;
-            const uint8_t pinNo   = (pin.pinId >> 8) & 0xff;
-            snprintf(str, sizeof(str), "%d %2d##%d", pinBank, pinNo, pinIx);
-            ImGui::Selectable(str, false, ImGuiSelectableFlags_SpanAllColumns);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_DIRECTION) ? "output" : "input");
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_VALUE) ? "high" : "low");
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PERIPHPIO))
-            {
-                ImGui::TextUnformatted("PIO");
-            }
-            else
-            {
-                const uint8_t periph = UBX_MON_HW3_V0_PINMASK_PINBANK_GET(pin.pinMask);
-                const char periphChars[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
-                ImGui::Text("%c", periph < NUMOF(periphChars) ? periphChars[periph] : '?');
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOIRQ) ? "yes" : "no");
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOPULLLOW) ? "low" : "");
-            if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_PIOPULLHIGH))
-            {
-                ImGui::SameLine();
-                ImGui::TextUnformatted("high");
-            }
-
-            ImGui::TableSetColumnIndex(colIx++);
-            if (CHKBITS(pin.pinMask, UBX_MON_HW3_V0_PINMASK_VPMANAGER))
-            {
-                ImGui::Text("%u - %s", pin.VP,
-                    (pin.VP < NUMOF(GuiMsgUbxMonHw::_virtFuncs)) && GuiMsgUbxMonHw::_virtFuncs[pin.VP] ?
-                    GuiMsgUbxMonHw::_virtFuncs[pin.VP] : "?");
-            }
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable(sizeAvail - topSize);
 
     return true;
 }

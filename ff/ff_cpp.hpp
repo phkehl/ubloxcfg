@@ -74,6 +74,15 @@ namespace Ff
         UBLOXCFG_LAYER_t               layer;
         std::vector<UBLOXCFG_KEYVAL_t> kv;
     };
+
+    // UBX message
+    struct UbxMessage
+    {
+        UbxMessage(const uint8_t clsId, const uint8_t msgId, const std::string &payload, const bool addNul = true);
+        UbxMessage(const uint8_t clsId, const uint8_t msgId, const std::vector<uint8_t> &payload);
+        UbxMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payload, const int payloadSize);
+        std::vector<uint8_t> raw;
+    };
 };
 
 /* ****************************************************************************************************************** */

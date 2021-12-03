@@ -54,8 +54,7 @@ GuiWinInput::GuiWinInput(const std::string &name) :
 {
     DEBUG("GuiWinInput(%s)", _winName.c_str());
 
-    _winSize    = { 90, 25 };
-    //_winSizeMin = { 90, 20 };
+    _winSize = { 95, 35 };
 
     // Prevent other (data win, other input win) windows from docking into center of the input window, i.e. other
     // windows can only split this a input window but not "overlap" (add a tab)
@@ -66,7 +65,7 @@ GuiWinInput::GuiWinInput(const std::string &name) :
          /* from imgui_internal.h: */ImGuiDockNodeFlags_CentralNode;
 
     // Load saved settings
-    _winSettings->GetValue(_winName + ".autoHideDatawin", _autoHideDatawin, true);
+    GuiSettings::GetValue(_winName + ".autoHideDatawin", _autoHideDatawin, true);
     // s.a. OpenPreviousDataWin(), called from GuiApp
 }
 
@@ -82,9 +81,8 @@ GuiWinInput::~GuiWinInput()
     {
         openWinNames.push_back(dataWin->GetName());
     }
-    DEBUG("openWinNames %d", (int)openWinNames.size());
-    _winSettings->SetValueList(_winName + ".dataWindows", openWinNames, ",", MAX_SAVED_WINDOWS);
-    _winSettings->SetValue(_winName + ".autoHideDatawin", _autoHideDatawin);
+    GuiSettings::SetValueList(_winName + ".dataWindows", openWinNames, ",", MAX_SAVED_WINDOWS);
+    GuiSettings::SetValue(_winName + ".autoHideDatawin", _autoHideDatawin);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -99,11 +97,17 @@ void GuiWinInput::Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinInput::_ProcessData(const Data &data)
+void GuiWinInput::_ProcessData(const InputData &data)
 {
     switch (data.type)
     {
-        case Data::Type::DATA_MSG:
+        case InputData::EVENT_START:
+        case InputData::EVENT_STOP:
+            _rxVerStr = "";
+            _UpdateTitle();
+            _epoch = nullptr;
+            break;
+        case InputData::DATA_MSG:
             if (data.msg->name == "UBX-MON-VER")
             {
                 char str[100];
@@ -114,21 +118,7 @@ void GuiWinInput::_ProcessData(const Data &data)
                 }
             }
             break;
-        case Data::Type::INFO_NOTICE:
-            _logWidget.AddLine(data.info->c_str(), GUI_COLOUR(INF_NOTICE));
-            break;
-        case Data::Type::INFO_WARN:
-            _logWidget.AddLine(data.info->c_str(), GUI_COLOUR(INF_WARNING));
-            break;
-        case Data::Type::INFO_ERROR:
-            _logWidget.AddLine(data.info->c_str(), GUI_COLOUR(INF_ERROR));
-            break;
-        case Data::Type::EVENT_STOP:
-            _rxVerStr = "";
-            _UpdateTitle();
-            _epoch = nullptr;
-            break;
-        case Data::Type::DATA_EPOCH:
+        case InputData::DATA_EPOCH:
             if (data.epoch->epoch.valid)
             {
                 _epoch = data.epoch;
@@ -138,7 +128,15 @@ void GuiWinInput::_ProcessData(const Data &data)
                     //_fixTime = _epoch->...timeofepoch... TODO
                 }
             }
-        default:
+            break;
+        case InputData::INFO_NOTICE:
+            _logWidget.AddLine(data.info.c_str(), GUI_COLOUR(INF_NOTICE));
+            break;
+        case InputData::INFO_WARNING:
+            _logWidget.AddLine(data.info.c_str(), GUI_COLOUR(INF_WARNING));
+            break;
+        case InputData::INFO_ERROR:
+            _logWidget.AddLine(data.info.c_str(), GUI_COLOUR(INF_ERROR));
             break;
     }
 
@@ -202,10 +200,10 @@ void GuiWinInput::DrawWindow()
     ImGui::Separator();
 
     const EPOCH_t *epoch = _epoch && _epoch->epoch.valid ? &_epoch->epoch : nullptr;
-    const float statusHeight = ImGui::GetTextLineHeightWithSpacing() * 9;
+    const float statusHeight = ImGui::GetTextLineHeightWithSpacing() * 10;
     const float maxHeight = ImGui::GetContentRegionAvail().y;
 
-    if (ImGui::BeginChild("##StatusLeft", ImVec2(_winSettings->charSize.x * 40, statusHeight), false,
+    if (ImGui::BeginChild("##StatusLeft", ImVec2(GuiSettings::charSize.x * 40, statusHeight), false,
             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse ))
     {
         _DrawNavStatusLeft(epoch);
@@ -256,6 +254,23 @@ void GuiWinInput::DrawDataWindows()
     }
 }
 
+void GuiWinInput::DataWinMenu()
+{
+    if (ImGui::MenuItem("Main"))
+    {
+        Focus();
+    }
+    ImGui::Separator();
+    const int offs = GetTitle().size() + 3;
+    for (auto &win: _dataWindows)
+    {
+        if (ImGui::MenuItem(win->GetTitle().substr(offs).c_str()))
+        {
+            win->Open();
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define _MK_CREATE(_cls_) \
@@ -283,7 +298,7 @@ void GuiWinInput::_DrawDataWinButtons()
     for (auto &def: _dataWinDefs)
     {
         ImGui::BeginDisabled(!CHKBITS_ANY(def.reqs, _dataWinCaps));
-        if (ImGui::Button(def.button, _winSettings->iconButtonSize))
+        if (ImGui::Button(def.button, GuiSettings::iconSize))
         {
             const std::string baseName = GetName() + def.name; // Receiver1Map, Logfile4Stats, ...
             int winNumber = 1;
@@ -329,7 +344,7 @@ void GuiWinInput::_DrawDataWinButtons()
 void GuiWinInput::OpenPreviousDataWin()
 {
     const std::string winName = GetName(); // "Receiver1", "Logfile3", ...
-    const std::vector<std::string> dataWinNames = _winSettings->GetValueList(winName + ".dataWindows", ",", MAX_SAVED_WINDOWS);
+    const std::vector<std::string> dataWinNames = GuiSettings::GetValueList(winName + ".dataWindows", ",", MAX_SAVED_WINDOWS);
     for (const auto &dataWinName: dataWinNames) // "Receiver1Scatter1", "Logfile3Map1", ...
     {
         try
@@ -345,7 +360,7 @@ void GuiWinInput::OpenPreviousDataWin()
                 std::string dataWinName2 = winName + name; // "Receiver1Map1"
                 auto win = def.create(dataWinName2, _database);
                 win->Open();
-                win->SetTitle(winName + std::string(" - ") + def.title + std::string(" ") + name.substr(nameLen));
+                win->SetTitle(GetTitle() + std::string(" - ") + def.title + std::string(" ") + name.substr(nameLen));
                 _AddDataWindow(std::move(win));
                 break;
             }
@@ -362,7 +377,7 @@ void GuiWinInput::OpenPreviousDataWin()
 void GuiWinInput::_DrawActionButtons()
 {
     // Clear
-    if (ImGui::Button(ICON_FK_ERASER "##Clear", _winSettings->iconButtonSize))
+    if (ImGui::Button(ICON_FK_ERASER "##Clear", GuiSettings::iconSize))
     {
         _ClearData();
     }
@@ -384,8 +399,8 @@ void GuiWinInput::_DrawActionButtons()
     const float dbFull = (float)dbUsage / (float)dbSize;
     const int dbIconIx = CLIP(dbFull, 0.0f, 1.0f) * (float)(NUMOF(dbIcons) - 1);
     const ImVec2 cursor = ImGui::GetCursorPos();
-    ImGui::InvisibleButton("DbStatus", _winSettings->iconButtonSize, ImGuiButtonFlags_None);
-    //ImGui::Button(dbIcons[dbIconIx], _winSettings->iconButtonSize);
+    ImGui::InvisibleButton("DbStatus", GuiSettings::iconSize, ImGuiButtonFlags_None);
+    //ImGui::Button(dbIcons[dbIconIx], GuiSettings::iconSize);
     if (Gui::ItemTooltipBegin())
     {
         ImGui::Text("Database %d/%d epochs, %.1f%% full", dbUsage, dbSize, dbFull * 1e2f);
@@ -400,7 +415,7 @@ void GuiWinInput::_DrawActionButtons()
 
 void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
 {
-    const float dataOffs = _winSettings->charSize.x * 13;
+    const float dataOffs = GuiSettings::charSize.x * 13;
 
     // Sequence / status
     ImGui::Selectable("Seq, uptime");
@@ -431,7 +446,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     if (epoch && epoch->haveFix)
     {
         ImGui::SameLine(dataOffs);
-        ImGui::PushStyleColor(ImGuiCol_Text, _winSettings->GetFixColour(epoch));
+        ImGui::PushStyleColor(ImGuiCol_Text, GuiSettings::GetFixColour(epoch));
         ImGui::TextUnformatted(epoch->fixStr);
         ImGui::PopStyleColor();
         // ImGui::SameLine();
@@ -468,6 +483,12 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
         ImGui::SameLine(dataOffs);
         if (!epoch->fixOk) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         ImGui::Text("%.2f m", epoch->llh[Database::_HEIGHT_]);
+        if (epoch->haveMsl)
+        {
+            ImGui::SameLine();
+            ImGui::Text("(%.1f MSL)", epoch->heightMsl);
+        }
+
         if (!epoch->fixOk) { ImGui::PopStyleColor(); }
     }
     ImGui::Selectable("Accuracy");
@@ -487,6 +508,14 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
         {
             ImGui::Text("H %.3f, V %.3f [m]", epoch->horizAcc, epoch->vertAcc);
         }
+        if (!epoch->fixOk) { ImGui::PopStyleColor(); }
+    }
+    ImGui::Selectable("Velocity");
+    if (epoch && epoch->haveVel)
+    {
+        ImGui::SameLine(dataOffs);
+        if (!epoch->fixOk) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+        ImGui::Text("%.2f [m/s] (%.1f [km/h])", epoch->vel3d, epoch->vel3d * (3600.0/1000.0));
         if (!epoch->fixOk) { ImGui::PopStyleColor(); }
     }
     ImGui::Selectable("Rel. pos.");
@@ -547,7 +576,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
 
 void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
 {
-    const float dataOffs = _winSettings->charSize.x * 12;
+    const float dataOffs = GuiSettings::charSize.x * 12;
 
     ImGui::Selectable("Sat. used");
     if (epoch)
@@ -572,7 +601,7 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
     const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
     const FfVec2 canvasMax  = canvasOffs + canvasSize;
     //DEBUG("%f %f %f %f", canvasOffs.x, canvasOffs.y, canvasSize.x, canvasSize.y);
-    const auto charSize = _winSettings->charSize;
+    const auto charSize = GuiSettings::charSize;
     if (canvasSize.y < (charSize.y * 5))
     {
         return;

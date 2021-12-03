@@ -5,7 +5,7 @@ Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
 [https://oinkzwurgl.org/hacking/ubloxcfg](https://oinkzwurgl.org/hacking/ubloxcfg)
 
 This implements a library (API) do deal with the new configuration interface introduced in u-blox 9 positioning
-receivers (see references in [ubloxcfg.json](./ubloxcfg/ubloxcfg.json)).
+receivers (see references in [ubloxcfg-50-ublox.jsonc](./ubloxcfg/ubloxcfg-50-ublox.jsonc)).
 
 A command line `cfgtool` is provided to configure a receiver from the configuration defined in a human-readable
 configuration file, as well as a few other functions.
@@ -68,17 +68,7 @@ sudo apt-get install gcc gcc-multilib perl libpath-tiny-perl libdata-float-perl 
 
 ### Windows
 
-GCC for Windows is available from [mingw-w64.org](http://mingw-w64.org/doku.php).
-Since you might need Perl to generate the configuration definitions (see below) you could also use the
-GCC that comes with [Strawberry Perl](http://strawberryperl.com/).
-
-Depending on the availability of other tools (make, rm, etc.) on your system you will be able to use the Makefile.
-
-To manually compile, start a Strawberry Perl shell, navigate to the source code, and use this command to compile:
-
-```
-gcc -o output/cfgtool.exe ubloxcfg*.c cfgtool*.c ff*.c crc*.c
-```
+GCC, Make, Perl, etc. for Windows is available from [mingw-w64.org](http://mingw-w64.org/doku.php).
 
 ### Building as a library (Linux)
 
@@ -101,7 +91,7 @@ make -C build/libubloxcfg install
 ## Configuration definitions
 
 The definitions for the configuration items (parameters) have been taken from u-blox manuals and converted into a JSON
-file (with comments): [`ubloxcfg.json`](./ubloxcfg.json).
+file (with comments): [`ubloxcfg-50-ublox.jsonc`](./ubloxcfg/ubloxcfg-50-ublox.jsonc).
 
 The [`ubloxcfg_gen.pl`](./ubloxcfg/ubloxcfg_gen.pl) script converts this to c source code:
 [`ubloxcfg_gen.h`](./ubloxcfg/ubloxcfg_gen.h) and [`ubloxcfg_gen.c`](./ubloxcfg/ubloxcfg_gen.c).
@@ -136,9 +126,7 @@ Run `cfgtool -h` or see [`cfgtool.txt`](./cfgtool.txt) for more information.
 
 ## GUI
 
-A *very experimental* GUI is available. Say `make cfggui`. Linux only. GCC >= 8.0. `sudo apt-get install libcurl4-dev libglfw3-dev libfreetype-dev`.
-
-YMMV.
+A *very experimental* GUI is available. See [here](./cfggui/README.md).
 
 ## Licenses
 
@@ -147,8 +135,6 @@ YMMV.
 * Configuration tool (`cfgtool`), configuration GUI (`cfggui`) and the other libraries (`ff`):
   GNU General Public License (GPL), see [`COPYING`](./ff/COPYING)
 * Various third-party code comes with its own license, see [`3rdparty/`](./3rdparty) and below
-* Definitions for various maps are built into the cfggui. Check if the licenses cover your use!
-  See [`maps.conf`](./cfggui/maps.conf)
 
 See the individual source files, scripts and other files for details.
 
@@ -160,30 +146,10 @@ The tool uses the following third-party code:
   See the included source code ([`crc24q.c`](./3rdparty/stuff/crc24q.c)) and license
   ([`crc24q.COPYING`](./3rdparty/stuff/crc24q.COPYING)).
 
-The GUI uses the following third-party code:
-
-* _Dear ImGui_ (<https://github.com/ocornut/imgui>), see [3rdparty/imgui/](./3rdparty/imgui/)
-* _ImPlot_ (<https://github.com/epezent/implot>), see [3rdparty/implot/](./3rdparty/implot/)
-* _PlatformFolders_ (<https://github.com/sago007/PlatformFolders>), see [3rdparty/stuff/](./3rdparty/stuff/)
-* _DejaVu_ fonts (<https://dejavu-fonts.github.io/>), see [3rdparty/fonts/](./3rdparty/fonts/)
-* _ProggyClean_ font (<https://proggyfonts.net>), see [3rdparty/fonts/](./3rdparty/fonts/)
-* _ForkAwesome_ font (<https://forkaweso.me/Fork-Awesome/>), see [3rdparty/fonts/](./3rdparty/fonts/)
-* _SDL2_ (<https://www.libsdl.org/>), dynamically linked
-* _curl_ (<https://curl.se/>), dynamically linked
-* And a bunch of other libraries that SDL, ImGui etc. need...
-
 ## Todo, ideas
 
 * Document ff_* better.
 * Fix FIXMEs and TODOs. :)
-* Get the GUI cross-compile for Windows (using mingw-w64)
-* Check out stuff here: <https://github.com/mahilab/mahi-gui>
-* Check out doing maps using ImPlot (<https://github.com/epezent/implot_demos>)
-* Maybe better use glfw instead of SDL?
-* Check out <https://github.com/bkaradzic/bgfx>
-* Check out <https://github.com/jnmaloney/WebGui>
-* Debugging gui: `LIBGL_SHOW_FPS=1 LIBGL_DEBUG=verbose ./output/gui` (<https://docs.mesa3d.org/envvars.html>)
-* Checkout icons in <https://github.com/leiradel/ImGuiAl/tree/master/fonts>
 
 
 

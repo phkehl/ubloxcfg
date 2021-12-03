@@ -31,7 +31,7 @@ class GuiWinDataLog : public GuiWinData
 
     protected:
 
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawToolbar() final;
         void _DrawContent() final;
         void _ClearData() final;

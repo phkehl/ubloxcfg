@@ -31,20 +31,20 @@ class GuiWinDataSatellites : public GuiWinData
 
     protected:
 
-        void _ProcessData(const Data &data) final;
+        void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;
 
         struct SatInfo
         {
             SatInfo(const EPOCH_SATINFO_t *_satInfo);
-            const EPOCH_SATINFO_t *satInfo;
-            bool                   visible;
-            float                  dX;
-            float                  dY;
-            float                  fR;
-            const EPOCH_SIGINFO_t *sigL1;
-            const EPOCH_SIGINFO_t *sigL2;
+            EPOCH_SATINFO_t satInfo;
+            bool            visible;
+            float           dX;
+            float           dY;
+            float           fR;
+            EPOCH_SIGINFO_t sigL1;
+            EPOCH_SIGINFO_t sigL2;
         };
         std::vector<SatInfo> _satInfo;
         struct Count
@@ -73,6 +73,8 @@ class GuiWinDataSatellites : public GuiWinData
         void _UpdateSatellites();
         void _DrawSky(const EPOCH_GNSS_t filter);
         void _DrawList(const EPOCH_GNSS_t filter);
+
+        void _DrawSignalLevelCb(void *arg);
 };
 
 /* ****************************************************************************************************************** */

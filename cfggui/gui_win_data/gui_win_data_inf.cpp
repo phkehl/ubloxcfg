@@ -30,16 +30,23 @@ GuiWinDataInf::GuiWinDataInf(const std::string &name, std::shared_ptr<Database> 
 
     _latestEpochEna = false;
 
+    _log.SetSettings(GuiSettings::GetValue(GetName()));
+
     ClearData();
+}
+
+GuiWinDataInf::~GuiWinDataInf()
+{
+    GuiSettings::SetValue(GetName(), _log.GetSettings());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataInf::_ProcessData(const Data &data)
+void GuiWinDataInf::_ProcessData(const InputData &data)
 {
     switch (data.type)
     {
-        case Data::Type::DATA_MSG:
+        case InputData::DATA_MSG:
         {
             if ( (data.msg->type == Ff::ParserMsg::UBX) && (UBX_CLSID(data.msg->data) == UBX_INF_CLSID) )
             {
@@ -52,48 +59,47 @@ void GuiWinDataInf::_ProcessData(const Data &data)
                     case UBX_INF_WARNING_MSGID:  colour = GUI_COLOUR(INF_WARNING); prefix = "Warning: "; _nWarning++; break;
                     case UBX_INF_ERROR_MSGID:    colour = GUI_COLOUR(INF_ERROR);   prefix = "Error:   "; _nError++;   break;
                     case UBX_INF_TEST_MSGID:     colour = GUI_COLOUR(INF_TEST);    prefix = "Test:    "; _nTest++;    break;
-                    default:                                               prefix = "Other:   "; _nOther++;   break;
+                    default:                                                       prefix = "Other:   "; _nOther++;   break;
                 }
                 _log.AddLine(prefix + data.msg->info, colour);
                 _nInf++;
             }
-            else if ( (data.msg->type == Ff::ParserMsg::NMEA) && (data.msg->name == "NMEA-GN-TXT") )
+            else if ( (data.msg->type == Ff::ParserMsg::NMEA) && (data.msg->name == "NMEA-GN-TXT") && (data.msg->data[13] == '0') )
             {
-                if (data.msg->info.substr(6, 2) == "04")
+                // 01234567890123456789
+                // $GPTXT,01,01,02,u-blox ag - www.u-blox.com*50\r\n
+                switch (data.msg->data[14])
                 {
-                    _log.AddLine(std::string("Debug:   ") + data.msg->info.substr(9), GUI_COLOUR(INF_DEBUG));
-                    _nDebug++;
-                    _nInf++;
-                }
-                else if (data.msg->info.substr(6, 2) == "02")
-                {
-                    _log.AddLine(std::string("Notice:  ") + data.msg->info.substr(9), GUI_COLOUR(INF_NOTICE));
-                    _nNotice++;
-                    _nInf++;
-                }
-                else if (data.msg->info.substr(6, 2) == "01")
-                {
-                    _log.AddLine(std::string("Warning: ") + data.msg->info.substr(9), GUI_COLOUR(INF_WARNING));
-                    _nWarning++;
-                    _nInf++;
-                }
-                else if (data.msg->info.substr(6, 2) == "00")
-                {
-                    _log.AddLine(std::string("Error:   ") + data.msg->info.substr(9), GUI_COLOUR(INF_ERROR));
-                    _nError++;
-                    _nInf++;
-                }
-                else if (data.msg->info.substr(6, 2) == "03")
-                {
-                    _log.AddLine(std::string("Test:    ") + data.msg->info.substr(9), GUI_COLOUR(INF_TEST));
-                    _nTest++;
-                    _nInf++;
-                }
-                else
-                {
-                    _log.AddLine(std::string("Other:   ") + data.msg->info, GUI_COLOUR(INF_OTHER));
-                    _nOther++;
-                    _nInf++;
+                    case '0':
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_ERROR));
+                        _nError++;
+                        _nInf++;
+                        break;
+                    case '1':
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_WARNING));
+                        _nWarning++;
+                        _nInf++;
+                        break;
+                    case '2':
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_NOTICE));
+                        _nNotice++;
+                        _nInf++;
+                        break;
+                    case '3':
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_TEST));
+                        _nTest++;
+                        _nInf++;
+                        break;
+                    case '4':
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_DEBUG));
+                        _nDebug++;
+                        _nInf++;
+                        break;
+                    default:
+                        _log.AddLine(data.msg->info, GUI_COLOUR(INF_OTHER));
+                        _nOther++;
+                        _nInf++;
+                        break;
                 }
             }
             break;

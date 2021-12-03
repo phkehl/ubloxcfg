@@ -91,7 +91,7 @@ class MapTiles
         bool                 _DownloadTile(const std::string &url, const std::string &path, uint32_t timeout, const std::string &referer);
 
         // Built-in tiles
-        static const uint8_t TILE_LOAD_PNG[929];  // "tileload.png"
+        static const uint8_t TILE_LOAD_PNG[973];  // "tileload.png"
         static const uint8_t TILE_FAIL_PNG[2276]; // "tilefail.png"
         static const uint8_t TILE_NOPE_PNG[786];  // "tilenope.png"
         static const uint8_t TILE_TEST_PNG[914];  // "tiletest.png"

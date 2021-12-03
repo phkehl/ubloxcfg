@@ -22,7 +22,10 @@
 #include <map>
 #include <cstdint>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-RXM-RAWX renderer ************************************************************************************** */
@@ -30,13 +33,13 @@
 class GuiMsgUbxRxmRawx : public GuiMsg
 {
     public:
-        GuiMsgUbxRxmRawx(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxRxmRawx(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
-    protected:
+    private:
 
         struct RawInfo
         {
@@ -63,9 +66,7 @@ class GuiMsgUbxRxmRawx : public GuiMsg
         bool   _clkReset;
         std::vector<RawInfo> _rawInfos;
 
-        uint32_t _selected;
-
-    private:
+        GuiWidgetTable _table;
 };
 
 /* ****************************************************************************************************************** */

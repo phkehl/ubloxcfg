@@ -1,1 +1,1 @@
-https://github.com/ocornut/imgui/releases/tag/v1.78
+https://github.com/ocornut/imgui

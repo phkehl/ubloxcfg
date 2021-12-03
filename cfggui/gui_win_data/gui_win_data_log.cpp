@@ -29,21 +29,21 @@ GuiWinDataLog::GuiWinDataLog(const std::string &name, std::shared_ptr<Database> 
 
     _latestEpochEna = false;
 
-    _log.SetFilterStr( _winSettings->GetValue(GetName() + ".filter") );
+    _log.SetSettings(GuiSettings::GetValue(GetName()));
 }
 
 GuiWinDataLog::~GuiWinDataLog()
 {
-    _winSettings->SetValue(GetName() + ".filter", _log.GetFilterStr());
+    GuiSettings::SetValue(GetName(), _log.GetSettings());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataLog::_ProcessData(const Data &data)
+void GuiWinDataLog::_ProcessData(const InputData &data)
 {
     switch (data.type)
     {
-        case Data::Type::DATA_MSG:
+        case InputData::DATA_MSG:
         {
             const char srcChar[] =
             {
@@ -81,7 +81,7 @@ void GuiWinDataLog::_ProcessData(const Data &data)
             _sizeRx += data.msg->size;
             break;
         }
-        case Data::Type::DATA_EPOCH:
+        case InputData::DATA_EPOCH:
         {
             char tmp[320];
             std::snprintf(tmp, sizeof(tmp), "@ %4u %s", data.epoch->seq, data.epoch->str.c_str());

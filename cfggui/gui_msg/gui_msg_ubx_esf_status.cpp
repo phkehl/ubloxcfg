@@ -27,9 +27,16 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxEsfStatus::GuiMsgUbxEsfStatus(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxEsfStatus::GuiMsgUbxEsfStatus(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile), _valid{false}
 {
+    _table.AddColumn("Sensor");
+    _table.AddColumn("Used");
+    _table.AddColumn("Ready");
+    _table.AddColumn("Calibration");
+    _table.AddColumn("Time");
+    _table.AddColumn("Freq");
+    _table.AddColumn("Faults");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -38,6 +45,7 @@ void GuiMsgUbxEsfStatus::Clear()
 {
     _valid = false;
     _sensors.clear();
+    _table.ClearRows();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -52,18 +60,68 @@ void GuiMsgUbxEsfStatus::Clear()
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxEsfStatus::_statusFlags012 =
 {
-    { UBX_ESF_STATUS_V2_INITSTATUS1_WTINITSTATUS_OFF,          "Off",          GUI_COLOUR(C_NONE) },
+    { UBX_ESF_STATUS_V2_INITSTATUS1_WTINITSTATUS_OFF,          "Off",          GUI_COLOUR_NONE },
     { UBX_ESF_STATUS_V2_INITSTATUS1_WTINITSTATUS_INITALIZING,  "Initialising", GUI_COLOUR(TEXT_WARNING) },
     { UBX_ESF_STATUS_V2_INITSTATUS1_WTINITSTATUS_INITIALIZED,  "Initialised",  GUI_COLOUR(TEXT_OK) },
 };
 
 /*static*/ const std::vector<GuiMsg::StatusFlags> GuiMsgUbxEsfStatus::_statusFlags0123 =
 {
-    { UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_OFF,          "Off",           GUI_COLOUR(C_NONE) },
+    { UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_OFF,          "Off",           GUI_COLOUR_NONE },
     { UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_INITALIZING,  "Initialising",  GUI_COLOUR(TEXT_WARNING) },
     { UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_INITIALIZED1, "Initialised",   GUI_COLOUR(TEXT_OK) },
     { UBX_ESF_STATUS_V2_INITSTATUS1_MNTALGSTATUS_INITIALIZED2, "Initialised!",  GUI_COLOUR(TEXT_OK) },
 };
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+GuiMsgUbxEsfStatus::Sensor::Sensor(const uint8_t *groupData)
+{
+    UBX_ESF_STATUS_V2_GROUP1_t sensor;
+    std::memcpy(&sensor, groupData, sizeof(sensor));
+
+    const int sensorType = UBX_ESF_STATUS_V2_SENSSTATUS1_TYPE_GET(sensor.sensStatus1);
+    if (sensorType < (int)GuiMsgUbxEsfMeas::MEAS_DEFS.size() && GuiMsgUbxEsfMeas::MEAS_DEFS[sensorType].name)
+    {
+        type = Ff::Sprintf("%s##%p", GuiMsgUbxEsfMeas::MEAS_DEFS[sensorType].name, groupData);
+    }
+    else
+    {
+        type = Ff::Sprintf("Unknown (type %d)##%p", sensorType, groupData);
+    }
+
+    used = CHKBITS(sensor.sensStatus1, UBX_ESF_STATUS_V2_SENSSTATUS1_USED);
+    ready = CHKBITS(sensor.sensStatus1, UBX_ESF_STATUS_V2_SENSSTATUS1_READY);
+
+    constexpr const char * const calibStatusStrs[] = { "not calibrated", "calibrating", "calibrated", "calibrated!" };
+    const int cIx = UBX_ESF_STATUS_V2_SENSSTATUS2_CALIBSTATUS_GET(sensor.sensStatus2);
+    calibStatus = cIx < NUMOF(calibStatusStrs) ? calibStatusStrs[cIx] : "?";
+    calibrated = cIx > 1;
+
+    constexpr const char  * const timeStatusStrs[] = { "no data", "first byte", "event input", "time tag" };
+    const int tIx = UBX_ESF_STATUS_V2_SENSSTATUS2_TIMESTATUS_GET(sensor.sensStatus2);
+    timeStatus = tIx < NUMOF(timeStatusStrs) ? timeStatusStrs[tIx] : "?";
+
+    freq = Ff::Sprintf("%d", sensor.freq);
+
+    faults = "";
+    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_BADMEAS))
+    {
+        faults += "meas ";
+    }
+    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_BADTTAG))
+    {
+        faults += "ttag ";
+    }
+    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_MISSINGMEAS))
+    {
+        faults += "missing ";
+    }
+    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_NOISYMEAS))
+    {
+        faults += "noisy ";
+    }
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -93,55 +151,32 @@ void GuiMsgUbxEsfStatus::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
     }
 
     std::sort(_sensors.begin(), _sensors.end(), [](const Sensor &a, const Sensor &b) { return a.type < b.type; });
-}
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-GuiMsgUbxEsfStatus::Sensor::Sensor(const uint8_t *groupData)
-{
-    UBX_ESF_STATUS_V2_GROUP1_t sensor;
-    std::memcpy(&sensor, groupData, sizeof(sensor));
-
-    const int sensorType = UBX_ESF_STATUS_V2_SENSSTATUS1_TYPE_GET(sensor.sensStatus1);
-    if (sensorType < (int)GuiMsgUbxEsfMeas::MEAS_DEFS.size() && GuiMsgUbxEsfMeas::MEAS_DEFS[sensorType].name)
+    for (const auto &sensor: _sensors)
     {
-        type = Ff::Sprintf("%s##%p", GuiMsgUbxEsfMeas::MEAS_DEFS[sensorType].name, groupData);
-    }
-    else
-    {
-        type = Ff::Sprintf("Unknown (type %d)##%p", sensorType, groupData);
-    }
-
-    used = CHKBITS(sensor.sensStatus1, UBX_ESF_STATUS_V2_SENSSTATUS1_USED) ? "yes" : "no";
-
-    ready = CHKBITS(sensor.sensStatus1, UBX_ESF_STATUS_V2_SENSSTATUS1_READY) ? "yes" : "no";
-
-    constexpr const char * const calibStatusStrs[] = { "not calibrated", "calibrating", "calibrated", "calibrated!" };
-    const int cIx = UBX_ESF_STATUS_V2_SENSSTATUS2_CALIBSTATUS_GET(sensor.sensStatus2);
-    calibStatus = cIx < NUMOF(calibStatusStrs) ? calibStatusStrs[cIx] : "?";
-
-    constexpr const char  * const timeStatusStrs[] = { "no data", "first byte", "event input", "time tag" };
-    const int tIx = UBX_ESF_STATUS_V2_SENSSTATUS2_TIMESTATUS_GET(sensor.sensStatus2);
-    timeStatus = tIx < NUMOF(timeStatusStrs) ? timeStatusStrs[tIx] : "?";
-
-    freq = Ff::Sprintf("%d", sensor.freq);
-
-    faults = "";
-    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_BADMEAS))
-    {
-        faults += "meas ";
-    }
-    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_BADTTAG))
-    {
-        faults += "ttag ";
-    }
-    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_MISSINGMEAS))
-    {
-        faults += "missing ";
-    }
-    if (CHKBITS(sensor.faults, UBX_ESF_STATUS_V2_FAULTS_NOISYMEAS))
-    {
-        faults += "noisy ";
+        _table.AddCellText(sensor.type);
+        _table.AddCellText(sensor.used ? "yes" : "no");
+        _table.AddCellText(sensor.ready ? "yes" : "no");
+        _table.AddCellText(sensor.calibStatus);
+        if (!sensor.calibrated)
+        {
+            _table.SetCellColour(GUI_COLOUR(TEXT_WARNING));
+        }
+        _table.AddCellText(sensor.timeStatus);
+        _table.AddCellText(sensor.freq);
+        _table.AddCellText(sensor.faults);
+        if (sensor.used && sensor.calibrated)
+        {
+            _table.SetRowColour(GUI_COLOUR(TEXT_OK));
+        }
+        else if (!sensor.faults.empty())
+        {
+            _table.SetRowColour(GUI_COLOUR(TEXT_ERROR));
+        }
+        else if (!sensor.ready)
+        {
+            _table.SetRowColour(GUI_COLOUR(TEXT_WARNING));
+        }
     }
 }
 
@@ -149,22 +184,17 @@ GuiMsgUbxEsfStatus::Sensor::Sensor(const uint8_t *groupData)
 
 bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
 {
+    UNUSED(msg);
     if (!_valid)
     {
         return false;
     }
-    if ( (UBX_ESF_STATUS_VERSION_GET(msg->data) != UBX_ESF_STATUS_V2_VERSION) || (UBX_ESF_STATUS_V2_SIZE(msg->data) != msg->size) )
-    {
-        return false;
-    }
-
-    UNUSED(msg);
 
     UBX_ESF_STATUS_V2_GROUP0_t status;
     std::memcpy(&status, &msg->data[UBX_HEAD_SIZE], sizeof(status));
 
     const ImVec2 topSize = _CalcTopSize(6);
-    const float dataOffs = 25 * _winSettings->charSize.x;
+    const float dataOffs = 25 * GuiSettings::charSize.x;
 
     if (ImGui::BeginChild("##Status", topSize))
     {
@@ -177,55 +207,7 @@ bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const
         ImGui::EndChild();
     }
 
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "Sensor",        .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Used",          .flags = 0 },
-        { .label = "Ready",         .flags = 0 },
-        { .label = "Calibration",   .flags = 0 },
-        { .label = "Time",          .flags = 0 },
-        { .label = "Freq",          .flags = 0 },
-        { .label = "Faults",        .flags = 0 },
-    };
-
-    if (ImGui::BeginTable("Sensors", NUMOF(columns), TABLE_FLAGS, sizeAvail - topSize))
-    {
-        ImGui::TableSetupScrollFreeze(1, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
-
-        for (const auto &sensor: _sensors)
-        {
-            ImGui::TableNextRow();
-            int colIx = 0;
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::Selectable(sensor.type.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.used.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.ready.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.calibStatus.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.timeStatus.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.freq.c_str());
-
-            ImGui::TableSetColumnIndex(colIx++);
-            ImGui::TextUnformatted(sensor.faults.c_str());
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable(sizeAvail - topSize);
 
     return true;
 }

@@ -29,7 +29,7 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
     GuiWinData(name, database),
     _debugLayout{false}, _showInfo{true}, _map{nullptr}, _tiles{nullptr}
 {
-    _winSize   = { 80, 25 };
+    _winSize = { 80, 40 };
     _winFlags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
     _latestEpochEna = false;
@@ -38,7 +38,7 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
     ClearData();
 
     // Load settings
-    auto cfg = Ff::StrSplit(_winSettings->GetValue(_winName + ".map"), ",");
+    auto cfg = Ff::StrSplit(GuiSettings::GetValue(_winName + ".map"), ",");
     bool haveCfg = false;
     if (cfg.size() == 4)
     {
@@ -46,7 +46,7 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
         const float zoom = std::stof(cfg[1], &n1);
         const double lat = std::stod(cfg[2], &n2);
         const double lon = std::stod(cfg[3], &n3);
-        for (auto &map: _winSettings->maps)
+        for (auto &map: GuiSettings::maps)
         {
             if (map.name == cfg[0])
             {
@@ -65,9 +65,9 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
             }
         }
     }
-    if (!haveCfg && !_winSettings->maps.empty())
+    if (!haveCfg && !GuiSettings::maps.empty())
     {
-        _SetMap(_winSettings->maps[0], true);
+        _SetMap(GuiSettings::maps[0], true);
     }
 }
 
@@ -77,7 +77,7 @@ GuiWinDataMap::~GuiWinDataMap()
     {
         double lat, lon;
         _map->GetCentLatLon(lat, lon);
-        _winSettings->SetValue(_winName + ".map", Ff::Sprintf("%s,%.2f,%.10f,%.10f",
+        GuiSettings::SetValue(_winName + ".map", Ff::Sprintf("%s,%.2f,%.10f,%.10f",
             _map->GetParams().name.c_str(), _map->GetZoom(), rad2deg(lat), rad2deg(lon)));
     }
 }
@@ -141,7 +141,7 @@ void GuiWinDataMap::_DrawContent()
             float x, y;
             if (_map->GetScreenXyFromLatLon(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_], x, y))
             {
-                draw->AddRectFilled(ImVec2(x - 2, y - 2), ImVec2(x + 2, y + 2), _winSettings->GetFixColour(&epoch.raw));
+                draw->AddRectFilled(ImVec2(x - 2, y - 2), ImVec2(x + 2, y + 2), GuiSettings::GetFixColour(&epoch.raw));
             }
         }
         return true;
@@ -212,21 +212,21 @@ void GuiWinDataMap::_DrawContent()
             const bool baseVis  = _map->GetScreenXyFromLatLon(llh[0], llh[1], xb, yb, false);
             if (roverVis || baseVis)
             {
-                draw->AddLine(ImVec2(xb, yb), ImVec2(xr, yr), GUI_COLOUR(PLOT_MAP_BASELINE), 2.0f);
+                draw->AddLine(ImVec2(xb, yb), ImVec2(xr, yr), GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
             }
             if (baseVis)
             {
-                draw->AddCircleFilled(ImVec2(xb, yb), 3.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
+                draw->AddCircleFilled(ImVec2(xb, yb), 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
             }
         }
     }
     // Controls
     bool controlsHovered = false;
     {
-        ImGui::SetCursorPos(cursorOrigin + _winSettings->style.ItemSpacing);
+        ImGui::SetCursorPos(cursorOrigin + GuiSettings::style->ItemSpacing);
 
         // Left click
-        if (ImGui::Button(ICON_FK_MAP "##MapParam", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_MAP "##MapParam", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("MapParams");
         }
@@ -245,7 +245,7 @@ void GuiWinDataMap::_DrawContent()
         {
             // Zoom slider
             float mapZoom = _mapZoom;
-            ImGui::PushItemWidth(30 * _winSettings->charSize.x);
+            ImGui::PushItemWidth(30 * GuiSettings::charSize.x);
             if (ImGui::SliderFloat("##MapZoom", &mapZoom, _kMapZoomMin, _kMapZoomMax, "%.2f"))
             {
                 _SetZoom(mapZoom);
@@ -255,10 +255,10 @@ void GuiWinDataMap::_DrawContent()
 
             // Map layer popup
             const auto map = _map->GetParams();
-            ImGui::PushItemWidth(30 * _winSettings->charSize.x);
+            ImGui::PushItemWidth(30 * GuiSettings::charSize.x);
             if (ImGui::BeginCombo("###MapLayer", map.title.c_str()))
             {
-                for (const auto &m: _winSettings->maps)
+                for (const auto &m: GuiSettings::maps)
                 {
                     if (m.enabled)
                     {
@@ -285,7 +285,7 @@ void GuiWinDataMap::_DrawContent()
             _map->DrawCtrl(_debugLayout);
 
             ImGui::SameLine();
-            ToggleButton(ICON_FK_INFO "##ShowInfo", NULL, &_showInfo, "Showing info box", "Not showing info box");
+            Gui::ToggleButton(ICON_FK_INFO "##ShowInfo", NULL, &_showInfo, "Showing info box", "Not showing info box", GuiSettings::iconSize);
 
             ImGui::EndPopup();
         }
@@ -300,7 +300,7 @@ void GuiWinDataMap::_DrawContent()
 
             ImGui::SameLine();
 
-            ImGui::PushItemWidth((_winSettings->charSize.x * 6));
+            ImGui::PushItemWidth((GuiSettings::charSize.x * 6));
             float mapZoom = _mapZoom;
             if (ImGui::InputScalar("##MapZoom", ImGuiDataType_Float, &mapZoom, NULL, NULL, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue))
             {
@@ -321,14 +321,14 @@ void GuiWinDataMap::_DrawContent()
             const float progress = (float)numTilesInQueue / (float)_tiles->MAX_TILES_IN_QUEUE;
             char str[100];
             std::snprintf(str, sizeof(str), "Loading %d tiles", numTilesInQueue);
-            ImGui::ProgressBar(progress, ImVec2(_winSettings->charSize.x * 20, 0.0f), str);
+            ImGui::ProgressBar(progress, ImVec2(GuiSettings::charSize.x * 20, 0.0f), str);
         }
     }
 
     // Attribution, license, terms of use
     {
-        const ImVec2 attr0 { canvasMin.x + _winSettings->style.ItemSpacing.x,
-                             canvasMax.y - _winSettings->charSize.y - (3 * _winSettings->style.ItemSpacing.y) };
+        const ImVec2 attr0 { canvasMin.x + GuiSettings::style->ItemSpacing.x,
+                             canvasMax.y - GuiSettings::charSize.y - (3 * GuiSettings::style->ItemSpacing.y) };
         ImGui::SetCursorScreenPos(attr0);
         auto p = _map->GetParams();
         const std::string *link = nullptr;
@@ -388,12 +388,12 @@ void GuiWinDataMap::_DrawContent()
     if (_showInfo)
     {
         const float lineSpacing = ImGui::GetTextLineHeightWithSpacing();
-        const FfVec2 infoSize { _winSettings->charSize.x * 23, lineSpacing * 3 };
-        const FfVec2 infoRectTopRight = FfVec2(canvasMax.x - _winSettings->style.ItemSpacing.x, canvasMin.y + _winSettings->style.ItemSpacing.y);
+        const FfVec2 infoSize { GuiSettings::charSize.x * 23, lineSpacing * 3 };
+        const FfVec2 infoRectTopRight = FfVec2(canvasMax.x - GuiSettings::style->ItemSpacing.x, canvasMin.y + GuiSettings::style->ItemSpacing.y);
         const FfVec2 infoRect0 = infoRectTopRight - FfVec2(infoSize.x, 0);
         const FfVec2 infoRect1 = infoRectTopRight + FfVec2(0, infoSize.y);
-        draw->AddRectFilled(infoRect0, infoRect1, ImGui::GetColorU32(ImGuiCol_FrameBg), _winSettings->style.FrameRounding);
-        FfVec2 cursor = infoRect0 + _winSettings->style.FramePadding;
+        draw->AddRectFilled(infoRect0, infoRect1, ImGui::GetColorU32(ImGuiCol_FrameBg), GuiSettings::style->FrameRounding);
+        FfVec2 cursor = infoRect0 + GuiSettings::style->FramePadding;
 
         // Lat/lon
         double lat;
@@ -458,7 +458,7 @@ void GuiWinDataMap::_DrawContent()
                 ImGui::Text("%.0f m", val);
             }
             const float len = val * m2px;
-            const FfVec2 offs = cursor + FfVec2(_winSettings->charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
+            const FfVec2 offs = cursor + FfVec2(GuiSettings::charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
             draw->AddLine(offs, offs + FfVec2(len, 0), GUI_COLOUR(C_BLACK), 4.0f);
             //DEBUG("lenM=%f log=%f val=%f len=%f", scaleLenM, n, val, len);
         }
@@ -539,8 +539,8 @@ void GuiWinDataMap::_SetMap(const MapParams &map, const bool resetView)
         _map->GetCentLatLon(lat, lon);
     }
 
-    _tiles   = std::make_shared<MapTiles>(map);
-    _map    = std::make_unique<GuiMap>(map, _tiles);
+    _tiles = std::make_shared<MapTiles>(map);
+    _map   = std::make_unique<GuiMap>(map, _tiles);
 
     if (resetView)
     {

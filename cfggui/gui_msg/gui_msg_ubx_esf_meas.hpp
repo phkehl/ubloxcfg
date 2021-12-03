@@ -19,8 +19,12 @@
 #define __GUI_MSG_USB_ESF_MEAS_HPP__
 
 #include <memory>
+#include <deque>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-ESF-MEAS renderer ************************************************************************************** */
@@ -28,10 +32,11 @@
 class GuiMsgUbxEsfMeas : public GuiMsg
 {
     public:
-        GuiMsgUbxEsfMeas(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxEsfMeas(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
+        void Buttons() final;
 
         struct MeasDef
         {
@@ -47,6 +52,8 @@ class GuiMsgUbxEsfMeas : public GuiMsg
 
     private:
 
+        static constexpr int MAX_PLOT_DATA = 1000;
+
         struct MeasInfo
         {
             MeasInfo();
@@ -60,10 +67,14 @@ class GuiMsgUbxEsfMeas : public GuiMsg
             std::string ttagRx;
             // std::string source;
             std::string provider;
+
+            std::deque<double> plotData;
         };
 
         std::map<std::string, MeasInfo> _measInfos;
-        std::string _selected;
+        bool _resetPlotRange;
+        bool _autoPlotRange;
+        GuiWidgetTable _table;
 };
 
 /* ****************************************************************************************************************** */

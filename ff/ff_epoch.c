@@ -45,24 +45,31 @@ void epochInit(EPOCH_t *coll)
     memset(coll, 0, sizeof(*coll));
 }
 
+// "Quality" (precision) if information: UBX better than NMEA, UBX high-precision messages better than normal UBX
+typedef enum COLL_QUAL_e
+{
+    HAVE_NOTHING = 0, HAVE_NMEA = 1, HAVE_BETTER_NMEA = 2, HAVE_UBX = 3, HAVE_UBX_HP = 4
+} COLL_QUAL_t;
+
 // Private epoch collector state
 typedef struct EPOCH_COLLECT_s
 {
-    int          haveFix;
-    int          haveTime;
-    int          haveDate;
-    int          haveLlh;
-    int          haveHacc;
-    int          haveVacc;
-    int          havePacc;
-    int          haveXyz;
-    int          haveSig;
-    int          haveSat;
-    int          haveGpsTow;
-    int          haveGpsWeek;
-    int          haveRelPos;
+    COLL_QUAL_t  haveFix;
+    COLL_QUAL_t  haveTime;
+    COLL_QUAL_t  haveDate;
+    COLL_QUAL_t  haveLlh;
+    COLL_QUAL_t  haveVel;
+    COLL_QUAL_t  haveHacc;
+    COLL_QUAL_t  haveVacc;
+    COLL_QUAL_t  havePacc;
+    COLL_QUAL_t  haveXyz;
+    COLL_QUAL_t  haveSig;
+    COLL_QUAL_t  haveSat;
+    COLL_QUAL_t  haveGpsTow;
+    COLL_QUAL_t  haveGpsWeek;
+    COLL_QUAL_t  haveRelPos;
     bool         relPosValid;
-    int          haveDiffAge;
+    COLL_QUAL_t  haveDiffAge;
 } EPOCH_COLLECT_t;
 
 STATIC_ASSERT(SIZEOF_MEMBER(EPOCH_t, _collect) >= sizeof(EPOCH_COLLECT_t));
@@ -693,9 +700,6 @@ static int _epochSatInfoSort(const void *a, const void *b)
     return (int32_t)(sA->_order - sB->_order);
 }
 
-// "Quality" (precision) if information: UBX better than NMEA, UBX high-precision messages better than normal UBX
-enum { HAVE_NOTHING = 0, HAVE_NMEA = 1, HAVE_BETTER_NMEA = 2, HAVE_UBX = 3, HAVE_UBX_HP = 4 };
-
 static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MSG_t *msg)
 {
     const uint8_t clsId = UBX_CLSID(msg->data);
@@ -774,7 +778,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                     coll->llh[1]      = deg2rad((double)pvt.lon * UBX_NAV_PVT_V1_LON_SCALE);
                     coll->llh[2]      = (double)pvt.height * UBX_NAV_PVT_V1_HEIGHT_SCALE;
                     coll->heightMsl   = (double)pvt.hMSL * UBX_NAV_PVT_V1_HEIGHT_SCALE;
-                    coll->haveMsl     = FLAG(pvt.flags3, UBX_NAV_PVT_V1_FLAGS3_INVALIDLLH);
+                    coll->haveMsl     = !FLAG(pvt.flags3, UBX_NAV_PVT_V1_FLAGS3_INVALIDLLH);
                 }
 
                 // Position accuracy estimate
@@ -790,6 +794,16 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                         collect->haveVacc = HAVE_UBX;
                         coll->vertAcc     = (double)pvt.vAcc * UBX_NAV_PVT_V1_VACC_SCALE;
                     }
+                }
+
+                // Velocity
+                if (collect->haveVel < HAVE_UBX)
+                {
+                    collect->haveVel = HAVE_UBX;
+                    coll->velNed[0] = pvt.velN * UBX_NAV_PVT_V1_VELNED_SCALE;
+                    coll->velNed[1] = pvt.velE * UBX_NAV_PVT_V1_VELNED_SCALE;
+                    coll->velNed[2] = pvt.velD * UBX_NAV_PVT_V1_VELNED_SCALE;
+                    coll->velAcc    = pvt.sAcc * UBX_NAV_PVT_V1_SACC_SCALE;
                 }
 
                 coll->pDOP        = (float)pvt.pDOP * UBX_NAV_PVT_V1_PDOP_SCALE;
@@ -919,6 +933,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                         UBX_NAV_SIG_V0_GROUP1_t uInfo;
                         memcpy(&uInfo, &msg->data[UBX_HEAD_SIZE + sizeof(UBX_NAV_SIG_V0_GROUP0_t) + (ix * sizeof(uInfo))], sizeof(uInfo));
                         EPOCH_SIGINFO_t *eInfo = &coll->signals[ix];
+                        eInfo->valid       = true;
                         eInfo->gnss        = _ubxGnssIdToGnss(uInfo.gnssId);
                         eInfo->sv          = uInfo.svId;
                         eInfo->signal      = _ubxSigIdToSignal(uInfo.gnssId, uInfo.sigId);
@@ -928,6 +943,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                         eInfo->prUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_PR_USED);
                         eInfo->crUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_CR_USED);
                         eInfo->doUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_DO_USED);
+                        eInfo->anyUsed     = eInfo->prUsed || eInfo->crUsed || eInfo->doUsed;
                         eInfo->prCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_PR_CORR_USED);
                         eInfo->crCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_CR_CORR_USED);
                         eInfo->doCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_DO_CORR_USED);
@@ -954,6 +970,7 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                         UBX_NAV_SAT_V1_GROUP1_t uInfo;
                         memcpy(&uInfo, &msg->data[UBX_HEAD_SIZE + sizeof(UBX_NAV_SAT_V1_GROUP0_t) + (ix * sizeof(uInfo))], sizeof(uInfo));
                         EPOCH_SATINFO_t *eInfo = &coll->satellites[ix];
+                        eInfo->valid       = true;
                         eInfo->gnss        = _ubxGnssIdToGnss(uInfo.gnssId);
                         eInfo->sv          = uInfo.svId;
                         const int orbSrc = UBX_NAV_SAT_V1_FLAGS_ORBITSOURCE_GET(uInfo.flags);
@@ -1243,6 +1260,14 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
         }
     }
 
+    if (collect->haveVel > HAVE_NOTHING)
+    {
+        epoch->haveVel = epoch->fix > EPOCH_FIX_NOFIX;
+        const double velNEsq = (epoch->velNed[0] * epoch->velNed[0]) + (epoch->velNed[1] * epoch->velNed[1]);
+        epoch->vel2d = sqrt(velNEsq);
+        epoch->vel3d = sqrt( velNEsq + (epoch->velNed[2] * epoch->velNed[2]) );
+    }
+
     // Stringify and sort list of satellites
     for (int ix = 0; ix < epoch->numSatellites; ix++)
     {
@@ -1322,7 +1347,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
             const int histIx = sig->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0 ? (sig->cno / 5) : 0 );
             epoch->sigCnoHistTrk[histIx]++;
 
-            if (sig->prUsed || sig->crUsed || sig->doUsed)
+            if (sig->anyUsed)
             {
                 epoch->sigCnoHistNav[histIx]++;
 

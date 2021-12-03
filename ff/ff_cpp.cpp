@@ -19,6 +19,8 @@
 #include <stdexcept>
 #include <cstring>
 
+#include "ff_ubx.h"
+
 #include "ff_cpp.hpp"
 
 /* ****************************************************************************************************************** */
@@ -97,6 +99,24 @@ Ff::KeyVal::KeyVal(const UBLOXCFG_LAYER_t _layer, const UBLOXCFG_KEYVAL_t *_kv, 
         kv.resize(numKv);
         std::memcpy(kv.data(), _kv, sizeof(*_kv) * kv.size());
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+Ff::UbxMessage::UbxMessage(const uint8_t clsId, const uint8_t msgId, const std::vector<uint8_t> &payload) :
+    UbxMessage(clsId, msgId, payload.data(), payload.size())
+{
+}
+
+Ff::UbxMessage::UbxMessage(const uint8_t clsId, const uint8_t msgId, const std::string &payload, const bool addNul) :
+    UbxMessage(clsId, msgId, (const uint8_t *)payload.data(), payload.size() + (addNul ? 1 : 0))
+{
+}
+
+Ff::UbxMessage::UbxMessage(const uint8_t clsId, const uint8_t msgId, const uint8_t *payload, const int payloadSize)
+{
+    raw.resize(payloadSize + UBX_FRAME_SIZE);
+    ubxMakeMessage(clsId, msgId, payload, payloadSize, raw.data());
 }
 
 /* ****************************************************************************************************************** */

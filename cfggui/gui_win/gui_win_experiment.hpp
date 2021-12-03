@@ -27,8 +27,9 @@
 #include "ff_cpp.hpp"
 
 #include "gui_win.hpp"
-
+#include "gui_widget_opengl.hpp"
 #include "gui_win_filedialog.hpp"
+#include "gui_notify.hpp"
 
 /* ***** Experiment ************************************************************************************************* */
 
@@ -41,10 +42,20 @@ class GuiWinExperiment : public GuiWin
 
     protected:
 
+        // Experiment 1
         GuiWinFileDialog _openFileDialog;
         std::string      _openFilePath;
         GuiWinFileDialog _saveFileDialog;
         std::string      _saveFilePath;
+        void _DrawGuiWinFileDialog();
+
+        // Experiment 2
+        bool _running;
+        GuiWidgetOpenGl _gl;
+        void _DrawGuiWidgetOpenGl();
+
+        // Experiment 3
+        void _DrawGuiNotify();
 };
 
 /* ****************************************************************************************************************** */

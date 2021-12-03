@@ -15,7 +15,11 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include <functional>
+
 #include "ff_port.h"
+#include "ff_ubx.h"
+#include "config.h"
 
 #include "gui_inc.hpp"
 
@@ -30,19 +34,19 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     _port{}, _baudrate{0},
     _stopSent{false}, _triggerConnect{false}, _focusPortInput{false},
     _recordFileDialog{_winName + "RecordFileDialog"},
-    _recordHandle{nullptr}, _recordSize{0}, _recordMessage{""}
+    _recordSize{0}, _recordMessage{""}
 {
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
     _winSize   = { 80, 25 };
     SetTitle("Receiver X");
 
-    _receiver = std::make_shared<Receiver>(name, _database);
+    _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
 
     if (_recentPorts.empty())
     {
-        _recentPorts = _winSettings->GetValueMult("ReceiverRecentPorts", MAX_RECENT_PORTS);
+        _recentPorts = GuiSettings::GetValueMult("ReceiverRecentPorts", MAX_RECENT_PORTS);
     }
     // Populate some examples if none were loaded
     if (_recentPorts.empty())
@@ -65,7 +69,11 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 GuiWinInputReceiver::~GuiWinInputReceiver()
 {
     DEBUG("~GuiWinInputReceiver(%s)", _winName.c_str());
-    _winSettings->SetValueMult("ReceiverRecentPorts", _recentPorts, MAX_RECENT_PORTS);
+    GuiSettings::SetValueMult("ReceiverRecentPorts", _recentPorts, MAX_RECENT_PORTS);
+    if (_receiver)
+    {
+        _receiver->Stop();
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -110,7 +118,7 @@ void GuiWinInputReceiver::Loop(const uint32_t &frame, const double &now)
 
         if ( (now - _recordLastMsgTime) > msgDeltaTime)
         {
-            _recordMessage = Ff::Sprintf("Stop recording\n(%s,\n%.3f MiB, %.2f KiB/s)",
+            _recordMessage = Ff::Sprintf("Stop recording\n%s,\n%.3f MiB, %.2f KiB/s",
                 _recordFilePath.c_str(), (double)_recordSize * (1.0 / 1024.0 / 1024.0), _recordKiBs);
             _recordLastMsgTime = now;
             _recordButtonColor = _recordButtonColor == 0 ? (ImU32)GUI_COLOUR(C_RED) : 0;
@@ -129,13 +137,13 @@ void GuiWinInputReceiver::Loop(const uint32_t &frame, const double &now)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinInputReceiver::_ProcessData(const Data &data)
+void GuiWinInputReceiver::_ProcessData(const InputData &data)
 {
     GuiWinInput::_ProcessData(data);
 
     switch (data.type)
     {
-        case Data::Type::DATA_MSG:
+        case InputData::DATA_MSG:
             if (_recordHandle)
             {
                 try
@@ -151,7 +159,7 @@ void GuiWinInputReceiver::_ProcessData(const Data &data)
             }
 
             break;
-        case Data::Type::DATA_EPOCH:
+        case InputData::DATA_EPOCH:
             if (data.epoch->epoch.valid)
             {
                 _epochTs = ImGui::GetTime();
@@ -217,7 +225,7 @@ void GuiWinInputReceiver::_DrawActionButtons()
     {
         if (resets[ix].button != NULL)
         {
-            if (ImGui::Button(resets[ix].button, _winSettings->iconButtonSize))
+            if (ImGui::Button(resets[ix].button, GuiSettings::iconSize))
             {
                 _receiver->Reset(resets[ix].reset);
             }
@@ -228,7 +236,7 @@ void GuiWinInputReceiver::_DrawActionButtons()
     }
 
     // Button with remaining reset commands
-    if (ImGui::Button(ICON_FK_POWER_OFF "##Reset", _winSettings->iconButtonSize))
+    if (ImGui::Button(ICON_FK_POWER_OFF "##Reset", GuiSettings::iconSize))
     {
         ImGui::OpenPopup("ResetCommands");
     }
@@ -264,18 +272,19 @@ void GuiWinInputReceiver::_DrawActionButtons()
 
     Gui::VerticalSeparator();
 
-    ImGui::BeginDisabled(disable);
+    //ImGui::BeginDisabled(disable);
 
     if (!_recordHandle)
     {
-        if (ImGui::Button(ICON_FK_CIRCLE "###Record", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_CIRCLE "###Record", GuiSettings::iconSize))
         {
             if (!_recordFileDialog.IsInit())
             {
                 _recordFilePath = "";
                 _recordFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
-                _recordFileDialog.SetFilename( Ff::Strftime(0, "log_%Y%m%d_%H%M.ubx") );
+                _recordFileDialog.SetFilename( Ff::Strftime("log_%Y%m%d_%H%M.ubx") );
                 _recordFileDialog.SetTitle(_winTitle + " - Record logfile...");
+                _recordFileDialog.SetFileFilter("\\.(ubx|raw)", true);
             }
             else
             {
@@ -287,43 +296,19 @@ void GuiWinInputReceiver::_DrawActionButtons()
     else
     {
         if (_recordButtonColor != 0) { ImGui::PushStyleColor(ImGuiCol_Text, _recordButtonColor); }
-        if (ImGui::Button(ICON_FK_STOP "###Record", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_STOP "###Record", GuiSettings::iconSize))
         {
-            _recordHandle = nullptr;
-            _logWidget.AddLine("Recording stopped", GUI_COLOUR(DEBUG_NOTICE));
+            _LogClose();
         }
         if (_recordButtonColor != 0) { ImGui::PopStyleColor(); }
         Gui::ItemTooltip(_recordMessage.c_str());
     }
 
-    ImGui::EndDisabled();
+    //ImGui::EndDisabled();
 
-    if (_recordFileDialog.IsInit())
+    if (_recordFileDialog.IsInit() && _recordFileDialog.DrawDialog())
     {
-        if (_recordFileDialog.DrawDialog())
-        {
-            _recordFilePath = _recordFileDialog.GetPath();
-            if (!_recordFilePath.empty())
-            {
-                _recordSize = 0;
-                _recordLastSize = 0;
-                _recordLastMsgTime = 0.0;
-                _recordLastSizeTime = 0.0;
-                _recordKiBs = 0.0;
-                try
-                {
-                    _recordHandle = std::make_unique<std::ofstream>();
-                    _recordHandle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
-                    _recordHandle->open(_recordFilePath, std::ofstream::binary);
-                    _logWidget.AddLine(Ff::Sprintf("Recording to %s", _recordFilePath.c_str()), GUI_COLOUR(DEBUG_NOTICE));
-                    ImGui::CloseCurrentPopup();
-                }
-                catch (std::exception &e)
-                {
-                    _logWidget.AddLine(Ff::Sprintf("Failed recording to %s: %s", _recordFilePath.c_str(), e.what()), GUI_COLOUR(DEBUG_ERROR));
-                }
-            }
-        }
+        _LogOpen(_recordFileDialog.GetPath());
     }
 }
 
@@ -338,7 +323,7 @@ void GuiWinInputReceiver::_DrawControls()
         {
             const bool disabled = _port.length() < 5;
             ImGui::BeginDisabled(disabled);
-            if (ImGui::Button(ICON_FK_PLAY "###StartStop", _winSettings->iconButtonSize) || (!disabled && _triggerConnect))
+            if (ImGui::Button(ICON_FK_PLAY "###StartStop", GuiSettings::iconSize) || (!disabled && _triggerConnect))
             {
                 _receiver->Start(_port, _baudrate);
             }
@@ -349,7 +334,7 @@ void GuiWinInputReceiver::_DrawControls()
         else if (_receiver->IsReady())
         {
             ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BRIGHTGREEN));
-            if (ImGui::Button(ICON_FK_STOP "###StartStop", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_STOP "###StartStop", GuiSettings::iconSize))
             {
                 _receiver->Stop();
             }
@@ -360,7 +345,7 @@ void GuiWinInputReceiver::_DrawControls()
         else if (_receiver->IsBusy())
         {
             ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREEN));
-            if (ImGui::Button(ICON_FK_EJECT "###StartStop", _winSettings->iconButtonSize))
+            if (ImGui::Button(ICON_FK_EJECT "###StartStop", GuiSettings::iconSize))
             {
                 _receiver->Stop();
             }
@@ -375,7 +360,7 @@ void GuiWinInputReceiver::_DrawControls()
     {
         const bool disabled = _receiver->IsBusy();
         ImGui::BeginDisabled(disabled);
-        if (ImGui::Button(ICON_FK_TACHOMETER "##Baudrate", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_TACHOMETER "##Baudrate", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("Baudrate");
         }
@@ -416,7 +401,7 @@ void GuiWinInputReceiver::_DrawControls()
     {
         const bool disabled = !_receiver->IsIdle();
         ImGui::BeginDisabled(disabled);
-        ImGui::PushItemWidth(-(_winSettings->iconButtonSize.x + _winSettings->style.ItemSpacing.x));
+        ImGui::PushItemWidth(-(GuiSettings::iconSize.x + GuiSettings::style->ItemSpacing.x));
         ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
         if (_focusPortInput)
         {
@@ -446,7 +431,7 @@ void GuiWinInputReceiver::_DrawControls()
     {
         const bool disabled = !_receiver->IsIdle();
         ImGui::BeginDisabled(disabled);
-        if (ImGui::Button(ICON_FK_STAR "##Recent", _winSettings->iconButtonSize))
+        if (ImGui::Button(ICON_FK_STAR "##Recent", GuiSettings::iconSize))
         {
             ImGui::OpenPopup("Recent");
         }
@@ -506,6 +491,50 @@ void GuiWinInputReceiver::_DrawControls()
     }
 
     ImGui::Separator();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinInputReceiver::_LogOpen(const std::string &path)
+{
+    if (!path.empty())
+    {
+        _recordFilePath = path;
+        _recordSize = 0;
+        _recordLastSize = 0;
+        _recordLastMsgTime = 0.0;
+        _recordLastSizeTime = 0.0;
+        _recordKiBs = 0.0;
+        try
+        {
+            std::unique_ptr<std::ofstream> handle = std::make_unique<std::ofstream>();
+            handle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
+            handle->open(_recordFilePath, std::ofstream::binary);
+            _logWidget.AddLine(Ff::Sprintf("Recording to %s", _recordFilePath.c_str()), GUI_COLOUR(DEBUG_NOTICE));
+
+            // Write marker
+            std::string marker = (_rxVerStr.empty() ? "unknown receiver" : _rxVerStr) + ", " +
+                _port + "@" + std::to_string(_baudrate) + ", " + Ff::Strftime("%Y-%m-%d %H:%M:%S") + ", " +
+                "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
+            Ff::UbxMessage msg(UBX_INF_CLSID, UBX_INF_TEST_MSGID, marker, false);
+            handle->write((const char *)msg.raw.data(), msg.raw.size());
+
+            // Hand over to receiver thread callback
+            _recordHandle = std::move(handle);
+        }
+        catch (std::exception &e)
+        {
+            _logWidget.AddLine(Ff::Sprintf("Failed recording to %s: %s", _recordFilePath.c_str(), e.what()), GUI_COLOUR(DEBUG_ERROR));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinInputReceiver::_LogClose()
+{
+    _recordHandle = nullptr;
+    _logWidget.AddLine("Recording stopped", GUI_COLOUR(DEBUG_NOTICE));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -48,9 +48,21 @@ std::string Ff::Sprintf(const char * const zcFormat, ...)
     return std::string(zc.data(), iLen);
 }
 
+std::string Ff::Vsprintf(const char *fmt, va_list args)
+{
+    va_list argsCopy;
+    va_copy(argsCopy, args);
+    const int len = std::vsnprintf(NULL, 0, fmt, argsCopy);
+    va_end(argsCopy);
+
+    std::vector<char> buf(len + 1);
+    std::vsnprintf(buf.data(), buf.size(), fmt, args);
+    return std::string(buf.data(), len);
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-std::string Ff::Strftime(const int64_t ts, const char * const fmt)
+std::string Ff::Strftime(const char * const fmt, const int64_t ts)
 {
     std::vector<char> str(1000);
     struct tm now;
@@ -98,24 +110,36 @@ void Ff::StrTrim(std::string &str)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-std::vector<std::string> Ff::StrSplit(const std::string &str, const std::string &sep)
+#include "ff_debug.h"
+std::vector<std::string> Ff::StrSplit(const std::string &str, const std::string &sep, const int maxNum)
 {
     std::vector<std::string> out;
+    if (str.empty())
+    {
+        return out;
+    }
+    if (sep.empty())
+    {
+        out.push_back(str);
+        return out;
+    }
+
     std::string strCopy = str;
     std::size_t pos = 0;
+    int num = 0;
     while ((pos = strCopy.find(sep)) != std::string::npos)
     {
         std::string part = strCopy.substr(0, pos);
         strCopy.erase(0, pos + sep.length());
-        if (!part.empty())
+        out.push_back(part);
+        num++;
+        if ( (maxNum > 0) && (num >= (maxNum - 1)) )
         {
-            out.push_back(part);
+            break;
         }
     }
-    if (!strCopy.empty())
-    {
-        out.push_back(strCopy);
-    }
+    out.push_back(strCopy);
+
     return out;
 }
 

@@ -238,6 +238,7 @@ typedef enum EPOCH_BAND_e
 //! Signal information
 typedef struct EPOCH_SIGINFO_s
 {
+    bool              valid;
     EPOCH_GNSS_t      gnss;
     uint8_t           sv;
     EPOCH_SIGNAL_t    signal;
@@ -252,6 +253,7 @@ typedef struct EPOCH_SIGINFO_s
     bool              prUsed;
     bool              crUsed;
     bool              doUsed;
+    bool              anyUsed;
     bool              prCorrUsed;
     bool              crCorrUsed;
     bool              doCorrUsed;
@@ -282,6 +284,7 @@ typedef enum EPOCH_SATORB_e
 //! Satellite information
 typedef struct EPOCH_SATINFO_s
 {
+    bool              valid;
     EPOCH_GNSS_t      gnss;
     uint8_t           sv;
     EPOCH_SATORB_t    orbUsed;
@@ -324,6 +327,12 @@ typedef struct EPOCH_s
     double              horizAcc;
     double              vertAcc;
     double              posAcc;
+
+    bool                haveVel;
+    double              velNed[3];
+    double              vel2d;
+    double              vel3d;
+    double              velAcc;
 
     bool                haveRelPos;
     double              relLen;

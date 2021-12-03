@@ -20,7 +20,10 @@
 
 #include <memory>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
+#include "gui_widget_table.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-ESF-STATUS renderer ************************************************************************************ */
@@ -28,7 +31,7 @@
 class GuiMsgUbxEsfStatus : public GuiMsg
 {
     public:
-        GuiMsgUbxEsfStatus(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxEsfStatus(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
@@ -43,9 +46,10 @@ class GuiMsgUbxEsfStatus : public GuiMsg
         {
             Sensor(const uint8_t *groupData);
             std::string type;
-            std::string used;
-            std::string ready;
+            bool        used;
+            bool        ready;
             std::string calibStatus;
+            bool        calibrated;
             std::string timeStatus;
             std::string freq;
             std::string faults;
@@ -58,6 +62,8 @@ class GuiMsgUbxEsfStatus : public GuiMsg
         int                 _imuInitStatus;
         int                 _fusionMode;
         std::vector<Sensor> _sensors;
+
+        GuiWidgetTable _table;
 };
 
 /* ****************************************************************************************************************** */

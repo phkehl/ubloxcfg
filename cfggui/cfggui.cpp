@@ -31,14 +31,18 @@
 #include "imgui_impl_opengl3.h"
 #include "implot.h"
 
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-#  include <GLES2/gl2.h>
-#endif
+// #if defined(IMGUI_IMPL_OPENGL_ES2)
+// #  include <GLES2/gl2.h>
+// #endif
+#include "GL/gl3w.h"
+#define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
 
 #include <curl/curl.h>
-#include <ft2build.h>
-#include <freetype/freetype.h>
+#ifdef IMGUI_ENABLE_FREETYPE
+#  include <ft2build.h>
+#  include <freetype/freetype.h>
+#endif
 
 #include "ff_debug.h"
 #include "config.h"
@@ -52,7 +56,7 @@ static void sInitLog(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG
 {
     GuiAppEarlyLog *earlyLog = static_cast<GuiAppEarlyLog *>(cfg->arg);
     earlyLog->Add(level, std::string(str));
-    if (level < cfg->level)
+    if (level > cfg->level)
     {
         return;
     }
@@ -64,14 +68,14 @@ static void sGlfwErrorCallback(int error, const char* description)
     ERROR("GLFW error %d: %s", error, description);
 }
 
-static bool sWindowActivity;
+static int sWindowActivity; // boost framerate temporarily
 
 static void sCursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
 {
     UNUSED(window);
     UNUSED(xpos);
     UNUSED(ypos);
-    sWindowActivity = true;
+    sWindowActivity = 10;
 }
 
 static void sMouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
@@ -80,7 +84,17 @@ static void sMouseButtonCallback(GLFWwindow *window, int button, int action, int
     UNUSED(button);
     UNUSED(action);
     UNUSED(mods);
-    sWindowActivity = true;
+    sWindowActivity = 20;
+}
+
+static void sKeyCallback (GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+    UNUSED(window);
+    UNUSED(key);
+    UNUSED(scancode);
+    UNUSED(action);
+    UNUSED(mods);
+    sWindowActivity = 20;
 }
 
 // cfggui/appicon.png -> https://convertio.co/png-rgba/ -> xxd -i
@@ -458,6 +472,8 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    Platform::WipeCache(Platform::CacheDir(), 365.25 / 4.0);
+
     /* ***** Setup low-level platform and renderer ****************************************************************** */
 
     int windowWidth  = 1280;
@@ -466,7 +482,18 @@ int main(int argc, char **argv)
     int windowPosY   = -1;
     const int   kWindowMinWidth  =  640;
     const int   kWindowMinHeight =  384;
+#ifdef FP_BUILD_DEBUG
+    const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ") -- debug build";
+#else
     const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
+#endif
+
+    // We want to do some OpenGL stuff ourselves. Maybe.
+    if (!gl3wInit())
+    {
+        ERROR("gl3wInit() fail!");
+        exit(EXIT_FAILURE);
+    }
 
     glfwSetErrorCallback(sGlfwErrorCallback);
     if (glfwInit() != GLFW_TRUE)
@@ -475,39 +502,40 @@ int main(int argc, char **argv)
     }
 
     // https://en.wikipedia.org/wiki/OpenGL_Shading_Language
-#if defined(IMGUI_IMPL_OPENGL_ES2)
-    // GL ES 2.0 + GLSL 100
-    const char *glsl_version = "#version 100";
-    glfwWindowHint(SDL_GL_CONTEXT_FLAGS, 0);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ES_API);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    const char *openGlVersion = "OpenGL ES 2.0, GLSL 1.00";
-#elif defined(_WIN32)
-    // GL 3.0 + GLSL 130
-    const char *char* glsl_version = "#version 130";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    const char *openGlVersion = "OpenGL 3.2, GLSL 1.30";
-##elif defined(__APPLE__)
-    // GL 3.2 Core + GLSL 150
-    const char *glsl_version = "#version 150";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // Always required on Mac
-    const char *openGlVersion = "OpenGL 3.2, GLSL 1.50";
-#else
+// #if defined(IMGUI_IMPL_OPENGL_ES2)
+//     // GL ES 2.0 + GLSL 100
+//     const char *glsl_version = "#version 100";
+//     glfwWindowHint(SDL_GL_CONTEXT_FLAGS, 0);
+//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ES_API);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+//     const char *openGlVersion = "OpenGL ES 2.0, GLSL 1.00";
+// #elif defined(_WIN32)
+//     // GL 3.0 + GLSL 130
+//     const char *char* glsl_version = "#version 130";
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//     const char *openGlVersion = "OpenGL 3.2, GLSL 1.30";
+// ##elif defined(__APPLE__)
+//     // GL 3.2 Core + GLSL 150
+//     const char *glsl_version = "#version 150";
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+//     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+//     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE); // Always required on Mac
+//     const char *openGlVersion = "OpenGL 3.2, GLSL 1.50";
+// #else
     // GL 3.2 + GLSL 150
     const char *glsl_version = "#version 150";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+    //glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
     const char *openGlVersion = "OpenGL 3.2, GLSL 1.50";
-#endif
+// #endif
 
     // Create window with graphics context
     GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, kWindowTitle, NULL, NULL);
@@ -525,6 +553,7 @@ int main(int argc, char **argv)
     // User activity detection, for frame rate control
     glfwSetCursorPosCallback(window, sCursorPositionCallback);
     glfwSetMouseButtonCallback(window, sMouseButtonCallback);
+    glfwSetKeyCallback(window, sKeyCallback);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -545,8 +574,10 @@ int main(int argc, char **argv)
 
     // Collect some version infos
     std::vector<std::string> versionInfos;
+    versionInfos.push_back(Ff::Sprintf("cfggui/ff/ubloxcfg %s (%d.%d), %s, %s %s",
+        CONFIG_VERSION, CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_GITHASH, CONFIG_DATE, CONFIG_TIME));
     versionInfos.push_back(openGlVersion);
-    versionInfos.push_back(Ff::Sprintf("GLFW: %s", glfwGetVersionString()));
+    versionInfos.push_back(Ff::Sprintf("GLFW %s", glfwGetVersionString()));
     versionInfos.push_back(Ff::Sprintf("ImGui %s (%s, %s)", ImGui::GetVersion(),
         io.BackendPlatformName ? io.BackendPlatformName : "?",
         io.BackendRendererName ? io.BackendRendererName : "?"));
@@ -555,6 +586,9 @@ int main(int argc, char **argv)
 #ifdef IMGUI_ENABLE_FREETYPE
     versionInfos.push_back("FreeType " STRINGIFY(FREETYPE_MAJOR) "." STRINGIFY(FREETYPE_MINOR) "." STRINGIFY(FREETYPE_PATCH));
 #endif
+    versionInfos.push_back("GCC " STRINGIFY(__GNUC__) "." STRINGIFY(__GNUC_MINOR__) "." STRINGIFY(__GNUC_PATCHLEVEL__)
+        " C++ " STRINGIFY(__cplusplus));
+
     for (const auto &info: versionInfos)
     {
         DEBUG("%s", info.c_str());
@@ -562,11 +596,9 @@ int main(int argc, char **argv)
 
     bool done = false;
     std::unique_ptr<GuiApp> app = nullptr;
-    std::shared_ptr<GuiSettings> settings = nullptr;
     try
     {
         app = std::make_unique<GuiApp>(appArgv, earlyLog, versionInfos);
-        settings = app->GetSettings();
         earlyLog.Clear();
         versionInfos.clear();
     }
@@ -577,9 +609,9 @@ int main(int argc, char **argv)
     }
 
     // Restore previous window geometry
-    if (app && settings)
+    if (app)
     {
-        std::string geometry = settings->GetValue("Cfggui.geometry");
+        std::string geometry = GuiSettings::GetValue("Cfggui.geometry");
         int w, h, x, y;
         if (std::sscanf(geometry.c_str(), "%d,%d,%d,%d", &w, &h, &x, &y) == 4)
         {
@@ -611,14 +643,15 @@ int main(int argc, char **argv)
             lastMark = ((now + (markInterval / 2 )) / markInterval) * markInterval;
         }
 
-        if ( sWindowActivity || ((now - lastDraw) > (1000/10)))
+        if ( (sWindowActivity > 0) || ((now - lastDraw) > (1000/10)))
         {
             lastDraw = now;
-            sWindowActivity = false;
+            sWindowActivity--;
 
+            app->PerfTic(GuiApp::Perf_e::TOTAL);
             app->PerfTic(GuiApp::Perf_e::NEWFRAME);
 
-            // Update font if necessary
+            // Update fonts if necessary
             if (app->PrepFrame())
             {
                 ImGui_ImplOpenGL3_DestroyDeviceObjects();
@@ -662,12 +695,13 @@ int main(int argc, char **argv)
             glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
             const auto c = app->BackgroundColour();
             glClearColor(c.x, c.y, c.z, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT); // FIXME: why does this take almost 15 ms when moving the mouse but not use any CPU (it seems..)???
+            glClear(GL_COLOR_BUFFER_BIT);
 #if (GLFW_VERSION_MAJOR >= 3) && (GLFW_VERSION_MINOR >= 3)
             glfwSetWindowOpacity(window, c.w < 0.2f ? 0.2f : c.w);
 #endif
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             app->PerfToc(GuiApp::Perf_e::RENDER_GL);
+            app->PerfToc(GuiApp::Perf_e::TOTAL);
 
             glfwSwapBuffers(window);
             glFlush();
@@ -678,16 +712,16 @@ int main(int argc, char **argv)
         }
     }
 
-    if (app && settings)
+    if (GL_APPLE_rgb_422)
     {
         // Save window geometry
         glfwGetWindowSize(window, &windowWidth, &windowHeight);
         glfwGetWindowPos(window, &windowPosX, &windowPosY);
-        settings->SetValue("Cfggui.geometry", Ff::Sprintf("%d,%d,%d,%d", windowWidth, windowHeight, windowPosX, windowPosY));
+        GuiSettings::SetValue("Cfggui.geometry", Ff::Sprintf("%d,%d,%d,%d", windowWidth, windowHeight, windowPosX, windowPosY));
 
         // Tear down
+        app->Shutdown();
         app = nullptr;
-        settings = nullptr;
     }
 
     DEBUG("Adios!");

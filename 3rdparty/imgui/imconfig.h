@@ -23,7 +23,7 @@
 #  define IM_ASSERT(_expr_) do { if (!(_expr_)) { ERROR("%s:%d:%s() Assertion failed: %s", __FILE__,  __LINE__, __FUNCTION__, # _expr_ ); DEBUGGER_BREAK(); }  } while (0)
 #  define IM_ASSERT_USER_ERROR(_expr_, _msg_) do { if (!(_expr_)) { WARNING("%s:%d:%s() Warning: %s", __FILE__,  __LINE__, __FUNCTION__, _msg_); } } while (0)
 #else
-#  define IM_ASSERT(_expr_)                   do { PANIC_AND_EXIT("Assertion failed: %s", # _expr_); } while (0)
+#  define IM_ASSERT(_expr_)                   do { if (!(_expr_)) { PANIC_AND_EXIT("Assertion failed: %s", # _expr_); } } while (0)
 #  define IM_ASSERT_USER_ERROR(_expr_, _msg_) do { } while (0)
 #endif
 

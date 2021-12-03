@@ -26,9 +26,17 @@
 
 /* ****************************************************************************************************************** */
 
-GuiMsgUbxRxmRtcm::GuiMsgUbxRxmRtcm(std::shared_ptr<Receiver> receiver, std::shared_ptr<Logfile> logfile) :
+GuiMsgUbxRxmRtcm::GuiMsgUbxRxmRtcm(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile)
 {
+    _table.AddColumn("Message");
+    _table.AddColumn("Ref");
+    _table.AddColumn("#Used", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("#Unused", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("#Unknown", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("#CrcFail", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Age");
+    _table.AddColumn("Desc");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -50,6 +58,7 @@ GuiMsgUbxRxmRtcm::RtcmInfo::RtcmInfo(const int _msgType, const int _subType, con
 void GuiMsgUbxRxmRtcm::Clear()
 {
     _rtcmInfos.clear();
+    _table.ClearRows();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -77,6 +86,7 @@ void GuiMsgUbxRxmRtcm::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             auto foo = _rtcmInfos.insert({ uid, RtcmInfo(rtcm.msgType, rtcm.subType, rtcm.refStation) });
             info = &foo.first->second;
+            info->uid = uid;
         }
 
         // Update statistics
@@ -97,6 +107,43 @@ void GuiMsgUbxRxmRtcm::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         }
         info->lastTs = msg->ts;
     }
+    else
+    {
+        return;
+    }
+
+    _table.ClearRows();
+    for (auto &entry: _rtcmInfos)
+    {
+        auto &info = entry.second;
+
+        _table.AddCellText(info.name + "##" + std::to_string(info.uid));
+        _table.AddCellTextF("%d", info.refStation);
+        _table.AddCellTextF("%d", info.nUsed);
+        _table.AddCellTextF("%u", info.nUnused);
+        _table.AddCellTextF("%u", info.nUnknown);
+        _table.AddCellTextF("%u", info.nCrcFailed);
+        if (_receiver)
+        {
+            _table.AddCellCb([](void *arg)
+                {
+                    const float dt = (TIME() - ((RtcmInfo *)arg)->lastTs) * 1e-3f;
+                    if (dt < 1000.0f)
+                    {
+                        ImGui::Text("%5.1f", dt);
+                    }
+                    else
+                    {
+                        ImGui::TextUnformatted("oo");
+                    }
+                }, &info);
+        }
+        else
+        {
+            _table.AddCellEmpty();
+        }
+        _table.AddCellText(info.tooltip);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -105,66 +152,7 @@ bool GuiMsgUbxRxmRtcm::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
 {
     UNUSED(msg);
 
-    const uint32_t now = TIME();
-
-    const struct { const char *label; ImGuiTableColumnFlags flags; } columns[] =
-    {
-        { .label = "Message",   .flags = ImGuiTableColumnFlags_NoReorder },
-        { .label = "Ref",       .flags = 0 },
-        { .label = "#Used",     .flags = 0 },
-        { .label = "#Unused",   .flags = 0 },
-        { .label = "#Unknown",  .flags = 0 },
-        { .label = "#CrcFail",  .flags = 0 },
-        { .label = "Age",       .flags = 0 },
-        { .label = "Desc",      .flags = 0 },
-    };
-
-    if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, sizeAvail))
-    {
-        ImGui::TableSetupScrollFreeze(0, 1);
-        for (int ix = 0; ix < NUMOF(columns); ix++)
-        {
-            ImGui::TableSetupColumn(columns[ix].label, columns[ix].flags);
-        }
-        ImGui::TableHeadersRow();
-
-        for (auto &entry: _rtcmInfos)
-        {
-            int ix = 0;
-            auto &info = entry.second;
-            ImGui::TableNextRow();
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Selectable(info.name.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
-            //Gui::ItemTooltip(info.tooltip);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%d", info.refStation);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%u", info.nUsed);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%u", info.nUnused);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%u", info.nUnknown);
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::Text("%u", info.nCrcFailed);
-
-            ImGui::TableSetColumnIndex(ix++);
-            if (_receiver)
-            {
-                ImGui::Text("%.1f", (now - info.lastTs) * 1e-3);
-            }
-
-            ImGui::TableSetColumnIndex(ix++);
-            ImGui::TextUnformatted(info.tooltip);
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable(sizeAvail);
 
     return true;
 }

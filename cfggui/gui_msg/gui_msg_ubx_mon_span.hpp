@@ -20,7 +20,8 @@
 
 #include <memory>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
 #include "gui_msg.hpp"
 
 /* ***** UBX-MON-SPAN renderer ************************************************************************************** */
@@ -28,13 +29,14 @@
 class GuiMsgUbxMonSpan : public GuiMsg
 {
     public:
-        GuiMsgUbxMonSpan(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxMonSpan(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
+        void Buttons() final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
         void Clear() final;
 
-    protected:
+    private:
 
         struct SpectData
         {
@@ -50,21 +52,22 @@ class GuiMsgUbxMonSpan : public GuiMsg
             double res;
             double pga;
             double count;
+            std::string tab;
+            std::string title;
+            std::string xlabel;
         };
         struct Label
         {
-            Label(const double _freq, const char *_label);
             double      freq;
-            std::string title;
             std::string id;
+            std::string title;
         };
+        static const std::vector<Label> FREQ_LABELS;
 
-        std::vector<SpectData> _spects;
-        ImPlotFlags          _plotFlags;
-        std::vector<Label>   _labels;
-        bool                 _resetPlotRange;
+        std::vector<SpectData> _spects;;
+        bool _resetPlotRange;
 
-    private:
+        void _DrawSpect(const SpectData &spect, const ImVec2 size);
 };
 
 /* ****************************************************************************************************************** */

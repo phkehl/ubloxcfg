@@ -22,7 +22,8 @@
 #include <vector>
 #include <deque>
 
-#include "imgui.h"
+#include "gui_inc.hpp"
+
 #include "gui_msg.hpp"
 
 #include "gui_msg_ubx_mon_hw2.hpp"
@@ -32,7 +33,7 @@
 class GuiMsgUbxMonRf : public GuiMsg
 {
     public:
-        GuiMsgUbxMonRf(std::shared_ptr<Receiver> receiver = nullptr, std::shared_ptr<Logfile> logfile = nullptr);
+        GuiMsgUbxMonRf(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
         bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
