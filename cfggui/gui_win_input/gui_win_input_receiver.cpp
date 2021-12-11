@@ -31,10 +31,12 @@
 
 GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     GuiWinInput(name),
-    _port{}, _baudrate{0},
-    _stopSent{false}, _triggerConnect{false}, _focusPortInput{false},
-    _recordFileDialog{_winName + "RecordFileDialog"},
-    _recordSize{0}, _recordMessage{""}
+    _baudrate        { 0 },
+    _stopSent        { false },
+    _triggerConnect  { false },
+    _focusPortInput  { false },
+    _recordFileDialog{ _winName + "RecordFileDialog" },
+    _recordSize      { 0 }
 {
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
@@ -44,21 +46,18 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
 
-    if (_recentPorts.empty())
-    {
-        _recentPorts = GuiSettings::GetValueMult("ReceiverRecentPorts", MAX_RECENT_PORTS);
-    }
+    _LoadRecentInputs("Receiver");
     // Populate some examples if none were loaded
-    if (_recentPorts.empty())
+    if (_GetRecentInputs("Receiver").empty())
     {
-        _recentPorts.push_back("/dev/ttyACM0");
-        _recentPorts.push_back("ser:///dev/ttyUSB0");
-        _recentPorts.push_back("tcp://192.168.1.1:12345");
-        _recentPorts.push_back("telnet://192.168.1.2:23456");
+        _AddRecentInput("Receiver", "telnet://192.168.1.2:23456");
+        _AddRecentInput("Receiver", "tcp://192.168.1.1:12345");
+        _AddRecentInput("Receiver", "ser:///dev/ttyUSB0");
+        _AddRecentInput("Receiver", "/dev/ttyACM0");
     }
     else
     {
-        _port = _recentPorts[0];
+        _port = _GetRecentInputs("Receiver").at(0);
     }
 
     _ClearData();
@@ -69,11 +68,12 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 GuiWinInputReceiver::~GuiWinInputReceiver()
 {
     DEBUG("~GuiWinInputReceiver(%s)", _winName.c_str());
-    GuiSettings::SetValueMult("ReceiverRecentPorts", _recentPorts, MAX_RECENT_PORTS);
+
     if (_receiver)
     {
         _receiver->Stop();
     }
+    _SaveRecentInputs("Receiver");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ void GuiWinInputReceiver::Loop(const uint32_t &frame, const double &now)
     }
 
     // Update recording
-    if (_recordHandle)
+    if (_recordLog.IsOpen())
     {
         constexpr double sizeDeltaTime = 2.0;
         constexpr double msgDeltaTime = 0.5;
@@ -144,20 +144,19 @@ void GuiWinInputReceiver::_ProcessData(const InputData &data)
     switch (data.type)
     {
         case InputData::DATA_MSG:
-            if (_recordHandle)
+            if (_recordLog.IsOpen())
             {
-                try
+                if (_recordLog.Write(data.msg->data, data.msg->size))
                 {
-                    _recordHandle->write((const char *)data.msg->data, data.msg->size);
                     _recordSize += data.msg->size;
                 }
-                catch (...)
+                else
                 {
-                    _logWidget.AddLine(Ff::Sprintf("Failed writing %s: %s", _recordFilePath.c_str(), std::strerror(errno)), GUI_COLOUR(DEBUG_ERROR));
-                    _recordHandle = nullptr;
+                    _logWidget.AddLine(Ff::Sprintf("Failed writing %s: %s", _recordFilePath.c_str(),
+                        _recordLog.GetError().c_str()), GUI_COLOUR(DEBUG_ERROR));
+                    _recordLog.Close();
                 }
             }
-
             break;
         case InputData::DATA_EPOCH:
             if (data.epoch->epoch.valid)
@@ -274,24 +273,25 @@ void GuiWinInputReceiver::_DrawActionButtons()
 
     //ImGui::BeginDisabled(disable);
 
-    if (!_recordHandle)
+    if (!_recordLog.IsOpen())
     {
         if (ImGui::Button(ICON_FK_CIRCLE "###Record", GuiSettings::iconSize))
         {
             if (!_recordFileDialog.IsInit())
             {
+                auto &io = ImGui::GetIO();
                 _recordFilePath = "";
                 _recordFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
-                _recordFileDialog.SetFilename( Ff::Strftime("log_%Y%m%d_%H%M.ubx") );
+                _recordFileDialog.SetFilename( Ff::Strftime("log_%Y%m%d_%H%M") + (io.KeyCtrl ? ".ubx.gz" : ".ubx") );
                 _recordFileDialog.SetTitle(_winTitle + " - Record logfile...");
-                _recordFileDialog.SetFileFilter("\\.(ubx|raw)", true);
+                _recordFileDialog.SetFileFilter("\\.(ubx|raw|ubz|ubx\\.gz)", true);
             }
             else
             {
                 _recordFileDialog.Focus();
             }
         }
-        Gui::ItemTooltip("Record logfile");
+        Gui::ItemTooltip("Record logfile\n(CTRL+click for compressed file)");
     }
     else
     {
@@ -412,8 +412,7 @@ void GuiWinInputReceiver::_DrawControls()
         if (ImGui::InputTextWithHint("##Port", "Port", &_port, flags))
         {
             _triggerConnect = true;
-            DEBUG("add recent port %s", _port.c_str());
-            _AddRecentPort(_port);
+            _AddRecentInput("Receiver", _port);
         }
         else
         {
@@ -441,14 +440,14 @@ void GuiWinInputReceiver::_DrawControls()
             ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
             ImGui::TextUnformatted("Recently used ports");
             ImGui::PopStyleColor();
-            for (auto &port : _recentPorts)
+
+            const std::string *selectedPort = nullptr;
+            const auto &recent = _GetRecentInputs("Receiver");
+            for (auto &port: recent)
             {
                 if (ImGui::Selectable(port.c_str()))
                 {
-                    _port = port;
-                    _baudrate = 0;
-                    _focusPortInput = true;
-                    _AddRecentPort(_port);
+                    selectedPort = &port;
                 }
             }
 
@@ -464,10 +463,7 @@ void GuiWinInputReceiver::_DrawControls()
             {
                 if (ImGui::Selectable(p.port.c_str()))
                 {
-                    _port = p.port;
-                    _baudrate = 0;
-                    _AddRecentPort(p.port);
-                    _focusPortInput = true;
+                    selectedPort = &p.port;
                 }
                 if (!p.desc.empty())
                 {
@@ -486,6 +482,14 @@ void GuiWinInputReceiver::_DrawControls()
             }
 
             ImGui::EndPopup();
+
+            if (selectedPort)
+            {
+                _port = *selectedPort;
+                _baudrate = 0;
+                _focusPortInput = true;
+                _AddRecentInput("Receiver", *selectedPort);
+            }
         }
         ImGui::EndDisabled();
     }
@@ -505,26 +509,19 @@ void GuiWinInputReceiver::_LogOpen(const std::string &path)
         _recordLastMsgTime = 0.0;
         _recordLastSizeTime = 0.0;
         _recordKiBs = 0.0;
-        try
-        {
-            std::unique_ptr<std::ofstream> handle = std::make_unique<std::ofstream>();
-            handle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
-            handle->open(_recordFilePath, std::ofstream::binary);
-            _logWidget.AddLine(Ff::Sprintf("Recording to %s", _recordFilePath.c_str()), GUI_COLOUR(DEBUG_NOTICE));
 
-            // Write marker
+        if (_recordLog.OpenWrite(path))
+        {
             std::string marker = (_rxVerStr.empty() ? "unknown receiver" : _rxVerStr) + ", " +
                 _port + "@" + std::to_string(_baudrate) + ", " + Ff::Strftime("%Y-%m-%d %H:%M:%S") + ", " +
                 "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
             Ff::UbxMessage msg(UBX_INF_CLSID, UBX_INF_TEST_MSGID, marker, false);
-            handle->write((const char *)msg.raw.data(), msg.raw.size());
-
-            // Hand over to receiver thread callback
-            _recordHandle = std::move(handle);
+            _recordLog.Write(msg.raw);
         }
-        catch (std::exception &e)
+        else
         {
-            _logWidget.AddLine(Ff::Sprintf("Failed recording to %s: %s", _recordFilePath.c_str(), e.what()), GUI_COLOUR(DEBUG_ERROR));
+            _logWidget.AddLine(Ff::Sprintf("Failed recording to %s: %s", _recordFilePath.c_str(),
+                _recordLog.GetError().c_str()), GUI_COLOUR(DEBUG_ERROR));
         }
     }
 }
@@ -533,29 +530,8 @@ void GuiWinInputReceiver::_LogOpen(const std::string &path)
 
 void GuiWinInputReceiver::_LogClose()
 {
-    _recordHandle = nullptr;
+    _recordLog.Close();
     _logWidget.AddLine("Recording stopped", GUI_COLOUR(DEBUG_NOTICE));
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-/* static */ std::vector<std::string> GuiWinInputReceiver::_recentPorts = {};
-
-void GuiWinInputReceiver::_AddRecentPort(const std::string &port)
-{
-    for (auto iter = _recentPorts.begin(); iter != _recentPorts.end(); iter++)
-    {
-        if (*iter == port)
-        {
-            _recentPorts.erase(iter);
-            break;
-        }
-    }
-    _recentPorts.insert(_recentPorts.begin(), 1, port);
-    while ((int)_recentPorts.size() > MAX_RECENT_PORTS)
-    {
-        _recentPorts.pop_back();
-    }
 }
 
 /* ****************************************************************************************************************** */

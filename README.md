@@ -131,9 +131,9 @@ A *very experimental* GUI is available. See [here](./cfggui/README.md).
 ## Licenses
 
 * Configuration library (`ubloxcfg`): GNU Lesser General Public License (LGPL),
-  see [`COPYING.LESSER`](./ubloxcfg/COPYING.LESSER)
+  see [`ubloxcfg/LICENSE`](./ubloxcfg/LICENSE)
 * Configuration tool (`cfgtool`), configuration GUI (`cfggui`) and the other libraries (`ff`):
-  GNU General Public License (GPL), see [`COPYING`](./ff/COPYING)
+  GNU General Public License (GPL), see [`ff/LICENSE`](./ff/LICENSE)
 * Various third-party code comes with its own license, see [`3rdparty/`](./3rdparty) and below
 
 See the individual source files, scripts and other files for details.
@@ -144,7 +144,7 @@ The tool uses the following third-party code:
 
 * _CRC-24Q_ routines from _GPSd_ (<https://gitlab.com/gpsd/>)
   See the included source code ([`crc24q.c`](./3rdparty/stuff/crc24q.c)) and license
-  ([`crc24q.COPYING`](./3rdparty/stuff/crc24q.COPYING)).
+  ([`crc24q.LICENSE`](./3rdparty/stuff/crc24q.LICENSE)).
 
 ## Todo, ideas
 

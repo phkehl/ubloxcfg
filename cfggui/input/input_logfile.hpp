@@ -21,13 +21,13 @@
 #include <memory>
 #include <string>
 #include <functional>
-#include <fstream>
 #include <mutex>
 #include <atomic>
 #include <queue>
 
 #include "input.hpp"
 #include "database.hpp"
+#include "logfile.hpp"
 
 /* ****************************************************************************************************************** */
 
@@ -49,7 +49,7 @@ class InputLogfile : public Input
         void Pause();
         void StepMsg(const std::string &msgName = "");
         void StepEpoch();
-        void Seek(const float pos);
+        void Seek(const float pos); // 0.0 ... 1.0 (= 0 ... 100%)
 
         bool CanOpen();
         bool CanClose();
@@ -58,8 +58,9 @@ class InputLogfile : public Input
         bool CanPause();
         bool CanStep();
         bool CanSeek();
+        const char *StateStr();
 
-        float GetPlayPos();
+        float GetPlayPos(); // 0.0 ... 1.0
         float GetPlaySpeed();
         void  SetPlaySpeed(const float speed);
 
@@ -84,8 +85,7 @@ class InputLogfile : public Input
         std::atomic<enum State_e>      _playState;
 
         // InputLogfile player thread
-        std::string                    _logfilePath;
-        std::unique_ptr<std::ifstream> _logfileHandle;
+        Logfile                        _logfile;
 
         static constexpr uint32_t      EVENT_QUEUE_MAX_SIZE = 1000; // FIXME: ??
         void _ThreadPrepare() final;

@@ -22,6 +22,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <map>
 
 #include "ff_epoch.h"
 
@@ -53,7 +54,6 @@ class GuiWinInput : public GuiWin
     protected:
 
         std::shared_ptr<Database>                  _database;
-        // std::function<void(Callback_e)>            _callback;
         std::vector< std::unique_ptr<GuiWinData> > _dataWindows;
         static constexpr int MAX_SAVED_WINDOWS = 20;
         GuiWidgetLog                               _logWidget;
@@ -62,7 +62,14 @@ class GuiWinInput : public GuiWin
         std::shared_ptr<Ff::Epoch> _epoch;
         double                     _epochAge;
         const char                *_fixStr;
-        //double                     _fixTime; TODO
+
+        static std::map<std::string, std::vector<std::string>> _recentInputs;
+        static constexpr int MAX_RECENT_INPUTS = 20;
+        static void _LoadRecentInputs(const std::string &name);
+        static void _SaveRecentInputs(const std::string &name);
+        static void _AddRecentInput(const std::string &name, const std::string &input);
+        static void _ClearRecentInputs(const std::string &name);
+        static const std::vector<std::string> &_GetRecentInputs(const std::string &name);
 
         virtual void _ProcessData(const InputData &data);
         virtual void _ClearData();

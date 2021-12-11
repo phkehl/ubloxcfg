@@ -13,7 +13,7 @@ A recent Ubuntu (20.04 or later) should work.
 Install dependencies:
 
 ```sh
-sudo apt-get install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev gcc g++ # or libcurl4-openssl-dev
+sudo apt-get install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev gcc g++ # or libcurl4-openssl-dev
 ```
 
 Build:
@@ -25,7 +25,7 @@ make cfggi -j8
 On older Ubuntus you may be able to get it to work as follows:
 
 ```sh
-sudo apt install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev gcc-8 g++-8 # or libcurl4-openssl-dev
+sudo apt install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev gcc-8 g++-8 # or libcurl4-openssl-dev
 make cfggui CC=gcc-8 CXX=gcc-8
 ```
 
@@ -57,12 +57,14 @@ The GUI uses the following third-party code:
 * _GLFW_ (<https://www.glfw.org/>), dynamically linked
 * _libcurl_ (<https://curl.se/>), dynamically linked
 * _Freetype_ (<https://freetype.org/>), dynamically linked
+* _zlib (<https://zlib.net/>), dynamically linked
 * And a bunch of other libraries that GLFW, Freetype, ImGui, libcurl etc. need...
 
 See the [main README](../README.md) for more.
 
 ## TODOs, ideas
 
+* Implement Logfile::Read(), Seek(), Tell(), Size(), and gzipped read/write/seek/tell/size
 * Make database size dynamic / configurable
 * Navigation status page (same stuff as in input window + velocity gage, artificial horizon, etc.)?
 * Button to open/arrange all data windows?
@@ -77,11 +79,8 @@ See the [main README](../README.md) for more.
 * Fix performance timeseries plot in debug window, it should scroll
 * Improve GuiWinDataPlot
 * Handle database reset (insert blank epoch?) when seeking in logfile
-* Handle logfile seekbar jumping when setting new seek target
 * Map: allow zooming rect with right click drag
-* Allow logging and playing gzipped logs (.gz, .ubz)
-* Logfile player: remember last directory (easy: path of file in recent logs list)
-* file dialog: load dir entries async, and as needed
+* File dialog: load dir entries async, and as needed (make _RefreshDir() run in background)
 * (started) Implement epoch info page (table with all details / fields of EPOCH_t etc.)
 * FIXMEs and TODOs all over...
 * Deque for Database
@@ -94,6 +93,9 @@ See the [main README](../README.md) for more.
     - <https://stackoverflow.com/questions/6733934/what-does-immediate-mode-mean-in-opengl>
     - <https://learnopengl.com/Getting-Started/OpenGL>
     - <https://docs.gl>
+* Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
+  Hmmm... lots of implications with the "immediate" in imgui.. :-/
+  Can we implement seekpos()? Maybe re-open file at a certain position?
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out doing maps using ImPlot (<https://github.com/epezent/implot_demos>)

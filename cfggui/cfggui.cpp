@@ -578,7 +578,11 @@ int main(int argc, char **argv)
         CONFIG_VERSION, CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_GITHASH, CONFIG_DATE, CONFIG_TIME));
     versionInfos.push_back(openGlVersion);
     versionInfos.push_back(Ff::Sprintf("GLFW %s", glfwGetVersionString()));
-    versionInfos.push_back(Ff::Sprintf("ImGui %s (%s, %s)", ImGui::GetVersion(),
+    versionInfos.push_back(Ff::Sprintf("ImGui %s"
+#ifdef IMGUI_HAS_DOCK
+        " (Docking branch)"
+#endif
+        " (%s, %s)", ImGui::GetVersion(),
         io.BackendPlatformName ? io.BackendPlatformName : "?",
         io.BackendRendererName ? io.BackendRendererName : "?"));
     versionInfos.push_back("ImPlot " IMPLOT_VERSION);

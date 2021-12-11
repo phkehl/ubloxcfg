@@ -63,25 +63,27 @@ void GuiWinAppAbout::DrawWindow()
     ImGui::TextUnformatted("- 'cfggui' application, under GPL");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted( "Third-party code (see source code and the links for details):");
-    ImGui::TextUnformatted( "- Dear ImGui by Omar Cornut and all Dear ImGui contributors, under a MIT license");
+    ImGui::TextUnformatted( "- Dear ImGui, under a MIT license");
     ImGui::SameLine(); Gui::TextLink("https://github.com/ocornut/imgui");
-    ImGui::TextUnformatted( "- ImPlot by Evan Pezent, under a MIT license");
+    ImGui::TextUnformatted( "- ImPlot, under a MIT license");
     ImGui::SameLine(); Gui::TextLink("https://github.com/epezent/implot");
-    ImGui::TextUnformatted( "- CRC24Q routines from the GPSD project, under a BSD-2-Clause license");
+    ImGui::TextUnformatted( "- CRC24Q routines (from GPSD), under a BSD-2-Clause license");
     ImGui::SameLine(); Gui::TextLink("https://gitlab.com/gpsd");
-    ImGui::TextUnformatted( "- PlatformFolders by Poul Sander, under a MIT license");
+    ImGui::TextUnformatted( "- PlatformFolders, under a MIT license");
     ImGui::SameLine(); Gui::TextLink("https://github.com/sago007/PlatformFolders");
     ImGui::TextUnformatted( "- DejaVu fonts, under a unnamed license");
     ImGui::SameLine(); Gui::TextLink("https://dejavu-fonts.github.io");
-    // ImGui::TextUnformatted( "- ProggyClean font by Tristan Grimmer, under a unnamed license");
+    // ImGui::TextUnformatted( "- ProggyClean font, under a unnamed license");
     // ImGui::SameLine(); Gui::TextLink("https://proggyfonts.net");
     ImGui::TextUnformatted( "- ForkAwesome font, under a MIT license");
     ImGui::SameLine(); Gui::TextLink("https://forkaweso.me");
-    ImGui::TextUnformatted( "- Tetris by Stephen Brennan, under a Revised BSD license");
+    ImGui::TextUnformatted( "- Tetris, under a Revised BSD license");
     ImGui::SameLine(); Gui::TextLink("https://brennan.io/2015/06/12/tetris-reimplementation/");
-    ImGui::TextUnformatted( "- NanoVG, under a Zlib License");
+    ImGui::TextUnformatted( "- NanoVG, under a Zlib license");
     ImGui::SameLine(); Gui::TextLink("https://github.com/memononen/nanovg");
     ImGui::SameLine(); Gui::TextLink("https://github.com/inniyah/nanovg");
+    //ImGui::TextUnformatted( "- Miniz, under a MIT license");
+    //ImGui::SameLine(); Gui::TextLink("https://github.com/richgel999/miniz");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party libraries (first level dependencies, use ldd to see all):");
     ImGui::TextUnformatted( "- GLFW");
@@ -157,7 +159,8 @@ void GuiWinAppHelp::DrawWindow()
         {
             ImGui::PushFont(GuiSettings::fontSans);
             ImGui::ShowUserGuide();
-            ImGui::BulletText("Hold SHIFT while moving window to dock into other windows");
+            ImGui::BulletText("Hold SHIFT while moving window to dock into other windows.\n"
+                "(VERY experimental. WILL crash sometimes!");
             ImGui::PopFont();
             ImGui::EndTabItem();
         }

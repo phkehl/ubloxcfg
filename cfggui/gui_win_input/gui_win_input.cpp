@@ -22,6 +22,7 @@
 #include "ff_ubx.h"
 #include "ff_trafo.h"
 #include "ff_cpp.hpp"
+#include "ff_utils.hpp"
 
 #include "gui_inc.hpp"
 #include "imgui_internal.h"
@@ -756,6 +757,44 @@ void GuiWinInput::_UpdateTitle()
             dataWin->SetTitle(childTitle);
         }
     }
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ std::map<std::string, std::vector<std::string>> GuiWinInput::_recentInputs;
+
+/*static*/ void GuiWinInput::_LoadRecentInputs(const std::string &name)
+{
+    _recentInputs[name] = GuiSettings::GetValueMult(name + ".recentInput", MAX_RECENT_INPUTS);
+    Ff::MakeUnique(_recentInputs[name]);
+}
+
+/*static*/ void GuiWinInput::_SaveRecentInputs(const std::string &name)
+{
+    GuiSettings::SetValueMult(name + ".recentInput", _recentInputs[name], MAX_RECENT_INPUTS);
+}
+
+/*static*/ void GuiWinInput::_AddRecentInput(const std::string &name, const std::string &input)
+{
+    auto existing = std::find(_recentInputs[name].begin(), _recentInputs[name].end(), input);
+    // Add first, then remove, as input could be a reference of the to-be-remved element in this vector
+    const bool deleteExisting = existing != _recentInputs[name].end();
+    _recentInputs[name].insert(_recentInputs[name].begin(), input);
+    if (deleteExisting)
+    {
+        _recentInputs[name].erase(existing + 1);
+    }
+}
+
+/*static*/ void GuiWinInput::_ClearRecentInputs(const std::string &name)
+{
+    _recentInputs[name].clear();
+}
+
+/*static*/ const std::vector<std::string> &GuiWinInput::_GetRecentInputs(const std::string &name)
+{
+    return _recentInputs[name];
 }
 
 /* ****************************************************************************************************************** */

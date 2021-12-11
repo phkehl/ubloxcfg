@@ -35,6 +35,7 @@ class GuiWinFileDialog : public GuiWin
         enum Mode_e { FILE_OPEN, FILE_SAVE };
 
         GuiWinFileDialog(const std::string &name);
+       ~GuiWinFileDialog();
 
         // Setup dialog
         void InitDialog(const Mode_e mode);
@@ -97,6 +98,7 @@ class GuiWinFileDialog : public GuiWin
         std::string           _currentDir;
         std::vector<std::string> _currentDirParts;
         std::vector<DirEntry> _currentDirEntries;
+        bool                  _currentDirEntriesDirty;
 
         bool                  _showHidden;
         bool                  _dirsFirst;

@@ -103,15 +103,17 @@ $(CFILES_cfgtool): $(BUILDDIR)/config.h
 
 # cfggui
 CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
-CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) 3rdparty/stuff/platform_folders.cpp
+CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) $(wildcard 3rdparty/stuff/*.cpp)
 CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3rdparty/stuff/tetris.c  3rdparty/stuff/gl3w.c $(wildcard 3rdparty/nanovg/*.c)
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
-LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++
+LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++ -ldl
 CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --static --libs glfw3 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --libs   glfw3 2>/dev/null)
 CXXFLAGS_cfggui       += $(shell pkg-config --cflags freetype2 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --static --libs freetype2 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --libs   freetype2 2>/dev/null)
+CXXFLAGS_cfggui       += $(shell pkg-config --cflags zlib 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --libs   zlib 2>/dev/null)
 CXXFLAGS_cfggui       += $(shell curl-config --cflags 2>/dev/null)
 LDFLAGS_cfggui        += $(shell curl-config --libs 2>/dev/null)
 LDFLAGS_cfggui        += -lGL
@@ -229,9 +231,9 @@ $(OUTPUTDIR)/cfgtool_$(VERSION).bin: $(OUTPUTDIR)/cfgtool-release Makefile | $(O
 	$(V)$(STRIP) $@.tmp
 	$(V)$(CP) $@.tmp $@
 	$(V)$(RM) $@.tmp
-	$(V)$(CP) ff/COPYING                      $(OUTPUTDIR)/ff_COPYING
-	$(V)$(CP) ubloxcfg/COPYING.LESSER         $(OUTPUTDIR)/ubloxcfg_COPYING.LESSER
-	$(V)$(CP) 3rdparty/stuff/crc24q.COPYING   $(OUTPUTDIR)/crc24q_COPYING
+	$(V)$(CP) ff/LICENSE                      $(OUTPUTDIR)/ff_LICENSE
+	$(V)$(CP) ubloxcfg/LICENSE                $(OUTPUTDIR)/ubloxcfg_LICENSE
+	$(V)$(CP) 3rdparty/stuff/crc24q.LICENSE   $(OUTPUTDIR)/crc24q_LICENSE
 
 cfgtool.txt: $(OUTPUTDIR)/cfgtool-release
 	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"
@@ -255,7 +257,7 @@ $(OUTPUTDIR)/cfgtool_$(VERSION).txt: cfgtool.txt Makefile | $(OUTPUTDIR)
 $(RELEASEZIP): $(RELEASEFILES)
 	@echo "$(HLY)*$(HLO) $(HLC)ZIP$(HLO) $(HLGG)$@$(HLO) $(HLM)($(notdir $^))$(HLO)"
 	$(V)$(RM) -f $@
-	$(V)( cd $(OUTPUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) *COPYING* )
+	$(V)( cd $(OUTPUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) *LICENSE* )
 
 ####################################################################################################
 # Analysers

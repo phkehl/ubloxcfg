@@ -21,7 +21,6 @@
 #include <memory>
 #include <map>
 #include <vector>
-#include <mutex>
 
 #include "input_logfile.hpp"
 #include "gui_win_filedialog.hpp"
@@ -38,12 +37,6 @@ class GuiWinInputLogfile : public GuiWinInput
         void Loop(const uint32_t &frame, const double &now) final;
 
     protected:
-
-        // Shared across multiple instances of this window
-        static std::vector<std::string> _recentLogs;
-        static std::mutex _recentLogsMutex;
-        static constexpr int MAX_RECENT_LOGS = 20;
-        static void _AddRecentLog(const std::string &path);
 
         std::shared_ptr<InputLogfile>  _logfile;
         GuiWinFileDialog          _fileDialog;

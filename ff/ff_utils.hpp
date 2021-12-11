@@ -50,6 +50,13 @@ namespace Ff
     // Join string
     std::string StrJoin(const std::vector<std::string> &strs, const std::string &sep);
 
+    // Remove duplicates
+    void MakeUnique(std::vector<std::string> &vec);
+
+    // Hexdump
+    std::vector<std::string> HexDump(const std::vector<uint8_t> data);
+    std::vector<std::string> HexDump(const uint8_t *data, const int size);
+
     // 2d Vector
     template<typename T>
     struct Vec2
@@ -73,10 +80,6 @@ namespace Ff
 
     template <typename T>
     inline Vec2<T> operator*(const T f, Vec2<T> const & v) { return v * f; } // x * Vec2
-
-    // Hexdump
-    std::vector<std::string> HexDump(const std::vector<uint8_t> data);
-    std::vector<std::string> HexDump(const uint8_t *data, const int size);
 };
 
 /* ****************************************************************************************************************** */

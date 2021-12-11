@@ -35,10 +35,8 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
     _logfile = std::make_shared<InputLogfile>(name, _database);
     _logfile->SetDataCb( std::bind(&GuiWinInputLogfile::_ProcessData, this, std::placeholders::_1) );
 
-    if (_recentLogs.empty())
-    {
-        _recentLogs = GuiSettings::GetValueMult("LogfileRecentLogs", MAX_RECENT_LOGS);
-    }
+    _LoadRecentInputs("Logfile");
+
     GuiSettings::GetValue(_winName + ".playSpeed", _playSpeed, 1.0f);
     GuiSettings::GetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed, true);
     _logfile->SetPlaySpeed(_playSpeed);
@@ -53,7 +51,6 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
 {
     DEBUG("~GuiWinInputLogfile(%s)", _winName.c_str());
 
-    GuiSettings::SetValueMult("LogfileRecentLogs", _recentLogs, MAX_RECENT_LOGS);
     GuiSettings::SetValue(_winName + ".playSpeed", _playSpeed);
     GuiSettings::SetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed);
 
@@ -61,6 +58,8 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
     {
         _logfile->Close();
     }
+
+    _SaveRecentInputs("Logfile");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -125,7 +124,7 @@ void GuiWinInputLogfile::_DrawControls()
             {
                 _fileDialog.InitDialog(GuiWinFileDialog::FILE_OPEN);
                 _fileDialog.SetTitle(_winTitle + " - Open logfile...");
-                _fileDialog.SetFileFilter("\\.(ubx|raw)", true);
+                _fileDialog.SetFileFilter("\\.(ubx|raw|ubz|ubx\\.gz)", true);
             }
             else
             {
@@ -139,19 +138,28 @@ void GuiWinInputLogfile::_DrawControls()
 
         if (ImGui::BeginCombo("##RecentLogs", NULL, ImGuiComboFlags_HeightLarge | ImGuiComboFlags_NoPreview))
         {
-            std::lock_guard<std::mutex> lock(_recentLogsMutex);
-            if (_recentLogs.empty())
+            const std::string *selectedLog = nullptr;
+            const auto &recent = _GetRecentInputs("Logfile");
+            if (recent.empty())
             {
                 ImGui::TextUnformatted("No recent logs");
             }
-            for (auto iter = _recentLogs.crbegin(); iter != _recentLogs.crend(); iter++)
+            for (auto &log: recent)
             {
-                if (ImGui::Selectable((*iter).c_str()))
+                if (ImGui::Selectable(log.c_str()))
                 {
-                    _logfile->Open(*iter);
+                    _seekProgress = -1.0f;
+                    selectedLog = &log;
                 }
             }
             ImGui::EndCombo();
+            if (selectedLog)
+            {
+                if (_logfile->Open(*selectedLog))
+                {
+                    _AddRecentInput("Logfile", *selectedLog);
+                }
+            }
         }
 
         ImGui::EndDisabled();
@@ -162,9 +170,10 @@ void GuiWinInputLogfile::_DrawControls()
             if (_fileDialog.DrawDialog())
             {
                 const auto path = _fileDialog.GetPath();
+                _seekProgress = -1.0f;
                 if (!path.empty() && _logfile->Open(path))
                 {
-                    _AddRecentLog(path);
+                    _AddRecentInput("Logfile", path);
                 }
             }
         }
@@ -185,27 +194,26 @@ void GuiWinInputLogfile::_DrawControls()
 
     ImGui::SameLine();
 
-    // Play
+    // Play / pause
     {
+        if (canPlay)
+        {
+            if (ImGui::Button(ICON_FK_PLAY "##PlayPause", GuiSettings::iconSize))
+            {
+                _logfile->Play();
+            }
+            Gui::ItemTooltip("Play");
+        }
+        else if (canPause)
+        {
+            if (ImGui::Button(ICON_FK_PAUSE "##PlayPause", GuiSettings::iconSize))
+            {
+                _logfile->Pause();
+            }
+            Gui::ItemTooltip("Pause");
+        }
+
         ImGui::BeginDisabled(!canPlay);
-        if (ImGui::Button(ICON_FK_PLAY "##Play", GuiSettings::iconSize))
-        {
-            _logfile->Play();
-        }
-        Gui::ItemTooltip("Play");
-        ImGui::EndDisabled();
-    }
-
-    ImGui::SameLine();
-
-    // Pause
-    {
-        ImGui::BeginDisabled(!canPause);
-        if (ImGui::Button(ICON_FK_PAUSE "##Pause", GuiSettings::iconSize))
-        {
-            _logfile->Pause();
-        }
-        Gui::ItemTooltip("Pause");
         ImGui::EndDisabled();
     }
 
@@ -219,7 +227,7 @@ void GuiWinInputLogfile::_DrawControls()
             _logfile->Stop();
             _ClearData();
         }
-        Gui::ItemTooltip("Stop");
+        Gui::ItemTooltip("Stop (rewind)");
         ImGui::EndDisabled();
     }
 
@@ -228,11 +236,13 @@ void GuiWinInputLogfile::_DrawControls()
     // Step epoch
     {
         ImGui::BeginDisabled(!canStep);
+        ImGui::PushButtonRepeat(true);
         if (ImGui::Button(ICON_FK_FORWARD "##StepEpoch", GuiSettings::iconSize))
         {
             _logfile->StepEpoch();
         }
         Gui::ItemTooltip("Step epoch");
+        ImGui::PopButtonRepeat();
         ImGui::EndDisabled();
     }
 
@@ -241,11 +251,13 @@ void GuiWinInputLogfile::_DrawControls()
     // Step message
     {
         ImGui::BeginDisabled(!canStep);
+        ImGui::PushButtonRepeat(true);
         if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsg", GuiSettings::iconSize))
         {
             _logfile->StepMsg();
         }
         Gui::ItemTooltip("Step message");
+        ImGui::PopButtonRepeat();
         ImGui::EndDisabled();
     }
 
@@ -291,10 +303,14 @@ void GuiWinInputLogfile::_DrawControls()
         }
     }
 
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(_logfile->StateStr());
+
     // Progress indicator
-    if (canClose) // i.e. log must be opened
+    if (canClose) // i.e. log must be currently open
     {
-        float progress = _logfile->GetPlayPos() * 100.0;
+        float progress = _seekProgress > -1.0f ? _seekProgress : _logfile->GetPlayPos() * 1e2f;
         ImGui::SetNextItemWidth(-1);
         ImGui::BeginDisabled(!canSeek);
         if (ImGui::SliderFloat("##PlayProgress", &progress, 0.0, 100.0, "%.3f%%", ImGuiSliderFlags_AlwaysClamp))
@@ -305,7 +321,8 @@ void GuiWinInputLogfile::_DrawControls()
         if (ImGui::IsItemDeactivated() && // ...this fires one frame later
             ( std::abs( _logfile->GetPlayPos() - _seekProgress ) > 1e-5 ) )
         {
-            _logfile->Seek(_seekProgress);
+            _logfile->Seek(_seekProgress * 1e-2f);
+            _seekProgress = -1.0f;
         }
         ImGui::EndDisabled();
     }
@@ -314,28 +331,6 @@ void GuiWinInputLogfile::_DrawControls()
         ImGui::InvisibleButton("##PlayProgress", GuiSettings::iconSize);
     }
     ImGui::Separator();
-}
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-/*static*/ std::vector<std::string> GuiWinInputLogfile::_recentLogs {};
-/*static*/ std::mutex GuiWinInputLogfile::_recentLogsMutex {};
-
-/*static*/ void GuiWinInputLogfile::_AddRecentLog(const std::string &path)
-{
-    std::lock_guard<std::mutex> lock(_recentLogsMutex);
-    auto existing = std::find(_recentLogs.begin(), _recentLogs.end(), path);
-    if (existing != _recentLogs.end())
-    {
-        _recentLogs.erase(existing);
-    }
-    _recentLogs.push_back(path);
-    while (_recentLogs.size() > MAX_RECENT_LOGS)
-    {
-        _recentLogs.erase( _recentLogs.begin() );
-    }
-    UNUSED(path);
 }
 
 /* ****************************************************************************************************************** */

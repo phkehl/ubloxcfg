@@ -204,38 +204,24 @@ void InputLogfile::Loop(const double &now)
 
 bool InputLogfile::Open(const std::string &path)
 {
-    if (_logfileHandle)
+    if (_logfile.IsOpen())
     {
         Close();
     }
-    bool res = false;
-    try
+
+    if (_logfile.OpenRead(path))
     {
-        _logfileHandle = std::make_unique<std::ifstream>();
-        _logfileHandle->exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        _logfileHandle->open(path, std::ifstream::binary);
-        _logfilePath = path;
-
-        // Get file size
-        _logfileHandle->seekg(0, std::ios::end);
-        _playSize = _logfileHandle->tellg();
-
-        // Go to beginning of log
-        _logfileHandle->seekg(0, std::ios::beg);
+        _playSize = _logfile.Size();
         _playPos = 0;
         _playPosRel = 0.0;
 
         // Hand over to play thread
-        res = _ThreadStart();
-    }
-    catch (std::exception &e)
+        return _ThreadStart();    }
+    else
     {
-        WARNING("Failed opening logfile %s: %s", path.c_str(), e.what());
-        _logfileHandle = nullptr;
-        _logfilePath.clear();
+        WARNING("Failed opening logfile %s: %s", path.c_str(), _logfile.GetError().c_str());
+        return false;
     }
-
-    return res;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -244,11 +230,9 @@ void InputLogfile::Close()
 {
     _ThreadStop();
 
-    if (_logfileHandle)
+    if (_logfile.IsOpen())
     {
-        _logfileHandle->close();
-        _logfileHandle = nullptr;
-        _logfilePath.clear();
+        _logfile.Close();
     }
 
     _playSize   = 0;
@@ -323,12 +307,24 @@ bool InputLogfile::CanPause()
 
 bool InputLogfile::CanStep()
 {
-    return (_playState == PLAYING) || (_playState == PAUSED);
+    return (_playState == PLAYING) || (_playState == PAUSED) || (_playState == STOPPED);
 }
 
 bool InputLogfile::CanSeek()
 {
-    return /*(_playState == PLAYING) ||*/ (_playState == PAUSED) || (_playState == STOPPED);
+    return (/*(_playState == PLAYING) ||*/ (_playState == PAUSED) || (_playState == STOPPED)) && _logfile.CanSeek();
+}
+
+const char *InputLogfile::StateStr()
+{
+    switch (_playState)
+    {
+        case CLOSED:  return "Closed";
+        case STOPPED: return "Stopped";
+        case PLAYING: return "Playing";
+        case PAUSED:  return "Paused";
+    }
+    return "?";
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -384,6 +380,8 @@ void InputLogfile::Seek(const float pos)
 {
     if (CanSeek())
     {
+        // Set it already here, so that GetPlayPos() returns the new pos, so that the seekbar in GuiWinLogfile doesn't jump...
+        _playPosRel = CLIP(pos, 0.0f, 1.0f);
         _SEND_COMMAND(LogfileCommandSeek, pos);
     }
 }
@@ -401,13 +399,13 @@ void InputLogfile::Seek(const float pos)
 void InputLogfile::_ThreadPrepare()
 {
     _playState = STOPPED;
-    _SEND_EVENT(LogfileEventNotice, "InputLogfile opened: " + _logfilePath);
+    _SEND_EVENT(LogfileEventNotice, "Logfile opened: " + _logfile.Path());
 }
 
 void InputLogfile::_ThreadCleanup()
 {
     _playState = CLOSED;
-    _SEND_EVENT(LogfileEventNotice, "InputLogfile closed: " + _logfilePath);
+    _SEND_EVENT(LogfileEventNotice, "Logfile closed: " + _logfile.Path());
 }
 
 void InputLogfile::_Thread()
@@ -442,7 +440,16 @@ void InputLogfile::_Thread()
                     break;
                 case LogfileCommand::STOP:
                     _THREAD_DEBUG("STOP");
-                    _logfileHandle->seekg(0, std::ios::beg);
+                    if (!_logfile.CanSeek())
+                    {
+                        const std::string path = _logfile.Path();
+                        _logfile.Close();
+                        _logfile.OpenRead(path);
+                    }
+                    else
+                    {
+                        _logfile.Seek(0);
+                    }
                     _playPos = 0;
                     _playPosRel = 0.0;
                     parserInit(&parser);
@@ -472,7 +479,7 @@ void InputLogfile::_Thread()
                 {
                     auto cmd = static_cast<LogfileCommandSeek *>(command.get());
                     _THREAD_DEBUG("SEEK %.3f", cmd->pos);
-                    float rel = cmd->pos * 1e-2;
+                    float rel = cmd->pos;
                     if (rel < FLT_MIN)
                     {
                         _playPosRel = 0.0f;
@@ -480,9 +487,9 @@ void InputLogfile::_Thread()
                     }
                     else
                     {
-                        if (rel > (100.0 - FLT_EPSILON))
+                        if (rel > (1.0 - FLT_EPSILON))
                         {
-                            rel = 100.0f;
+                            rel = 1.0f;
                         }
                         _playPosRel = rel;
                         _playPos = (double)_playSize * (double)_playPosRel;
@@ -492,7 +499,7 @@ void InputLogfile::_Thread()
                             _playPos = endPos;
                         }
                     }
-                    _logfileHandle->seekg(_playPos, std::ios::beg);
+                    _logfile.Seek(_playPos);
                     parserInit(&parser);
                     break;
                 }
@@ -608,7 +615,7 @@ void InputLogfile::_Thread()
 
         // Get more logfile data
         uint8_t buf[PARSER_MAX_ANY_SIZE];
-        const int num = _logfileHandle->readsome((char *)buf, sizeof(buf));
+        const int num = _logfile.Read(buf, sizeof(buf));
         if (num > 0)
         {
             if (!parserAdd(&parser, buf, num))

@@ -159,6 +159,23 @@ bool FileSpew(const std::string &file, const uint8_t *data, const int size, cons
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+uint64_t FileSize(const std::string &file)
+{
+    std::filesystem::path path { file };
+    std::error_code err;
+    const uint64_t size = std::filesystem::file_size(path, err);
+    if (err)
+    {
+        return 0;
+    }
+    else
+    {
+        return size;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 const std::vector<Port> &EnumeratePorts(const bool enumerate)
 {
     static std::vector<Port> ports;

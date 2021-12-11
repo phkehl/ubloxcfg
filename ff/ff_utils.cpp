@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <cstring>
+#include <unordered_map>
 
 #include "ff_utils.hpp"
 
@@ -110,7 +111,6 @@ void Ff::StrTrim(std::string &str)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#include "ff_debug.h"
 std::vector<std::string> Ff::StrSplit(const std::string &str, const std::string &sep, const int maxNum)
 {
     std::vector<std::string> out;
@@ -199,6 +199,23 @@ std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
         ix += 16;
     }
     return hexdump;
+}// ---------------------------------------------------------------------------------------------------------------------
+
+void Ff::MakeUnique(std::vector<std::string> &vec)
+{
+    std::unordered_map<std::string, bool> seen;
+    for (auto iter = vec.begin(); iter != vec.end(); )
+    {
+        if (seen.find(*iter) != seen.end())
+        {
+            iter = vec.erase(iter);
+        }
+        else
+        {
+            seen[*iter] = true;
+            iter++;
+        }
+    }
 }
 
 /* ****************************************************************************************************************** */

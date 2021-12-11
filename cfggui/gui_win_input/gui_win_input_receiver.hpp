@@ -26,6 +26,8 @@
 
 #include "ff_cpp.hpp"
 
+#include "logfile.hpp"
+
 #include "input_receiver.hpp"
 #include "gui_win_filedialog.hpp"
 #include "gui_win_input.hpp"
@@ -49,12 +51,6 @@ class GuiWinInputReceiver : public GuiWinInput
         std::string          _port;
         int                  _baudrate;
 
-        // Detected and recent ports
-        static std::vector<std::string> _recentPorts;
-        static constexpr int  MAX_RECENT_PORTS = 20;
-        void                 _AddRecentPort(const std::string &port);
-        void                 _InitRecentPorts();
-
         bool                 _stopSent;
         bool                 _triggerConnect;
         bool                 _focusPortInput;
@@ -63,7 +59,7 @@ class GuiWinInputReceiver : public GuiWinInput
 
         GuiWinFileDialog     _recordFileDialog;
         std::string          _recordFilePath;
-        std::unique_ptr<std::ofstream> _recordHandle;
+        Logfile              _recordLog;
         uint32_t             _recordSize;
         std::string          _recordMessage;
         uint32_t             _recordLastSize;

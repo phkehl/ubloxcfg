@@ -45,7 +45,15 @@ GuiWinFileDialog::GuiWinFileDialog(const std::string &name) :
     _winSizeMin = {  80, 20 };
     _winFlags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking; //ImGuiWindowFlags_NoTitleBar;
     _confirmWinName = std::string("Confirm##") + _winName;
+
+    _ChangeDir(GuiSettings::GetValue(_winName + ".lastDir"));
 }
+
+GuiWinFileDialog::~GuiWinFileDialog()
+{
+    GuiSettings::SetValue(_winName + ".lastDir", _currentDir);
+}
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -59,7 +67,6 @@ void GuiWinFileDialog::InitDialog(const Mode_e mode)
     {
         _ChangeDir(std::filesystem::current_path());
     }
-    _RefreshDir();
     switch (_dialogMode)
     {
         case FILE_OPEN:
@@ -75,7 +82,6 @@ void GuiWinFileDialog::InitDialog(const Mode_e mode)
     }
     Open();
     Focus();
-
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -142,6 +148,8 @@ bool GuiWinFileDialog::DrawDialog()
         _Done();
         return true;
     }
+
+    _RefreshDir();
 
     if (_dialogState == SELECT)
     {
@@ -314,7 +322,7 @@ void GuiWinFileDialog::_ChangeDir(const std::string &path)
         }
 
         // Load list of files
-        _RefreshDir();
+        _currentDirEntriesDirty = true;
     }
     // Otherwise carp, and don't change current directory
     catch (std::exception &e)
@@ -575,7 +583,8 @@ bool GuiWinFileDialog::_DrawDialog()
                     _sortInfo.emplace_back(Col_e::TYPE, Order_e::ASC);
                 }
                 sortSpecs->SpecsDirty = false;
-                _RefreshDir();
+
+                _currentDirEntriesDirty = true;
             }
 
             const DirEntry *changeDirEntry = nullptr;
@@ -772,6 +781,12 @@ GuiWinFileDialog::DirEntry::DirEntry(const std::filesystem::directory_entry &ent
 
 void GuiWinFileDialog::_RefreshDir()
 {
+    if (!_currentDirEntriesDirty)
+    {
+        return;
+    }
+    _currentDirEntriesDirty = false;
+
     _currentDirEntries.clear();
     if (_currentDir.empty())
     {

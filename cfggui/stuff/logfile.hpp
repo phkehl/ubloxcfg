@@ -15,45 +15,54 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef __PLATFORM_HPP__
-#define __PLATFORM_HPP__
+#ifndef __LOGFILE_HPP__
+#define __LOGFILE_HPP__
 
-#include <vector>
 #include <string>
+#include <iostream>
+#include <memory>
+#include <vector>
 #include <cstdint>
 
-namespace Platform {
 /* ****************************************************************************************************************** */
 
-bool Init();
-
-const std::string &ConfigBaseDir();
-const std::string &CacheBaseDir();
-const std::string &HomeDir();
-
-std::string ConfigFile(const std::string &name);
-std::string CacheDir(const std::string &name = "");
-
-
-bool FileExists(const std::string &file);
-
-bool FileSpew(const std::string &file, const uint8_t *data, const int size, bool debug = true);
-
-uint64_t FileSize(const std::string &file);
-
-struct Port
+class Logfile
 {
-    Port(const std::string &_port, const std::string &_desc) : port{_port}, desc{_desc} {}
-    Port(const char *_port, const char *_desc) : port{_port}, desc{_desc} {}
-    std::string port;
-    std::string desc;
+    public:
+
+        Logfile();
+       ~Logfile();
+
+        bool     OpenRead(const std::string &path);
+        uint64_t Read(uint8_t *data, const uint64_t size);
+        uint64_t Size();
+        void     Seek(const uint64_t pos);
+        bool     CanSeek();
+
+        bool     OpenWrite(const std::string &path);
+        bool     Write(const uint8_t *data, const uint64_t size);
+        bool     Write(const std::vector<uint8_t> data);
+
+        bool     Close();
+
+        bool     IsOpen();
+
+        const std::string &Path();
+        const std::string &GetError();
+
+    private:
+
+        bool           _isOpen;
+        std::string    _path;
+        std::unique_ptr<std::istream> _in;
+        std::unique_ptr<std::ostream> _out;
+        std::string    _errorStr;
+        uint64_t       _size;
+        bool           _isCompressed;
+
+        bool _IsCompressed(const std::string &path);
+        void _Clear();
 };
-const std::vector<Port> &EnumeratePorts(const bool enumerate = true);
-
-void SetThreadName(const std::string &name);
-
-void WipeCache(const std::string &path, const double maxAge);
 
 /* ****************************************************************************************************************** */
-} // namespace Platform
-#endif // __PLATFORM_HPP__
+#endif // __LOGFILE_HPP__

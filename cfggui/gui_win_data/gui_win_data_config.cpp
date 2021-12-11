@@ -16,6 +16,7 @@
 // If not, see <https://www.gnu.org/licenses/>.
 
 #include <functional>
+#include <fstream>
 
 #include "ff_ubx.h"
 #include "ff_cpp.hpp"
