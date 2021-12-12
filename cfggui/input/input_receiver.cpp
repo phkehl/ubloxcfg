@@ -42,15 +42,21 @@
 // Events from the receiver (thread)
 struct ReceiverEvent
 {
-    enum Event_e { NOOP, MSG, ERROR, WARNING, NOTICE, EPOCH, GETCONFIG, SETCONFIG };
+    enum Event_e { NOOP, MSG, EPOCH, ERROR, WARNING, NOTICE, GETCONFIG, SETCONFIG };
     ReceiverEvent(const enum Event_e _event) : event{_event} { }
     enum Event_e event;
 };
 
 struct ReceiverEventMsg : public ReceiverEvent
 {
-    ReceiverEventMsg(const PARSER_MSG_t *_msg) : ReceiverEvent(MSG), msg{ std::make_shared<Ff::ParserMsg>(_msg) } { }
-    std::shared_ptr<Ff::ParserMsg> msg;
+    ReceiverEventMsg(const PARSER_MSG_t *_msg) : ReceiverEvent(MSG), msg{_msg} { }
+    Ff::ParserMsg msg;
+};
+
+struct ReceiverEventEpoch : public ReceiverEvent
+{
+    ReceiverEventEpoch(const EPOCH_t *_epoch) : ReceiverEvent(EPOCH), epoch{_epoch} { }
+    Ff::Epoch epoch;
 };
 
 struct ReceiverEventError : public ReceiverEvent
@@ -72,12 +78,6 @@ struct ReceiverEventNotice : public ReceiverEvent
     ReceiverEventNotice(const std::string &_str) : ReceiverEvent(NOTICE), str{_str} { }
     ReceiverEventNotice(const char        *_str) : ReceiverEvent(NOTICE), str{_str} { }
     std::string str;
-};
-
-struct ReceiverEventEpoch : public ReceiverEvent
-{
-    ReceiverEventEpoch(const EPOCH_t *_epoch) : ReceiverEvent(EPOCH), epoch{ std::make_shared<Ff::Epoch>(_epoch) } { }
-    std::shared_ptr<Ff::Epoch> epoch;
 };
 
 struct ReceiverEventGetconfig : public ReceiverEvent
@@ -287,27 +287,18 @@ void InputReceiver::Reset(const RX_RESET_t reset)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-std::unique_ptr<ReceiverEvent> InputReceiver::_GetEvent()
-{
-    std::lock_guard<std::mutex> lock(_eventMutex);
-    if (_eventQueue.empty())
-    {
-        return nullptr;
-    }
-    auto event = std::move( _eventQueue.front() );
-    _eventQueue.pop();
-    return event;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 void InputReceiver::Loop(const double &now)
 {
     (void)now;
     // TODO: limit max. number of events handled in main thread? Though there is a check for that in Receivers...
-    while (true)
+    while (!_eventQueue.empty())
     {
-        auto event = _GetEvent();
+        std::unique_ptr<ReceiverEvent> event = nullptr;
+        {
+            std::lock_guard<std::mutex> lock(_eventMutex);
+            event = std::move(_eventQueue.front());
+            _eventQueue.pop();
+        }
 
         // No further events
         if (!event)
@@ -329,31 +320,31 @@ void InputReceiver::Loop(const double &now)
             case ReceiverEvent::NOTICE:
             {
                 auto e = static_cast<ReceiverEventNotice *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_NOTICE, e->str) );
+                _CallDataCb( InputData(InputData::INFO_NOTICE, std::move(e->str)) );
                 break;
             }
             case ReceiverEvent::WARNING:
             {
                 auto e = static_cast<ReceiverEventWarning *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_WARNING, e->str) );
+                _CallDataCb( InputData(InputData::INFO_WARNING, std::move(e->str)) );
                 break;
             }
             case ReceiverEvent::ERROR:
             {
                 auto e = static_cast<ReceiverEventError *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_ERROR, e->str) );
+                _CallDataCb( InputData(InputData::INFO_ERROR, std::move(e->str)) );
                 break;
             }
             case ReceiverEvent::MSG:
             {
                 auto e = static_cast<ReceiverEventMsg *>( event.get() );
-                _CallDataCb( InputData(e->msg) );
+                _CallDataCb( InputData(std::move(e->msg)) );
                 break;
             }
             case ReceiverEvent::EPOCH:
             {
                 auto e = static_cast<ReceiverEventEpoch *>( event.get() );
-                _CallDataCb( InputData(e->epoch) );
+                _CallDataCb( InputData(std::move(e->epoch)) );
                 break;
             }
             case ReceiverEvent::GETCONFIG:

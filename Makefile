@@ -273,8 +273,8 @@ $(OUTPUTDIR)/scan-build/.done: Makefile | $(OUTPUTDIR)
 	$(V)$(TOUCH) $@
 
 .PHONY: cfggui-valgrind
-cfggui-valgrind: cfggui-debug
-	$(VALGRIND) -leak-check=full --suppressions=cfggui/cfggui.supp $(OUTPUTDIR)/cfggui-debug
+cfggui-valgrind: $(OUTPUTDIR)/cfggui-debug
+	$(VALGRIND) --leak-check=full --show-leak-kinds=all --suppressions=cfggui/cfggui.supp $(OUTPUTDIR)/cfggui-debug
 
 ########################################################################################################################
 

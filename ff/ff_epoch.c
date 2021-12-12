@@ -943,7 +943,6 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                         eInfo->prUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_PR_USED);
                         eInfo->crUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_CR_USED);
                         eInfo->doUsed      = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_DO_USED);
-                        eInfo->anyUsed     = eInfo->prUsed || eInfo->crUsed || eInfo->doUsed;
                         eInfo->prCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_PR_CORR_USED);
                         eInfo->crCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_CR_CORR_USED);
                         eInfo->doCorrUsed  = FLAG(uInfo.sigFlags, UBX_NAV_SIG_V0_SIGFLAGS_DO_CORR_USED);
@@ -1156,6 +1155,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                     case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
                 }
                 coll->fixOk = nmea->gll.valid;
+                coll->haveFix = true;
             }
             if ( (nmea->gll.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_NMEA) )
             {
@@ -1279,7 +1279,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
     }
     qsort(epoch->satellites, epoch->numSatellites, sizeof(*epoch->satellites), _epochSatInfoSort);
 
-    // Stringify and sort list of signals
+    // Process, stringify and sort list of signals
     for (int ix = 0; ix < epoch->numSignals; ix++)
     {
         EPOCH_SIGINFO_t *sig = &epoch->signals[ix];
@@ -1299,6 +1299,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
             case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
         }
+        sig->anyUsed     = sig->prUsed || sig->crUsed || sig->doUsed;
         sig->gnssStr     = sig->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[sig->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
         sig->svStr       = _epochSvStr(sig->gnss, sig->sv);
         sig->signalStr   = sig->signal < NUMOF(kEpochSignalStrs)    ? kEpochSignalStrs[sig->signal]    : kEpochSignalStrs[EPOCH_SIGNAL_UNKNOWN];

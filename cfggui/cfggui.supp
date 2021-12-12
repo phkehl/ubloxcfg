@@ -1,6 +1,6 @@
 # valgrind suppression file
-# valgrind --leak-check=full --suppressions=cfggui.supp output/cfggui
-# --show-leak-kinds=all --show-reachable=yes --gen-suppressions=all
+# valgrind --leak-check=full --show-leak-kinds=all --suppressions=cfggui/cfggui.supp output/cfggui-debug
+# valgrind --leak-check=full --show-leak-kinds=all --gen-suppressions=all output/cfggui-debug
 # https://valgrind.org/docs/manual/manual-core.html
 
 {
@@ -121,3 +121,31 @@
     ...
 }
 
+{
+   silly_glfw_leak
+   Memcheck:Leak
+   fun:*
+   obj:/usr/lib/x86_64-linux-gnu/libglfw.so.*
+}
+
+{
+   silly_glx_leak
+   fun:*
+   obj:/usr/lib/x86_64-linux-gnu/libGLX.so.*
+}
+
+{
+   fix_why_why_why_1
+   Memcheck:Leak
+   ...
+   fun:_dl_*
+   ...
+}
+
+{
+   fix_why_why_why_2
+   Memcheck:Leak
+   ...
+   fun:dlopen
+   ...
+}

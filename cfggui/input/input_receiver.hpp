@@ -67,7 +67,6 @@ class InputReceiver : public Input
         enum State_e { IDLE, BUSY, READY };
 
         void _SendCommand(std::unique_ptr<ReceiverCommand> command);
-        std::unique_ptr<ReceiverEvent> _GetEvent();
 
         // Shared between main thread and receiver thread
         std::queue< std::unique_ptr<ReceiverEvent> >

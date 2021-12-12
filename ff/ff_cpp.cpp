@@ -26,7 +26,7 @@
 /* ****************************************************************************************************************** */
 
 Ff::ParserMsg::ParserMsg(const PARSER_MSG_t *_msg) :
-    type{}, data{}, size{_msg->size}, seq{_msg->seq}, ts{_msg->ts}, name{}, info{}
+    type{}, data{}, size{_msg->size}, seq{_msg->seq}, ts{_msg->ts}, name{_msg->name}, info{}
 {
     switch (_msg->type)
     {
@@ -45,7 +45,6 @@ Ff::ParserMsg::ParserMsg(const PARSER_MSG_t *_msg) :
         case PARSER_MSGSRC_LOG:     src = LOG;     srcStr = "LOG";     break;
     }
     std::memcpy(data, _msg->data, size > PARSER_MAX_ANY_SIZE ? PARSER_MAX_ANY_SIZE : size);
-    name = _msg->name;
     if (_msg->info != NULL)
     {
         info = _msg->info;

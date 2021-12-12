@@ -72,6 +72,7 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _statsCpu      { },
     _statsRss      { },
     _debugWinOpen  { false },
+    _debugWinDim   { true },
     _versionInfos  { versionInfos }
 {
     UNUSED(argv);

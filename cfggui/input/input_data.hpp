@@ -35,17 +35,17 @@ struct InputData
     InputData(enum Type _type) :
         type{_type}
     {}
-    InputData(std::shared_ptr<Ff::ParserMsg> _msg) :
-        type{Type::DATA_MSG}, msg{_msg}
+    InputData(Ff::ParserMsg _msg) :
+        type{Type::DATA_MSG}, msg{std::make_shared<Ff::ParserMsg>(_msg)}
     {}
-    InputData(std::shared_ptr<Ff::Epoch> _epoch) :
-        type{Type::DATA_EPOCH}, epoch{_epoch}
+    InputData(Ff::Epoch _epoch) :
+        type{Type::DATA_EPOCH}, epoch{std::make_shared<Ff::Epoch>(_epoch)}
     {}
-    InputData(enum Type _type, const std::string &_info) :
+    InputData(enum Type _type, const std::string _info) :
         type{_type}, info{ _info }
     {}
    ~InputData()
-    {}
+    { }
     enum Type                      type;   // all
     std::shared_ptr<Ff::ParserMsg> msg;    // only DATA_MSG
     std::shared_ptr<Ff::Epoch>     epoch;  // only DATA_EPOCH

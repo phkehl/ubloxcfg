@@ -350,15 +350,32 @@ static bool sStrToDate(NMEA_DATE_t *date, const char *str)
     return date->valid;
 }
 
-static bool sStrToLatOrLon(double *latOrLon, const char *str)
+static bool sStrToLat(double *lat, const char *str)
 {
     int len = 0;
     int deg = 0;
     double min = 0.0;
     if ( (sscanf(str, "%2d%lf%n", &deg, &min, &len) == 2) && (len == (int)strlen(str)) )
     {
-        *latOrLon = (double)deg + (min * (1.0/60.0));
-        NMEA_DEBUG("sStrToLatOrLon [%s] -> %d %g -> %g", str, deg, min, *latOrLon);
+        *lat = (double)deg + (min * (1.0/60.0));
+        NMEA_DEBUG("sStrToLat [%s] -> %d %g -> %g", str, deg, min, *lat);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static bool sStrToLon(double *lon, const char *str)
+{
+    int len = 0;
+    int deg = 0;
+    double min = 0.0;
+    if ( (sscanf(str, "%3d%lf%n", &deg, &min, &len) == 2) && (len == (int)strlen(str)) )
+    {
+        *lon = (double)deg + (min * (1.0/60.0));
+        NMEA_DEBUG("sStrToLon [%s] -> %d %g -> %g", str, deg, min, *lon);
         return true;
     }
     else
@@ -449,9 +466,9 @@ static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
 
     if ( (fields[1][0] != '\0') && (fields[3][0] != '\0') && (fields[5][0] != '\0') )
     {
-        if (!sStrToLatOrLon( &gga->lat, fields[1]) ||
-            !sStrToLatOrLon( &gga->lon, fields[3]) ||
-            !sStrToFix(      &gga->fix, fields[5], NMEA_TYPE_GGA))
+        if (!sStrToLat( &gga->lat, fields[1]) ||
+            !sStrToLon( &gga->lon, fields[3]) ||
+            !sStrToFix( &gga->fix, fields[5], NMEA_TYPE_GGA))
         {
             res = false;
         }
@@ -548,9 +565,9 @@ static bool sNmeaDecodeRmc(NMEA_RMC_t *rmc, char *payload, const char *talker)
 
     if ( (fields[2][0] != '\0') && (fields[4][0] != '\0') && (fields[11][0] != '\0') )
     {
-        if (!sStrToLatOrLon( &rmc->lat, fields[2]) ||
-            !sStrToLatOrLon( &rmc->lon, fields[4]) ||
-            !sStrToFix(      &rmc->fix, fields[11], NMEA_TYPE_RMC))
+        if (!sStrToLat( &rmc->lat, fields[2]) ||
+            !sStrToLon( &rmc->lon, fields[4]) ||
+            !sStrToFix( &rmc->fix, fields[11], NMEA_TYPE_RMC))
         {
             res = false;
         }
@@ -648,9 +665,9 @@ static bool sNmeaDecodeGll(NMEA_GLL_t *gll, char *payload, const char *talker)
 
     if ( (fields[0][0] != '\0') && (fields[2][0] != '\0') && (fields[6][0] != '\0') )
     {
-        if (!sStrToLatOrLon( &gll->lat, fields[0]) ||
-            !sStrToLatOrLon( &gll->lon, fields[2]) ||
-            !sStrToFix(      &gll->fix, fields[6], NMEA_TYPE_RMC))
+        if (!sStrToLat( &gll->lat, fields[0]) ||
+            !sStrToLon( &gll->lon, fields[2]) ||
+            !sStrToFix( &gll->fix, fields[6], NMEA_TYPE_RMC))
         {
             res = false;
         }

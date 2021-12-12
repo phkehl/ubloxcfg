@@ -29,15 +29,21 @@
 // Events from the logfile (thread)
 struct LogfileEvent
 {
-    enum Event_e { NOOP, MSG, ERROR, WARNING, NOTICE, EPOCH };
+    enum Event_e { NOOP, MSG, EPOCH, ERROR, WARNING, NOTICE };
     LogfileEvent(const enum Event_e _event) : event{_event} { }
     enum Event_e event;
 };
 
 struct LogfileEventMsg : public LogfileEvent
 {
-    LogfileEventMsg(const PARSER_MSG_t *_msg) : LogfileEvent(MSG), msg{ std::make_shared<Ff::ParserMsg>(_msg) } { }
-    std::shared_ptr<Ff::ParserMsg> msg;
+    LogfileEventMsg(const PARSER_MSG_t *_msg) : LogfileEvent(MSG), msg{_msg} { }
+    Ff::ParserMsg msg;
+};
+
+struct LogfileEventEpoch : public LogfileEvent
+{
+    LogfileEventEpoch(const EPOCH_t *_epoch) : LogfileEvent(EPOCH), epoch{_epoch} { }
+    Ff::Epoch epoch;
 };
 
 struct LogfileEventError : public LogfileEvent
@@ -59,12 +65,6 @@ struct LogfileEventNotice : public LogfileEvent
     LogfileEventNotice(const std::string &_str) : LogfileEvent(NOTICE), str{_str} { }
     LogfileEventNotice(const char        *_str) : LogfileEvent(NOTICE), str{_str} { }
     std::string str;
-};
-
-struct LogfileEventEpoch : public LogfileEvent
-{
-    LogfileEventEpoch(const EPOCH_t *_epoch) : LogfileEvent(EPOCH), epoch{ std::make_shared<Ff::Epoch>(_epoch) } { }
-    std::shared_ptr<Ff::Epoch> epoch;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -169,31 +169,31 @@ void InputLogfile::Loop(const double &now)
             case LogfileEvent::NOTICE:
             {
                 auto e = static_cast<LogfileEventNotice *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_NOTICE, e->str) );
+                _CallDataCb( InputData(InputData::INFO_NOTICE, std::move(e->str)) );
                 break;
             }
             case LogfileEvent::WARNING:
             {
                 auto e = static_cast<LogfileEventWarning *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_WARNING, e->str) );
+                _CallDataCb( InputData(InputData::INFO_WARNING, std::move(e->str)) );
                 break;
             }
             case LogfileEvent::ERROR:
             {
                 auto e = static_cast<LogfileEventError *>( event.get() );
-                _CallDataCb( InputData(InputData::INFO_ERROR, e->str) );
+                _CallDataCb( InputData(InputData::INFO_ERROR, std::move(e->str)) );
                 break;
             }
             case LogfileEvent::MSG:
             {
                 auto e = static_cast<LogfileEventMsg *>( event.get() );
-                _CallDataCb( InputData(e->msg) );
+                _CallDataCb( InputData(std::move(e->msg)) );
                 break;
             }
             case LogfileEvent::EPOCH:
             {
                 auto e = static_cast<LogfileEventEpoch *>( event.get() );
-                _CallDataCb( InputData(e->epoch) );
+                _CallDataCb( InputData(std::move(e->epoch)) );
                 break;
             }
         }

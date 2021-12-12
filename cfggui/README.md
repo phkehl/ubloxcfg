@@ -96,6 +96,7 @@ See the [main README](../README.md) for more.
 * Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
   Can we implement seekpos()? Maybe re-open file at a certain position?
+* Fix memory leaks... valgrind isn't too happy.. :-/
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out doing maps using ImPlot (<https://github.com/epezent/implot_demos>)
