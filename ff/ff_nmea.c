@@ -100,14 +100,19 @@ static bool sNmeaMessageInfo(MSG_INFO_t *info, const uint8_t *msg, const int msg
 
 bool nmeaMessageName(char *name, const int size, const uint8_t *msg, const int msgSize)
 {
-    MSG_INFO_t info;
-    if (sNmeaMessageInfo(&info, msg, msgSize))
+    if ( (name == NULL) || (size < 1) )
     {
-        if ( (info.talker[0] == 'P') && (info.formatter[0] == 'U') && (info.formatter[1] == 'B') && (info.formatter[2] == 'X') )
+        return false;
+    }
+
+    MSG_INFO_t nmeaInfo;
+    if (sNmeaMessageInfo(&nmeaInfo, msg, msgSize))
+    {
+        if ( (nmeaInfo.talker[0] == 'P') && (nmeaInfo.formatter[0] == 'U') && (nmeaInfo.formatter[1] == 'B') && (nmeaInfo.formatter[2] == 'X') )
         {
             const char *pubx = NULL;
-            const char c1 = msg[info.payloadIx0];
-            const char c2 = msg[info.payloadIx0 + 1];
+            const char c1 = msg[nmeaInfo.payloadIx0];
+            const char c2 = msg[nmeaInfo.payloadIx0 + 1];
             if      ( (c1 == '4') && (c2 == '1') ) { pubx = "CONFIG"; }
             else if ( (c1 == '0') && (c2 == '0') ) { pubx = "POSITION"; }
             else if ( (c1 == '4') && (c2 == '0') ) { pubx = "RATE"; }
@@ -121,92 +126,67 @@ bool nmeaMessageName(char *name, const int size, const uint8_t *msg, const int m
         }
         else
         {
-            return snprintf(name, size, "NMEA-%s-%s", info.talker, info.formatter) < size;
+            return snprintf(name, size, "NMEA-%s-%s", nmeaInfo.talker, nmeaInfo.formatter) < size;
         }
     }
-    else
-    {
-        return false;
-    }
+
+    return false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 bool nmeaMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if (info == NULL)
+    if ( (info == NULL) || (size < 1) )
     {
-        return false;
-    }
-    // "$GNGGA*xx\r\n", "$PUBX,nn*xx\r\n"
-    if ( (msg == NULL) || (msgSize < 11) )
-    {
-        info[0] = '\0';
         return false;
     }
 
-    // Find offset of start of payload (first comma after formatter)
-    // 0123456789
-    // $GNGGA,...,...,...*xx\r\n
-    //  o     ^here
-    // $PUBX,nn,...,...,...*xx\r\n
-    //       o  ^here
-    int startIx = (msg[1] == 'P') && (msg[2] == 'U') && (msg[3] == 'B') && (msg[4] == 'X') ? 6 : 1;
-    int commaIx = 0;
-    for (int ix = startIx; ix < (msgSize - 5); ix++)
+    MSG_INFO_t nmeaInfo;
+    if (sNmeaMessageInfo(&nmeaInfo, msg, msgSize))
     {
-        if (msg[ix] == ',')
+        // For TXT the info is the text, with type stringified
+        if ( (nmeaInfo.formatter[0] == 'T') && (nmeaInfo.formatter[1] == 'X') && (nmeaInfo.formatter[2] == 'T') && (msg[nmeaInfo.payloadIx0] == '0') )
         {
-            commaIx = ix;
-            break;
+            char other[5];
+            const char *prefix = "";
+            // 01234567890123456789
+            // $GPTXT,01,01,02,u-blox ag - www.u-blox.com*50\r\n
+            switch (msg[nmeaInfo.payloadIx0 + 1])
+            {
+                case '0': prefix = "ERROR: ";   break;
+                case '1': prefix = "WARNING: "; break;
+                case '2': prefix = "NOTICE: ";  break;
+                case '3': prefix = "TEST: ";    break;
+                case '4': prefix = "DEBUG: ";   break;
+                default:
+                    other[0] = msg[nmeaInfo.payloadIx0];
+                    other[1] = msg[nmeaInfo.payloadIx0 + 1];
+                    other[2] = ':';
+                    other[3] = ' ';
+                    other[4] = '\0';
+                    prefix = other;
+                    break;
+            }
+            const int offs = 9; // "00,00,00," FIXME: no assumptions!
+            char fmt[20];
+            snprintf(fmt, sizeof(fmt), "%%s%%.%ds", nmeaInfo.payloadIx1 - nmeaInfo.payloadIx0 + 1 - offs);
+            return snprintf(info, size, fmt, prefix, (const char *)&msg[nmeaInfo.payloadIx0 + offs]) < size;
+        }
+        // Otherwise the info is the payload
+        else
+        {
+            // $GNGGA,...,...,...*xx\r\n
+            //        ^^^^^^^^^^^this
+            // $PUBX,nn,...,...,...*xx\r\n
+            //          ^^^^^^^^^^^this
+            char fmt[20];
+            snprintf(fmt, sizeof(fmt), "%%.%ds", nmeaInfo.payloadIx1 - nmeaInfo.payloadIx0 + 1);
+            return snprintf(info, size, fmt, (const char *)&msg[nmeaInfo.payloadIx0]) < size;
         }
     }
-    if (commaIx <= 0)
-    {
-        info[0] = '\0';
-        return false;
-    }
 
-    // For TXT the info is the text, with type stringified
-    if ( (msg[3] == 'T') && (msg[4] == 'X') && (msg[5] == 'T') && (msg[13] == '0') )
-    {
-        char other[5];
-        const char *prefix = "";
-        // 01234567890123456789
-        // $GPTXT,01,01,02,u-blox ag - www.u-blox.com*50\r\n
-        switch (msg[14])
-        {
-            case '0': prefix = "ERROR: ";   break;
-            case '1': prefix = "WARNING: "; break;
-            case '2': prefix = "NOTICE: ";  break;
-            case '3': prefix = "TEST: ";    break;
-            case '4': prefix = "DEBUG: ";   break;
-            default:
-                other[0] = msg[13];
-                other[1] = msg[14];
-                other[2] = ':';
-                other[3] = ' ';
-                other[4] = '\0';
-                prefix = other;
-                break;
-        }
-        char fmt[20];
-        snprintf(fmt, sizeof(fmt), "%%s%%.%ds", msgSize - 5 - 16);
-        snprintf(info, size, fmt, prefix, (const char *)&msg[16]);
-    }
-    // Otherwise the info is the payload
-    else
-    {
-        // $GNGGA,...,...,...*xx\r\n
-        //        ^^^^^^^^^^^this
-        // $PUBX,nn,...,...,...*xx\r\n
-        //          ^^^^^^^^^^^this
-        char fmt[20];
-        snprintf(fmt, sizeof(fmt), "%%.%ds", msgSize - commaIx - 6);
-        snprintf(info, size, fmt, (const char *)&msg[commaIx + 1]);
-    }
-
-    return true;
+    return false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

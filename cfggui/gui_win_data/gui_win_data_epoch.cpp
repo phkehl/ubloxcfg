@@ -73,6 +73,10 @@ void GuiWinDataEpoch::_DrawContent()
         { .label = "Value",     .flags = ImGuiTableColumnFlags_NoReorder },
     };
 
+    static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg |ImGuiTableFlags_Borders | //ImGuiTableFlags_NoBordersInBody |
+        ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
+        ImGuiTableFlags_ScrollY;
+
     if (ImGui::BeginTable("stats", NUMOF(columns), TABLE_FLAGS, ImGui::GetContentRegionAvail()))
     {
         ImGui::TableSetupScrollFreeze(0, 1);

@@ -20,6 +20,8 @@
 
 #include "imgui.h"
 
+#include "opengl.hpp"
+
 /* ****************************************************************************************************************** */
 
 class GuiWidgetOpenGl
@@ -46,14 +48,10 @@ class GuiWidgetOpenGl
 
     protected:
 
-        int          _width;
-        int          _height;
-        bool         _canDraw;
-        unsigned int _framebuffer;
-        unsigned int _renderbuffer;
-        unsigned int _texture;
-        float        _clearColour[4];
-        void        *_nvgContext;
+        int                 _width;
+        int                 _height;
+        OpenGL::FrameBuffer _framebuffer;
+        void               *_nvgContext;
 };
 
 /* ****************************************************************************************************************** */

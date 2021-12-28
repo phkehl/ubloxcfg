@@ -83,8 +83,8 @@ bool Ff::ConfFile::Get(const std::string &key, int32_t &val)
     std::string str;
     if (Get(key, str))
     {
-        std::size_t num;
-        val = std::stol(str, &num, 0);
+        std::size_t num = 0;
+        try { val = std::stol(str, &num, 0); } catch (...) { }
         res = num > 0;
     }
     return res;
@@ -96,8 +96,8 @@ bool Ff::ConfFile::Get(const std::string &key, uint32_t &val)
     std::string str;
     if (Get(key, str))
     {
-        std::size_t num;
-        val = std::stoul(str, &num, 0);
+        std::size_t num = 0;
+        try { val = std::stoul(str, &num, 0); } catch (...) { }
         res = num > 0;
     }
     return res;
@@ -109,8 +109,8 @@ bool Ff::ConfFile::Get(const std::string &key, float &val)
     std::string str;
     if (Get(key, str))
     {
-        std::size_t num;
-        val = std::stof(str, &num);
+        std::size_t num = 0;
+        try { val = std::stof(str, &num); } catch (...) { }
         res = num > 0;
     }
     return res;
@@ -122,8 +122,8 @@ bool Ff::ConfFile::Get(const std::string &key, double &val)
     std::string str;
     if (Get(key, str))
     {
-        std::size_t num;
-        val = std::stod(str, &num);
+        std::size_t num = 0;
+        try { val = std::stod(str, &num); } catch (...) { }
         res = num > 0;
     }
     return res;

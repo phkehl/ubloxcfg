@@ -55,7 +55,7 @@ void GuiWinDataLog::_ProcessData(const InputData &data)
                 [Ff::ParserMsg::LOG]     = 'L'
             };
             char tmp[256];
-            std::snprintf(tmp, sizeof(tmp), "%c %4u, size %4d, %-20s %s\n",
+            std::snprintf(tmp, sizeof(tmp), "%c %4u, size %4d, %-20s %s",
                 data.msg->src < NUMOF(srcChar) ? srcChar[data.msg->src] : srcChar[0],
                 data.msg->seq, data.msg->size, data.msg->name.c_str(), data.msg->info.size() > 0 ? data.msg->info.c_str() : "n/a");
             switch (data.msg->type)

@@ -75,10 +75,24 @@ class GuiSettings
         static std::vector<std::string> GetValueMult(const std::string &key, const int maxNum);
         static std::vector<std::string> GetValueList(const std::string &key, const std::string &sep, const int maxNum);
 
+        // List of recent things
+        static constexpr int MAX_RECENT = 20;
+        static constexpr const char *RECENT_RECEIVERS     = "Receiver";
+        static constexpr const char *RECENT_LOGFILES      = "Logfile";
+        static constexpr const char *RECENT_NTRIP_CASTERS = "NtripCaster";
+        static void LoadRecentItems(const std::string &name);
+        static void SaveRecentItems(const std::string &name);
+        static void AddRecentItem(const std::string &name, const std::string &input);
+        static void ClearRecentItems(const std::string &name);
+        static const std::vector<std::string> &GetRecentItems(const std::string &name);
+
         // Font
-        static float     fontSize; // Current font size
-        static ImFont   *fontMono; // Default monospace font
-        static ImFont   *fontSans; // Alternative font
+        static float     fontSize;    // Current font size (default font)
+        static float     lineHeight;  // Current line hight (default font)
+        static ImFont   *fontMono;    // Default monospace font
+        static ImFont   *fontSans;    // Alternative sans-serif font
+        static ImFont   *fontBold;    // Alternative sans-serif font (bold)
+        static ImFont   *fontOblique; // Alternative sans-serif font (italics)
         static FfVec2    charSize; // Char size (of a fontMono character)
         static FfVec2    iconSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
 
@@ -111,6 +125,8 @@ class GuiSettings
         bool                      _fontDirty;
         bool                      _sizesDirty;
         float                     _widgetOffs;
+
+        static std::map<std::string, std::vector<std::string>> _recentItems;
 
         // Freetype2 config
         uint32_t                  _ftBuilderFlags;

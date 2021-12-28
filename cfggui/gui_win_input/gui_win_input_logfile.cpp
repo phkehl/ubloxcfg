@@ -27,15 +27,12 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
 {
     DEBUG("GuiWinInputLogfile(%s)", _winName.c_str());
 
-    _winSize = { 80, 25 };
     SetTitle("Logfile X");
 
     _dataWinCaps = DataWinDef::Cap_e::PASSIVE;
 
     _logfile = std::make_shared<InputLogfile>(name, _database);
     _logfile->SetDataCb( std::bind(&GuiWinInputLogfile::_ProcessData, this, std::placeholders::_1) );
-
-    _LoadRecentInputs("Logfile");
 
     GuiSettings::GetValue(_winName + ".playSpeed", _playSpeed, 1.0f);
     GuiSettings::GetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed, true);
@@ -58,8 +55,6 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
     {
         _logfile->Close();
     }
-
-    _SaveRecentInputs("Logfile");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -131,7 +126,6 @@ void GuiWinInputLogfile::_DrawControls()
                 _fileDialog.Focus();
             }
         }
-
         Gui::ItemTooltip("Open logfile");
 
         ImGui::SameLine(0, 0);
@@ -139,7 +133,7 @@ void GuiWinInputLogfile::_DrawControls()
         if (ImGui::BeginCombo("##RecentLogs", NULL, ImGuiComboFlags_HeightLarge | ImGuiComboFlags_NoPreview))
         {
             const std::string *selectedLog = nullptr;
-            const auto &recent = _GetRecentInputs("Logfile");
+            const auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_LOGFILES);
             if (recent.empty())
             {
                 ImGui::TextUnformatted("No recent logs");
@@ -152,12 +146,20 @@ void GuiWinInputLogfile::_DrawControls()
                     selectedLog = &log;
                 }
             }
+            if (!recent.empty())
+            {
+                ImGui::Separator();
+                if (ImGui::Selectable("Clear recent logs"))
+                {
+                    GuiSettings::ClearRecentItems(GuiSettings::RECENT_LOGFILES);
+                }
+            }
             ImGui::EndCombo();
             if (selectedLog)
             {
                 if (_logfile->Open(*selectedLog))
                 {
-                    _AddRecentInput("Logfile", *selectedLog);
+                    GuiSettings::AddRecentItem(GuiSettings::RECENT_LOGFILES, *selectedLog);
                 }
             }
         }
@@ -173,7 +175,7 @@ void GuiWinInputLogfile::_DrawControls()
                 _seekProgress = -1.0f;
                 if (!path.empty() && _logfile->Open(path))
                 {
-                    _AddRecentInput("Logfile", path);
+                    GuiSettings::AddRecentItem(GuiSettings::RECENT_LOGFILES, path);
                 }
             }
         }

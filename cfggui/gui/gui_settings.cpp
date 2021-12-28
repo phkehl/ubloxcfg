@@ -111,11 +111,14 @@ GuiSettings::~GuiSettings()
 
 // Static member variables, set/updated at run-time
 
-/*static*/ float   GuiSettings::fontSize = GuiSettings::FONT_SIZE_DEF;
-/*static*/ ImFont *GuiSettings::fontMono = nullptr;
-/*static*/ ImFont *GuiSettings::fontSans = nullptr;
-/*static*/ FfVec2  GuiSettings::charSize = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
-/*static*/ FfVec2  GuiSettings::iconSize = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+/*static*/ float   GuiSettings::fontSize    = GuiSettings::FONT_SIZE_DEF;
+/*static*/ float   GuiSettings::lineHeight  = GuiSettings::FONT_SIZE_DEF + 2.0f;
+/*static*/ ImFont *GuiSettings::fontMono    = nullptr;
+/*static*/ ImFont *GuiSettings::fontSans    = nullptr;
+/*static*/ ImFont *GuiSettings::fontBold    = nullptr;
+/*static*/ ImFont *GuiSettings::fontOblique = nullptr;
+/*static*/ FfVec2  GuiSettings::charSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+/*static*/ FfVec2  GuiSettings::iconSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
 
 /* static */ImU32 GuiSettings::colours[_NUM_COLOURS] =
 {
@@ -158,6 +161,10 @@ void GuiSettings::LoadConf(const std::string &file)
         GetValue("Settings.ftBuilderFlags", _ftBuilderFlags, FT_BUILDER_FLAGS_DEF);
         GetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply, FT_RASTERIZER_MULTIPLY_DEF);
         _ftRasterizerMultiply = CLIP(_ftRasterizerMultiply, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX);
+
+        LoadRecentItems(RECENT_LOGFILES);
+        LoadRecentItems(RECENT_RECEIVERS);
+        LoadRecentItems(RECENT_NTRIP_CASTERS);
     }
 
     // Load maps
@@ -170,8 +177,6 @@ void GuiSettings::LoadConf(const std::string &file)
             bool mapOk = true;
             if (!conf.Get("name",        map.name)        || map.name.empty()        ||
                 !conf.Get("title",       map.title)       || map.title.empty()       ||
-                !conf.Get("attribution", map.attribution) || map.attribution.empty() ||
-                !conf.Get("attrLink",    map.attrLink)    || map.attrLink.empty()    ||
                 !conf.Get("zoomMin",     map.zoomMin)     || (map.zoomMin < 0)       ||
                 !conf.Get("zoomMax",     map.zoomMax)     || (map.zoomMax < map.zoomMin) ||
                 !conf.Get("tileSizeX",   map.tileSizeX)   || (map.tileSizeX < 100)   || (map.tileSizeX > 16384) ||
@@ -184,15 +189,25 @@ void GuiSettings::LoadConf(const std::string &file)
                 mapOk = false;
             }
 
+            for (int i = 1; i <= MapParams::MAX_MAP_LINKS; i++)
+            {
+                MapParams::MapLink link;
+                if (conf.Get(Ff::Sprintf("link%d.label", i), link.label) &&
+                    conf.Get(Ff::Sprintf("link%d.url", i), link.url))
+                {
+                    map.mapLinks.push_back(link);
+                }
+            }
+            if (map.mapLinks.empty())
+            {
+                mapOk = false;
+            }
+
             map.enabled = true;
             conf.Get("enabled",         map.enabled);
             conf.Get("referer",         map.referer);
             conf.Get("threads",         map.threads);
             conf.Get("downloadTimeout", map.downloadTimeout);
-            conf.Get("license",         map.license);
-            conf.Get("licenseLink",     map.licenseLink);
-            conf.Get("policy",          map.policy);
-            conf.Get("policyLink",      map.policyLink);
 
             map.threads = CLIP(map.threads, 1, 10);
             map.downloadTimeout = CLIP(map.downloadTimeout, 1000, 30000);
@@ -208,8 +223,8 @@ void GuiSettings::LoadConf(const std::string &file)
             if (conf.Get("minLon", map.minLon)) { map.minLon = deg2rad(map.minLon); } else { mapOk = false; }
             if (conf.Get("maxLon", map.maxLon)) { map.maxLon = deg2rad(map.maxLon); } else { mapOk = false; }
             const double minDelta = deg2rad(1.0);
-            if ( (map.minLat < (MapParams::MIN_LAT - 1e-12)) || (map.maxLat > (MapParams::MAX_LAT + 1e-12)) ||
-                 (map.minLon < (MapParams::MIN_LON - 1e-12)) || (map.maxLon > (MapParams::MAX_LON + 1e-12)) ||
+            if ( (map.minLat < (MapParams::MIN_LAT_RAD - 1e-12)) || (map.maxLat > (MapParams::MAX_LAT_RAD + 1e-12)) ||
+                 (map.minLon < (MapParams::MIN_LON_RAD - 1e-12)) || (map.maxLon > (MapParams::MAX_LON_RAD + 1e-12)) ||
                  ((map.maxLat - map.minLat) < minDelta) || ((map.maxLon - map.minLon) < minDelta) )
             {
                 mapOk = false;
@@ -267,6 +282,10 @@ void GuiSettings::SaveConf(const std::string &file)
     SetValue("Settings.ftBuilderFlags",       _ftBuilderFlags);
     SetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply);
 
+    SaveRecentItems(RECENT_LOGFILES);
+    SaveRecentItems(RECENT_RECEIVERS);
+    SaveRecentItems(RECENT_NTRIP_CASTERS);
+
     _confFile.Save(file, "cfggui", true);
 
     // Save maps
@@ -276,12 +295,14 @@ void GuiSettings::SaveConf(const std::string &file)
         conf.Set("enabled",         map.enabled);
         conf.Set("name",            map.name);
         conf.Set("title",           map.title);
-        conf.Set("attribution",     map.attribution);
-        conf.Set("attrLink",        map.attrLink);
-        conf.Set("license",         map.license);
-        conf.Set("licenseLink",     map.licenseLink);
-        conf.Set("policy",          map.policy);
-        conf.Set("policyLink",      map.policyLink);
+        for (int ix = 0; ix < MapParams::MAX_MAP_LINKS; ix++)
+        {
+            if ((int)map.mapLinks.size() > ix)
+            {
+                conf.Set(Ff::Sprintf("link%d.label", ix + 1), map.mapLinks[ix].label);
+                conf.Set(Ff::Sprintf("link%d.url", ix + 1), map.mapLinks[ix].url);
+            }
+        }
         conf.Set("zoomMin",         map.zoomMin);
         conf.Set("zoomMax",         map.zoomMax);
         conf.Set("tileSizeX",       map.tileSizeX);
@@ -490,6 +511,24 @@ bool GuiSettings::UpdateFonts()
         fontSans = io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSans(), fontSize + 1.0f, &config/*, glyphs.Data*/);
     }
 
+    // Bold font
+    {
+        ImFontConfig config;
+        snprintf(config.Name, sizeof(config.Name), "DejaVu Sans Bold %.1f", fontSize + 1.0f);
+        config.FontBuilderFlags = _ftBuilderFlags;
+        config.RasterizerMultiply = _ftRasterizerMultiply;
+        fontBold = io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSansBold(), fontSize + 1.0f, &config/*, glyphs.Data*/);
+    }
+
+    // Oblique font
+    {
+        ImFontConfig config;
+        snprintf(config.Name, sizeof(config.Name), "DejaVu Sans Oblique %.1f", fontSize + 1.0f);
+        config.FontBuilderFlags = _ftBuilderFlags;
+        config.RasterizerMultiply = _ftRasterizerMultiply;
+        fontOblique = io.Fonts->AddFontFromMemoryCompressedBase85TTF(guiGetFontDejaVuSansOblique(), fontSize + 1.0f, &config/*, glyphs.Data*/);
+    }
+
     // Build font atlas
     io.Fonts->Build();
 
@@ -512,6 +551,7 @@ bool GuiSettings::UpdateSizes()
     const float frameHeight = ImGui::GetFrameHeight();
     iconSize = ImVec2(frameHeight, frameHeight);
     charSize = ImGui::CalcTextSize("X");
+    lineHeight = ImGui::GetTextLineHeightWithSpacing();
     _widgetOffs = 25 * charSize.x;
     _sizesDirty = false;
     return true;
@@ -547,6 +587,41 @@ bool GuiSettings::UpdateSizes()
         }
     }
     return colours[FIX_INVALID];
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ std::map<std::string, std::vector<std::string>> GuiSettings::_recentItems;
+
+/*static*/ void GuiSettings::LoadRecentItems(const std::string &name)
+{
+    _recentItems[name] = GuiSettings::GetValueMult(name + ".recentItems", MAX_RECENT);
+    Ff::MakeUnique(_recentItems[name]);
+}
+
+/*static*/ void GuiSettings::SaveRecentItems(const std::string &name)
+{
+    GuiSettings::SetValueMult(name + ".recentItems", _recentItems[name], MAX_RECENT);
+}
+
+/*static*/ void GuiSettings::AddRecentItem(const std::string &name, const std::string &input)
+{
+    _recentItems[name].insert(_recentItems[name].begin(), input);
+    Ff::MakeUnique(_recentItems[name]);
+    while (_recentItems[name].size() > MAX_RECENT)
+    {
+        _recentItems[name].pop_back();
+    }
+}
+
+/*static*/ void GuiSettings::ClearRecentItems(const std::string &name)
+{
+    _recentItems[name].clear();
+}
+
+/*static*/ const std::vector<std::string> &GuiSettings::GetRecentItems(const std::string &name)
+{
+    return _recentItems[name];
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -665,6 +740,71 @@ bool GuiSettings::UpdateSizes()
             //     _fontDirty = true;
             // }
 
+            ImGui::Separator();
+
+            ImGui::TextUnformatted("Default font");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushFont(GuiSettings::fontMono);
+            ImGui::TextUnformatted(GuiSettings::fontMono->ConfigData->Name);
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+            ImGui::PopFont();
+
+            ImGui::TextUnformatted("Sans font");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushFont(GuiSettings::fontSans);
+            ImGui::TextUnformatted(GuiSettings::fontSans->ConfigData->Name);
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+            ImGui::PopFont();
+
+            ImGui::TextUnformatted("Bold font");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushFont(GuiSettings::fontBold);
+            ImGui::TextUnformatted(GuiSettings::fontBold->ConfigData->Name);
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+            ImGui::PopFont();
+
+            ImGui::TextUnformatted("Oblique font");
+            ImGui::SameLine(_widgetOffs);
+            ImGui::PushFont(GuiSettings::fontOblique);
+            ImGui::TextUnformatted(GuiSettings::fontOblique->ConfigData->Name);
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            ImGui::NewLine();
+            ImGui::SameLine(_widgetOffs);
+            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+            ImGui::PopFont();
+
+
+
+
             ImGui::EndTabItem();
         }
         // Colours
@@ -674,7 +814,10 @@ bool GuiSettings::UpdateSizes()
             {
                 for (int ix = 0; ix < _NUM_COLOURS; ix++)
                 {
-                    ImGui::Separator();
+                    if (ix != 0)
+                    {
+                        ImGui::Separator();
+                    }
 
                     ImGui::PushID(COLOUR_LABELS[ix]);
 

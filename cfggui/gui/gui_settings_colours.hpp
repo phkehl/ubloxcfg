@@ -48,11 +48,13 @@
     _P_("Plot crosshairs",       PLOT_FIX_CROSSHAIRS,          IM_COL32(0xff, 0x55, 0xff, 0xaf)) \
     _P_("Plot crosshairs label", PLOT_FIX_CROSSHAIRS_LABEL,    IM_COL32(0xff, 0x55, 0xff, 0xff)) \
     _P_("Plot histogram",        PLOT_HISTOGRAM,               IM_COL32(0xb2, 0x81, 0x5e, 0xff)) \
-    _P_("Map crosshairs",        PLOT_MAP_CROSSHAIRS,          IM_COL32(0xff, 0x44, 0x44, 0xaf)) \
     _P_("Map highlight masked",  PLOT_MAP_HL_MASKED,           IM_COL32(0x55, 0xff, 0xff, 0xff)) \
     _P_("Map highlight OK fix",  PLOT_MAP_HL_OK,               IM_COL32(0xff, 0x55, 0x55, 0xff)) \
     _P_("Map accuracy estimate", PLOT_MAP_ACC_EST,             IM_COL32(0x40, 0x40, 0x40, 0x55)) \
     _P_("Map baseline",          PLOT_MAP_BASELINE,            IM_COL32(0xff, 0x42, 0xf2, 0xcc)) /* hsla(304, 100%, 63%, 0.8) */ \
+    _P_("Map crosshairs",        MAP_CROSSHAIRS,               IM_COL32(0xff, 0x44, 0x44, 0xaf)) \
+    _P_("Map layout debug",      MAP_DEBUG,                    IM_COL32(0xff, 0x00, 0x00, 0xaf)) \
+    _P_("Map zoom rect",         MAP_ZOOM_RECT,                IM_COL32(0xdd, 0xe7, 0x08, 0xa0)) \
     _P_("Sky view satellite",    SKY_VIEW_SAT,                 IM_COL32(0x55, 0x86, 0xff, 0xa3)) \
     _P_("Signal used (text)",    SIGNAL_USED_TEXT,             IM_COL32(0x55, 0xff, 0x55, 0xff)) \
     _P_("Signal unused (text)",  SIGNAL_UNUSED_TEXT,           IM_COL32(0xaa, 0xaa, 0xaa, 0xff)) \

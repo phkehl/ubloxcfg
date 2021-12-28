@@ -44,6 +44,8 @@ class GuiWinInputReceiver : public GuiWinInput
 
         bool IsOpen() final;
 
+        std::shared_ptr<InputReceiver> GetReceiver();
+
     protected:
 
         std::shared_ptr<InputReceiver> _receiver;

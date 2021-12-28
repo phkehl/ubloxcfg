@@ -24,11 +24,17 @@
 #include <mutex>
 #include <queue>
 #include <vector>
+#include <functional>
 #include <atomic>
 #include <condition_variable>
+#include <unordered_map>
 #include <cstdint>
 #include <cinttypes>
 #include <cmath>
+
+#include "ff_utils.hpp"
+#include "ff_thread.hpp"
+#include "opengl.hpp"
 
 #include "mapparams.hpp"
 
@@ -41,60 +47,96 @@ class MapTiles
         MapTiles(const MapParams &mapParams);
        ~MapTiles();
 
-        void                 Loop(const double &now);
+        void *GetTileTex(const int tx, const int ty, const int tz);
 
-        void                *GetTileTex(const int tx, const int ty, const int tz);
-        static const std::string &GetDebugText();
-
-        static double        LatToTy(const double lat, const int tz); // latitude [rad] to tile coordinate y (real!)
-        static double        LonToTx(const double lon, const int tz); // longitude [rad] to tile coordinate x (real!)
-        static double        TyToLat(const double ty,  const int tz); // tile y coordinate (real!) to latitude [rad]
-        static double        TxToLon(const double tx,  const int tz); // tile x coordinate (real!) to longitude [rad]
+        // Lat/lon [rad] to tile coordinates y/x (real!)
+        static Ff::Vec2<double> LonLatToTileXy(const Ff::Vec2<double> &lonLat, const int tz);
+        static Ff::Vec2<float>  LonLatToTileXy(const Ff::Vec2<float>  &lonLat, const int tz);
+        // Tile coordinates y/x (real!) to lat/lon [rad]
+        static Ff::Vec2<double> TileXyToLonLat(const Ff::Vec2<double> &tXy, const int tz);
+        static Ff::Vec2<float>  TileXyToLonLat(const Ff::Vec2<float>  &tXy, const int tz);
 
         static constexpr double WGS84_A = 6378137.0;                   // Semi-major axis
         static constexpr double WGS84_C = 2 * M_PI * WGS84_A;          // Circumference at equator
         static constexpr int    MAX_TILES_IN_QUEUE = 250;
 
-        int                   NumTilesInQueue();
+        int NumTilesInQueue(); // Number of tiles in queue for (down)loading
+
+        struct DebugStats
+        {
+            DebugStats();
+            int numTiles;
+            int numAvail;
+            int numLoad;
+            int numFail;
+            int numOutside;
+        };
+        static const DebugStats &GetStats();
 
     protected:
 
-        MapParams            _mapParams;
+        MapParams   _mapParams;
+        std::size_t _mapParamsUid;
 
-        // Tile download thread
-        struct TileRequest
+        // A tile coordinate, the request for the download thread as well as the key for the tile storage unordered_map
+        struct Coord
         {
-            TileRequest(const std::string &_key, const int _tx, const int _ty, const int _tz);
-            std::string       key;
-            int               tx;
-            int               ty;
-            int               tz;
+            Coord(const std::size_t _uid, const int _x, const int _y, const int _z);
+            std::size_t uid;
+            int         x; // x coord (0..(z**2)-1)
+            int         y; // y coord (0..(z**2)-1)
+            int         z; // z coord (0..z)
+            bool operator==(const Coord &other) const;
         };
-        struct TileData
+
+        struct CoordHash
         {
-            TileData(const std::string &_key, const int _width, const int _height, const uint8_t *_data, const int size);
-            std::string          key;
-            int                  width;
-            int                  height;
-            std::vector<uint8_t> data;
+            std::size_t operator() (const Coord &coord) const;
         };
-        std::vector<std::unique_ptr<std::thread>> _requestThreads;
-        std::atomic<bool>       _requestThreadAbort;
-        std::mutex              _requestMutex;
-        std::condition_variable _requestSem;
-        std::queue<TileRequest> _requestQueue;
-        std::mutex              _dataMutex;
-        std::queue<TileData>    _dataQueue;
-        std::atomic<int>        _subDomainIx;
-        void                 _ThreadWrapper(std::string name);
-        void                 _Thread(std::string name);
-        bool                 _DownloadTile(const std::string &url, const std::string &path, uint32_t timeout, const std::string &referer);
+
+        // Tile download threads
+        std::vector<std::unique_ptr<Ff::Thread>> _threads;
+        std::mutex          _requestMutex;
+        std::queue<Coord>   _requestQueue;
+        std::atomic<int>    _subDomainIx;
+        void _Thread(Ff::Thread *thread);
+        bool _DownloadTile(const std::string &url, const std::string &path, uint32_t timeout, const std::string &referer);
+        static size_t _DownloadWriteCb(char *ptr, size_t size, size_t nmemb, void *userdata);
+
+        // Tile storage
+        struct Tile
+        {
+            enum State_e { LOADING, AVAILABLE, FAILED, OUTSIDE };
+            Tile(const State_e _state);
+            Tile() : Tile(LOADING) {}
+            enum State_e           state;
+            uint32_t               lastUsed;
+            std::string            path;
+            OpenGL::ImageTexture   tex;
+        };
+        static std::unordered_map<Coord, Tile, CoordHash> _tiles;
+        static std::mutex _tilesMutex;
 
         // Built-in tiles
         static const uint8_t TILE_LOAD_PNG[973];  // "tileload.png"
         static const uint8_t TILE_FAIL_PNG[2276]; // "tilefail.png"
         static const uint8_t TILE_NOPE_PNG[786];  // "tilenope.png"
         static const uint8_t TILE_TEST_PNG[914];  // "tiletest.png"
+        static OpenGL::ImageTexture _tileLoadTex;
+        static OpenGL::ImageTexture _tileFailTex;
+        static OpenGL::ImageTexture _tileNopeTex;
+        static OpenGL::ImageTexture _tileTestTex;
+        void *_builtInTile; // Set to one of the above if the current map uses one single fixed tile (for debugging...)
+
+        // Housekeeping (expiring old tiles, cleaning up when the last instance disappears)
+        static std::string          _debugText;
+        static uint32_t             _lastHousekeeping;
+        static constexpr double     HOUSEKEEPING_INT    =   1234; // [ms]
+        static constexpr uint32_t   TILE_MAX_AGE        =  60000; // 1 min
+        static constexpr uint32_t   TILE_MAX_AGE_FAILED = 300000; // 30 min
+        static int                  _numInstances;
+        static DebugStats           _debugStats;
+        void _Cleanup(const uint32_t now);
 };
 
 /* ****************************************************************************************************************** */

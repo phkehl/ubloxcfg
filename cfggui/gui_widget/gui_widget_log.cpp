@@ -32,6 +32,9 @@ GuiWidgetLog::LogLine::LogLine(const char *_str, const ImU32 _colour) :
     colour { _colour },
     match  { false }
 {
+    // FIXME: we should do this in ff_debug
+    Ff::StrReplace(str, "\r", "\\r");
+    Ff::StrReplace(str, "\n", "\\n");
 }
 
 GuiWidgetLog::LogLine::LogLine(const std::string &_str, const ImU32 _colour) :
@@ -41,6 +44,9 @@ GuiWidgetLog::LogLine::LogLine(const std::string &_str, const ImU32 _colour) :
     colour { _colour },
     match  { false }
 {
+    // FIXME: we should do this in ff_debug
+    Ff::StrReplace(str, "\r", "\\r");
+    Ff::StrReplace(str, "\n", "\\n");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -344,7 +350,7 @@ void GuiWidgetLog::DrawLog()
 
     ImGui::EndChild();
 
-    if (ImGui::BeginPopupContextItem("RefLayerContext"))
+    if (ImGui::BeginPopupContextItem("LogSettings"))
     {
         if (ImGui::Checkbox("Auto-scroll", &_logAutoscroll))
         {

@@ -19,11 +19,9 @@
 #define __INPUT_HPP__
 
 #include <memory>
-#include <mutex>
-#include <thread>
-#include <atomic>
 #include <string>
-#include <condition_variable>
+
+#include "ff_thread.hpp"
 
 #include "input_data.hpp"
 #include "database.hpp"
@@ -43,18 +41,21 @@ class Input
         virtual void Loop(const double &now) = 0;
         void SetDataCb(std::function<void(const InputData &)> cb);
 
+        const std::string &GetName();
+        const std::string &GetRxVer();
+        const std::shared_ptr<Database> &GetDatabase();
+
     protected:
 
         std::string                  _inputName;           // Name, for debugging
         std::shared_ptr<Database>    _inputDatabase;       // Database
+        std::string                  _inputRxVer;          // Receiver version (if known)
 
         bool _ThreadStart();                               // Start input thread
         void _ThreadStop();                                // Stop input thread
         virtual void _ThreadPrepare() = 0;                 // Called before Thread()
-        virtual void _Thread() = 0;                        // Input thread, must abort if _ThreadAbort() says so
+        virtual void _Thread(Ff::Thread *thread) = 0;      // Input thread, must abort if thread->ShouldAbort() says so
         virtual void _ThreadCleanup() = 0;                 // Called after Thread()
-        bool _ThreadAbort();                               // Thread should abort
-        bool _ThreadSleep(const uint32_t millis);          // Sleep (in _ThreadLoop()), returns true if interrupted early
         void _ThreadWakeup();                              // Wake up sleeping thread
 
         std::function<void(const InputData &)> _inputDataCb;
@@ -63,12 +64,9 @@ class Input
 
     private:
 
-        std::unique_ptr<std::thread> _inputThread;         // Input thread handle
-        std::mutex                   _inputThreadMutex;    // Fake a semaphore to wake up...
-        std::condition_variable      _inputThreadCondVar;  // ... a sleeping thread
-        std::atomic<bool>            _inputThreadAbort;    // Input thread abort signal
-
-        void _ThreadWrapper();                             // Wrapper that runs _ThreadLoop()
+        Ff::Thread _inputThread;
+        void _ThreadPrep();
+        void _ThreadClean();
 };
 
 /* ****************************************************************************************************************** */

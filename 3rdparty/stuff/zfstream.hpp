@@ -55,7 +55,7 @@ South Africa
 
 #include <istream>  // not iostream, since we don't need cin/cout
 #include <ostream>
-#include "zlib.h"
+#include <zlib.h>
 
 /*****************************************************************************/
 

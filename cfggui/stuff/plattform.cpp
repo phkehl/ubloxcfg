@@ -222,7 +222,7 @@ void SetThreadName(const std::string &name)
     currName[0] = '\0';
     if (prctl(PR_GET_NAME, currName, 0, 0, 0) == 0)
     {
-        currName[8] = '\0';
+        currName[7] = '\0';
         std::snprintf(threadName, sizeof(threadName), "%s:%s", currName, name.c_str());
         prctl(PR_SET_NAME, threadName, 0, 0, 0);
     }
@@ -333,8 +333,6 @@ class CacheWiper
                 return true;
             }
         }
-
-
 };
 
 // static void _WipeCache(const std::string &path, const double maxAge, const int maxDepth, WipeCacheState &state)

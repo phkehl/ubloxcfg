@@ -28,6 +28,7 @@
 
 #include "gui_win.hpp"
 #include "gui_widget_opengl.hpp"
+#include "gui_widget_map.hpp"
 #include "gui_win_filedialog.hpp"
 #include "gui_notify.hpp"
 
@@ -37,6 +38,7 @@ class GuiWinExperiment : public GuiWin
 {
     public:
         GuiWinExperiment();
+       ~GuiWinExperiment();
 
         void DrawWindow() final;
 
@@ -56,6 +58,10 @@ class GuiWinExperiment : public GuiWin
 
         // Experiment 3
         void _DrawGuiNotify();
+
+        // Experiment 4
+        std::unique_ptr<GuiWidgetMap> _map;
+        void _DrawGuiWidgetMap();
 };
 
 /* ****************************************************************************************************************** */

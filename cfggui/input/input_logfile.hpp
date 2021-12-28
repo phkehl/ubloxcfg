@@ -20,9 +20,6 @@
 
 #include <memory>
 #include <string>
-#include <functional>
-#include <mutex>
-#include <atomic>
 #include <queue>
 
 #include "input.hpp"
@@ -89,7 +86,7 @@ class InputLogfile : public Input
 
         static constexpr uint32_t      EVENT_QUEUE_MAX_SIZE = 1000; // FIXME: ??
         void _ThreadPrepare() final;
-        void _Thread() final;
+        void _Thread(Ff::Thread *thread) final;
         void _ThreadCleanup() final;
 };
 

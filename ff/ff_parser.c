@@ -242,30 +242,30 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     switch (msgType)
     {
         case PARSER_MSGTYPE_UBX:
-            msg->name = ubxMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
-                parser->name : "UBX-?-?";
+            msg->name = (ubxMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
+                parser->name : "UBX-?-?");
             if (info)
             {
-                msg->info = ubxMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                    parser->info : NULL;
+                msg->info = (ubxMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL);
             }
             break;
         case PARSER_MSGTYPE_NMEA:
-            msg->name = nmeaMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
-                parser->name : "NMEA-?-?";
+            msg->name = (nmeaMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
+                parser->name : "NMEA-?-?");
             if (info)
             {
-                msg->info = nmeaMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                    parser->info : NULL;
+                msg->info = (nmeaMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL);
             }
             break;
         case PARSER_MSGTYPE_RTCM3:
-            msg->name = rtcm3MessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
-                parser->name : "RTCM3-?";
+            msg->name = (rtcm3MessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
+                parser->name : "RTCM3-?");
             if (info)
             {
-                msg->info = rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
-                    parser->info : NULL;
+                msg->info = (rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL);
             }
             break;
         default:

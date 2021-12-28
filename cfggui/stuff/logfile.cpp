@@ -226,7 +226,12 @@ void Logfile::Seek(const uint64_t pos)
 {
     if ( !_isCompressed && _isOpen && _in && (pos < _size) )
     {
+        _in->clear(); // seems to be neccessary or seekg() sometimes fails
         _in->seekg(pos, std::ios::beg);
+        if (_in->fail())
+        {
+            WARNING("seek %lu fail: %s", pos, std::strerror(errno));
+        }
     }
 }
 

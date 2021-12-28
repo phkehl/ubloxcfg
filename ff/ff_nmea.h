@@ -200,7 +200,7 @@ bool nmeaMessageClsId(const char *name, uint8_t *clsId, uint8_t *msgId);
     \param[in]   formatter    Formatter (can be "")
     \param[in]   payload      The message payload (can be NULL)
     \param[out]  msg          Message buffer (must be at least \c strlen(talker) + \c strlen(formatter) +
-                              \c strlen(payload) + #NMEA_FRAME_SIZE + 2)
+                              \c strlen(payload) + #NMEA_FRAME_SIZE + 3)
 
     \note \c payload and \c msg may be the same buffer (or may overlap).
 

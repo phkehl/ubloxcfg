@@ -67,10 +67,6 @@ class GuiWin
         void                 _DrawWindowEnd();
         ImVec2               _WinSizeToVec(ImVec2 size);
 
-        static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody |
-            ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
-             ImGuiTableFlags_ScrollY;
-
         static const std::vector<FfVec2> NEW_WIN_POS;
         static int _newWinPosIx;
         FfVec2     _newWinInitPos;

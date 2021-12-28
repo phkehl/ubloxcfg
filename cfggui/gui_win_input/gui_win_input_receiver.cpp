@@ -40,24 +40,15 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 {
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
-    _winSize   = { 80, 25 };
     SetTitle("Receiver X");
 
     _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
 
-    _LoadRecentInputs("Receiver");
-    // Populate some examples if none were loaded
-    if (_GetRecentInputs("Receiver").empty())
+    auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
+    if (!recent.empty())
     {
-        _AddRecentInput("Receiver", "telnet://192.168.1.2:23456");
-        _AddRecentInput("Receiver", "tcp://192.168.1.1:12345");
-        _AddRecentInput("Receiver", "ser:///dev/ttyUSB0");
-        _AddRecentInput("Receiver", "/dev/ttyACM0");
-    }
-    else
-    {
-        _port = _GetRecentInputs("Receiver").at(0);
+        _port = recent[0];
     }
 
     _ClearData();
@@ -73,7 +64,6 @@ GuiWinInputReceiver::~GuiWinInputReceiver()
     {
         _receiver->Stop();
     }
-    _SaveRecentInputs("Receiver");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -82,6 +72,13 @@ bool GuiWinInputReceiver::IsOpen()
 {
     // Keep window open as long as receiver is still connected (during disconnect)
     return _winOpen || !_receiver->IsIdle();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::shared_ptr<InputReceiver> GuiWinInputReceiver::GetReceiver()
+{
+    return _receiver;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -402,7 +399,7 @@ void GuiWinInputReceiver::_DrawControls()
         const bool disabled = !_receiver->IsIdle();
         ImGui::BeginDisabled(disabled);
         ImGui::PushItemWidth(-(GuiSettings::iconSize.x + GuiSettings::style->ItemSpacing.x));
-        ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
+        ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue /*| ImGuiInputTextFlags_AutoSelectAll*/;
         if (_focusPortInput)
         {
             ImGui::SetKeyboardFocusHere();
@@ -412,7 +409,7 @@ void GuiWinInputReceiver::_DrawControls()
         if (ImGui::InputTextWithHint("##Port", "Port", &_port, flags))
         {
             _triggerConnect = true;
-            _AddRecentInput("Receiver", _port);
+            GuiSettings::AddRecentItem(GuiSettings::RECENT_RECEIVERS, _port);
         }
         else
         {
@@ -437,12 +434,10 @@ void GuiWinInputReceiver::_DrawControls()
         Gui::ItemTooltip("Recent and detected ports");
         if (ImGui::BeginPopup("Recent"))
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-            ImGui::TextUnformatted("Recently used ports");
-            ImGui::PopStyleColor();
+            Gui::TextTitle("Recently used ports");
 
             const std::string *selectedPort = nullptr;
-            const auto &recent = _GetRecentInputs("Receiver");
+            const auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
             for (auto &port: recent)
             {
                 if (ImGui::Selectable(port.c_str()))
@@ -450,12 +445,18 @@ void GuiWinInputReceiver::_DrawControls()
                     selectedPort = &port;
                 }
             }
+            if (!recent.empty())
+            {
+                ImGui::Separator();
+                if (ImGui::Selectable("Clear recent ports"))
+                {
+                    GuiSettings::ClearRecentItems(GuiSettings::RECENT_RECEIVERS);
+                }
+            }
 
             ImGui::Separator();
 
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-            ImGui::TextUnformatted("Detected ports");
-            ImGui::PopStyleColor();
+            Gui::TextTitle("Detected ports");
 
             ImGui::PushID(1234);
             auto ports = Platform::EnumeratePorts(true);
@@ -488,7 +489,7 @@ void GuiWinInputReceiver::_DrawControls()
                 _port = *selectedPort;
                 _baudrate = 0;
                 _focusPortInput = true;
-                _AddRecentInput("Receiver", *selectedPort);
+                GuiSettings::AddRecentItem(GuiSettings::RECENT_RECEIVERS, *selectedPort);
             }
         }
         ImGui::EndDisabled();

@@ -45,6 +45,10 @@ namespace Gui
     bool ClickableText(const char *text);
 
     bool ToggleButton(const char *label, const char *labelOff, bool *toggle, const char *tooltipOn, const char *tooltipOff, const ImVec2 &size = ImVec2(0, 0));
+
+    void TextTitle(const char *text);
+    void TextTitle(const std::string &text);
+    void TextTitleF(const char *fmt, ...) IM_FMTARGS(1);
 };
 
 /* ****************************************************************************************************************** */

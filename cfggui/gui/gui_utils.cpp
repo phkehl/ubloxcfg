@@ -327,5 +327,31 @@ bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, 
     return res;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
+void Gui::TextTitle(const char *text)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
+    ImGui::TextUnformatted(text);
+    ImGui::PopStyleColor();
+}
+
+void Gui::TextTitle(const std::string &text)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+}
+
+void Gui::TextTitleF(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
+    ImGui::TextV(fmt, args);
+    ImGui::PopStyleColor();
+    va_end(args);
+}
+
 /* ****************************************************************************************************************** */
 // eof

@@ -592,6 +592,11 @@ int main(int argc, char **argv)
 #endif
     versionInfos.push_back("GCC " STRINGIFY(__GNUC__) "." STRINGIFY(__GNUC_MINOR__) "." STRINGIFY(__GNUC_PATCHLEVEL__)
         " C++ " STRINGIFY(__cplusplus));
+    versionInfos.push_back(Ff::Sprintf("GPU: %s %s %s (GLSL %s)",
+        (const char *)glGetString(GL_VENDOR),
+        (const char *)glGetString(GL_RENDERER),
+        (const char *)glGetString(GL_VERSION),
+        (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
     for (const auto &info: versionInfos)
     {

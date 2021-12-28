@@ -1,0 +1,7 @@
+A C++ I/O streams interface to the zlib gz* functions
+
+by Ludwig Schwardt <schwardt@sun.ac.za>
+original version by Kevin Ruland <kevin@rodin.wustl.edu>
+
+The code is provided "as is", with the permission to use, copy, modify, distribute
+and sell it for any purpose without fee.

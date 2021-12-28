@@ -147,6 +147,16 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
         }
     }
 
+    const std::vector<std::string> ntripWinNames = GuiSettings::GetValueList("App.ntripWindows", ",", MAX_SAVED_WINDOWS);
+    if (!ntripWinNames.empty())
+    {
+        for (auto &winName: ntripWinNames)
+        {
+            _CreateNtripWindow(winName);
+        }
+    }
+    _UpdateNtripWindows();
+
     // Say hello
     NOTICE("cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
     GuiNotify::Notice("Hello, hello", "Good morning, good evening!");
@@ -178,20 +188,26 @@ void GuiApp::Shutdown()
     GuiSettings::SetValue("App.experimentWindow", _appWindows[APP_WIN_EXPERIMENT]->IsOpen());
     GuiSettings::SetValue("App.debugLog", _debugLog.GetSettings());
 
-
     std::vector<std::string> openReceiverWinNames;
-    for (auto &receiver: _receiverWindows)
+    for (auto &win: _receiverWindows)
     {
-        openReceiverWinNames.push_back(receiver->GetName());
+        openReceiverWinNames.push_back(win->GetName());
     }
     GuiSettings::SetValueList("App.receiverWindows", openReceiverWinNames, ",", MAX_SAVED_WINDOWS);
 
     std::vector<std::string> openLogfileWinNames;
-    for (auto &logfile: _logfileWindows)
+    for (auto &win: _logfileWindows)
     {
-        openLogfileWinNames.push_back(logfile->GetName());
+        openLogfileWinNames.push_back(win->GetName());
     }
     GuiSettings::SetValueList("App.logfileWindows", openLogfileWinNames, ",", MAX_SAVED_WINDOWS);
+
+    std::vector<std::string> openNtripWinNames;
+    for (auto &win: _ntripWindows)
+    {
+        openNtripWinNames.push_back(win->GetName());
+    }
+    GuiSettings::SetValueList("App.ntripWindows", openNtripWinNames, ",", MAX_SAVED_WINDOWS);
 
     // Destroy child windows, so that they can save their settings before we save the file below
     _appWindows.clear();
@@ -245,6 +261,10 @@ void GuiApp::Loop()
     {
         win->Loop(frame, now);
     }
+    for (auto &win: _ntripWindows)
+    {
+        win->Loop(frame, now);
+    }
     for (auto &win: _receiverWindows)
     {
         win->Loop(frame, now);
@@ -272,6 +292,21 @@ void GuiApp::DrawFrame()
         }
     }
 
+    // Draw ntrip windows, remove and destroy closed ones
+    for (auto iter = _ntripWindows.begin(); iter != _ntripWindows.end(); )
+    {
+        auto &ntripWin = *iter;
+        if (ntripWin->IsOpen())
+        {
+            ntripWin->DrawWindow();
+            iter++;
+        }
+        else
+        {
+            iter = _ntripWindows.erase(iter);
+        }
+    }
+
     // Draw receiver windows, remove and destroy closed ones
     for (auto iter = _receiverWindows.begin(); iter != _receiverWindows.end(); )
     {
@@ -285,6 +320,7 @@ void GuiApp::DrawFrame()
         else
         {
             iter = _receiverWindows.erase(iter);
+            _UpdateNtripWindows();
         }
     }
 
@@ -377,6 +413,72 @@ template<typename T> void GuiApp::_CreateInputWindow(
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+void GuiApp::_CreateNtripWindow(const std::string &prevWinName)
+{
+    const std::string baseName = "NtripClient";
+    std::vector<std::string> existingWinNames;
+    for (auto &win: _ntripWindows)
+    {
+        existingWinNames.push_back(win->GetName());
+    }
+
+    int winNumber = 0;
+    // Open a previous window
+    if (!prevWinName.empty())
+    {
+        if (std::find(existingWinNames.begin(), existingWinNames.end(), prevWinName) == existingWinNames.end())
+        {
+            try { winNumber = std::stoi(prevWinName.substr(baseName.size())); } catch (...) { }
+        }
+    }
+    // Find next free
+    else
+    {
+        int n = 1;
+        while (n < 1000)
+        {
+            const std::string newWinName = baseName + std::to_string(n); // BaseName1, BaseName2, ...
+            if (std::find(existingWinNames.begin(), existingWinNames.end(), newWinName) == existingWinNames.end())
+            {
+                winNumber = n;
+                break;
+            }
+            n++;
+        }
+    }
+
+    // Create it
+    if (winNumber > 0)
+    {
+        auto win = std::make_unique<GuiWinNtrip>(baseName + std::to_string(winNumber));
+        win->Open();
+        win->SetTitle("NTRIP client " + std::to_string(winNumber));
+        _ntripWindows.emplace_back(std::move(win));
+
+        std::sort(_ntripWindows.begin(), _ntripWindows.end(),
+            [](const auto &a, const auto &b)
+            {
+                return a->GetName() < b->GetName();
+            });
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::_UpdateNtripWindows()
+{
+    for (auto &ntripWin: _ntripWindows)
+    {
+        ntripWin->RemoveReceivers();
+        for (auto &receiverWin: _receiverWindows)
+        {
+            ntripWin->AddReceiver(receiverWin->GetReceiver());
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void GuiApp::_MainMenu()
 {
     if (ImGui::BeginMainMenuBar())
@@ -391,6 +493,7 @@ void GuiApp::_MainMenu()
             if (ImGui::MenuItem("New"))
             {
                 _CreateInputWindow("Receiver", _receiverWindows);
+                _UpdateNtripWindows();
             }
             if (!_receiverWindows.empty())
             {
@@ -443,7 +546,32 @@ void GuiApp::_MainMenu()
                 }
             }
             ImGui::Separator();
+
+            if (ImGui::BeginMenu("NTRIP"))
+            {
+                if (ImGui::MenuItem("New client"))
+                {
+                    _CreateNtripWindow();
+                    _UpdateNtripWindows();
+                }
+                if (!_ntripWindows.empty())
+                {
+                    ImGui::Separator();
+                    for (auto &win: _ntripWindows)
+                    {
+                        if (ImGui::MenuItem(win->GetTitle().c_str()))
+                        {
+                            win->Open();
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::Separator();
+
             ImGui::MenuItem("Debug", NULL, &_debugWinOpen);
+
             ImGui::EndMenu();
         }
 
@@ -598,13 +726,6 @@ void GuiApp::_DrawDebugWin()
                     }
                 }
 
-                ImGui::Separator();
-                ImGui::PushFont(GuiSettings::fontMono);
-                ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
-                ImGui::PopFont();
-                ImGui::PushFont(GuiSettings::fontSans);
-                ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+*%&/()=?{}[];,:.-_<>");
-                ImGui::PopFont();
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Perf"))

@@ -122,9 +122,7 @@ bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfV
 
         if (ImGui::BeginChild(offs, blockSize))
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-            ImGui::Text("RF block #%u", blockIx);
-            ImGui::PopStyleColor();
+            Gui::TextTitleF("RF block #%u", blockIx);
 
             _RenderStatusFlag(_aStatusFlags,  block.antStatus,                                   "Antenna status", dataOffs);
             _RenderStatusFlag(_aPowerFlags,   block.antPower,                                    "Antenna power",  dataOffs);

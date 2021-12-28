@@ -31,7 +31,7 @@
 
 struct InputData
 {
-    enum Type { EVENT_START, EVENT_STOP, DATA_MSG, DATA_EPOCH, INFO_NOTICE, INFO_WARNING, INFO_ERROR };
+    enum Type { EVENT_START, EVENT_STOP, DATA_MSG, DATA_EPOCH, RXVERSTR, INFO_NOTICE, INFO_WARNING, INFO_ERROR };
     InputData(enum Type _type) :
         type{_type}
     {}
@@ -49,7 +49,7 @@ struct InputData
     enum Type                      type;   // all
     std::shared_ptr<Ff::ParserMsg> msg;    // only DATA_MSG
     std::shared_ptr<Ff::Epoch>     epoch;  // only DATA_EPOCH
-    std::string  info;   // only INFO_*
+    std::string                    info;   // only INFO_*, RXVERSTR
 };
 
 /* ****************************************************************************************************************** */

@@ -26,8 +26,7 @@
 /* ****************************************************************************************************************** */
 
 GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> database) :
-    GuiWinData(name, database),
-    _debugLayout{false}, _showInfo{true}, _map{nullptr}, _tiles{nullptr}
+    GuiWinData(name, database)
 {
     _winSize = { 80, 40 };
     _winFlags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -37,98 +36,24 @@ GuiWinDataMap::GuiWinDataMap(const std::string &name, std::shared_ptr<Database> 
 
     ClearData();
 
-    // Load settings
-    auto cfg = Ff::StrSplit(GuiSettings::GetValue(_winName + ".map"), ",");
-    bool haveCfg = false;
-    if (cfg.size() == 4)
-    {
-        std::size_t n1, n2, n3;
-        const float zoom = std::stof(cfg[1], &n1);
-        const double lat = std::stod(cfg[2], &n2);
-        const double lon = std::stod(cfg[3], &n3);
-        for (auto &map: GuiSettings::maps)
-        {
-            if (map.name == cfg[0])
-            {
-                _SetMap(map, true);
-                if (n1 > 0)
-                {
-                    _SetZoom(zoom);
-                }
-                if ( (n2 > 0) && (n3 > 0) )
-                {
-                    _SetCent(deg2rad(lat), deg2rad(lon));
-                }
-                _triggerAutosize = false;
-                haveCfg = true;
-                break;
-            }
-        }
-    }
-    if (!haveCfg && !GuiSettings::maps.empty())
-    {
-        _SetMap(GuiSettings::maps[0], true);
-    }
+    _map.SetSettings( GuiSettings::GetValue(_winName + ".map") );
 }
 
 GuiWinDataMap::~GuiWinDataMap()
 {
-    if (_map)
-    {
-        double lat, lon;
-        _map->GetCentLatLon(lat, lon);
-        GuiSettings::SetValue(_winName + ".map", Ff::Sprintf("%s,%.2f,%.10f,%.10f",
-            _map->GetParams().name.c_str(), _map->GetZoom(), rad2deg(lat), rad2deg(lon)));
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_Loop(const uint32_t &frame, const double &now)
-{
-    UNUSED(frame);
-    if (_tiles)
-    {
-        _tiles->Loop(now);
-    }
+    GuiSettings::SetValue( _winName + ".map", _map.GetSettings() );
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinDataMap::_DrawContent()
 {
-    if (!_tiles || !_map)
+    if (!_map.BeginDraw())
     {
-        ImGui::TextUnformatted("No maps :-(");
         return;
     }
 
-    //ImGui::BeginChild("##Plot", ImVec2(0.0f, 0.0f), false,
-    //    ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-
-    // Update canvas size
-    const FfVec2 canvasMin  = ImGui::GetCursorScreenPos();
-    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const FfVec2 canvasMax  = canvasMin + canvasSize;
-    const FfVec2 canvasCent = FfVec2(canvasMin.x + std::floor(canvasSize.x * 0.5), canvasMin.y + std::floor(canvasSize.y * 0.5));
-
-    _map->SetCanvas(canvasMin, canvasMax);
-    //_mapMain->SetCanvas(canvasMin, canvasMin  + (canvasSize * FfVec2(0.5,1)));
-
-    const FfVec2 cursorOrigin = ImGui::GetCursorPos();
-    //FfVec2 cursorMax = ImGui::GetWindowContentRegionMax();
-
     ImDrawList *draw = ImGui::GetWindowDrawList();
-
-    // Size to fill window
-    if (_triggerAutosize)
-    {
-        _triggerAutosize = false;
-        _AutoSize();
-    }
-
-    // Draw map
-    _map->DrawMap(draw);
 
     // Draw points
     constexpr int _LAT_ = Database::_LAT_;
@@ -138,11 +63,8 @@ void GuiWinDataMap::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            float x, y;
-            if (_map->GetScreenXyFromLatLon(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_], x, y))
-            {
-                draw->AddRectFilled(ImVec2(x - 2, y - 2), ImVec2(x + 2, y + 2), GuiSettings::GetFixColour(&epoch.raw));
-            }
+            const FfVec2 xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
+            draw->AddRectFilled(xy - FfVec2(2,2), xy + FfVec2(2,2), GuiSettings::GetFixColour(&epoch.raw));
         }
         return true;
     });
@@ -154,24 +76,24 @@ void GuiWinDataMap::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            float x, y;
-            if (_map->GetScreenXyFromLatLon(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_], x, y))
+            const FfVec2 xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
+
+            const ImU32 c = epoch.raw.fixOk ? GUI_COLOUR(PLOT_MAP_HL_OK) : GUI_COLOUR(PLOT_MAP_HL_MASKED);
+            const double m2px = _map.PixelPerMetre(epoch.raw.llh[_LAT_]);
+            const float r = (0.5 * epoch.raw.horizAcc * m2px) + 0.5;
+            if (r > 1.0f)
             {
-                const ImU32 c = epoch.raw.fixOk ? GUI_COLOUR(PLOT_MAP_HL_OK) : GUI_COLOUR(PLOT_MAP_HL_MASKED);
-                const double m2px = _map->GetPixelsPerMetre(epoch.raw.llh[_LAT_]);
-                const float r = (0.5 * epoch.raw.horizAcc * m2px) + 0.5;
-                if (r > 1.0f)
-                {
-                    draw->AddCircleFilled(ImVec2(x, y), r, GUI_COLOUR(PLOT_MAP_ACC_EST));
-                }
-                uint32_t age = TIME() - epoch.raw.ts;
-                const float w = age < 100 ? 3.0 : 1.0;
-                const float l = 20.0; //age < 100 ? 40.0 : 20.0; //20 + ((100 - MIN(age, 100)) / 2);
-                draw->AddLine(ImVec2(x - l, y), ImVec2(x - 3, y), c, w);
-                draw->AddLine(ImVec2(x + 3, y), ImVec2(x + l, y), c, w);
-                draw->AddLine(ImVec2(x, y - l), ImVec2(x, y - 3), c, w);
-                draw->AddLine(ImVec2(x, y + 3), ImVec2(x, y + l), c, w);
+                draw->AddCircleFilled(xy, r, GUI_COLOUR(PLOT_MAP_ACC_EST));
             }
+            uint32_t age = TIME() - epoch.raw.ts;
+            const float w = age < 100 ? 3.0 : 1.0;
+            const float l = 20.0; //age < 100 ? 40.0 : 20.0; //20 + ((100 - MIN(age, 100)) / 2);
+
+            draw->AddLine(xy - ImVec2(l, 0), xy - ImVec2(3, 0), c, w);
+            draw->AddLine(xy + ImVec2(3, 0), xy + ImVec2(l, 0), c, w);
+            draw->AddLine(xy - ImVec2(0, l), xy - ImVec2(0, 3), c, w);
+            draw->AddLine(xy + ImVec2(0, 3), xy + ImVec2(0, l), c, w);
+
             lastEpoch = &epoch;
             return false;
         }
@@ -207,420 +129,14 @@ void GuiWinDataMap::_DrawContent()
             // Base LLH
             xyz2llh_vec(xyz, llh);
 
-            float xb, yb, xr, yr;
-            const bool roverVis = _map->GetScreenXyFromLatLon(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1], xr, yr, false);
-            const bool baseVis  = _map->GetScreenXyFromLatLon(llh[0], llh[1], xb, yb, false);
-            if (roverVis || baseVis)
-            {
-                draw->AddLine(ImVec2(xb, yb), ImVec2(xr, yr), GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
-            }
-            if (baseVis)
-            {
-                draw->AddCircleFilled(ImVec2(xb, yb), 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
-            }
-        }
-    }
-    // Controls
-    bool controlsHovered = false;
-    {
-        ImGui::SetCursorPos(cursorOrigin + GuiSettings::style->ItemSpacing);
-
-        // Left click
-        if (ImGui::Button(ICON_FK_MAP "##MapParam", GuiSettings::iconSize))
-        {
-            ImGui::OpenPopup("MapParams");
-        }
-        // Right click
-        if (ImGui::BeginPopupContextWindow())
-        {
-            if (ImGui::Checkbox("Debug map layout", &_debugLayout))
-            {
-                _map->SetDebug(_debugLayout);
-            }
-            ImGui::EndPopup();
-        }
-
-        // Left click: show full info/control
-        if (ImGui::BeginPopup("MapParams"))
-        {
-            // Zoom slider
-            float mapZoom = _mapZoom;
-            ImGui::PushItemWidth(30 * GuiSettings::charSize.x);
-            if (ImGui::SliderFloat("##MapZoom", &mapZoom, _kMapZoomMin, _kMapZoomMax, "%.2f"))
-            {
-                _SetZoom(mapZoom);
-            }
-            ImGui::PopItemWidth();
-            Gui::ItemTooltip("Map zoom level");
-
-            // Map layer popup
-            const auto map = _map->GetParams();
-            ImGui::PushItemWidth(30 * GuiSettings::charSize.x);
-            if (ImGui::BeginCombo("###MapLayer", map.title.c_str()))
-            {
-                for (const auto &m: GuiSettings::maps)
-                {
-                    if (m.enabled)
-                    {
-                        const bool selected = m.name == map.name;
-                        if (ImGui::Selectable(m.title.c_str(), selected))
-                        {
-                            if (m.name != map.name)
-                            {
-                                DEBUG("switch to %s", m.name.c_str());
-                                _SetMap(m);
-                            }
-                        }
-                        if (selected)
-                        {
-                            ImGui::SetItemDefaultFocus();
-                        }
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            ImGui::PopItemWidth();
-
-            // Map controls
-            _map->DrawCtrl(_debugLayout);
-
-            ImGui::SameLine();
-            Gui::ToggleButton(ICON_FK_INFO "##ShowInfo", NULL, &_showInfo, "Showing info box", "Not showing info box", GuiSettings::iconSize);
-
-            ImGui::EndPopup();
-        }
-        // Show minimal info/control
-        else
-        {
-            Gui::ItemTooltip("Map config");
-            if (ImGui::IsItemHovered())
-            {
-                controlsHovered = true;
-            }
-
-            ImGui::SameLine();
-
-            ImGui::PushItemWidth((GuiSettings::charSize.x * 6));
-            float mapZoom = _mapZoom;
-            if (ImGui::InputScalar("##MapZoom", ImGuiDataType_Float, &mapZoom, NULL, NULL, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue))
-            {
-                _SetZoom(mapZoom);
-            }
-            ImGui::PopItemWidth();
-            Gui::ItemTooltip("Map zoom level");
-            if (ImGui::IsItemHovered())
-            {
-                controlsHovered = true;
-            }
-        }
-
-        const int numTilesInQueue = _tiles->NumTilesInQueue();
-        if (numTilesInQueue > 0)
-        {
-            ImGui::SameLine();
-            const float progress = (float)numTilesInQueue / (float)_tiles->MAX_TILES_IN_QUEUE;
-            char str[100];
-            std::snprintf(str, sizeof(str), "Loading %d tiles", numTilesInQueue);
-            ImGui::ProgressBar(progress, ImVec2(GuiSettings::charSize.x * 20, 0.0f), str);
+            const FfVec2 xyBase  = _map.LonLatToScreen(llh[0], llh[1]);
+            const FfVec2 xyRover = _map.LonLatToScreen(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1]);
+            draw->AddLine(xyBase, xyRover, GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
+            draw->AddCircleFilled(xyBase, 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
         }
     }
 
-    // Attribution, license, terms of use
-    {
-        const ImVec2 attr0 { canvasMin.x + GuiSettings::style->ItemSpacing.x,
-                             canvasMax.y - GuiSettings::charSize.y - (3 * GuiSettings::style->ItemSpacing.y) };
-        ImGui::SetCursorScreenPos(attr0);
-        auto p = _map->GetParams();
-        const std::string *link = nullptr;
-        if (ImGui::Button(p.attribution.c_str()))
-        {
-            link = &p.attrLink;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-        if (!p.license.empty())
-        {
-            ImGui::SameLine();
-            if (ImGui::Button(p.license.c_str()))
-            {
-                link = &p.licenseLink;
-            }
-            if (ImGui::IsItemHovered())
-            {
-                controlsHovered = true;
-            }
-        }
-        if (!p.policy.empty())
-        {
-            ImGui::SameLine();
-            if (ImGui::Button(p.policy.c_str()))
-            {
-                link = &p.policyLink;
-            }
-            if (ImGui::IsItemHovered())
-            {
-                controlsHovered = true;
-            }
-        }
-
-        if (link && !link->empty())
-        {
-            std::string cmd = "xdg-open " + *link;
-            if (std::system(cmd.c_str()) != EXIT_SUCCESS)
-            {
-                WARNING("Command failed: %s", cmd.c_str());
-            }
-        }
-
-    }
-
-    // Place an invisible button on top of everything to capture mouse events (and disable windows moving)
-    // Note the real buttons above must are placed first so that they will get the mouse events first (before this invisible button)
-    ImGui::SetCursorPos(cursorOrigin);
-    ImGui::InvisibleButton("canvas", canvasSize, ImGuiButtonFlags_MouseButtonLeft);
-    const bool isHovered = !controlsHovered && ImGui::IsItemHovered();
-    const bool isActive = ImGui::IsItemActive();
-    auto &io = ImGui::GetIO();
-
-    // Info box
-    if (_showInfo)
-    {
-        const float lineSpacing = ImGui::GetTextLineHeightWithSpacing();
-        const FfVec2 infoSize { GuiSettings::charSize.x * 23, lineSpacing * 3 };
-        const FfVec2 infoRectTopRight = FfVec2(canvasMax.x - GuiSettings::style->ItemSpacing.x, canvasMin.y + GuiSettings::style->ItemSpacing.y);
-        const FfVec2 infoRect0 = infoRectTopRight - FfVec2(infoSize.x, 0);
-        const FfVec2 infoRect1 = infoRectTopRight + FfVec2(0, infoSize.y);
-        draw->AddRectFilled(infoRect0, infoRect1, ImGui::GetColorU32(ImGuiCol_FrameBg), GuiSettings::style->FrameRounding);
-        FfVec2 cursor = infoRect0 + GuiSettings::style->FramePadding;
-
-        // Lat/lon
-        double lat;
-        double lon;
-        if (isHovered)
-        {
-            _map->GetLatLonAtMouse(io.MousePos, lat, lon);
-        }
-        else
-        {
-            _map->GetCentLatLon(lat, lon);
-        }
-
-        ImGui::SetCursorScreenPos(cursor); cursor.y += lineSpacing;
-
-        if ( (lat < MapParams::MAX_LAT) && (lat > MapParams::MIN_LAT) )
-        {
-            int d, m;
-            double s;
-            deg2dms(rad2deg(lat), &d, &m, &s);
-            ImGui::Text(" %2d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
-        }
-        else
-        {
-            ImGui::TextUnformatted("Lat: n/a");
-        }
-        ImGui::SetCursorScreenPos(cursor); cursor.y += lineSpacing;
-        if ( (lon < MapParams::MAX_LON) && (lon > MapParams::MIN_LON) )
-        {
-            int d, m;
-            double s;
-            deg2dms(rad2deg(lon), &d, &m, &s);
-            ImGui::Text("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'W' : 'E');
-        }
-        else
-        {
-            ImGui::TextUnformatted("Lon: n/a");
-        }
-
-        // Scale bar
-        ImGui::SetCursorScreenPos(cursor); cursor.y += lineSpacing;
-
-        const double m2px = _map->GetPixelsPerMetre(lat);
-        if (m2px > 0.0)
-        {
-            const float px2m = 1.0 / m2px;
-            const float scaleLenPx = 100.0f;
-            const float scaleLenM = scaleLenPx * px2m;
-
-            const float n = std::floor( std::log10(scaleLenM) );
-            const float val = std::pow(10, n);
-            if (val > 1000.0f)
-            {
-                ImGui::Text("%.0f km", val * 1e-3f);
-            }
-            else if (val < 1.0f)
-            {
-                ImGui::Text("%.2f m", val);
-            }
-            else
-            {
-                ImGui::Text("%.0f m", val);
-            }
-            const float len = val * m2px;
-            const FfVec2 offs = cursor + FfVec2(GuiSettings::charSize.x * 7, (-0.5f * lineSpacing) - 2.0f);
-            draw->AddLine(offs, offs + FfVec2(len, 0), GUI_COLOUR(C_BLACK), 4.0f);
-            //DEBUG("lenM=%f log=%f val=%f len=%f", scaleLenM, n, val, len);
-        }
-    }
-
-    // Crosshairs
-    if (isHovered)
-    {
-        draw->AddLine(ImVec2(io.MousePos.x, canvasMin.y), ImVec2(io.MousePos.x, canvasMax.y), GUI_COLOUR(PLOT_MAP_CROSSHAIRS), 3.0);
-        draw->AddLine(ImVec2(canvasMin.x, io.MousePos.y), ImVec2(canvasMax.x, io.MousePos.y), GUI_COLOUR(PLOT_MAP_CROSSHAIRS), 3.0);
-    }
-
-    // Map centre
-    // {
-    //     constexpr float len = 20;
-    //     const float w = isHovered ? 1.0 : 3.0;
-    //     draw->AddLine(ImVec2(canvasCent.x - len, canvasCent.y), ImVec2(canvasCent.x + len, canvasCent.y), GUI_COLOUR(PLOT_MAP_CROSSHAIRS), w);
-    //     draw->AddLine(ImVec2(canvasCent.x, canvasCent.y - len), ImVec2(canvasCent.x, canvasCent.y + len), GUI_COLOUR(PLOT_MAP_CROSSHAIRS), w);
-    // }
-
-    // Dragging
-    if (isHovered && isActive)
-    {
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        {
-            _DragStart();
-        }
-        else if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-        {
-            _DragEnd(ImGui::GetMouseDragDelta(ImGuiMouseButton_Left));
-        }
-    }
-
-    // Zoom control using mouse wheel (but not while dragging)
-    if (isHovered && !isActive)
-    {
-        if (io.MouseWheel != 0.0)
-        {
-
-            float step = _kMapZoomStep;
-            if (io.KeyShift)
-            {
-                step = _kMapZoomStepShift;
-            }
-            else if (io.KeyCtrl)
-            {
-                step = _kMapZoomStepCtrl;
-            }
-            _SetZoomDelta(io.MousePos, io.MouseWheel * step, step);
-        }
-    }
-
-    if (_debugLayout)
-    {
-        draw->AddRect(canvasMin, canvasMax, _cDebugLayout);
-        draw->AddLine(canvasCent + FfVec2(0, -10), canvasCent + FfVec2(0, +10), _cDebugLayout);
-        draw->AddLine(canvasCent + FfVec2(-10, 0), canvasCent + FfVec2(+10, 0), _cDebugLayout);
-        draw->AddText(canvasMin + FfVec2(1,1), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasMin.x, canvasMin.y).c_str());
-        draw->AddText(canvasMin + canvasSize + FfVec2(-80,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasSize.x, canvasSize.y).c_str());
-        draw->AddText(canvasCent + FfVec2(1,-15), _cDebugLayout, Ff::Sprintf("%.1f/%.1f", canvasCent.x, canvasCent.y).c_str());
-        //draw->AddText(canvasCent + FfVec2(1,0), _cDebugLayout, Ff::Sprintf("%.1fx%.1f (%.1f)", _tileSize.x, _tileSize.y, _tileScale).c_str());
-        //draw->AddText(canvasCent + ImVec2(1,15), _cDebugLayout, Ff::Sprintf("%d %.1f", _zoomLevel, _mapZoom).c_str());
-        ImGui::Begin((_winName + "Tiles").c_str());
-        ImGui::TextUnformatted(_tiles->GetDebugText().c_str());
-        ImGui::End();
-    }
-
-    //ImGui::EndChild(); // ##Plot
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_SetMap(const MapParams &map, const bool resetView)
-{
-    double lat, lon;
-    if (!resetView)
-    {
-        _map->GetCentLatLon(lat, lon);
-    }
-
-    _tiles = std::make_shared<MapTiles>(map);
-    _map   = std::make_unique<GuiMap>(map, _tiles);
-
-    if (resetView)
-    {
-        _SetCent(0.0, 0.0);
-        _SetZoom(1.0);
-        _triggerAutosize = true;
-    }
-    else
-    {
-        _SetCent(lat, lon);
-        _SetZoom(_mapZoom);
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_AutoSize()
-{
-    const float zoom = _map->GetAutoSizeZoom();
-    _SetZoom(zoom);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_SetCent(const double lat, const double lon)
-{
-    _map->SetCentLatLon(lat, lon);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_SetZoom(const float zoom, const float snap)
-{
-    _mapZoom = zoom;
-    if (_mapZoom < _kMapZoomMin)
-    {
-        _mapZoom = _kMapZoomMin;
-    }
-    else if (_mapZoom > _kMapZoomMax)
-    {
-        _mapZoom = _kMapZoomMax;
-    }
-
-    if (snap > 0.0f)
-    {
-        _mapZoom = std::floor( (_mapZoom * (1.0f / snap)) + (snap / 2.0f)) * snap;
-    }
-
-    _map->SetZoom(_mapZoom);
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_SetZoomDelta(const ImVec2 &mousePos, const float delta, const float snap)
-{
-    double lat0, lon0, lat1, lon1, latC, lonC;
-    _map->GetLatLonAtMouse(mousePos, lat0, lon0);
-    const float mapZoom = _mapZoom + delta;
-    _SetZoom(mapZoom, snap);
-    _map->GetLatLonAtMouse(mousePos, lat1, lon1);
-    _map->GetCentLatLon(latC, lonC);
-    _SetCent(latC + (lat0 - lat1), lonC + (lon0 - lon1));
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_DragStart()
-{
-    _dragStartTxyMain = _map->GetCentTxy();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataMap::_DragEnd(const ImVec2 &totalDrag)
-{
-    if ( (totalDrag.x != 0.0) || (totalDrag.y != 0.0) )
-    {
-        const Ff::Vec2<double> deltaTxyMain = _map->GetDeltaTxyFromMouseDelta(totalDrag);
-        _map->SetCentTxy(_dragStartTxyMain - deltaTxyMain);
-    }
+    _map.EndDraw();
 }
 
 /* ****************************************************************************************************************** */

@@ -40,6 +40,8 @@ class GuiWinAppAbout : public GuiWinApp
     public:
         GuiWinAppAbout();
         void DrawWindow() final;
+    private:
+        void _DrawEntry(const char *name, const char *license, const char *link = nullptr, const char *link2 = nullptr);
 };
 
 /* ***** Settings *************************************************************************************************** */

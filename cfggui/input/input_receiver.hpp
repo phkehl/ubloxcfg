@@ -86,7 +86,7 @@ class InputReceiver : public Input
         bool                 _eventQueueSaturation;
 
         void _ThreadPrepare() final;
-        void _Thread() final;
+        void _Thread(Ff::Thread *thread) final;
         void _ThreadCleanup() final;
 
         static void _ReceiverMsgCb(PARSER_MSG_t *msg, void *arg);

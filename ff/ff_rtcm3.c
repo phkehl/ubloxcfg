@@ -25,7 +25,7 @@
 
 bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int msgSize)
 {
-    if (name == NULL)
+    if ( (name == NULL) || (size < 1) )
     {
         return false;
     }
@@ -98,10 +98,11 @@ const char *rtcm3TypeDesc(const int msgType, const int subType)
 
 bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if (info == NULL)
+    if ( (info == NULL) || (size < 1) )
     {
         return false;
     }
+
     if ( (msg == NULL) || (msgSize < (RTCM3_HEAD_SIZE + 2)) )
     {
         info[0] = '\0';

@@ -33,6 +33,7 @@
 #include "gui_win_input_receiver.hpp"
 #include "gui_win_input_logfile.hpp"
 #include "gui_notify.hpp"
+#include "gui_win_ntrip.hpp"
 
 struct GuiAppEarlyLog
 {
@@ -97,6 +98,11 @@ class GuiApp
         static constexpr int MAX_SAVED_WINDOWS = 20;
         template<typename T> void _CreateInputWindow(
             const std::string &baseName, std::vector< std::unique_ptr<T> > &inputWindows, const std::string &prevWinName = "");
+
+        // NTRIP clients
+        std::vector< std::unique_ptr<GuiWinNtrip> > _ntripWindows;
+        void _CreateNtripWindow(const std::string &prevWinName = "");
+        void _UpdateNtripWindows();
 
         // Debugging
         std::mutex           _debugMutex;

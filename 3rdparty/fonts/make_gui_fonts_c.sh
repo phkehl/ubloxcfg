@@ -22,10 +22,11 @@ echo "// Automatically generated. Do not edit." >> "$c"
 echo "#ifndef __GUI_FONTS_HPP__" >> "$h"
 echo "#define __GUI_FONTS_HPP__" >> "$h"
 # ProggyClean
-for F in DejaVuSansMono DejaVuSans ForkAwesome; do
-    (cd $tmp && ./binary_to_compressed_c -base85 $F.ttf $F >> "$c");
-    echo "const char *guiGetFont$F(void) { return ${F}_compressed_data_base85; }" >> "$c"
-    echo "const char *guiGetFont$F(void);" >> "$h"
+for F in DejaVuSansMono DejaVuSans DejaVuSans-Bold DejaVuSans-Oblique ForkAwesome; do
+    FF=${F//-/}
+    (cd $tmp && ./binary_to_compressed_c -base85 $F.ttf $FF >> "$c");
+    echo "const char *guiGetFont${FF}(void) { return ${FF}_compressed_data_base85; }" >> "$c"
+    echo "const char *guiGetFont${FF}(void);" >> "$h"
 done
 echo "#endif // __GUI_FONTS_HPP__" >> "$h"
 cp "$h" "$base/../../cfggui/gui/gui_fonts.hpp"

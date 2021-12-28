@@ -38,9 +38,9 @@ GuiWin::GuiWin(const std::string &name) :
     _winSize          { 30, 30 }, // > 0: units of fontsize, < 0: = fraction of screen width/height
     _winSizeMin       { 0, 0 },
     _winUid           { reinterpret_cast<std::uintptr_t>(this) },
+    _winUidStr        { Ff::Sprintf("%016lx", _winUid) },
     _winClass         { std::make_unique<ImGuiWindowClass>() }
 {
-    _winUidStr = Ff::Sprintf("%016lx", _winUid);
     _winName = name;
     _newWinInitPos = NEW_WIN_POS[_newWinPosIx++];
     _newWinPosIx %= NEW_WIN_POS.size();
@@ -62,6 +62,7 @@ void GuiWin::Open()
 {
     _winOpen = true;
     Focus();
+    ImGui::SetWindowCollapsed(_winImguiName.c_str(), false);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

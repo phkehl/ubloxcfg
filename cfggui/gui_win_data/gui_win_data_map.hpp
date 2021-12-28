@@ -19,8 +19,7 @@
 #define __GUI_WIN_DATA_MAP_HPP__
 
 #include "ff_stuff.h"
-#include "maptiles.hpp"
-#include "gui_map.hpp"
+#include "gui_widget_map.hpp"
 #include "gui_win_data.hpp"
 
 /* ***** Map ******************************************************************************************************** */
@@ -32,38 +31,11 @@ class GuiWinDataMap : public GuiWinData
         GuiWinDataMap(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataMap();
 
-    protected:
+    private:
 
-        void _Loop(const uint32_t &frame, const double &now) final;
         void _DrawContent() final;
 
-        // Map display parameters
-        bool                 _debugLayout;
-        bool                 _triggerAutosize;
-        bool                 _showInfo;
-        float                _mapZoom;
-
-        static constexpr float _kMapZoomMin       =  0.0;
-        static constexpr float _kMapZoomMax       = 25.0;
-        static constexpr float _kMapZoomStep      =  0.1;
-        static constexpr float _kMapZoomStepShift =  0.05;
-        static constexpr float _kMapZoomStepCtrl  =  0.5;
-
-        std::unique_ptr<GuiMap> _map;
-        std::shared_ptr<MapTiles> _tiles;
-
-        // Dragging map start
-        Ff::Vec2<double>     _dragStartTxyMain;
-
-        void                 _SetMap(const MapParams &map, const bool resetView = false);
-        void                 _AutoSize();
-        void                 _SetCent(const double lat, const double lon);
-        void                 _SetZoom(const float zoom, const float snap = _kMapZoomStepShift);
-        void                 _SetZoomDelta(const ImVec2 &mousePos, const float delta, const float snap = _kMapZoomStepShift);
-        void                 _DragStart();
-        void                 _DragEnd(const ImVec2 &totalDrag);
-
-        static constexpr ImU32 _cDebugLayout = IM_COL32(0xff, 0x00, 0x00, 0xaf);
+        GuiWidgetMap _map;
 };
 
 /* ****************************************************************************************************************** */

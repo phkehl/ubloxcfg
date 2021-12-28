@@ -49,49 +49,42 @@ void GuiWinAppAbout::DrawWindow()
         return;
     }
 
-    ImGui::PushFont(GuiSettings::fontSans);
+    ImGui::PushFont(GuiSettings::fontBold);
+    Gui::TextTitle(         "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
+    ImGui::PopFont();
 
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-    ImGui::TextUnformatted( "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
-    ImGui::PopStyleColor();
+    ImGui::PushFont(GuiSettings::fontSans);
     ImGui::TextUnformatted( "Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)");
     Gui::TextLink(          "https://oinkzwurgl.org/hacking/ubloxcfg/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("This consists of the following parts:");
-    ImGui::TextUnformatted("- 'ubloxcfg' library, under LGPL");
-    ImGui::TextUnformatted("- 'ff' library, under GPL");
-    ImGui::TextUnformatted("- 'cfggui' application, under GPL");
+
+
+    _DrawEntry("'ubloxcfg' library",   "LGPLv3 license");
+    _DrawEntry("'ff' library",         "GPLv3 license");
+    _DrawEntry("'cfggui' application", "GPLv3 license");
+
     ImGui::Separator();  // -----------------------------------------------------------------------------
+
     ImGui::TextUnformatted( "Third-party code (see source code and the links for details):");
-    ImGui::TextUnformatted( "- Dear ImGui, under a MIT license");
-    ImGui::SameLine(); Gui::TextLink("https://github.com/ocornut/imgui");
-    ImGui::TextUnformatted( "- ImPlot, under a MIT license");
-    ImGui::SameLine(); Gui::TextLink("https://github.com/epezent/implot");
-    ImGui::TextUnformatted( "- CRC24Q routines (from GPSD), under a BSD-2-Clause license");
-    ImGui::SameLine(); Gui::TextLink("https://gitlab.com/gpsd");
-    ImGui::TextUnformatted( "- PlatformFolders, under a MIT license");
-    ImGui::SameLine(); Gui::TextLink("https://github.com/sago007/PlatformFolders");
-    ImGui::TextUnformatted( "- DejaVu fonts, under a unnamed license");
-    ImGui::SameLine(); Gui::TextLink("https://dejavu-fonts.github.io");
-    // ImGui::TextUnformatted( "- ProggyClean font, under a unnamed license");
-    // ImGui::SameLine(); Gui::TextLink("https://proggyfonts.net");
-    ImGui::TextUnformatted( "- ForkAwesome font, under a MIT license");
-    ImGui::SameLine(); Gui::TextLink("https://forkaweso.me");
-    ImGui::TextUnformatted( "- Tetris, under a Revised BSD license");
-    ImGui::SameLine(); Gui::TextLink("https://brennan.io/2015/06/12/tetris-reimplementation/");
-    ImGui::TextUnformatted( "- NanoVG, under a Zlib license");
-    ImGui::SameLine(); Gui::TextLink("https://github.com/memononen/nanovg");
-    ImGui::SameLine(); Gui::TextLink("https://github.com/inniyah/nanovg");
-    //ImGui::TextUnformatted( "- Miniz, under a MIT license");
-    //ImGui::SameLine(); Gui::TextLink("https://github.com/richgel999/miniz");
+
+    _DrawEntry("Dear Imgui",                  "MIT license",          "https://github.com/ocornut/imgui");
+    _DrawEntry("ImPlot",                      "MIT license",          "https://github.com/epezent/implot");
+    _DrawEntry("CRC24Q routines (from GPSD)", "BSD-2-Clause license", "https://gitlab.com/gpsd");
+    _DrawEntry("PlatformFolders",             "MIT license",          "https://github.com/sago007/PlatformFolders");
+    _DrawEntry("DejaVu fonts",                "unnamed license",      "https://dejavu-fonts.github.io");
+  //_DrawEntry("ProggyClean font",            "unnamed license",      "https://proggyfonts.net");
+    _DrawEntry("ForkAwesome font",            "MIT license",          "https://forkaweso.me", "https://github.com/ForkAwesome/Fork-Awesome");
+    _DrawEntry("Tetris",                      "Revised BSD license",  "https://brennan.io/2015/06/12/tetris-reimplementation/");
+    _DrawEntry("NanoVG",                      "Zlib license",         "https://github.com/memononen/nanovg", "https://github.com/inniyah/nanovg");
+  // _DrawEntry("Miniz",                      "MIT license",          "https://github.com/richgel999/miniz");
+    _DrawEntry("zfstream",                    "unnamed license",      "https://github.com/madler/zlib/tree/master/contrib/iostream3");
+    _DrawEntry("Base64",                      "MIT license",          "https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party libraries (first level dependencies, use ldd to see all):");
-    ImGui::TextUnformatted( "- GLFW");
-    ImGui::SameLine(); Gui::TextLink("https://www.glfw.org");
-    ImGui::TextUnformatted( "- libcurl");
-    ImGui::SameLine(); Gui::TextLink("https://curl.se/");
-    ImGui::TextUnformatted( "- FreeType");
-    ImGui::SameLine(); Gui::TextLink("https://freetype.org/");
+    _DrawEntry("GLFW",                        "zlib/libpng license",  "https://www.glfw.org", "https://github.com/glfw/glfw");
+    _DrawEntry("libcurl",                     "unnamed license",      "https://curl.se/", "https://github.com/curl/curl");
+    _DrawEntry("FreeType",                    "FreeType license",     "https://freetype.org/", "https://gitlab.freedesktop.org/freetype/freetype");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party data from the following public sources:");
     int nSources = 0;
@@ -105,14 +98,45 @@ void GuiWinAppAbout::DrawWindow()
     _DrawWindowEnd();
 }
 
+void GuiWinAppAbout::_DrawEntry(const char *name, const char *license, const char *link, const char *link2)
+{
+    ImGui::PushFont(GuiSettings::fontSans);
+
+    ImGui::TextUnformatted("- ");
+    ImGui::SameLine(0, 0);
+    ImGui::PushFont(GuiSettings::fontOblique);
+    ImGui::TextUnformatted(name);
+    ImGui::PopFont();
+
+    if (license)
+    {
+        ImGui::SameLine(GuiSettings::charSize.x * 30);
+        ImGui::TextUnformatted(license);
+    }
+
+    if (link)
+    {
+        ImGui::SameLine(GuiSettings::charSize.x * 51);
+        Gui::TextLink(link);
+    }
+
+    if (link2)
+    {
+        ImGui::SameLine();
+        Gui::TextLink(link2);
+    }
+
+    ImGui::PopFont();
+}
+
 /* ****************************************************************************************************************** */
 
 GuiWinAppSettings::GuiWinAppSettings(std::function<void()> drawCb) :
     GuiWinApp("Settings"),
     _drawCb { drawCb }
 {
-    _winSize    = { 72, 25 };
-    _winSizeMin = { 72, 15 };
+    _winSize    = { 75, 25 };
+    _winSizeMin = { 75, 15 };
 }
 
 void GuiWinAppSettings::DrawWindow()

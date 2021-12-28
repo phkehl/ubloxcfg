@@ -57,7 +57,7 @@ The GUI uses the following third-party code:
 * _GLFW_ (<https://www.glfw.org/>), dynamically linked
 * _libcurl_ (<https://curl.se/>), dynamically linked
 * _Freetype_ (<https://freetype.org/>), dynamically linked
-* _zlib (<https://zlib.net/>), dynamically linked
+* _zlib_ (<https://zlib.net/>), dynamically linked
 * And a bunch of other libraries that GLFW, Freetype, ImGui, libcurl etc. need...
 
 See the [main README](../README.md) for more.
@@ -76,10 +76,8 @@ See the [main README](../README.md) for more.
 * Custom message: implement RTCM3
 * Custom message: load from / save to file, load from clipboard? sw itch to right tab depending on what message it is?
 * Fix docking troubles in GuiWinInput::DrawWindow(), disallow some centre dockings
-* Fix performance timeseries plot in debug window, it should scroll
 * Improve GuiWinDataPlot
 * Handle database reset (insert blank epoch?) when seeking in logfile
-* Map: allow zooming rect with right click drag
 * File dialog: load dir entries async, and as needed (make _RefreshDir() run in background)
 * (started) Implement epoch info page (table with all details / fields of EPOCH_t etc.)
 * FIXMEs and TODOs all over...
@@ -93,15 +91,20 @@ See the [main README](../README.md) for more.
     - <https://stackoverflow.com/questions/6733934/what-does-immediate-mode-mean-in-opengl>
     - <https://learnopengl.com/Getting-Started/OpenGL>
     - <https://docs.gl>
+    - <https://github.com/g-truc/glm>
+    - <https://www.khronos.org/opengl/wiki/Tutorial2:_VAOs,_VBOs,_Vertex_and_Fragment_Shaders_(C_/_SDL)>
 * Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
-  Can we implement seekpos()? Maybe re-open file at a certain position?
+  Can we implement seekpos()? Maybe re-open file at a certain position? And gzseek() is commented-out in zlib.h anyway... (?!)
 * Fix memory leaks... valgrind isn't too happy.. :-/
+* Use GuiWidgetTable for GuiWinDataEpoch
+* Use Ff::Thread in GuiWinPlay
+* Write parser for swisstopo wmts capabilities xml to generate mapparams
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
-* Check out doing maps using ImPlot (<https://github.com/epezent/implot_demos>)
 * Check out <https://github.com/bkaradzic/bgfx>
 * Check out <https://github.com/jnmaloney/WebGui>
 * Checkout icons in <https://github.com/leiradel/ImGuiAl/tree/master/fonts>
 * <https://gist.github.com/gorbatschow/ce36c15d9265b61d12a1be1783bf0abf>
+* Checkout <https://github.com/CedricGuillemet/ImGuizmo>
 

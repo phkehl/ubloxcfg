@@ -63,14 +63,6 @@ class GuiWinInput : public GuiWin
         double                     _epochAge;
         const char                *_fixStr;
 
-        static std::map<std::string, std::vector<std::string>> _recentInputs;
-        static constexpr int MAX_RECENT_INPUTS = 20;
-        static void _LoadRecentInputs(const std::string &name);
-        static void _SaveRecentInputs(const std::string &name);
-        static void _AddRecentInput(const std::string &name, const std::string &input);
-        static void _ClearRecentInputs(const std::string &name);
-        static const std::vector<std::string> &_GetRecentInputs(const std::string &name);
-
         virtual void _ProcessData(const InputData &data);
         virtual void _ClearData();
         virtual void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin);

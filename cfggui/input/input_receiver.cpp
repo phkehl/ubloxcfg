@@ -420,7 +420,7 @@ void InputReceiver::_ThreadCleanup()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void InputReceiver::_Thread()
+void InputReceiver::_Thread(Ff::Thread *thread)
 {
     EPOCH_t coll;
     EPOCH_t epoch;
@@ -476,7 +476,7 @@ void InputReceiver::_Thread()
     // Keep going...
     bool abort = false;
     auto lastMsg = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-    while (!abort && !_ThreadAbort())
+    while (!abort && !thread->ShouldAbort())
     {
         bool yield = true;
 
@@ -623,7 +623,7 @@ void InputReceiver::_Thread()
                 case ReceiverCommand::SEND:
                 {
                     auto cmd = static_cast<ReceiverCommandSend *>(command.get());
-                    _THREAD_DEBUG("command SEND (%d)", (int)cmd->data.size());
+                    //_THREAD_DEBUG("command SEND (%d)", (int)cmd->data.size());
                     rxSend(_rx->rx, cmd->data.data(), (int)cmd->data.size());
                     break;
                 }
@@ -708,7 +708,7 @@ void InputReceiver::_Thread()
             }
 
             // Yield
-            _ThreadSleep(10);
+            thread->Sleep(10);
         }
     }
 }

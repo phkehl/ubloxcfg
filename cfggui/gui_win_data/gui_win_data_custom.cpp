@@ -646,8 +646,7 @@ void GuiWinDataCustom::_DrawEditNmea(const bool refresh)
         else
         {
             std::string msg;
-            const int msgLen = _nmeaTalker.size() + _nmeaFormatter.size() + _nmeaPayload.size() + NMEA_FRAME_SIZE + 2;
-            msg.reserve(msgLen);
+            const int msgLen = _nmeaTalker.size() + _nmeaFormatter.size() + _nmeaPayload.size() + NMEA_FRAME_SIZE + 2 + 1;
             msg.resize(msgLen, 'X');
             const int size = nmeaMakeMessage(_nmeaTalker.c_str(), _nmeaFormatter.c_str(), _nmeaPayload.c_str(), msg.data());
             msg.resize(size, 'X');

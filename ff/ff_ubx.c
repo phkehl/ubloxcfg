@@ -254,17 +254,17 @@ typedef struct MSGINFO_s
 #define _P_MSGINFO_UNKN(_clsId_, _clsName_) { .clsId = (_clsId_), .msgName = (_clsName_) },
 #define _P_MSGDEF(_clsId_, _msgId_, _msgName_) { .name = (_msgName_),  .clsId = (_clsId_), .msgId = (_msgId_) },
 
-const MSGINFO_t kMsgInfo[] =
+static const MSGINFO_t kMsgInfo[] =
 {
     UBX_MESSAGES(_P_MSGINFO)
 };
 
-const MSGINFO_t kUnknInfo[] =
+static const MSGINFO_t kUnknInfo[] =
 {
     UBX_CLASSES(_P_MSGINFO_UNKN)
 };
 
-const UBX_MSGDEF_t kMsgDefs[] =
+static const UBX_MSGDEF_t kMsgDefs[] =
 {
     UBX_MESSAGES(_P_MSGDEF)
 };
@@ -624,7 +624,7 @@ static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const i
 
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    if (info == NULL)
+    if ( (info == NULL) || (size < 1) )
     {
         return false;
     }

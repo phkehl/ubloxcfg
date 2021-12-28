@@ -26,15 +26,9 @@
 /* ****************************************************************************************************************** */
 
 GuiWidgetOpenGl::GuiWidgetOpenGl() :
-    _width           { 0 },
-    _height          { 0 },
-    _canDraw         { false },
-    _framebuffer     { 0 },
-    _renderbuffer    { 0 },
-    _texture         { 0 },
-    //_clearColour     { 0.2f, 0.2f, 0.2f, 1.0f }, // RGBA
-    _clearColour     { 0.0f, 0.0f, 0.0f, 0.0f }, // RGBA
-    _nvgContext      { nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES /*| NVG_DEBUG*/) }
+    _width      { 0 },
+    _height     { 0 },
+    _nvgContext { nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES /*| NVG_DEBUG*/) }
 {
     if (!_nvgContext)
     {
@@ -44,19 +38,6 @@ GuiWidgetOpenGl::GuiWidgetOpenGl() :
 
 GuiWidgetOpenGl::~GuiWidgetOpenGl()
 {
-    if (_framebuffer != 0)
-    {
-        glDeleteFramebuffers(1, &_framebuffer);
-        _framebuffer = 0;
-    }
-    if (_renderbuffer != 0)
-    {
-        glDeleteRenderbuffers(1, &_renderbuffer);
-    }
-    if (_texture != 0)
-    {
-        glDeleteTextures(1, &_texture);
-    }
     if (_nvgContext)
     {
         nvgDeleteGL3((NVGcontext *)_nvgContext);
@@ -99,98 +80,29 @@ bool GuiWidgetOpenGl::BeginDraw(const int width, const int height)
         w = sizeAvail.x;
         h = sizeAvail.y;
     }
+    _width = w;
+    _height = h;
 
-    // Limit drawing to some reasonably (?) small rect
-    if ( (w < 10) || (h < 10) )
+    if (_framebuffer.Begin(w, h))
     {
-        _width   = 0;
-        _height  = 0;
-        _canDraw = false;
+        _framebuffer.Clear();
+        return true;
+    }
+    else
+    {
         return false;
     }
-
-    // https://learnopengl.com/Advanced-OpenGL/Framebuffers
-
-    // Size changed? (Or first run.)
-    if ( (w != _width) || (h != _height) )
-    {
-        // TODO error handling?
-
-        // Create framebuffer
-        if (_framebuffer == 0)
-        {
-            glGenFramebuffers(1, &_framebuffer);
-        }
-
-        // Create texture
-        if (_texture != 0)
-        {
-            glDeleteTextures(1, &_texture);
-        }
-        glGenTextures(1, &_texture);
-        glBindTexture(GL_TEXTURE_2D, _texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-        // FIXME: hmmm...
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        // Create renderbuffer
-        if (_renderbuffer != 0)
-        {
-            glDeleteRenderbuffers(1, &_renderbuffer);
-        }
-        glGenRenderbuffers(1, &_renderbuffer);
-        glBindRenderbuffer(GL_RENDERBUFFER, _renderbuffer);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-        //DEBUG("GuiWidgetOpenGl: %dx%d, fb %u rb %u tex %u", w, h, _framebuffer, _renderbuffer, _texture);
-    }
-
-    // Activate framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _texture, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _renderbuffer);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        WARNING("GuiWidgetOpenGl: framebuffer not complete");
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // FIXME: detach renderbuffer, too?
-        return false;
-    }
-
-    // Set viewport, clear framebuffer
-    glViewport(0, 0, w, h);
-    glClearColor(_clearColour[0], _clearColour[1], _clearColour[2], _clearColour[3]);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // We should be good to go
-    _width   = w;
-    _height  = h;
-    _canDraw = true;
-
-    // We could use nvgluCreateFramebuffer(), nvgluDeleteFramebuffer(), nvgluBindFramebuffer() ...
-
-    return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWidgetOpenGl::EndDraw()
 {
-    if (!_canDraw)
-    {
-        return;
-    }
-
-    // Switch back to default framebuffer
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    _framebuffer.End();
 
     // Place rendered texture into ImGui draw list
     const FfVec2 pos0 = ImGui::GetCursorScreenPos();
-    ImGui::GetWindowDrawList()->AddImage((void *)(uintptr_t)_texture,
+    ImGui::GetWindowDrawList()->AddImage(_framebuffer.GetTexture(),
         pos0, pos0 + FfVec2(_width, _height), ImVec2(0, 1), ImVec2(1, 0));
 }
 

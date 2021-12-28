@@ -49,13 +49,12 @@ GuiWinInput::GuiWinInput(const std::string &name) :
     GuiWin(name),
     _database        { std::make_shared<Database>(10000) },
     _logWidget       { 1000 },
-    _rxVerStr        { "" },
     _dataWinCaps     { DataWinDef::Cap_e::ALL },
     _autoHideDatawin { true }
 {
     DEBUG("GuiWinInput(%s)", _winName.c_str());
 
-    _winSize = { 95, 35 };
+    _winSize = { 100, 35 };
 
     // Prevent other (data win, other input win) windows from docking into center of the input window, i.e. other
     // windows can only split this a input window but not "overlap" (add a tab)
@@ -109,15 +108,10 @@ void GuiWinInput::_ProcessData(const InputData &data)
             _epoch = nullptr;
             break;
         case InputData::DATA_MSG:
-            if (data.msg->name == "UBX-MON-VER")
-            {
-                char str[100];
-                if (ubxMonVerToVerStr(str, sizeof(str), data.msg->data, data.msg->size))
-                {
-                    _rxVerStr = str;
-                    _UpdateTitle();
-                }
-            }
+            break;
+        case InputData::RXVERSTR:
+            _rxVerStr = data.info;
+            _UpdateTitle();
             break;
         case InputData::DATA_EPOCH:
             if (data.epoch->epoch.valid)
@@ -261,13 +255,16 @@ void GuiWinInput::DataWinMenu()
     {
         Focus();
     }
-    ImGui::Separator();
-    const int offs = GetTitle().size() + 3;
-    for (auto &win: _dataWindows)
+    if (!_dataWindows.empty())
     {
-        if (ImGui::MenuItem(win->GetTitle().substr(offs).c_str()))
+        ImGui::Separator();
+        const int offs = GetTitle().size() + 3;
+        for (auto &win: _dataWindows)
         {
-            win->Open();
+            if (ImGui::MenuItem(win->GetTitle().substr(offs).c_str()))
+            {
+                win->Open();
+            }
         }
     }
 }
@@ -757,44 +754,6 @@ void GuiWinInput::_UpdateTitle()
             dataWin->SetTitle(childTitle);
         }
     }
-}
-
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-/*static*/ std::map<std::string, std::vector<std::string>> GuiWinInput::_recentInputs;
-
-/*static*/ void GuiWinInput::_LoadRecentInputs(const std::string &name)
-{
-    _recentInputs[name] = GuiSettings::GetValueMult(name + ".recentInput", MAX_RECENT_INPUTS);
-    Ff::MakeUnique(_recentInputs[name]);
-}
-
-/*static*/ void GuiWinInput::_SaveRecentInputs(const std::string &name)
-{
-    GuiSettings::SetValueMult(name + ".recentInput", _recentInputs[name], MAX_RECENT_INPUTS);
-}
-
-/*static*/ void GuiWinInput::_AddRecentInput(const std::string &name, const std::string &input)
-{
-    auto existing = std::find(_recentInputs[name].begin(), _recentInputs[name].end(), input);
-    // Add first, then remove, as input could be a reference of the to-be-remved element in this vector
-    const bool deleteExisting = existing != _recentInputs[name].end();
-    _recentInputs[name].insert(_recentInputs[name].begin(), input);
-    if (deleteExisting)
-    {
-        _recentInputs[name].erase(existing + 1);
-    }
-}
-
-/*static*/ void GuiWinInput::_ClearRecentInputs(const std::string &name)
-{
-    _recentInputs[name].clear();
-}
-
-/*static*/ const std::vector<std::string> &GuiWinInput::_GetRecentInputs(const std::string &name)
-{
-    return _recentInputs[name];
 }
 
 /* ****************************************************************************************************************** */

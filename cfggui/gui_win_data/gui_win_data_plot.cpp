@@ -235,9 +235,7 @@ void GuiWinDataPlot::_DrawToolbar()
 void GuiWinDataPlot::_DrawVars()
 {
     // Variables currently used in plot
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-    ImGui::TextUnformatted("Used:");
-    ImGui::PopStyleColor();
+    Gui::TextTitle("Used:");
     ImGui::Separator();
     PlotVar *removeVar = nullptr;
     PlotData *src = nullptr;
@@ -313,9 +311,7 @@ void GuiWinDataPlot::_DrawVars()
 
     // Variables not currently used in plot
     ImGui::BeginGroup();
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
-    ImGui::TextUnformatted("Available:");
-    ImGui::PopStyleColor();
+    Gui::TextTitle("Available:");
     ImGui::Separator();
     for (auto &var: _plotVars)
     {

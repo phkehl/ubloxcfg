@@ -216,7 +216,8 @@ bool InputLogfile::Open(const std::string &path)
         _playPosRel = 0.0;
 
         // Hand over to play thread
-        return _ThreadStart();    }
+        return _ThreadStart();
+    }
     else
     {
         WARNING("Failed opening logfile %s: %s", path.c_str(), _logfile.GetError().c_str());
@@ -408,7 +409,7 @@ void InputLogfile::_ThreadCleanup()
     _SEND_EVENT(LogfileEventNotice, "Logfile closed: " + _logfile.Path());
 }
 
-void InputLogfile::_Thread()
+void InputLogfile::_Thread(Ff::Thread *thread)
 {
     PARSER_t parser;
     PARSER_MSG_t msg;
@@ -421,7 +422,7 @@ void InputLogfile::_Thread()
     parserInit(&parser);
     epochInit(&coll);
 
-    while (!_ThreadAbort())
+    while (!thread->ShouldAbort())
     {
         // Handle commands
         std::unique_ptr<LogfileCommand> command;
@@ -510,13 +511,13 @@ void InputLogfile::_Thread()
         // Player idle
         if ( (_playState == STOPPED) || (_playState == PAUSED) )
         {
-            _ThreadSleep(10);
+            thread->Sleep(10);
             continue;
         }
 
         // Process logfile data
         bool intr = false;
-        while (!intr && parserProcess(&parser, &msg, true) && !_ThreadAbort() && _commandQueue.empty())
+        while (!intr && parserProcess(&parser, &msg, true) && !thread->ShouldAbort() && _commandQueue.empty())
         {
             _playPos += msg.size;
             _playPosRel = (double)_playPos / (double)_playSize;
@@ -545,7 +546,7 @@ void InputLogfile::_Thread()
                 // Throttle playback
                 if ( (_playSpeed > 0.0) && !stepMsg && !stepEpoch )
                 {
-                    _ThreadSleep(1000.0 / _playSpeed);
+                    thread->Sleep(1000.0 / _playSpeed);
 
                     // Message timestamp is no longer valid after sleeping
                     msg.ts = TIME();
@@ -592,7 +593,7 @@ void InputLogfile::_Thread()
             // Wait a bit if the event queue is too long, to not overwhelm the main thread
             while (!intr && (_eventQueue.size() > EVENT_QUEUE_MAX_SIZE))
             {
-                _ThreadSleep(25);
+                thread->Sleep(25);
             }
 
             // Send message

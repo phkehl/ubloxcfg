@@ -34,8 +34,8 @@ extern "C" {
 #define UBX_SYNC_1        0xb5        //!< UBX frame sync char 1
 #define UBX_SYNC_2        0x62        //!< UBX frame sync char 2
 #define UBX_HEAD_SIZE     6           //!< Size of UBX frame header
-#define UBX_CLSID(msg)    ((msg)[2])  //!< Get class ID from message
-#define UBX_MSGID(msg)    ((msg)[3])  //!< Get message ID from message
+#define UBX_CLSID(msg)    (((uint8_t *)(msg))[2]) //!< Get class ID from message
+#define UBX_MSGID(msg)    (((uint8_t *)(msg))[3]) //!< Get message ID from message
 
 // ---------------------------------------------------------------------------------------------------------------------
 

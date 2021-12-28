@@ -39,6 +39,10 @@ GuiWinExperiment::GuiWinExperiment() :
     _winFlags |= ImGuiWindowFlags_NoDocking;
 }
 
+GuiWinExperiment::~GuiWinExperiment()
+{
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinExperiment::DrawWindow()
@@ -63,6 +67,11 @@ void GuiWinExperiment::DrawWindow()
         if (ImGui::BeginTabItem("GuiNotify"))
         {
             _DrawGuiNotify();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("GuiWidgetMap"))
+        {
+            _DrawGuiWidgetMap();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -206,6 +215,44 @@ void GuiWinExperiment::_DrawGuiNotify()
     if (ImGui::Button("Warning: no title, no text"))
     {
         GuiNotify::Warning("", "");
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinExperiment::_DrawGuiWidgetMap()
+{
+    if (_map)
+    {
+        if (ImGui::Button("stop"))
+        {
+            _map = nullptr;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("load"))
+        {
+            _map->SetSettings( GuiSettings::GetValue(_winName + ".map") );
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("save"))
+        {
+            GuiSettings::SetValue( _winName + ".map", _map->GetSettings() );
+        }
+    }
+    else
+    {
+        if (ImGui::Button("start"))
+        {
+            _map = std::make_unique<GuiWidgetMap>();
+        }
+    }
+
+    if (_map)
+    {
+        if (_map->BeginDraw())
+        {
+            _map->EndDraw();
+        }
     }
 }
 

@@ -62,11 +62,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE CONFIG_VERSION_MAJOR=${PROJEC
 target_compile_definitions(${PROJECT_NAME} PRIVATE CONFIG_VERSION_MINOR=${PROJECT_VERSION_MINOR})
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE FP_BUILD_RELEASE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE FF_BUILD_RELEASE)
     target_compile_options(${PROJECT_NAME} PRIVATE -O3)
 endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE FP_BUILD_DEBUG)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE FF_BUILD_DEBUG)
     target_compile_options(${PROJECT_NAME} PRIVATE -Og)
 endif()
 

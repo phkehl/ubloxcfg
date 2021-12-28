@@ -63,13 +63,22 @@ std::string Ff::Vsprintf(const char *fmt, va_list args)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-std::string Ff::Strftime(const char * const fmt, const int64_t ts)
+std::string Ff::Strftime(const char * const fmt, const int64_t ts, const bool utc)
 {
     std::vector<char> str(1000);
     struct tm now;
-    int len = 0;
     const time_t t = (ts <= 0 ? time(NULL) : ts);
-    if (localtime_r(&t, &now) == &now)
+    bool ok = false;
+    if (utc)
+    {
+        ok = gmtime_r(&t, &now) == &now;
+    }
+    else
+    {
+        ok = localtime_r(&t, &now) == &now;
+    }
+    int len = 0;
+    if (ok)
     {
         len = strftime(str.data(), str.size(), fmt, &now);
     }
@@ -199,7 +208,9 @@ std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
         ix += 16;
     }
     return hexdump;
-}// ---------------------------------------------------------------------------------------------------------------------
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 void Ff::MakeUnique(std::vector<std::string> &vec)
 {
