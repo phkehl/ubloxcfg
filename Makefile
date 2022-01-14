@@ -77,9 +77,15 @@ CFLAGS_release        := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
 CXXFLAGS_release      := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
 LDFLAGS_release       := -g
 
-CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
-CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb -rdynamic
-LDFLAGS_debug         := -ggdb -rdynamic
+CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb
+CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb
+LDFLAGS_debug         := -ggdb
+ifeq ($(WIN),)
+CFLAGS_debug          += -rdynamic
+CXXFLAGS_debug        += -rdynamic
+LDFLAGS_debug         += -rdynamic
+endif
+
 
 # test (ubloxcfg)
 CFILES_test_m32       := test/test_ubloxcfg.c
@@ -108,12 +114,8 @@ CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3r
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
 LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++ -ldl
-CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --libs   glfw3 2>/dev/null)
-CXXFLAGS_cfggui       += $(shell pkg-config --cflags freetype2 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --libs   freetype2 2>/dev/null)
-CXXFLAGS_cfggui       += $(shell pkg-config --cflags zlib 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --libs   zlib 2>/dev/null)
+CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 freetype2 zlib glm 2>/dev/null)
+LDFLAGS_cfggui        += $(shell pkg-config --libs   glfw3 freetype2 zlib glm 2>/dev/null)
 CXXFLAGS_cfggui       += $(shell curl-config --cflags 2>/dev/null)
 LDFLAGS_cfggui        += $(shell curl-config --libs 2>/dev/null)
 LDFLAGS_cfggui        += -lGL

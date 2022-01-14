@@ -117,13 +117,24 @@ GuiSettings::~GuiSettings()
 /*static*/ ImFont *GuiSettings::fontSans    = nullptr;
 /*static*/ ImFont *GuiSettings::fontBold    = nullptr;
 /*static*/ ImFont *GuiSettings::fontOblique = nullptr;
-/*static*/ FfVec2  GuiSettings::charSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
-/*static*/ FfVec2  GuiSettings::iconSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+/*static*/ FfVec2f  GuiSettings::charSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
+/*static*/ FfVec2f  GuiSettings::iconSize    = { GuiSettings::FONT_SIZE_DEF, GuiSettings::FONT_SIZE_DEF };
 
 /* static */ImU32 GuiSettings::colours[_NUM_COLOURS] =
 {
 #  define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
     GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
+};
+
+/*static*/ ImVec4 GuiSettings::colours4[_NUM_COLOURS] =
+{
+
+#  define _SETTINGS_COLOUR_COL4(_str, _enum, _col) \
+    { (float)((_col >> IM_COL32_R_SHIFT) & 0xff) / 255.0f, \
+      (float)((_col >> IM_COL32_G_SHIFT) & 0xff) / 255.0f, \
+      (float)((_col >> IM_COL32_B_SHIFT) & 0xff) / 255.0f, \
+      (float)((_col >> IM_COL32_A_SHIFT) & 0xff) / 255.0f },
+    GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL4)
 };
 
 /*static*/ const ImGuiStyle   *GuiSettings::style = nullptr;
@@ -589,6 +600,36 @@ bool GuiSettings::UpdateSizes()
     return colours[FIX_INVALID];
 }
 
+/*static*/ const ImVec4 &GuiSettings::GetFixColour4(const EPOCH_t *epoch)
+{
+    if (!epoch || !epoch->haveFix)
+    {
+        return colours4[FIX_INVALID];
+    }
+    else if (!epoch->fixOk)
+    {
+        return colours4[FIX_MASKED];
+    }
+    else
+    {
+        switch (epoch->fix)
+        {
+            case EPOCH_FIX_UNKNOWN:
+            case EPOCH_FIX_NOFIX:         return colours4[FIX_INVALID];
+            case EPOCH_FIX_DRONLY:        return colours4[FIX_DRONLY];
+            case EPOCH_FIX_S2D:           return colours4[FIX_S2D];
+            case EPOCH_FIX_S3D:           return colours4[FIX_S3D];
+            case EPOCH_FIX_S3D_DR:        return colours4[FIX_S3D_DR];
+            case EPOCH_FIX_TIME:          return colours4[FIX_TIME];
+            case EPOCH_FIX_RTK_FLOAT:     return colours4[FIX_RTK_FLOAT];
+            case EPOCH_FIX_RTK_FIXED:     return colours4[FIX_RTK_FIXED];
+            case EPOCH_FIX_RTK_FLOAT_DR:  return colours4[FIX_RTK_FLOAT_DR];
+            case EPOCH_FIX_RTK_FIXED_DR:  return colours4[FIX_RTK_FIXED_DR];
+        }
+    }
+    return colours4[FIX_INVALID];
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 /*static*/ std::map<std::string, std::vector<std::string>> GuiSettings::_recentItems;
@@ -802,9 +843,6 @@ bool GuiSettings::UpdateSizes()
             ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
             ImGui::PopFont();
 
-
-
-
             ImGui::EndTabItem();
         }
         // Colours
@@ -834,12 +872,10 @@ bool GuiSettings::UpdateSizes()
                     }
                     ImGui::SameLine();
                     {
-                        ImVec4 col = ImGui::ColorConvertU32ToFloat4(colours[ix]);
-                        float col4[4] = { col.x, col.y, col.z, col.w };
                         ImGui::PushItemWidth(charSize.x * 40);
-                        if (ImGui::ColorEdit4("##ColourEdit", col4, ImGuiColorEditFlags_AlphaPreviewHalf))
+                        if (ImGui::ColorEdit4("##ColourEdit", &colours4[ix].x, ImGuiColorEditFlags_AlphaPreviewHalf))
                         {
-                            colours[ix] = ImGui::ColorConvertFloat4ToU32(ImVec4(col4[0], col4[1], col4[2], col4[3]));
+                            colours[ix] = ImGui::ColorConvertFloat4ToU32(colours4[ix]);
                         }
                         ImGui::PopItemWidth();
                     }

@@ -86,7 +86,7 @@ class GuiWidgetTable
             Column(const std::string &_title, const float _width = 0.0f, const ColumnFlags _flags = ColumnFlags::NONE);
             std::string      title;
             enum ColumnFlags flags;
-            FfVec2           titleSize;
+            FfVec2f           titleSize;
             float            width;
             float            maxWidth;
         };
@@ -95,7 +95,7 @@ class GuiWidgetTable
         {
             Cell();
             std::string   content;
-            FfVec2        contentSize;
+            FfVec2f        contentSize;
             float         paddingLeft;
             CellDrawCb_t  drawCb;
             void         *drawCbArg;

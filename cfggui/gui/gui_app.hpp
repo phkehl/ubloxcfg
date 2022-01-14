@@ -53,7 +53,7 @@ class GuiApp
         static GuiApp &GetInstance();
 
         // Main application loop, do what needs to be done regularly
-        void Loop();
+        void Loop(const uint32_t &frame, const double &now);
 
         // Called in between ImGui::Render() and ImGui::NewFrame()
         bool PrepFrame();

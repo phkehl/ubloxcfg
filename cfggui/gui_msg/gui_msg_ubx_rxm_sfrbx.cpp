@@ -136,7 +136,7 @@ void GuiMsgUbxRxmSfrbx::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxRxmSfrbx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
 

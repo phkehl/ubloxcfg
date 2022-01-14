@@ -21,7 +21,6 @@
 #include "ff_stuff.h"
 
 #include "GL/gl3w.h"
-#include "nanovg.h"
 
 #include "gui_inc.hpp"
 
@@ -32,8 +31,7 @@
 GuiWinExperiment::GuiWinExperiment() :
     GuiWin("Experiments"),
     _openFileDialog{_winName + "OpenFileDialog"},
-    _saveFileDialog{_winName + "SaveFileDialog"},
-    _running{false}
+    _saveFileDialog{_winName + "SaveFileDialog"}
 {
     _winSize = { 100, 50 };
     _winFlags |= ImGuiWindowFlags_NoDocking;
@@ -57,11 +55,6 @@ void GuiWinExperiment::DrawWindow()
         if (ImGui::BeginTabItem("GuiWinFileDialog"))
         {
             _DrawGuiWinFileDialog();
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("GuiWidgetOpenGl"))
-        {
-            _DrawGuiWidgetOpenGl();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("GuiNotify"))
@@ -132,46 +125,6 @@ void GuiWinExperiment::_DrawGuiWinFileDialog()
         {
             _saveFilePath = _saveFileDialog.GetPath();
             DEBUG("save file done");
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinExperiment::_DrawGuiWidgetOpenGl()
-{
-    // https://learnopengl.com/Advanced-OpenGL/Framebuffers
-
-    if (ImGui::Button(_running ? "stop##running" : "start##running"))
-    {
-        if (!_running)
-        {
-            _running = true;
-        }
-        else
-        {
-            _running = false;
-        }
-    }
-
-    if (_running)
-    {
-        if (_gl.BeginDraw())
-        {
-            NVGcontext *vg = (NVGcontext *)_gl.NanoVgBeginFrame();
-
-            nvgBeginPath(vg);
-            nvgRect(vg, 100,100, 120,30);
-            nvgFillColor(vg, nvgRGBA(255,192,0,255));
-            nvgFill(vg);
-
-            _gl.NanoVgDebug();
-
-            _gl.NanoVgEndFrame();
-
-            // more OpenGL here...
-
-            _gl.EndDraw();
         }
     }
 }

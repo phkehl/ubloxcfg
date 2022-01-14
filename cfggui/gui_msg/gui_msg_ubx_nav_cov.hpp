@@ -31,7 +31,7 @@ class GuiMsgUbxNavCov : public GuiMsg
     public:
         GuiMsgUbxNavCov(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail) final;
 
     private:
 };

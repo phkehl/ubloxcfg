@@ -114,10 +114,10 @@ void GuiNotify::Draw()
     auto &style = ImGui::GetStyle();
 
     const auto charSize =  ImGui::CalcTextSize("X");
-    const FfVec2 notiMinSize { charSize.x * 50, charSize.y };
+    const FfVec2f notiMinSize { charSize.x * 50, charSize.y };
     const float maxContentHeight = charSize.y * 5;
-    const FfVec2 notiMaxSize { charSize.x * 50, maxContentHeight + (4 * charSize.y) };
-    FfVec2 winPos { io.DisplaySize.x - charSize.x, io.DisplaySize.y - charSize.y };
+    const FfVec2f notiMaxSize { charSize.x * 50, maxContentHeight + (4 * charSize.y) };
+    FfVec2f winPos { io.DisplaySize.x - charSize.x, io.DisplaySize.y - charSize.y };
 
     std::lock_guard<std::mutex> guard(_mutex);
 
@@ -146,10 +146,10 @@ void GuiNotify::Draw()
         // Remaining time bar
         if (noti.remaining > 0)
         {
-            const FfVec2 bar0 = FfVec2(ImGui::GetCursorScreenPos()) + FfVec2(style.FramePadding.x, -style.FramePadding.y);
+            const FfVec2f bar0 = FfVec2f(ImGui::GetCursorScreenPos()) + FfVec2f(style.FramePadding.x, -style.FramePadding.y);
             const float width = ImGui::GetContentRegionAvail().x - ( 2 * style.FramePadding.x);
             const float frac = noti.remaining / noti.duration;
-            const FfVec2 bar1 = FfVec2(bar0.x + (frac * width), bar0.y);
+            const FfVec2f bar1 = FfVec2f(bar0.x + (frac * width), bar0.y);
             auto *draw = ImGui::GetWindowDrawList();
             draw->AddLine(bar0, bar1, GUI_COLOUR(TEXT_DIM), 2.0f);
         }

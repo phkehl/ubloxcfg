@@ -27,7 +27,8 @@
 
 GuiWinDataScatter::GuiWinDataScatter(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _havePoints{false}
+    _showingErrorEll   { false },
+    _triggerSnapRadius { false }
 {
     _winSize    = { 75.0, 0.0 };
     _winSizeMin = { 40.0, 0.0 };
@@ -42,6 +43,10 @@ GuiWinDataScatter::GuiWinDataScatter(const std::string &name, std::shared_ptr<Da
         bool ena;
         GuiSettings::GetValue(_winName + ".sigmaEnabled" + std::to_string(ix), ena, false);
         _sigmaEnabled[ix] = ena;
+        if (ena)
+        {
+            _showingErrorEll = true;
+        }
     }
 
     ClearData();
@@ -63,7 +68,81 @@ GuiWinDataScatter::~GuiWinDataScatter()
 
 void GuiWinDataScatter::_ClearData()
 {
-    _havePoints = false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataScatter::_DrawToolbar()
+{
+    Gui::VerticalSeparator();
+
+    switch (_database->GetRefPos())
+    {
+        case Database::REFPOS_MEAN:
+            if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###RefPos", GuiSettings::iconSize))
+            {
+                _database->SetRefPosLast();
+            }
+            Gui::ItemTooltip("Reference position is mean position");
+            break;
+        case Database::REFPOS_LAST:
+            if (ImGui::Button(ICON_FK_CHECK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
+            {
+                _database->SetRefPosMean();
+            }
+            Gui::ItemTooltip("Reference position is last position");
+            break;
+        case Database::REFPOS_USER:
+            if (ImGui::Button(ICON_FK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
+            {
+                _database->SetRefPosMean();
+            }
+            Gui::ItemTooltip("Reference position is user position");
+            break;
+    }
+
+    ImGui::SameLine();
+
+    // Fit data
+    if (ImGui::Button(ICON_FK_ARROWS_ALT "###Fit", GuiSettings::iconSize))
+    {
+        _triggerSnapRadius = true;
+    }
+    Gui::ItemTooltip("Fit all points");
+
+    ImGui::SameLine();
+
+    // Error ellipse
+    if (Gui::ToggleButton(ICON_FK_PERCENT "###ErrEll", NULL, &_showingErrorEll, "Error ellipses", NULL, GuiSettings::iconSize))
+    {
+        ImGui::OpenPopup("ErrEllSigma");
+    }
+    if (ImGui::BeginPopup("ErrEllSigma"))
+    {
+        for (int ix = 0; ix < NUM_SIGMA; ix++)
+        {
+            ImGui::Checkbox(SIGMA_LABELS[ix], &_sigmaEnabled[ix]);
+        }
+        ImGui::EndPopup();
+    }
+
+    ImGui::SameLine();
+
+    // Show statistics?
+    Gui::ToggleButton(ICON_FK_CROP "###ShowStats", NULL, &_showStats,
+        "Showing statistics", "Not showing statistics", GuiSettings::iconSize);
+
+    ImGui::SameLine();
+
+    // Histogram
+    Gui::ToggleButton(ICON_FK_BAR_CHART "##Histogram", NULL, &_showHistogram,
+        "Showing histogram", "Not showing histogram", GuiSettings::iconSize);
+
+    ImGui::SameLine();
+
+    // Accuracy estimate circle
+    Gui::ToggleButton(ICON_FK_CIRCLE "###AccEst", NULL, &_showAccEst,
+        "Showing accuracy estimate (2d)", "Not showing accuracy estimate (2d)", GuiSettings::iconSize);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -74,12 +153,12 @@ void GuiWinDataScatter::_ClearData()
 // See http://johnthemathguy.blogspot.com/2017/11/statistics-of-multi-dimensional-data.html,
 //     https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0118537
 
-const float GuiWinDataScatter::_sigmaScales[NUM_SIGMA] =
+const float GuiWinDataScatter::SIGMA_SCALES[NUM_SIGMA] =
 {
     1.0,              2.0,              2.4477,         3.0,              3.0349,         3.7169
 };
 
-const char * const GuiWinDataScatter::_sigmaLabels[NUM_SIGMA] =
+const char * const GuiWinDataScatter::SIGMA_LABELS[NUM_SIGMA] =
 {
     "1.0    (38.5%)", "2.0    (86.5%)", "2.4477 (95%)", "3.0    (98.9%)", "3.0349 (99%)", "3.7169 (99.9%)"
 };
@@ -92,11 +171,11 @@ void GuiWinDataScatter::_DrawContent()
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     // Canvas
-    const FfVec2 offs = ImGui::GetCursorScreenPos();
-    const FfVec2 size = ImGui::GetContentRegionAvail();
-    const FfVec2 cent = ImVec2(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
-    const FfVec2 cursorOrigin = ImGui::GetCursorPos();
-    const FfVec2 cursorMax = ImGui::GetWindowContentRegionMax();
+    const FfVec2f offs = ImGui::GetCursorScreenPos();
+    const FfVec2f size = ImGui::GetContentRegionAvail();
+    const FfVec2f cent = ImVec2(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
+    const FfVec2f cursorOrigin = ImGui::GetCursorPos();
+    const FfVec2f cursorMax = ImGui::GetWindowContentRegionMax();
 
     constexpr int _E_ = Database::_E_;
     constexpr int _N_ = Database::_N_;
@@ -131,19 +210,19 @@ void GuiWinDataScatter::_DrawContent()
         const float barSep = 2 * radiusPx / (float)NUM_HIST;
         const float barLen = 0.5 * radiusPx;
         const float norm = barLen / (float)_histNumPoints;
-        const FfVec2 pos0x = cent + FfVec2(-radiusPx, -radiusPx);
-        const FfVec2 pos0y = cent + FfVec2(-radiusPx, radiusPx - barSep);
+        const FfVec2f pos0x = cent + FfVec2f(-radiusPx, -radiusPx);
+        const FfVec2f pos0y = cent + FfVec2f(-radiusPx, radiusPx - barSep);
         for (int ix = 0; ix <NUM_HIST; ix++)
         {
             {
                 const float dx = ix * barSep;
                 const float dy = 1.0 + ((float)_histogramE[ix] * norm);
-                draw->AddRectFilled(pos0x + FfVec2(dx, 0), pos0x + FfVec2(dx + barSep, dy), GUI_COLOUR(PLOT_HISTOGRAM));
+                draw->AddRectFilled(pos0x + FfVec2f(dx, 0), pos0x + FfVec2f(dx + barSep, dy), GUI_COLOUR(PLOT_HISTOGRAM));
             }
             {
                 const float dx = 1.0 + ((float)_histogramN[ix] * norm);
                 const float dy = -ix * barSep;
-                draw->AddRectFilled(pos0y + FfVec2(0, dy), pos0y + FfVec2(dx, dy + barSep), GUI_COLOUR(PLOT_HISTOGRAM));
+                draw->AddRectFilled(pos0y + FfVec2f(0, dy), pos0y + FfVec2f(dx, dy + barSep), GUI_COLOUR(PLOT_HISTOGRAM));
             }
         }
     }
@@ -152,6 +231,7 @@ void GuiWinDataScatter::_DrawContent()
     std::memset(_histogramN, 0, sizeof(_histogramN));
     std::memset(_histogramE, 0, sizeof(_histogramE));
     _histNumPoints = 0;
+    bool havePoints = false;
     _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
     {
         (void)ix;
@@ -162,8 +242,11 @@ void GuiWinDataScatter::_DrawContent()
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
             draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), GuiSettings::GetFixColour(&epoch.raw));
-            _havePoints = true;
+            havePoints = true;
             _histNumPoints++;
+
+            // const ImVec4 fc = GuiSettings::GetFixColour4(&epoch.raw);
+            // DEBUG("%03d %6.3f %6.3f %6.3f   %.3f %.3f %.3f %.3f", ix, epoch.enuAbs[_E_], epoch.enuAbs[_N_], epoch.enuAbs[Database::_U_], fc.x, fc.y, fc.z, fc.w);
 
             if (_showHistogram)
             {
@@ -230,7 +313,7 @@ void GuiWinDataScatter::_DrawContent()
     ImGui::PopStyleColor();
 
     // Draw min/max/mean
-    if (_showStats && _havePoints)
+    if (_showStats && havePoints)
     {
         const float minEastX = cent.x + std::floor((stats.enuAbs[_E_].min * m2px) + 0.5);
         const float maxEastX = cent.x + std::floor((stats.enuAbs[_E_].max * m2px) + 0.5);
@@ -287,7 +370,7 @@ void GuiWinDataScatter::_DrawContent()
     }
 
     // Draw error ellipses
-    bool showingEllipses = false;
+    _showingErrorEll = false;
     if ( (stats.enErrEll.a > 0) && (stats.enErrEll.b > 0) )
     {
         for (int sIx = 0; sIx < NUM_SIGMA; sIx++)
@@ -296,14 +379,14 @@ void GuiWinDataScatter::_DrawContent()
             {
                 continue;
             }
-            showingEllipses = true;
+            _showingErrorEll = true;
 
             ImVec2 points[100];
             const double cosOmega = std::cos(stats.enErrEll.omega);
             const double sinOmega = std::sin(stats.enErrEll.omega);
             const double x0 = stats.enuAbs[_E_].mean * m2px;
             const double y0 = stats.enuAbs[_N_].mean * m2px;
-            const double scale = _sigmaScales[sIx];
+            const double scale = SIGMA_SCALES[sIx];
             const double a = scale * stats.enErrEll.a;
             const double b = scale * stats.enErrEll.b;
             for (int ix = 0; ix < NUMOF(points); ix++)
@@ -353,118 +436,15 @@ void GuiWinDataScatter::_DrawContent()
 
     draw->PopClipRect();
 
-    ImGui::SetCursorPos(cursorOrigin);
-
-    // Controls
-    bool snapRadius = false;
-    bool controlsHovered = false;
-    {
-        // Reference position
-        switch (refPos)
-        {
-            case Database::REFPOS_MEAN:
-                if (ImGui::Button(ICON_FK_DOT_CIRCLE_O "###RefPos", GuiSettings::iconSize))
-                {
-                    _database->SetRefPosLast();
-                }
-                Gui::ItemTooltip("Reference position is mean position");
-                break;
-            case Database::REFPOS_LAST:
-                if (ImGui::Button(ICON_FK_CHECK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
-                {
-                    _database->SetRefPosMean();
-                }
-                Gui::ItemTooltip("Reference position is last position");
-                break;
-            case Database::REFPOS_USER:
-                if (ImGui::Button(ICON_FK_CIRCLE_O "###RefPos", GuiSettings::iconSize))
-                {
-                    _database->SetRefPosMean();
-                }
-                Gui::ItemTooltip("Reference position is user position");
-                break;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-
-        ImGui::SameLine();
-
-        // Fit data
-        if (ImGui::Button(ICON_FK_ARROWS_ALT "###Fit", GuiSettings::iconSize))
-        {
-            _plotRadius = MIN(MAX(stats.enuAbs[_E_].max, stats.enuAbs[_N_].max), maxRadiusM);
-            snapRadius = true;
-        }
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-        Gui::ItemTooltip("Fit all points");
-
-        const float rightButtonsOffs = cursorMax.x - (2 * (GuiSettings::iconSize.x + GuiSettings::style->ItemInnerSpacing.x));
-        ImGui::SetCursorPos(ImVec2(rightButtonsOffs, cursorOrigin.y));
-
-        // Error ellipse
-        bool dummy = showingEllipses;
-        if (Gui::ToggleButton(ICON_FK_PERCENT "###ErrEll", NULL, &dummy, "Error ellipses", NULL, GuiSettings::iconSize))
-        {
-            ImGui::OpenPopup("ErrEllSigma");
-        }
-        if (ImGui::BeginPopup("ErrEllSigma"))
-        {
-            for (int ix = 0; ix < NUM_SIGMA; ix++)
-            {
-                ImGui::Checkbox(_sigmaLabels[ix], &_sigmaEnabled[ix]);
-            }
-            ImGui::EndPopup();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-
-        ImGui::SameLine();
-
-        // Show statistics?
-        Gui::ToggleButton(ICON_FK_CROP "###ShowStats", NULL, &_showStats, "Showing statistics", "Not showing statistics", GuiSettings::iconSize);
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-
-        ImGui::SetCursorPosX(rightButtonsOffs);
-
-        // Histogram
-        Gui::ToggleButton(ICON_FK_BAR_CHART "##Histogram", NULL, &_showHistogram, "Showing histogram", "Not showing histogram", GuiSettings::iconSize);
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-
-        ImGui::SameLine();
-
-        // Accuracy estimate circle
-        if (Gui::ToggleButton(ICON_FK_CIRCLE "###AccEst", NULL, &_showAccEst, "Showing accuracy estimate (2d)", "Not showing accuracy estimate (2d)", GuiSettings::iconSize))
-        {
-
-        }
-        if (ImGui::IsItemHovered())
-        {
-            controlsHovered = true;
-        }
-    }
-
     // Place an invisible button on top of everything to capture mouse events (and disable windows moving)
     // Note the real buttons above must are placed first so that they will get the mouse events first (before this invisible button)
     ImGui::SetCursorPos(cursorOrigin);
     ImGui::InvisibleButton("canvas", size, ImGuiButtonFlags_MouseButtonLeft);
-    const bool isHovered = !controlsHovered && ImGui::IsItemHovered();
+    const bool isHovered = ImGui::IsItemHovered();
     const bool isActive = ImGui::IsItemActive();
 
     // Dragging
-    if (isActive && _havePoints)
+    if (isActive && havePoints)
     {
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
@@ -473,10 +453,10 @@ void GuiWinDataScatter::_DrawContent()
         }
         else if (ImGui::IsMouseDragging(ImGuiMouseButton_Left))
         {
-            FfVec2 totalDrag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+            FfVec2f totalDrag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
             if ( (totalDrag.x != 0.0) || (totalDrag.y != 0.0) )
             {
-                FfVec2 totalDragM = totalDrag * px2m;
+                FfVec2f totalDragM = totalDrag * px2m;
                 double enu[3] = { -totalDragM.x, totalDragM.y, 0 };
                 double newXyz[3];
                 enu2xyz_vec(enu, _refPosXyzDragStart, _refPosLlhDragStart, newXyz);
@@ -494,7 +474,7 @@ void GuiWinDataScatter::_DrawContent()
         draw->AddLine(ImVec2(io.MousePos.x, top), ImVec2(io.MousePos.x, bot), GUI_COLOUR(PLOT_FIX_CROSSHAIRS));
         draw->AddLine(ImVec2(left, io.MousePos.y), ImVec2(right, io.MousePos.y), GUI_COLOUR(PLOT_FIX_CROSSHAIRS));
 
-        const auto delta = (cent - io.MousePos) * (FfVec2(-1.0f, 1.0f) * px2m);
+        const auto delta = (cent - io.MousePos) * (FfVec2f(-1.0f, 1.0f) * px2m);
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_FIX_CROSSHAIRS_LABEL));
         char label[20];
 
@@ -511,7 +491,7 @@ void GuiWinDataScatter::_DrawContent()
 
     // Print centre position
     ImGui::SetCursorPosY(cursorMax.y - lineHeight);
-    if (_havePoints)
+    if (havePoints)
     {
         ImGui::Text("%+.7f %+.7f %+.3f", rad2deg(refPosLlh[0]), rad2deg(refPosLlh[1]), refPosLlh[2]);
     }
@@ -520,10 +500,15 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::TextUnformatted("no data");
     }
 
-    // Range control using mouse wheel (but not while dragging)
-    if ( (isHovered && !isActive) || snapRadius)
+    if (_triggerSnapRadius)
     {
-        if ( (io.MouseWheel != 0.0) || snapRadius)
+        _plotRadius = MIN(MAX(stats.enuAbs[_E_].max, stats.enuAbs[_N_].max), maxRadiusM);
+    }
+
+    // Range control using mouse wheel (but not while dragging)
+    if ( (isHovered && !isActive) || _triggerSnapRadius)
+    {
+        if ( (io.MouseWheel != 0.0) || _triggerSnapRadius)
         {
             float delta = 0.0;
             // Zoom in
@@ -550,9 +535,10 @@ void GuiWinDataScatter::_DrawContent()
             {
                 delta *= 2.0;
             }
-            if (snapRadius)
+            if (_triggerSnapRadius)
             {
                 _plotRadius = std::floor((_plotRadius + (1.0 * delta)) / delta) * delta;
+                _triggerSnapRadius = false;
             }
             else
             {
@@ -567,7 +553,7 @@ void GuiWinDataScatter::_DrawContent()
                 _plotRadius = maxRadiusM;
             }
         }
-        if (_havePoints)
+        if (havePoints)
         {
             ImGui::SetMouseCursor(ImGuiMouseCursor_None /*ImGuiMouseCursor_ResizeAll*/);
         }

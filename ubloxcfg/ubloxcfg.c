@@ -435,7 +435,7 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
             {
                 const char *fmt1 = NULL;
                 const char *fmt2 = NULL;
-                uint64_t valX;
+                uint64_t valX = 0;
                 switch (type)
                 {
                     case UBLOXCFG_TYPE_X1: fmt1 = "0x%02"  PRIx64 " "; fmt2 = "|0x%02"  PRIx64; valX = val->X1; break;
@@ -493,7 +493,7 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
         case UBLOXCFG_TYPE_E4:
             if (size > (15 + 30))
             {
-                int32_t valE;
+                int32_t valE = 0;
                 switch (type)
                 {
                     case UBLOXCFG_TYPE_E1: valE = val->E1; break;

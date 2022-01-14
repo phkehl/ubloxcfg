@@ -28,26 +28,31 @@ class GuiWinDataScatter : public GuiWinData
         GuiWinDataScatter(const std::string &name, std::shared_ptr<Database> database);
        ~GuiWinDataScatter();
 
-    protected:
+    private:
 
         void _ClearData() final;
         void _DrawContent() final;
+        void _DrawToolbar() final;
 
-        float                _plotRadius;
-        bool                 _havePoints;
-        bool                 _showStats;
-        double               _refPosLlhDragStart[3];
-        double               _refPosXyzDragStart[3];
+        // Plot
         enum { NUM_SIGMA = 6 };
-        static const float   _sigmaScales[NUM_SIGMA];
-        static const char * const _sigmaLabels[NUM_SIGMA];
-        bool                 _sigmaEnabled[NUM_SIGMA];
+        static const float        SIGMA_SCALES[NUM_SIGMA];
+        static const char * const SIGMA_LABELS[NUM_SIGMA];
         enum { NUM_HIST = 50 };
-        int                  _histogramN[NUM_HIST];
-        int                  _histogramE[NUM_HIST];
-        int                  _histNumPoints;
-        bool                 _showHistogram;
-        bool                 _showAccEst;
+        int     _histogramN[NUM_HIST];
+        int     _histogramE[NUM_HIST];
+        int     _histNumPoints;
+        bool    _showingErrorEll;
+        bool    _triggerSnapRadius;
+        double  _refPosLlhDragStart[3];
+        double  _refPosXyzDragStart[3];
+
+        // Config
+        float  _plotRadius;
+        bool   _showStats;
+        bool   _showHistogram;
+        bool   _showAccEst;
+        bool   _sigmaEnabled[NUM_SIGMA];
 };
 
 /* ****************************************************************************************************************** */

@@ -99,13 +99,15 @@
 
 #include "ff_utils.hpp"
 
+using FfVec2f = Ff::Vec2<float>;
+using FfVec2d = Ff::Vec2<double>;
+
 #define IM_VEC2_CLASS_EXTRA \
     ImVec2(const Ff::Vec2<float> &v) { x = v.x; y = v.y; } \
     ImVec2(const Ff::Vec2<double> &v) { x = v.x; y = v.y; } \
-    operator Ff::Vec2<float>() const { return Ff::Vec2<float>(x, y); } \
-    operator Ff::Vec2<double>() const { return Ff::Vec2<double>(x, y); }
+    operator FfVec2f() const { return FfVec2f(x, y); } \
+    operator FfVec2d() const { return FfVec2d(x, y); }
 
-using FfVec2 = Ff::Vec2<float>;
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
 // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).

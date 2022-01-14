@@ -132,7 +132,7 @@ void GuiWidgetMap::SetMap(const MapParams &mapParams, const bool resetView)
 
 void GuiWidgetMap::SetPos(const double lat, const double lon)
 {
-    _SetPosAndZoom(FfVec2(lon, lat), _mapZoom, _zLevel);
+    _SetPosAndZoom({ lon, lat }, _mapZoom, _zLevel);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ void GuiWidgetMap::SetZoom(const float zoom)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetMap::_SetPosAndZoom(const FfVec2 &pos, const float zoom, const int zLevel, const float snap)
+void GuiWidgetMap::_SetPosAndZoom(const FfVec2d &pos, const float zoom, const int zLevel, const float snap)
 {
     // Clamp and snap zoom level
     _mapZoom = std::clamp(zoom, ZOOM_MIN, ZOOM_MAX);
@@ -176,14 +176,14 @@ void GuiWidgetMap::_SetPosAndZoom(const FfVec2 &pos, const float zoom, const int
     _numTiles  = 1 << _zLevel;
 
     // Update center position
-    _centPosLonLat.x = std::clamp(pos.x, (float)_mapParams.minLon, (float)_mapParams.maxLon);
-    _centPosLonLat.y = std::clamp(pos.y, (float)_mapParams.minLat, (float)_mapParams.maxLat);
+    _centPosLonLat.x = std::clamp(pos.x, _mapParams.minLon, _mapParams.maxLon);
+    _centPosLonLat.y = std::clamp(pos.y, _mapParams.minLat, _mapParams.maxLat);
     _centPosXy = MapTiles::LonLatToTileXy(_centPosLonLat, _zLevel);
 
     // Scale tiles for zoom level
     const float deltaScale = _mapZoom - (float)_zLevel; // can be > 1, e.g. when zoom > max. level the map has
     const float tileScale = (std::fabs(deltaScale) > (1.0 - FLT_EPSILON) ? std::pow(2.0, deltaScale) : 1.0 + deltaScale);
-    _tileSize = FfVec2(_mapParams.tileSizeX, _mapParams.tileSizeY) * tileScale;
+    _tileSize = FfVec2d(_mapParams.tileSizeX, _mapParams.tileSizeY) * tileScale;
 
     // Centre tile top-left corner offset from canvas centre
     const float fracX = _centPosXy.x - std::floor(_centPosXy.x);
@@ -204,11 +204,11 @@ float GuiWidgetMap::PixelPerMetre(const float lat)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-FfVec2 GuiWidgetMap::LonLatToScreen(const double lat, const double lon)
+FfVec2f GuiWidgetMap::LonLatToScreen(const double lat, const double lon)
 {
     // Note: double precision calculations here!
     const Ff::Vec2<double> tXy = MapTiles::LonLatToTileXy(Ff::Vec2<double>(lon, lat), _zLevel);
-    return _canvasCent + FfVec2(
+    return _canvasCent + FfVec2f(
         (tXy.x - (double)_centPosXy.x) * (double)_tileSize.x,
         (tXy.y - (double)_centPosXy.y) * (double)_tileSize.y );
 
@@ -302,8 +302,8 @@ void GuiWidgetMap::_DrawMapTile(ImDrawList *draw, const int ix, const int dx, co
     const int ty = (int)_centPosXy.y + dy;
     if ( (tx >= 0) && (tx < _numTiles) && (ty >= 0) && (ty < _numTiles) )
     {
-        const FfVec2 tile0 = _canvasCent + _centTileOffs + (FfVec2(dx, dy) * _tileSize);
-        const FfVec2 tile1 = tile0 + _tileSize;
+        const FfVec2f tile0 = _canvasCent + _centTileOffs + (FfVec2f(dx, dy) * _tileSize);
+        const FfVec2f tile1 = tile0 + _tileSize;
         if ( (tile0.x < _canvasMax.x) && (tile0.y < _canvasMax.y) && (tile1.x > _canvasMin.x) && (tile1.y > _canvasMin.y) )
         {
             const bool skipDraw = (_tintColour & IM_COL32_A_MASK) == 0;
@@ -318,7 +318,7 @@ void GuiWidgetMap::_DrawMapTile(ImDrawList *draw, const int ix, const int dx, co
             {
                 if (_mapTiles)
                 {
-                    draw->AddImage(_mapTiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, FfVec2(0,0), FfVec2(1.0,1.0), _tintColour);
+                    draw->AddImage(_mapTiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, FfVec2f(0,0), FfVec2f(1.0,1.0), _tintColour);
                 }
                 if (_debugTiles)
                 {
@@ -397,8 +397,8 @@ void GuiWidgetMap::EndDraw()
         {
             ImGui::NewLine();
             ImGui::SameLine();
-            //if (ImGui::BeginChildFrame(1234, GuiSettings::charSize * FfVec2(30, 5.5), ImGuiWindowFlags_NoScrollbar))
-            if (ImGui::BeginChild(1234, GuiSettings::charSize * FfVec2(30, 5.5), false, ImGuiWindowFlags_NoScrollbar))
+            //if (ImGui::BeginChildFrame(1234, GuiSettings::charSize * FfVec2f(30, 5.5), ImGuiWindowFlags_NoScrollbar))
+            if (ImGui::BeginChild(1234, GuiSettings::charSize * FfVec2f(30, 5.5), false, ImGuiWindowFlags_NoScrollbar))
             {
                 // Zoom slider
                 {
@@ -525,13 +525,13 @@ void GuiWidgetMap::EndDraw()
     auto &io = ImGui::GetIO();
 
     // Info box (part 1)
-    FfVec2 infoBoxCursor;
+    FfVec2f infoBoxCursor;
     if (_showInfo)
     {
-        const FfVec2 infoSize { GuiSettings::charSize.x * 23, (GuiSettings::charSize.y * 3) + (2 * GuiSettings::style->ItemSpacing.y) };
-        const FfVec2 infoRectTopRight = FfVec2(_canvasMax.x - GuiSettings::style->ItemSpacing.x, _canvasMin.y + GuiSettings::style->ItemSpacing.y);
-        const FfVec2 infoRect0 = infoRectTopRight - FfVec2(infoSize.x, 0);
-        const FfVec2 infoRect1 = infoRectTopRight + FfVec2(0, infoSize.y);
+        const FfVec2f infoSize { GuiSettings::charSize.x * 23, (GuiSettings::charSize.y * 3) + (2 * GuiSettings::style->ItemSpacing.y) };
+        const FfVec2f infoRectTopRight = FfVec2f(_canvasMax.x - GuiSettings::style->ItemSpacing.x, _canvasMin.y + GuiSettings::style->ItemSpacing.y);
+        const FfVec2f infoRect0 = infoRectTopRight - FfVec2f(infoSize.x, 0);
+        const FfVec2f infoRect1 = infoRectTopRight + FfVec2f(0, infoSize.y);
         infoBoxCursor = infoRect0 + GuiSettings::style->FramePadding;
         draw->AddRectFilled(infoRect0, infoRect1, ImGui::GetColorU32(ImGuiCol_FrameBg), GuiSettings::style->FrameRounding);
         ImGui::SetCursorScreenPos(infoRect0);
@@ -549,10 +549,10 @@ void GuiWidgetMap::EndDraw()
     // Info box (part 2)
     if (_showInfo)
     {
-        FfVec2 pos = _centPosLonLat; // use center pos
+        FfVec2f pos = _centPosLonLat; // use center pos
         if (isHovered && !isActive)  // unless hovering but not dragging
         {
-            const FfVec2 delta = (FfVec2(io.MousePos) - _canvasCent) / _tileSize;
+            const FfVec2f delta = (FfVec2f(io.MousePos) - _canvasCent) / _tileSize;
             pos = MapTiles::TileXyToLonLat(_centPosXy + delta, _zLevel);
         }
 
@@ -610,9 +610,9 @@ void GuiWidgetMap::EndDraw()
                 ImGui::Text("%.0f m", val);
             }
             const float len = std::round(val * m2px);
-            const FfVec2 offs = infoBoxCursor + FfVec2(GuiSettings::charSize.x * 8, std::floor(-0.5f * GuiSettings::charSize.y) - 2.0f);
-            draw->AddRectFilled(offs, offs + FfVec2(len, 6), GUI_COLOUR(C_BLACK));
-            draw->AddRect(offs, offs + FfVec2(len, 6), GUI_COLOUR(C_WHITE));
+            const FfVec2f offs = infoBoxCursor + FfVec2f(GuiSettings::charSize.x * 8, std::floor(-0.5f * GuiSettings::charSize.y) - 2.0f);
+            draw->AddRectFilled(offs, offs + FfVec2f(len, 6), GUI_COLOUR(C_BLACK));
+            draw->AddRect(offs, offs + FfVec2f(len, 6), GUI_COLOUR(C_WHITE));
             //DEBUG("lenM=%f log=%f val=%f len=%f", scaleLenM, n, val, len);
         }
     }
@@ -642,10 +642,10 @@ void GuiWidgetMap::EndDraw()
     else if (_isDragging == ImGuiMouseButton_Left)
     {
         ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-        const FfVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+        const FfVec2d delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
         if ( (delta.x != 0.0) || (delta.y != 0.0) )
         {
-            const FfVec2 pos = MapTiles::TileXyToLonLat(_dragStartXy - (delta / _tileSize), _zLevel);
+            const FfVec2d pos = MapTiles::TileXyToLonLat(_dragStartXy - (delta / _tileSize), _zLevel);
             _SetPosAndZoom(pos, _mapZoom, _zLevel);
         }
         if (io.MouseReleased[ImGuiMouseButton_Left])
@@ -656,12 +656,12 @@ void GuiWidgetMap::EndDraw()
     else if (_isDragging == ImGuiMouseButton_Right)
     {
         ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
-        const FfVec2 delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
+        const FfVec2f delta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Right);
 
         if ( (delta.x != 0.0) && (delta.y != 0.0) )
         {
-            draw->AddRectFilled(io.MousePos, FfVec2(io.MousePos) - delta, GUI_COLOUR(MAP_ZOOM_RECT));
-            draw->AddRect(io.MousePos, FfVec2(io.MousePos) - delta, GUI_COLOUR(MAP_CROSSHAIRS));
+            draw->AddRectFilled(io.MousePos, FfVec2f(io.MousePos) - delta, GUI_COLOUR(MAP_ZOOM_RECT));
+            draw->AddRect(io.MousePos, FfVec2f(io.MousePos) - delta, GUI_COLOUR(MAP_CROSSHAIRS));
         }
 
         if (io.MouseReleased[ImGuiMouseButton_Right])
@@ -669,11 +669,11 @@ void GuiWidgetMap::EndDraw()
             _isDragging = ImGuiMouseButton_COUNT;
             if ( (delta.x != 0.0) && (delta.y != 0.0) )
             {
-                const FfVec2 deltaMin = (FfVec2(io.MousePos) - delta - _canvasCent) / _tileSize;
-                const FfVec2 llMin = MapTiles::TileXyToLonLat(_centPosXy + deltaMin, _zLevel);
-                const FfVec2 deltaMax = (FfVec2(io.MousePos) - _canvasCent) / _tileSize;
-                const FfVec2 llMax = MapTiles::TileXyToLonLat(_centPosXy + deltaMax, _zLevel);
-                const FfVec2 llCent = (llMax + llMin) * 0.5;
+                const FfVec2f deltaMin = (FfVec2f(io.MousePos) - delta - _canvasCent) / _tileSize;
+                const FfVec2f llMin = MapTiles::TileXyToLonLat(_centPosXy + deltaMin, _zLevel);
+                const FfVec2f deltaMax = (FfVec2f(io.MousePos) - _canvasCent) / _tileSize;
+                const FfVec2f llMax = MapTiles::TileXyToLonLat(_centPosXy + deltaMax, _zLevel);
+                const FfVec2f llCent = (llMax + llMin) * 0.5;
                 const float deltaLon = std::abs(llMax.x - llMin.x);
                 const float deltaLat = std::abs(llMax.y - llMin.y);
                 const float zoom = std::log( 2 * M_PI / MIN(deltaLon, deltaLat) ) / std::log(2.0f);
@@ -698,16 +698,16 @@ void GuiWidgetMap::EndDraw()
             }
 
             // Position at mouse before zoom
-            const FfVec2 delta0 = (FfVec2(io.MousePos) - _canvasCent) / _tileSize;
-            const FfVec2 pos0 = MapTiles::TileXyToLonLat(_centPosXy + delta0, _zLevel);
+            const FfVec2f delta0 = (FfVec2f(io.MousePos) - _canvasCent) / _tileSize;
+            const FfVec2f pos0 = MapTiles::TileXyToLonLat(_centPosXy + delta0, _zLevel);
 
             // Zoom
             const float deltaZoom = io.MouseWheel * step;
             _SetPosAndZoom(_centPosLonLat, _mapZoom + deltaZoom, -1, step);
 
             // Position at mouse after zoom
-            const FfVec2 delta1 = (FfVec2(io.MousePos) - _canvasCent) / _tileSize;
-            const FfVec2 pos1 = MapTiles::TileXyToLonLat(_centPosXy + delta1, _zLevel);
+            const FfVec2f delta1 = (FfVec2f(io.MousePos) - _canvasCent) / _tileSize;
+            const FfVec2f pos1 = MapTiles::TileXyToLonLat(_centPosXy + delta1, _zLevel);
 
             // Update map position so that the original position is at the mouse position
             _SetPosAndZoom(_centPosLonLat + (pos0 - pos1), _mapZoom, _zLevel, step);
@@ -721,19 +721,19 @@ void GuiWidgetMap::EndDraw()
         draw->AddRect(_canvasMin, _canvasMax, GUI_COLOUR(MAP_DEBUG));
 
         // Centre
-        draw->AddLine(_canvasCent + FfVec2(0, -10), _canvasCent + FfVec2(0, +10), GUI_COLOUR(MAP_DEBUG));
-        draw->AddLine(_canvasCent + FfVec2(-10, 0), _canvasCent + FfVec2(+10, 0), GUI_COLOUR(MAP_DEBUG));
-        draw->AddText(_canvasCent + FfVec2(2,-GuiSettings::charSize.y), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasCent.x, _canvasCent.y).c_str());
-        draw->AddText(_canvasCent + FfVec2(2,0), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.6f/%.6f", rad2deg(_centPosLonLat.x), rad2deg(_centPosLonLat.y)).c_str());
-        draw->AddText(_canvasCent + FfVec2(2, GuiSettings::charSize.y), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _centPosXy.x, _centPosXy.y).c_str());
+        draw->AddLine(_canvasCent + FfVec2f(0, -10), _canvasCent + FfVec2f(0, +10), GUI_COLOUR(MAP_DEBUG));
+        draw->AddLine(_canvasCent + FfVec2f(-10, 0), _canvasCent + FfVec2f(+10, 0), GUI_COLOUR(MAP_DEBUG));
+        draw->AddText(_canvasCent + FfVec2f(2,-GuiSettings::charSize.y), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasCent.x, _canvasCent.y).c_str());
+        draw->AddText(_canvasCent + FfVec2f(2,0), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.6f/%.6f", rad2deg(_centPosLonLat.x), rad2deg(_centPosLonLat.y)).c_str());
+        draw->AddText(_canvasCent + FfVec2f(2, GuiSettings::charSize.y), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _centPosXy.x, _centPosXy.y).c_str());
 
         // Top left
-        draw->AddText(_canvasMin + FfVec2(1,1), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasMin.x, _canvasMin.y).c_str());
+        draw->AddText(_canvasMin + FfVec2f(1,1), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasMin.x, _canvasMin.y).c_str());
 
         // Bottom right
-        draw->AddText(_canvasMax + FfVec2(-12 * GuiSettings::charSize.x, -GuiSettings::charSize.y - 1), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasSize.x, _canvasSize.y).c_str());
+        draw->AddText(_canvasMax + FfVec2f(-12 * GuiSettings::charSize.x, -GuiSettings::charSize.y - 1), GUI_COLOUR(MAP_DEBUG), Ff::Sprintf("%.1f/%.1f", _canvasSize.x, _canvasSize.y).c_str());
 
-        //draw->AddText(canvasCent + FfVec2(1,0), GUI_COLOURS(MAP_DEBUG), Ff::Sprintf("%.1fx%.1f (%.1f)", _tileSize.x, _tileSize.y, _tileScale).c_str());
+        //draw->AddText(canvasCent + FfVec2f(1,0), GUI_COLOURS(MAP_DEBUG), Ff::Sprintf("%.1fx%.1f (%.1f)", _tileSize.x, _tileSize.y, _tileScale).c_str());
         //draw->AddText(canvasCent + ImVec2(1,15), GUI_COLOURS(MAP_DEBUG), Ff::Sprintf("%d %.1f", _zoomLevel, _mapZoom).c_str());
 
         // Bottom right

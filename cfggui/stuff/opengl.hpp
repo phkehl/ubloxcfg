@@ -21,6 +21,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <glm/glm.hpp>
 
 namespace OpenGL {
 /* ****************************************************************************************************************** */
@@ -71,6 +72,12 @@ class FrameBuffer
         FrameBuffer();
        ~FrameBuffer();
 
+        // No copy, no move
+        FrameBuffer &operator=(const FrameBuffer&) = delete;
+        FrameBuffer(const FrameBuffer&) = delete;
+        FrameBuffer(FrameBuffer &&) = delete;
+        FrameBuffer &operator=(FrameBuffer &&) = delete;
+
         bool Begin(const int width, const int height);
         void Clear(const float r = 0.0f, const float g = 0.0f, const float b = 0.0f, const float a = 0.0f);
         void End();
@@ -91,6 +98,64 @@ class FrameBuffer
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+class Shader
+{
+    public:
+        Shader(const char *vertexCode, const char *fragmentCode, const char *geometryCode = nullptr);
+       ~Shader();
+
+        bool Ready();
+        void Use();
+
+        void SetUniform(const char *name, const bool b);
+        void SetUniform(const char *name, const float f);
+        void SetUniform(const char *name, const int32_t i);
+        void SetUniform(const char *name, const uint32_t u);
+        void SetUniform(const char *name, const glm::vec2 &v);
+        void SetUniform(const char *name, const glm::vec3 &v);
+        void SetUniform(const char *name, const glm::vec4 &v);
+        void SetUniform(const char *name, const float x, const float y);
+        void SetUniform(const char *name, const float x, const float y, const float z);
+        void SetUniform(const char *name, const float x, const float y, const float z, const float w);
+        void SetUniform(const char *name, const glm::mat2 &m);
+        void SetUniform(const char *name, const glm::mat3 &m);
+        void SetUniform(const char *name, const glm::mat4 &m);
+
+        // No copy, no move
+        Shader &operator=(const Shader &) = delete;
+        Shader(const Shader &) = delete;
+        Shader(Shader &&) = delete;
+        Shader &operator=(Shader &&) = delete;
+
+    private:
+
+        unsigned int _shaderProgram;
+
+        bool _CheckShader(const unsigned int shader, const char *info);
+        bool _CheckProgram(const unsigned int program, const char *info);
+
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+struct Vertex
+{
+    Vertex(const glm::vec3 &_pos    = { 0.0f, 0.0f, 0.0f },
+           const glm::vec3 &_normal = { 0.0f, 0.0f, 0.0f },
+           const glm::vec4 &_colour = { 0.0f, 0.0f, 0.0f, 1.0f });
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec4 colour;
+    static constexpr uint32_t POS_OFFS    = 0;
+    static constexpr int32_t  POS_NUM     = 3;
+    static constexpr uint32_t NORMAL_OFFS = sizeof(pos);
+    static constexpr int32_t  NORMAL_NUM  = 3;
+    static constexpr uint32_t COLOUR_OFFS = sizeof(pos) + sizeof(normal);
+    static constexpr int32_t  COLOUR_NUM  = 4;
+    static constexpr uint32_t SIZE        = sizeof(pos) + sizeof(normal) + sizeof(colour);
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 const char *GetGlErrorStr();
 

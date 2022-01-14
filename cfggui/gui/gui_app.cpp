@@ -251,11 +251,8 @@ void GuiApp::_DrawSettingsEditor()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiApp::Loop()
+void GuiApp::Loop(const uint32_t &frame, const double &now)
 {
-    const uint32_t frame = ImGui::GetFrameCount();
-    const double now = ImGui::GetTime();
-
     // Run windows loops
     for (auto &win: _appWindows)
     {

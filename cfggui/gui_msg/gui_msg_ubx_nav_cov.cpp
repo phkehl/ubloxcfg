@@ -33,7 +33,7 @@ GuiMsgUbxNavCov::GuiMsgUbxNavCov(std::shared_ptr<InputReceiver> receiver, std::s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(sizeAvail);
     if ( (UBX_NAV_COV_VERSION_GET(msg->data) != UBX_NAV_COV_V0_VERSION) || (msg->size != UBX_NAV_COV_V0_SIZE) )

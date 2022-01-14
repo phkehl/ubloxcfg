@@ -32,7 +32,7 @@ GuiMsgUbxMonVer::GuiMsgUbxMonVer(std::shared_ptr<InputReceiver> receiver, std::s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonVer::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonVer::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(sizeAvail);
     if (msg->size >= UBX_MON_VER_V0_MIN_SIZE)

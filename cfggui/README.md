@@ -13,19 +13,19 @@ A recent Ubuntu (20.04 or later) should work.
 Install dependencies:
 
 ```sh
-sudo apt-get install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev gcc g++ # or libcurl4-openssl-dev
+sudo apt-get install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev libglm-dev gcc g++ # or libcurl4-openssl-dev
 ```
 
 Build:
 
 ```sh
-make cfggi -j8
+make cfggui -j8
 ```
 
 On older Ubuntus you may be able to get it to work as follows:
 
 ```sh
-sudo apt install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev gcc-8 g++-8 # or libcurl4-openssl-dev
+sudo apt install libcurl4-gnutls-dev libglfw3-dev libfreetype6-dev libglu1-mesa-dev zlib1g-dev libglm-dev gcc-8 g++-8 # or libcurl4-openssl-dev
 make cfggui CC=gcc-8 CXX=gcc-8
 ```
 
@@ -53,11 +53,11 @@ The GUI uses the following third-party code:
 * _DejaVu_ fonts (<https://dejavu-fonts.github.io/>), see [3rdparty/fonts/](./3rdparty/fonts/)
 * _ProggyClean_ font (<https://proggyfonts.net>), see [3rdparty/fonts/](./3rdparty/fonts/)
 * _ForkAwesome_ font (<https://forkaweso.me/Fork-Awesome/>), see [3rdparty/fonts/](./3rdparty/fonts/)
-* _NanoVG_ (<https://github.com/memononen/nanovg>, L<https://github.com/inniyah/nanovg>, see [3rdparty/nanovg/](./3rdparty/nanovg/)
 * _GLFW_ (<https://www.glfw.org/>), dynamically linked
 * _libcurl_ (<https://curl.se/>), dynamically linked
 * _Freetype_ (<https://freetype.org/>), dynamically linked
 * _zlib_ (<https://zlib.net/>), dynamically linked
+* _glm_ (<https://github.com/g-truc/glm>)
 * And a bunch of other libraries that GLFW, Freetype, ImGui, libcurl etc. need...
 
 See the [main README](../README.md) for more.
@@ -87,12 +87,6 @@ See the [main README](../README.md) for more.
   seems to help (and in ~GuiWinInputLogfile)
 * GuiWinDataConfig needs some love, and the new tables..
 * Stringify UBX-NAV-TIME*
-* Draw an OpenGL triangle or so
-    - <https://stackoverflow.com/questions/6733934/what-does-immediate-mode-mean-in-opengl>
-    - <https://learnopengl.com/Getting-Started/OpenGL>
-    - <https://docs.gl>
-    - <https://github.com/g-truc/glm>
-    - <https://www.khronos.org/opengl/wiki/Tutorial2:_VAOs,_VBOs,_Vertex_and_Fragment_Shaders_(C_/_SDL)>
 * Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
   Can we implement seekpos()? Maybe re-open file at a certain position? And gzseek() is commented-out in zlib.h anyway... (?!)

@@ -60,7 +60,7 @@ void GuiMsgUbxMonHw2::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonHw2::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonHw2::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
     DrawIQ(sizeAvail, _iqs);
@@ -78,8 +78,8 @@ bool GuiMsgUbxMonHw2::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
         const IQ &iqLatest = iqs[iqs.size() - 1];
 
         // Canvas
-        const FfVec2 offs = ImGui::GetCursorScreenPos();
-        const FfVec2 cent = FfVec2(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
+        const FfVec2f offs = ImGui::GetCursorScreenPos();
+        const FfVec2f cent = FfVec2f(offs.x + std::floor(size.x * 0.5), offs.y + std::floor(size.y * 0.5));
 
         // ImGui::Text("I: %5.1f%% @ %+5.1f%%", iqLatest.magI * 1e2f, iqLatest.offsI * 1e2f);
         // ImGui::Text("Q: %5.1f%% @ %+5.1f%%", iqLatest.magQ * 1e2f, iqLatest.offsQ * 1e2f);
@@ -122,17 +122,17 @@ bool GuiMsgUbxMonHw2::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
 
             const float radiusX = radiusPx * iq.magQ;
             const float radiusY = radiusPx * iq.magI;
-            const FfVec2 offsXY = FfVec2(iq.offsQ * radiusPx, -iq.offsI * radiusPx);
-            const FfVec2 centXY = cent + offsXY;
-            draw->AddLine(centXY - FfVec2(radiusX, 0), centXY + FfVec2(radiusX, 0), col, lw);
-            draw->AddLine(centXY - FfVec2(0, radiusY), centXY + FfVec2(0, radiusY), col, lw);
+            const FfVec2f offsXY = FfVec2f(iq.offsQ * radiusPx, -iq.offsI * radiusPx);
+            const FfVec2f centXY = cent + offsXY;
+            draw->AddLine(centXY - FfVec2f(radiusX, 0), centXY + FfVec2f(radiusX, 0), col, lw);
+            draw->AddLine(centXY - FfVec2f(0, radiusY), centXY + FfVec2f(0, radiusY), col, lw);
             ImVec2 points[30];
             for (int ix = 0; ix < NUMOF(points); ix++)
             {
                 const double t = (double)ix * (2 * M_PI / (double)NUMOF(points));
                 const double dx = radiusX * std::cos(t);
                 const double dy = radiusY * std::sin(t);
-                points[ix] = centXY + FfVec2(dx, dy);
+                points[ix] = centXY + FfVec2f(dx, dy);
             }
             draw->AddPolyline(points, NUMOF(points), col, true, lw);
         }

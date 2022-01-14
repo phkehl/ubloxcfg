@@ -36,7 +36,7 @@ class GuiMsgUbxRxmRtcm : public GuiMsg
         GuiMsgUbxRxmRtcm(std::shared_ptr<InputReceiver> receiver = nullptr, std::shared_ptr<InputLogfile> logfile = nullptr);
 
         void Update(const std::shared_ptr<Ff::ParserMsg> &msg) final;
-        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail) final;
+        bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail) final;
         void Clear() final;
 
     private:

@@ -63,8 +63,8 @@ void GuiWinDataMap::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            const FfVec2 xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
-            draw->AddRectFilled(xy - FfVec2(2,2), xy + FfVec2(2,2), GuiSettings::GetFixColour(&epoch.raw));
+            const FfVec2f xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
+            draw->AddRectFilled(xy - FfVec2f(2,2), xy + FfVec2f(2,2), GuiSettings::GetFixColour(&epoch.raw));
         }
         return true;
     });
@@ -76,7 +76,7 @@ void GuiWinDataMap::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            const FfVec2 xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
+            const FfVec2f xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
 
             const ImU32 c = epoch.raw.fixOk ? GUI_COLOUR(PLOT_MAP_HL_OK) : GUI_COLOUR(PLOT_MAP_HL_MASKED);
             const double m2px = _map.PixelPerMetre(epoch.raw.llh[_LAT_]);
@@ -129,8 +129,8 @@ void GuiWinDataMap::_DrawContent()
             // Base LLH
             xyz2llh_vec(xyz, llh);
 
-            const FfVec2 xyBase  = _map.LonLatToScreen(llh[0], llh[1]);
-            const FfVec2 xyRover = _map.LonLatToScreen(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1]);
+            const FfVec2f xyBase  = _map.LonLatToScreen(llh[0], llh[1]);
+            const FfVec2f xyRover = _map.LonLatToScreen(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1]);
             draw->AddLine(xyBase, xyRover, GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
             draw->AddCircleFilled(xyBase, 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
         }

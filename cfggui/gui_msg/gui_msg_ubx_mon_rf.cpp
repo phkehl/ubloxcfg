@@ -99,7 +99,7 @@ void GuiMsgUbxMonRf::Clear()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonRf::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     if ( (UBX_MON_RF_VERSION_GET(msg->data) != UBX_MON_RF_V0_VERSION) || (UBX_MON_RF_V0_SIZE(msg->data) != msg->size) )
     {

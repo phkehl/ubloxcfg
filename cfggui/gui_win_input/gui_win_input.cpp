@@ -40,6 +40,7 @@
 #include "gui_win_data_stats.hpp"
 #include "gui_win_data_custom.hpp"
 #include "gui_win_data_epoch.hpp"
+#include "gui_win_data_3d.hpp"
 
 #include "gui_win_input.hpp"
 
@@ -289,6 +290,7 @@ void GuiWinInput::DataWinMenu()
     { "Epoch",      "Epoch details",   ICON_FK_TH             "##Epoch",      DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataEpoch)      },
     { "Fwupdate",   "Firmware update", ICON_FK_DOWNLOAD       "##Fwupdate",   DataWinDef::Cap_e::ACTIVE, _MK_CREATE(GuiWinDataFwupdate)   },
     { "Custom",     "Custom message",  ICON_FK_TERMINAL       "##Custom",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinDataCustom)     },
+    { "Threed",     "3d view",         ICON_FK_SPINNER        "##3dView",     DataWinDef::Cap_e::ALL,    _MK_CREATE(GuiWinData3d)     },
 };
 
 void GuiWinInput::_DrawDataWinButtons()
@@ -595,9 +597,9 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
 
     ImGui::Separator();
 
-    const FfVec2 canvasOffs = ImGui::GetCursorScreenPos();
-    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const FfVec2 canvasMax  = canvasOffs + canvasSize;
+    const FfVec2f canvasOffs = ImGui::GetCursorScreenPos();
+    const FfVec2f canvasSize = ImGui::GetContentRegionAvail();
+    const FfVec2f canvasMax  = canvasOffs + canvasSize;
     //DEBUG("%f %f %f %f", canvasOffs.x, canvasOffs.y, canvasSize.x, canvasSize.y);
     const auto charSize = GuiSettings::charSize;
     if (canvasSize.y < (charSize.y * 5))

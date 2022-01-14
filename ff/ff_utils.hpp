@@ -77,38 +77,15 @@ namespace Ff
         inline Vec2 &operator += (const Vec2 &v)       { x += v.x; y += v.y; }              // Vec2 += Vec2;
         inline Vec2 &operator -= (const Vec2 &v)       { x -= v.x; y -= v.y; }              // Vec2 -= Vec2;
 
-        //inline Vec2 operator = (const Vec2 &v) { return Vec2(v.x, v.y); }
+        template<typename TT = float>
+        Vec2(const Vec2<double> &v) : x{(T)v.x}, y{(T)v.y} { }                              // Vec2<float> = Vec2<double>
+
+        template<typename TT = double>
+        Vec2(const Vec2<float>  &v) : x{(T)v.x}, y{(T)v.y} { }                              // Vec2<double> = Vec2<float>
     };
 
-    // TODO: how to do this:
-    // Vec2<float> floatVec = Vec2<double>(1.0, 2.0);
-
-    //template <typename T>
-    //inline Vec2<T> operator * (const T f, Vec2<T> const &v) { return v * f; }               // x * Vec2
-
-    //Vec2<float>::Vec2(const double _x, const double _y) : x{(float)_x}, y{(float)_y} {}
-    //Vec2<float>::Vec2(const double _x, const double _y) { x = (float)_x; y = (float)_y; }
-
-    //inline Vec2<float> operator=(const Vec2<double> &v) { return Vec2<float>((float)v.x, (float)v.y); }
-
-    // template<typename T>
-    // struct Vec2<float>
-    // {
-    //     Vec2(const double _x, const double _y) : x{(float)_x}, y{(float)_y} {}
-    // };
-
-    // Close:
-//     template<>
-//     struct Vec2<float>
-//     {
-// //        Vec2(const double _x, const double _y) : x{(float)_x}, y{(float)_y} {}
-// //        Vec2(const Vec2<double> v) { return Vec2<float>((float)v.x, (float)v.y); }
-
-// //        inline Vec2 operator = (const Vec2<double> &v) { return Vec2<float>((float)v.x, (float)v.y); }
-// //        inline Vec2 operator = (const Vec2<double> &v) { Vec2<float> vv; vv.x = v.x; vv.y = v.y; return vv; }
-//     };
-
-
+    template <typename T>
+    inline Vec2<T> operator * (const T f, Vec2<T> const &v) { return v * f; }               // x * Vec2
 };
 
 /* ****************************************************************************************************************** */

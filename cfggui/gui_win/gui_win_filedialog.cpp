@@ -194,8 +194,8 @@ bool GuiWinFileDialog::DrawDialog()
 
         if (_DrawWindowBegin())
         {
-            const FfVec2 winPos  = ImGui::GetCursorPos();
-            const FfVec2 winSize = ImGui::GetContentRegionAvail();
+            const FfVec2f winPos  = ImGui::GetCursorPos();
+            const FfVec2f winSize = ImGui::GetContentRegionAvail();
 
             // Draw dialog with all stuff disabled (unclickable)
             ImGui::BeginDisabled();
@@ -203,7 +203,7 @@ bool GuiWinFileDialog::DrawDialog()
             ImGui::EndDisabled();
 
             // Confirmation dialog (inspired by ImGui::BeginChildFrame())
-            const FfVec2 dialogSize = GuiSettings::charSize * FfVec2(43, 11);
+            const FfVec2f dialogSize = GuiSettings::charSize * FfVec2f(43, 11);
             ImGui::SetCursorPos(winPos + (winSize * 0.5f) - (dialogSize * 0.5f));
             ImGui::PushStyleColor(ImGuiCol_ChildBg, GuiSettings::style->Colors[ImGuiCol_WindowBg]);
             if (ImGui::BeginChild("Confirm", dialogSize, true, ImGuiWindowFlags_NoMove))

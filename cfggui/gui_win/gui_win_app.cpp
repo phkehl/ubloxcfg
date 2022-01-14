@@ -76,10 +76,11 @@ void GuiWinAppAbout::DrawWindow()
   //_DrawEntry("ProggyClean font",            "unnamed license",      "https://proggyfonts.net");
     _DrawEntry("ForkAwesome font",            "MIT license",          "https://forkaweso.me", "https://github.com/ForkAwesome/Fork-Awesome");
     _DrawEntry("Tetris",                      "Revised BSD license",  "https://brennan.io/2015/06/12/tetris-reimplementation/");
-    _DrawEntry("NanoVG",                      "Zlib license",         "https://github.com/memononen/nanovg", "https://github.com/inniyah/nanovg");
-  // _DrawEntry("Miniz",                      "MIT license",          "https://github.com/richgel999/miniz");
+  //_DrawEntry("NanoVG",                      "Zlib license",         "https://github.com/memononen/nanovg", "https://github.com/inniyah/nanovg");
+  //_DrawEntry("Miniz",                       "MIT license",          "https://github.com/richgel999/miniz");
     _DrawEntry("zfstream",                    "unnamed license",      "https://github.com/madler/zlib/tree/master/contrib/iostream3");
     _DrawEntry("Base64",                      "MIT license",          "https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594");
+    _DrawEntry("glm",                         "Happy Bunny license",  "https://github.com/g-truc/glm");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party libraries (first level dependencies, use ldd to see all):");
     _DrawEntry("GLFW",                        "zlib/libpng license",  "https://www.glfw.org", "https://github.com/glfw/glfw");
@@ -242,8 +243,8 @@ void GuiWinAppLegend::DrawWindow()
 void GuiWinAppLegend::_DrawFixColourLegend(const int value, const ImU32 colour, const char *label)
 {
     ImDrawList *draw = ImGui::GetWindowDrawList();
-    FfVec2 offs = ImGui::GetCursorScreenPos();
-    const FfVec2 size { GuiSettings::charSize.x * 1.5f, GuiSettings::charSize.y };
+    FfVec2f offs = ImGui::GetCursorScreenPos();
+    const FfVec2f size { GuiSettings::charSize.x * 1.5f, GuiSettings::charSize.y };
     const float textOffs = (2 * size.x) + (2 * GuiSettings::style->ItemSpacing.x);
     draw->AddRectFilled(offs, offs + size, colour | ((ImU32)(0xff) << IM_COL32_A_SHIFT) );
     offs.x += size.x;

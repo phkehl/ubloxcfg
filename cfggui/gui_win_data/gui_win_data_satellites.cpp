@@ -281,9 +281,9 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
     // Canvas
-    const FfVec2 canvasOffs = ImGui::GetCursorScreenPos();
-    const FfVec2 canvasSize = ImGui::GetContentRegionAvail();
-    const FfVec2 canvasCent {
+    const FfVec2f canvasOffs = ImGui::GetCursorScreenPos();
+    const FfVec2f canvasSize = ImGui::GetContentRegionAvail();
+    const FfVec2f canvasCent {
         canvasOffs.x + std::floor(canvasSize.x * 0.5f), canvasOffs.y + std::floor(canvasSize.y * 0.5f) };
 
     ImDrawList *draw = ImGui::GetWindowDrawList();
@@ -305,20 +305,20 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
             const float r2 = radiusPx * (1.0f - (float)(elev + (step/2))/90.f);
             draw->AddCircle(canvasCent, r2, GUI_COLOUR(PLOT_GRID_MINOR), 0);
         }
-        draw->AddLine(canvasCent - FfVec2(radiusPx, 0), canvasCent + FfVec2(radiusPx, 0), GUI_COLOUR(PLOT_GRID_MAJOR));
-        draw->AddLine(canvasCent - FfVec2(0, radiusPx), canvasCent + FfVec2(0, radiusPx), GUI_COLOUR(PLOT_GRID_MAJOR));
-        draw->AddLine(canvasCent - FfVec2(f * radiusPx, f * radiusPx), canvasCent + FfVec2(f * radiusPx, f * radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
-        draw->AddLine(canvasCent - FfVec2(f * radiusPx, -f * radiusPx), canvasCent + FfVec2(f * radiusPx, f * -radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
+        draw->AddLine(canvasCent - FfVec2f(radiusPx, 0), canvasCent + FfVec2f(radiusPx, 0), GUI_COLOUR(PLOT_GRID_MAJOR));
+        draw->AddLine(canvasCent - FfVec2f(0, radiusPx), canvasCent + FfVec2f(0, radiusPx), GUI_COLOUR(PLOT_GRID_MAJOR));
+        draw->AddLine(canvasCent - FfVec2f(f * radiusPx, f * radiusPx), canvasCent + FfVec2f(f * radiusPx, f * radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
+        draw->AddLine(canvasCent - FfVec2f(f * radiusPx, -f * radiusPx), canvasCent + FfVec2f(f * radiusPx, f * -radiusPx), GUI_COLOUR(PLOT_GRID_MINOR));
     }
 
     // Draw satellites
     {
-        const FfVec2 textOffs(-1.5f * GuiSettings::charSize.x, -0.5f * GuiSettings::charSize.y);
+        const FfVec2f textOffs(-1.5f * GuiSettings::charSize.x, -0.5f * GuiSettings::charSize.y);
         const float svR = 2.0f * GuiSettings::charSize.x;
-        const FfVec2 barOffs1(-svR, (0.5f * GuiSettings::charSize.y) );
-        const FfVec2 barOffs2(-svR, (0.5f * GuiSettings::charSize.y) + 3 + 2);
-        const FfVec2 buttonSize(2 * svR, 2 * svR);
-        const FfVec2 buttonOffs(-svR, -svR);
+        const FfVec2f barOffs1(-svR, (0.5f * GuiSettings::charSize.y) );
+        const FfVec2f barOffs2(-svR, (0.5f * GuiSettings::charSize.y) + 3 + 2);
+        const FfVec2f buttonSize(2 * svR, 2 * svR);
+        const FfVec2f buttonOffs(-svR, -svR);
         const float barScale = svR / 25.0f;
         for (const auto &sat: _satInfo)
         {
@@ -329,7 +329,7 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
 
             // Circle
             const float r = sat.fR * radiusPx;
-            const FfVec2 svPos = canvasCent + FfVec2(r * sat.dX, r * sat.dY);
+            const FfVec2f svPos = canvasCent + FfVec2f(r * sat.dX, r * sat.dY);
             draw->AddCircleFilled(svPos, svR, GUI_COLOUR(SKY_VIEW_SAT));
 
             // Tooltip
@@ -347,16 +347,16 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
             // Signal level bars
             if (sat.sigL1.valid && (sat.sigL1.use > EPOCH_SIGUSE_NONE))
             {
-                const FfVec2 barPos = svPos + barOffs1;
+                const FfVec2f barPos = svPos + barOffs1;
                 const int colIx = sat.sigL1.cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL1.cno > 0 ? (sat.sigL1.cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + FfVec2(sat.sigL1.cno * barScale, 3),
+                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL1.cno * barScale, 3),
                     sat.sigL1.prUsed || sat.sigL1.crUsed || sat.sigL1.doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
             }
             if (sat.sigL2.valid && (sat.sigL2.use > EPOCH_SIGUSE_NONE))
             {
-                const FfVec2 barPos = svPos + barOffs2;
+                const FfVec2f barPos = svPos + barOffs2;
                 const int colIx = sat.sigL2.cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL2.cno > 0 ? (sat.sigL2.cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + FfVec2(sat.sigL2.cno * barScale, 3),
+                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL2.cno * barScale, 3),
                     sat.sigL2.prUsed || sat.sigL2.crUsed || sat.sigL2.doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
             }
 

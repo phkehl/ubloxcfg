@@ -44,7 +44,7 @@ class GuiWidgetMap
 
         // 2. Draw custom stuff
         float PixelPerMetre(const float lat); // [rad]
-        FfVec2 LonLatToScreen(const double lat, const double lon); // [rad]
+        FfVec2f LonLatToScreen(const double lat, const double lon); // [rad]
 
         // 3. Draw controls, handle dragging, zooming, etc.
         void EndDraw();
@@ -56,10 +56,10 @@ class GuiWidgetMap
         std::unique_ptr<MapTiles> _mapTiles;
 
         // Settings and state
-        FfVec2  _centPosLonLat;    // Position (lon/lat) at canvas centre
-        FfVec2  _centPosXy;        // Position (tile x/y) at canvas centre
-        FfVec2  _centTileOffs;     // Centre tile (top left) offset from _canvasCent
-        FfVec2  _tileSize;         // Tile size (_mapParams.tileSize[XY] with scaling applied)
+        FfVec2d _centPosLonLat;    // Position (lon/lat) at canvas centre
+        FfVec2d _centPosXy;        // Position (tile x/y) at canvas centre
+        FfVec2d _centTileOffs;     // Centre tile (top left) offset from _canvasCent
+        FfVec2d _tileSize;         // Tile size (_mapParams.tileSize[XY] with scaling applied)
         float   _mapZoom;          // Zoom level
         int     _zLevel;           // Map tiles zoom level
         int     _numTiles;         // Number of tiles in x and y (at _zLevel)
@@ -70,21 +70,21 @@ class GuiWidgetMap
         ImVec4  _tintColour4;      // Tint colour (for colour widget)
         bool    _debugLayout;      // Debug map layout
         bool    _debugTiles;       // Debug tiles
-        FfVec2  _dragStartXy;      // Start of dragging map (tile coordinates)
+        FfVec2d _dragStartXy;      // Start of dragging map (tile coordinates)
         int     _isDragging;       // Dragging in progress
-        void _SetPosAndZoom(const FfVec2 &lonLat, const float zoom, const int zLevel = -1, const float snap = ZOOM_STEP_SHIFT);
+        void _SetPosAndZoom(const FfVec2d &lonLat, const float zoom, const int zLevel = -1, const float snap = ZOOM_STEP_SHIFT);
         void _DrawMapTile(ImDrawList *draw, const int ix, const int dx, const int dy);
 
         // Map canvas in screen coordinates
-        FfVec2 _canvasMin;
-        FfVec2 _canvasSize;
-        FfVec2 _canvasMax;
-        FfVec2 _canvasCent;
+        FfVec2f _canvasMin;
+        FfVec2f _canvasSize;
+        FfVec2f _canvasMax;
+        FfVec2f _canvasCent;
         static constexpr float CANVAS_MIN_WIDTH  = 100.0f;
         static constexpr float CANVAS_MIN_HEIGHT =  50.0f;
 
         static constexpr float ZOOM_MIN        =  0.0;
-        static constexpr float ZOOM_MAX        = 25.0;
+        static constexpr float ZOOM_MAX        = 28.0;
         static constexpr float ZOOM_STEP       =  0.1;
         static constexpr float ZOOM_STEP_SHIFT =  0.05;
         static constexpr float ZOOM_STEP_CTRL  =  0.5;

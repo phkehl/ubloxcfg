@@ -75,7 +75,7 @@ void GuiMsgUbxNavDop::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxNavDop::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxNavDop::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(sizeAvail);
     if (msg->size != UBX_NAV_DOP_V0_SIZE)

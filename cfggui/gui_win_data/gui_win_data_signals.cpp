@@ -236,15 +236,15 @@ void GuiWinDataSignals::_UpdateSignals()
 
     const float barMaxLen = 100.0f; // [px]
     const float barMaxCno = 55.0f;  // [dbHz]
-    const FfVec2 bar0 = ImGui::GetCursorScreenPos();
-    const FfVec2 barSize = ImVec2(barMaxLen, charSize.y);
+    const FfVec2f bar0 = ImGui::GetCursorScreenPos();
+    const FfVec2f barSize = ImVec2(barMaxLen, charSize.y);
     ImGui::Dummy(barSize);
     const float barLen = sig->cno * barMaxLen / barMaxCno;
-    const FfVec2 bar1 = bar0 + FfVec2(barLen, barSize.y);
+    const FfVec2f bar1 = bar0 + FfVec2f(barLen, barSize.y);
     const int colIx = sig->cno > 55.0f ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0.0f ? (sig->cno / 5.0f) : 0);
     draw->AddRectFilled(bar0, bar1, sig->anyUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
     const float offs42 = 42.0 * barMaxLen / barMaxCno;
-    draw->AddLine(bar0 + FfVec2(offs42, 0), bar0 + FfVec2(offs42, barSize.y), GUI_COLOUR(C_GREY));
+    draw->AddLine(bar0 + FfVec2f(offs42, 0), bar0 + FfVec2f(offs42, barSize.y), GUI_COLOUR(C_GREY));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

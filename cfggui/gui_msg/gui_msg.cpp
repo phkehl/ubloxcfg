@@ -53,7 +53,7 @@ void GuiMsg::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsg::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsg::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
     UNUSED(sizeAvail);

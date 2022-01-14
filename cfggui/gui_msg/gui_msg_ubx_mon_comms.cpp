@@ -155,7 +155,7 @@ void GuiMsgUbxMonComms::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonComms::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
     if (!_valid)

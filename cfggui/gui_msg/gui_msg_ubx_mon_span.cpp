@@ -133,7 +133,7 @@ void GuiMsgUbxMonSpan::Buttons()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
     if (_spects.empty())
@@ -164,7 +164,7 @@ bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
             ImGui::EndTabBar();
         }
 
-        FfVec2 plotSize = ImGui::GetContentRegionAvail();
+        FfVec2f plotSize = ImGui::GetContentRegionAvail();
         plotSize.y -= (float)(spectIx1 - spectIx0 + 1 - 1) * GuiSettings::style->ItemInnerSpacing.y;
         plotSize.y /= (float)(spectIx1 - spectIx0 + 1);
         for (int spectIx = spectIx0; spectIx <= spectIx1; spectIx++)

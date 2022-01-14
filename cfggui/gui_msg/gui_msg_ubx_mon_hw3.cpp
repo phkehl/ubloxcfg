@@ -112,7 +112,7 @@ void GuiMsgUbxMonHw3::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxMonHw3::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     if ( (UBX_MON_HW3_VERSION_GET(msg->data) != UBX_MON_HW3_V0_VERSION) || (UBX_MON_HW3_V0_SIZE(msg->data) != msg->size) )
     {

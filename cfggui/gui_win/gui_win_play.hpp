@@ -56,7 +56,7 @@ class GuiWinPlay : public GuiWin
         void _TetrisThread();
 
         void _DrawTetris();
-        void _DrawTetromino(ImDrawList *draw, const FfVec2 &p0, const FfVec2 &square, const tetris_block &block);
+        void _DrawTetromino(ImDrawList *draw, const FfVec2f &p0, const FfVec2f &square, const tetris_block &block);
         ImU32 _TetrominoColour(const tetris_type type, const bool dim = false);
 };
 

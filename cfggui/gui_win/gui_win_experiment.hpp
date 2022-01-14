@@ -51,11 +51,6 @@ class GuiWinExperiment : public GuiWin
         std::string      _saveFilePath;
         void _DrawGuiWinFileDialog();
 
-        // Experiment 2
-        bool _running;
-        GuiWidgetOpenGl _gl;
-        void _DrawGuiWidgetOpenGl();
-
         // Experiment 3
         void _DrawGuiNotify();
 

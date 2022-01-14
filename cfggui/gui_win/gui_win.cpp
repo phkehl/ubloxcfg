@@ -49,7 +49,7 @@ GuiWin::GuiWin(const std::string &name) :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-/*static*/ const std::vector<FfVec2> GuiWin::NEW_WIN_POS =
+/*static*/ const std::vector<FfVec2f> GuiWin::NEW_WIN_POS =
 {
     { 20, 20 }, { 40, 40 }, { 60, 60 }, { 80, 80 }, { 100, 100 }, { 120, 120 }, { 140, 140 }, { 160, 160 }, { 180, 180 },
 };

@@ -93,13 +93,15 @@ class GuiSettings
         static ImFont   *fontSans;    // Alternative sans-serif font
         static ImFont   *fontBold;    // Alternative sans-serif font (bold)
         static ImFont   *fontOblique; // Alternative sans-serif font (italics)
-        static FfVec2    charSize; // Char size (of a fontMono character)
-        static FfVec2    iconSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
+        static FfVec2f    charSize; // Char size (of a fontMono character)
+        static FfVec2f    iconSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
 
         // Colours
         enum Colour_e : int { _DUMMY = -1, GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_ENUM) _NUM_COLOURS };
         static ImU32 colours[_NUM_COLOURS]; // See GUI_SETTINGS_COLOURS (and GUI_COLOUR_NONE), use GUI_COLOUR() macro to access
+        static ImVec4 colours4[_NUM_COLOURS];
         static ImU32 GetFixColour(const EPOCH_t *epoch); // GNSS fix colour
+        static const ImVec4 &GetFixColour4(const EPOCH_t *epoch); // GNSS fix colour
 
         // Paths
         static std::string cachePath;
@@ -141,6 +143,7 @@ class GuiSettings
 };
 
 #define GUI_COLOUR(which) GuiSettings::colours[GuiSettings::which]
+#define GUI_COLOUR4(which) GuiSettings::colours4[GuiSettings::which]
 #define GUI_COLOUR_NONE   IM_COL32(0x00, 0x00, 0x00, 0x00)
 
 

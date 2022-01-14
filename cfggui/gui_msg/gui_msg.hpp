@@ -39,7 +39,7 @@ class GuiMsg
 
         virtual void Update(const std::shared_ptr<Ff::ParserMsg> &msg);
         virtual void Buttons();
-        virtual bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail);
+        virtual bool Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail);
         virtual void Clear();
 
         static std::unique_ptr<GuiMsg> GetRenderer(const std::string &msgName,

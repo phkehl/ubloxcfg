@@ -67,9 +67,9 @@ class GuiWin
         void                 _DrawWindowEnd();
         ImVec2               _WinSizeToVec(ImVec2 size);
 
-        static const std::vector<FfVec2> NEW_WIN_POS;
+        static const std::vector<FfVec2f> NEW_WIN_POS;
         static int _newWinPosIx;
-        FfVec2     _newWinInitPos;
+        FfVec2f     _newWinInitPos;
 
     private:
 };

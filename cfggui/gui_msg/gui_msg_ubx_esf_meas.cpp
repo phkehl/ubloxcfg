@@ -246,12 +246,12 @@ void GuiMsgUbxEsfMeas::Buttons()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2 &sizeAvail)
+bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfVec2f &sizeAvail)
 {
     UNUSED(msg);
 
     const float tableReqHeight = (_table.GetNumRows() + 1) * (GuiSettings::charSize.y + GuiSettings::style->ItemSpacing.y + 2.0f);
-    FfVec2 tableSize { sizeAvail.x, (0.5f * sizeAvail.y) - GuiSettings::style->ItemSpacing.y };
+    FfVec2f tableSize { sizeAvail.x, (0.5f * sizeAvail.y) - GuiSettings::style->ItemSpacing.y };
     if (tableSize.y > tableReqHeight)
     {
         tableSize.y = tableReqHeight;

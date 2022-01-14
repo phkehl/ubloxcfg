@@ -200,7 +200,7 @@ static const char *sNmeaFixStr(const NMEA_FIX_t fix);
 
 bool nmeaDecode(NMEA_MSG_t *nmea, const uint8_t *msg, const int msgSize)
 {
-    if ( (nmea == NULL)  || (msg == 0) )
+    if ( (nmea == NULL) || (msg == 0) )
     {
         return false;
     }
@@ -293,19 +293,30 @@ static const char *sNmeaFixStr(const NMEA_FIX_t fix)
 
 static int sGetFields(const char **fields, const int maxFields, char *payload)
 {
-    const char *sep = ",";
     int nTok = 0;
     int nFields = 0;
-    for (char *save = NULL, *tok = strtok_r(payload, sep, &save); tok != NULL; tok = strtok_r(NULL, sep, &save))
+    for (char *sep = strchr(payload, ','); sep != NULL; )
     {
         nTok++;
-        //NMEA_DEBUG("tok %d [%s]", nTok, tok);
+        *sep = '\0';
+        NMEA_DEBUG("tok %d [%s]", nTok, payload);
         if (nFields < maxFields)
         {
-            fields[nFields] = tok;
+            fields[nFields] = payload;
             nFields++;
         }
+
+        payload = &sep[1];
+        sep = strchr(payload, ',');
     }
+    nTok++;
+    NMEA_DEBUG("tok %d [%s]", nTok, payload);
+    if (nFields < maxFields)
+    {
+        fields[nFields] = payload;
+        nFields++;
+    }
+
     return nFields <= maxFields ? nFields : 0;
 }
 
