@@ -33,12 +33,8 @@
 
 /* ****************************************************************************************************************** */
 
-#define EPOCH_XTRA_DEBUG 0
-#if EPOCH_XTRA_DEBUG
-#  define EPOCH_DEBUG(fmt, args...) DEBUG("epoch: " fmt, ## args)
-#else
-#  define EPOCH_DEBUG(...) /* nothing */
-#endif
+//#define EPOCH_DEBUG(fmt, args...) DEBUG("epoch: " fmt, ## args)
+#define EPOCH_DEBUG(...) /* nothing */
 
 void epochInit(EPOCH_t *coll)
 {
@@ -186,6 +182,7 @@ static bool _detectUbx(EPOCH_DETECT_t *detect, const PARSER_MSG_t *msg)
     switch (msgId)
     {
         case UBX_NAV_EOE_MSGID:
+            EPOCH_DEBUG("detect %s", msg->name);
             detect->haveUbxItow = false;
             complete = true;
             break;
@@ -213,6 +210,7 @@ static bool _detectUbx(EPOCH_DETECT_t *detect, const PARSER_MSG_t *msg)
                 memcpy(&iTow, &msg->data[UBX_HEAD_SIZE], sizeof(iTow));
                 if (detect->haveUbxItow && (detect->ubxItow != iTow))
                 {
+                    EPOCH_DEBUG("detect %s %u != %u", msg->name, detect->ubxItow, iTow);
                     complete = true;
                 }
                 detect->ubxItow = iTow;
@@ -230,6 +228,7 @@ static bool _detectUbx(EPOCH_DETECT_t *detect, const PARSER_MSG_t *msg)
                 memcpy(&iTow, &msg->data[UBX_HEAD_SIZE + 4], sizeof(iTow));
                 if (detect->haveUbxItow && (detect->ubxItow != iTow))
                 {
+                    EPOCH_DEBUG("detect %s %u != %u", msg->name, detect->ubxItow, iTow);
                     complete = true;
                 }
                 detect->ubxItow = iTow;
@@ -265,6 +264,7 @@ static bool _detectNmea(EPOCH_DETECT_t *detect, const NMEA_MSG_t *nmea)
     {
         if ( detect->haveNmeaMs && (ms != detect->nmeaMs) )
         {
+            EPOCH_DEBUG("detect %s %s %d != %d", nmea->talker, nmea->formatter, ms, detect->nmeaMs);
             complete = true;
         }
         detect->nmeaMs = ms;
@@ -1038,7 +1038,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
     switch (nmea->type)
     {
         case NMEA_TYPE_GGA:
-            EPOCH_DEBUG("collect %s", msg->name);
+            EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveTime < HAVE_NMEA)
             {
                 collect->haveTime = HAVE_NMEA;
@@ -1087,7 +1087,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
 
             break;
         case NMEA_TYPE_RMC:
-            EPOCH_DEBUG("collect %s", msg->name);
+            EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveTime < HAVE_NMEA)
             {
                 collect->haveTime = HAVE_NMEA;
@@ -1131,7 +1131,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
             }
             break;
         case NMEA_TYPE_GLL:
-            EPOCH_DEBUG("collect %s", msg->name);
+            EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveTime < HAVE_NMEA)
             {
                 collect->haveTime = HAVE_NMEA;
@@ -1168,7 +1168,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
             }
             break;
         case NMEA_TYPE_GSV:
-            EPOCH_DEBUG("collect %s", msg->name);
+            EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveSat <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
             {
                 collect->haveSat = HAVE_NMEA;
@@ -1228,19 +1228,19 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
 
     if (collect->haveLlh > collect->haveXyz)
     {
-        EPOCH_DEBUG("complete: llh (%d) -> xyz (%d)", epoch->_haveLlh, epoch->_haveXyz);
+        EPOCH_DEBUG("complete: llh (%d) -> xyz (%d)", collect->haveLlh, collect->haveXyz);
         llh2xyz_vec(epoch->llh, epoch->xyz);
         epoch->havePos = epoch->fix > EPOCH_FIX_NOFIX;
     }
     else if (collect->haveXyz > collect->haveLlh)
     {
-        EPOCH_DEBUG("complete: xyz (%d) -> llh (%d)", epoch->_haveXyz, epoch->_haveLlh);
+        EPOCH_DEBUG("complete: xyz (%d) -> llh (%d)", collect->haveXyz, collect->haveLlh);
         xyz2llh_vec(epoch->xyz, epoch->llh);
         epoch->havePos = epoch->fix > EPOCH_FIX_NOFIX;
     }
     else
     {
-        EPOCH_DEBUG("complete: llh (%d) = xyz (%d)", epoch->_haveLlh, epoch->_haveXyz);
+        EPOCH_DEBUG("complete: llh (%d) = xyz (%d)", collect->haveLlh, collect->haveXyz);
     }
 
     if ( (collect->haveHacc > HAVE_NOTHING) && (collect->haveVacc > HAVE_NOTHING) && (collect->havePacc < HAVE_UBX) )

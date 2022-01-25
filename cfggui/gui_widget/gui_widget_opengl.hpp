@@ -81,6 +81,7 @@ class GuiWidgetOpenGl
         bool _cullFace;
         bool _cullBack;
         bool _cullCcw;
+        bool _wireframe;
         bool _forceRender;
 
         static constexpr float FIELD_OF_VIEW_MIN =  10.0f;

@@ -96,6 +96,7 @@
     _P_("Log UBX messages",      LOG_MSGUBX,                   IM_COL32(0xff, 0x80, 0x80, 0xff)) \
     _P_("Log NMEA messages",     LOG_MSGNMEA,                  IM_COL32(0xab, 0xff, 0x80, 0xff)) \
     _P_("Log RTCM3 messages",    LOG_MSGRTCM3,                 IM_COL32(0xaf, 0x80, 0xff, 0xff)) \
+    _P_("Log NOVATEL messages",  LOG_MSGNOVATEL,               IM_COL32(0x41, 0xce, 0x73, 0xff)) \
     _P_("Log GARBAGE messages",  LOG_MSGGARBAGE,               IM_COL32(0x80, 0xce, 0xff, 0xff)) \
     _P_("Log Epochs",            LOG_EPOCH,                    IM_COL32(0xff, 0xfe, 0x80, 0xff)) \
     /* Inf window */ \

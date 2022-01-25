@@ -23,6 +23,7 @@
 #include "ff_ubx.h"
 #include "ff_rtcm3.h"
 #include "ff_nmea.h"
+#include "ff_novatel.h"
 
 #include "ff_parser.h"
 
@@ -73,6 +74,7 @@ const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
         case PARSER_MSGTYPE_UBX:     return "UBX";
         case PARSER_MSGTYPE_NMEA:    return "NMEA";
         case PARSER_MSGTYPE_RTCM3:   return "RTCM3";
+        case PARSER_MSGTYPE_NOVATEL: return "NOVATEL";
         case PARSER_MSGTYPE_GARBAGE: return "GARBAGE";
     }
     return "UNKNOWN";
@@ -83,6 +85,7 @@ const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
 static int _isUbxMessage(const uint8_t *buf, const int size);
 static int _isNmeaMessage(const uint8_t *buf, const int size);
 static int _isRtcm3Message(const uint8_t *buf, const int size);
+static int _isNovatelMessage(const uint8_t *buf, const int size);
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg);
 static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType, const bool info);
 
@@ -95,9 +98,10 @@ typedef struct PARSER_FUNC_s
 
 static const PARSER_FUNC_t kParserFuncs[] =
 {
-    { .func = _isUbxMessage,   .type = PARSER_MSGTYPE_UBX,   .name = "UBX"   },
-    { .func = _isNmeaMessage,  .type = PARSER_MSGTYPE_NMEA,  .name = "NMEA"  },
-    { .func = _isRtcm3Message, .type = PARSER_MSGTYPE_RTCM3, .name = "RTCM3" },
+    { .func = _isUbxMessage,     .type = PARSER_MSGTYPE_UBX,     .name = "UBX"     },
+    { .func = _isNmeaMessage,    .type = PARSER_MSGTYPE_NMEA,    .name = "NMEA"    },
+    { .func = _isRtcm3Message,   .type = PARSER_MSGTYPE_RTCM3,   .name = "RTCM3"   },
+    { .func = _isNovatelMessage, .type = PARSER_MSGTYPE_NOVATEL, .name = "NOVATEL" },
 };
 
 bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg, const bool info)
@@ -265,6 +269,15 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
             if (info)
             {
                 msg->info = (rtcm3MessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL);
+            }
+            break;
+        case PARSER_MSGTYPE_NOVATEL:
+            msg->name = (novatelMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
+                parser->name : "NOVATEL-?");
+            if (info)
+            {
+                msg->info = (novatelMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
                     parser->info : NULL);
             }
             break;
@@ -445,6 +458,105 @@ static int _isRtcm3Message(const uint8_t *buf, const int size)
     }
 
     return 0;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// https://docs.novatel.com/OEM7/Content/Messages/32_Bit_CRC.htm
+static uint32_t crc32(const uint8_t *data, const int size)
+{
+    uint32_t crc = 0;
+    for (int i = 0; i < size; i++)
+    {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++)
+        {
+            if (crc & 1)
+            {
+                 crc= (crc >> 1) ^ 0xedb88320u;
+            }
+            else
+            {
+                crc >>= 1;
+            }
+        }
+    }
+    return crc;
+}
+
+static int _isNovatelMessage(const uint8_t *buf, const int size)
+{
+    if (buf[0] != NOVATEL_SYNC_1)
+    {
+        return 0;
+    }
+
+    if (size < 3)
+    {
+        return -1;
+    }
+
+    if ( (buf[1] != NOVATEL_SYNC_2) || ( (buf[2] != NOVATEL_SYNC_3_LONG) && (buf[2] != NOVATEL_SYNC_3_SHORT) ) )
+    {
+        return 0;
+    }
+
+    // https://docs.novatel.com/OEM7/Content/Messages/Binary.htm
+    // https://docs.novatel.com/OEM7/Content/Messages/Description_of_Short_Headers.htm
+    // Offset  Type      Long header   Short header
+    // 0       uint8_t   0xaa         uint8_t   0xaa
+    // 1       uint8_t   0x44         uint8_t   0x44
+    // 2       uint8_t   0x12         uint8_t   0x13
+    // 3       uint8_t   header len   uint8_t   msg len
+    // 4       uint16_t  msg ID       uint16_t  msg ID
+    // 6       uint8_t   msg type     uint16_t  wno
+    // 7       uint8_t   port addr
+    // 8       uint16_t  msg len      int32_t   tow
+    // ...
+    // 3+hlen  payload             offs 13 payload
+
+    if (size < 12)
+    {
+        return -1;
+    }
+
+    int len = 0;
+
+    // Long header
+    if (buf[2] == NOVATEL_SYNC_3_LONG)
+    {
+        const uint8_t headerLen = buf[3];
+        const uint16_t msgLen = ((uint16_t)buf[9] << 8)| (uint16_t)buf[8];
+        len = headerLen + msgLen + sizeof(uint32_t);
+    }
+    // Short header
+    else
+    {
+        const uint8_t headerLen = 12;
+        const uint8_t msgLen = buf[3];
+        len = headerLen + msgLen + sizeof(uint32_t);
+    }
+
+    if (len > PARSER_MAX_NOVATEL_SIZE)
+    {
+        return 0;
+    }
+
+    if (size < len)
+    {
+        return -1;
+    }
+
+    const uint32_t crc = (buf[len - 1] << 24) | (buf[len - 2] << 16) | (buf[len - 3] << 8) | (buf[len - 4]);
+    if (crc == crc32(buf, len - sizeof(uint32_t)))
+    {
+        return len;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 /* ****************************************************************************************************************** */

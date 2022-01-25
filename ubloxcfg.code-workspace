@@ -314,7 +314,7 @@
                     "stopAtEntry": false,
                     "preLaunchTask" : "make cfgtool-debug",
                     "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-i", "tmp/nmeagsv", "parse", "-x", "-e" ],
+                    "args": [ "-v", "-i", "tmp/somelog", "parse", "-x", "-e" ],
                     "cwd": "${workspaceFolder}"
                 },
                 {

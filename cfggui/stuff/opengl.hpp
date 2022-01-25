@@ -32,15 +32,16 @@ class ImageTexture
         ImageTexture();
 
         // Create OpenGL image texture from PNG data
-        ImageTexture(const std::string &pngPath);
-        ImageTexture(const uint8_t *pngData, const int pngSize);
+        ImageTexture(const std::string &pngPath, const bool genMipmap = false);
+        ImageTexture(const uint8_t *pngData, const int pngSize, const bool genMipmap = false);
 
         // Create OpenGL image texture from raw RGBA data
-        ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData);
+        ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap = false);
 
         int GetWidth();
         int GetHeight();
         void *GetImageTexture();
+        unsigned int GetTexture();
 
         // Destroy OpenGL image texture, actively or on destruct
         void Destroy();
@@ -60,7 +61,7 @@ class ImageTexture
         int          _height;
         unsigned int _texture;
 
-        static unsigned int _MakeTex(const int width, const int height, const uint8_t *data);
+        static unsigned int _MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap);
 };
 
 

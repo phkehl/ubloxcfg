@@ -98,7 +98,7 @@ OpenGL::ImageTexture &OpenGL::ImageTexture::operator=(OpenGL::ImageTexture &&rhs
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const std::string &pngPath) :
+OpenGL::ImageTexture::ImageTexture(const std::string &pngPath, const bool genMipmap) :
     ImageTexture()
 {
     int width = 0;
@@ -110,7 +110,7 @@ OpenGL::ImageTexture::ImageTexture(const std::string &pngPath) :
         return;
     }
 
-    _texture = _MakeTex(width, height, data);
+    _texture = _MakeTex(width, height, data, genMipmap);
     _width   = width;
     _height  = height;
 
@@ -121,7 +121,7 @@ OpenGL::ImageTexture::ImageTexture(const std::string &pngPath) :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize) :
+OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize, const bool genMipmap) :
     ImageTexture()
 {
     int width = 0;
@@ -133,7 +133,7 @@ OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize) :
         return;
     }
 
-    _texture = _MakeTex(width, height, data);
+    _texture = _MakeTex(width, height, data, genMipmap);
     _width   = width;
     _height  = height;
 
@@ -144,10 +144,10 @@ OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize) :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData) :
+OpenGL::ImageTexture::ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap) :
     _width   { width },
     _height  { height },
-    _texture { _MakeTex(width, height, rgbaData.data()) }
+    _texture { _MakeTex(width, height, rgbaData.data(), genMipmap) }
 {
     //DEBUG("OpenGL::ImageTexture() rgba %dx%d %u", _width, _height, _texture);
 }
@@ -173,9 +173,14 @@ void *OpenGL::ImageTexture::GetImageTexture()
     return (void *)(uintptr_t)_texture;
 }
 
+unsigned int OpenGL::ImageTexture::GetTexture()
+{
+    return _texture;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-/* static */ unsigned int OpenGL::ImageTexture::_MakeTex(const int width, const int height, const uint8_t *data)
+/* static */ unsigned int OpenGL::ImageTexture::_MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap)
 {
     GLint lastTex;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTex);
@@ -197,6 +202,11 @@ void *OpenGL::ImageTexture::GetImageTexture()
     // Upload pixels into texture
     glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+    if (genMipmap)
+    {
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
 
     glBindTexture(GL_TEXTURE_2D, lastTex);
 
@@ -381,7 +391,8 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
     if ( (vertexShader != 0) && (fragmentShader != 0) && (!geometryCode || (geometryShader !=0)) )
     {
         _shaderProgram = glCreateProgram();
-        DEBUG("OpenGL::Shader() %u %u %u -> %u", vertexShader, fragmentShader, geometryShader, _shaderProgram);
+        DEBUG("OpenGL::Shader() vertex %u, fragment %u, geometry %u -> program %u",
+            vertexShader, fragmentShader, geometryShader, _shaderProgram);
         glAttachShader(_shaderProgram, vertexShader);
         glAttachShader(_shaderProgram, fragmentShader);
         if (geometryShader != 0)
@@ -396,7 +407,7 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
         }
     }
 
-    DEBUG("OpenGL::Shader() %u", _shaderProgram);
+    DEBUG("OpenGL::Shader() program %u", _shaderProgram);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

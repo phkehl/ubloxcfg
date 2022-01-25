@@ -27,10 +27,10 @@
 #include "ff_cpp.hpp"
 
 #include "gui_win.hpp"
-#include "gui_widget_opengl.hpp"
 #include "gui_widget_map.hpp"
 #include "gui_win_filedialog.hpp"
 #include "gui_notify.hpp"
+#include "matrix.hpp"
 
 /* ***** Experiment ************************************************************************************************* */
 
@@ -44,19 +44,25 @@ class GuiWinExperiment : public GuiWin
 
     protected:
 
-        // Experiment 1
+        ImGuiTabItemFlags _tabItemFlags;
+
+        // File dialogues
         GuiWinFileDialog _openFileDialog;
         std::string      _openFilePath;
         GuiWinFileDialog _saveFileDialog;
         std::string      _saveFilePath;
         void _DrawGuiWinFileDialog();
 
-        // Experiment 3
+        // Notifications
         void _DrawGuiNotify();
 
-        // Experiment 4
+        // Maps
         std::unique_ptr<GuiWidgetMap> _map;
         void _DrawGuiWidgetMap();
+
+        // Matrix
+        void _DrawMatrix();
+        Matrix _matrix;
 };
 
 /* ****************************************************************************************************************** */

@@ -481,7 +481,7 @@ static CFG_DB_t *_getCfgDb(RX_t *rx, UBLOXCFG_LAYER_t layer)
     PRINT("Polling receiver configuration for layer %s", layerName);
 
 
-    uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
+    const uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
     db->nKv = rxGetConfig(rx, layer, keys, NUMOF(keys), kv, NUMOF(db->recs));
 
     if (db->nKv < 0)

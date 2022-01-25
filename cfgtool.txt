@@ -132,7 +132,7 @@ Exit status:
 
 Command 'cfg2rx':
 
-    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a]
+    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U]
 
     This configures a receiver from a configuration file. The configuration is
     stored to one or more (comma-separated) of the following <layers>: 'RAM',
@@ -144,6 +144,12 @@ Command 'cfg2rx':
     The -a switch soft resets the receiver after storing the configuration in
     order to activate the changed configuration. See the notes below and the
     'reset' command description.
+
+    The -U switch makes the command only update the receiver configuration if
+    necessary. If the current configuration of the receiver already contains all
+    the configuration from <infile>, no action is taken and the command finishes
+    early. Additionally, with '-r factory', the items not covered by <infile>
+    are checked against the default configuration.
 
     A configuration file consists of one or more lines of configuration
     parameters. Leading and trailing whitespace, empty lines as well as comments

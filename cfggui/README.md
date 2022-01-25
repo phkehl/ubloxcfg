@@ -68,7 +68,6 @@ See the [main README](../README.md) for more.
 * Make database size dynamic / configurable
 * Navigation status page (same stuff as in input window + velocity gage, artificial horizon, etc.)?
 * Button to open/arrange all data windows?
-* Make some screenshots, add to repo, post in upstream discussion topic
 * Implement A-GNSS
 * Add epoch rate [Hz] to nav status (also for logfile!)
 * Messages data win: show tree anyway if hidden but selected message not present (until it is present...)
@@ -76,7 +75,7 @@ See the [main README](../README.md) for more.
 * Custom message: implement RTCM3
 * Custom message: load from / save to file, load from clipboard? sw itch to right tab depending on what message it is?
 * Fix docking troubles in GuiWinInput::DrawWindow(), disallow some centre dockings
-* Improve GuiWinDataPlot
+* Improve GuiWinDataPlot, e.g. markers, lines, lines+markers, ...
 * Handle database reset (insert blank epoch?) when seeking in logfile
 * File dialog: load dir entries async, and as needed (make _RefreshDir() run in background)
 * (started) Implement epoch info page (table with all details / fields of EPOCH_t etc.)
@@ -94,6 +93,7 @@ See the [main README](../README.md) for more.
 * Use GuiWidgetTable for GuiWinDataEpoch
 * Use Ff::Thread in GuiWinPlay
 * Write parser for swisstopo wmts capabilities xml to generate mapparams
+* Maybe use some global event queue for all input data stuff and have the data windows subscribe (to one or multiple sources)
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out <https://github.com/bkaradzic/bgfx>

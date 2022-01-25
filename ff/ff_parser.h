@@ -32,14 +32,15 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
-#define PARSER_BUF_SIZE      32768 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
-#define PARSER_MAX_UBX_SIZE   4096 // messages larger than this will be GARBAGE
-#define PARSER_MAX_NMEA_SIZE   200 // messages larger than this will be GARBAGE
-#define PARSER_MAX_RTCM3_SIZE 4096 // messages larger than this will be GARBAGE
-#define PARSER_MAX_GARB_SIZE   256
-#define PARSER_MAX_ANY_SIZE  16384 // the largest of the above
-#define PARSER_MAX_NAME_SIZE   100
-#define PARSER_MAX_INFO_SIZE  1000
+#define PARSER_BUF_SIZE        32768 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
+#define PARSER_MAX_UBX_SIZE     4096 // messages larger than this will be GARBAGE
+#define PARSER_MAX_NMEA_SIZE     200 // messages larger than this will be GARBAGE
+#define PARSER_MAX_RTCM3_SIZE   4096 // messages larger than this will be GARBAGE
+#define PARSER_MAX_NOVATEL_SIZE 4096 // messages larger than this will be GARBAGE
+#define PARSER_MAX_GARB_SIZE    4096
+#define PARSER_MAX_ANY_SIZE    16384 // the largest of the above
+#define PARSER_MAX_NAME_SIZE     100
+#define PARSER_MAX_INFO_SIZE    1000
 
 typedef struct PARSER_s
 {
@@ -60,7 +61,8 @@ typedef enum PARSER_MSGTYPE_e
     PARSER_MSGTYPE_GARBAGE,
     PARSER_MSGTYPE_UBX,
     PARSER_MSGTYPE_NMEA,
-    PARSER_MSGTYPE_RTCM3
+    PARSER_MSGTYPE_RTCM3,
+    PARSER_MSGTYPE_NOVATEL,
 } PARSER_MSGTYPE_t;
 
 typedef enum PARSER_MSGSRC_e

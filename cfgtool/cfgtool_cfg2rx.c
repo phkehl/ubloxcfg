@@ -40,7 +40,7 @@ const char *cfg2rxHelp(void)
 // -----------------------------------------------------------------------------
 "Command 'cfg2rx':\n"
 "\n"
-"    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a]\n"
+"    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U]\n"
 "\n"
 "    This configures a receiver from a configuration file. The configuration is\n"
 "    stored to one or more (comma-separated) of the following <layers>: 'RAM',\n"
@@ -52,6 +52,12 @@ const char *cfg2rxHelp(void)
 "    The -a switch soft resets the receiver after storing the configuration in\n"
 "    order to activate the changed configuration. See the notes below and the\n"
 "    'reset' command description.\n"
+"\n"
+"    The -U switch makes the command only update the receiver configuration if\n"
+"    necessary. If the current configuration of the receiver already contains all\n"
+"    the configuration from <infile>, no action is taken and the command finishes\n"
+"    early. Additionally, with '-r factory', the items not covered by <infile>\n"
+"    are checked against the default configuration.\n"
 "\n"
 "    A configuration file consists of one or more lines of configuration\n"
 "    parameters. Leading and trailing whitespace, empty lines as well as comments\n"
@@ -151,7 +157,7 @@ const char *cfg2rxHelp(void)
 
 /* ****************************************************************************************************************** */
 
-int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig)
+int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig, const bool updateOnly)
 {
     bool ram = false;
     bool bbr = false;
@@ -168,9 +174,9 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     }
 
     PRINT("Loading configuration");
-    int nKv = 0;
-    UBLOXCFG_KEYVAL_t *kv = cfgToKeyVal(&nKv);
-    if (kv == NULL)
+    int nAllKvCfg = 0;
+    UBLOXCFG_KEYVAL_t *allKvCfg = cfgToKeyVal(&nAllKvCfg);
+    if (allKvCfg == NULL)
     {
         return EXIT_OTHERFAIL;
     }
@@ -178,27 +184,105 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
     RX_t *rx = rxInit(portArg, NULL);
     if ( (rx == NULL) || !rxOpen(rx) )
     {
-        free(kv);
+        free(allKvCfg);
         free(rx);
         return EXIT_RXFAIL;
     }
 
+    // Check current config
+    if (updateOnly)
+    {
+        bool configNeedsUpdate = false;
+        // Get current and default config
+        const uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
+        UBLOXCFG_KEYVAL_t allKvRam[3000];
+        const int nAllKvRam = rxGetConfig(rx, UBLOXCFG_LAYER_RAM, keys, NUMOF(keys), allKvRam, NUMOF(allKvRam));
+        UBLOXCFG_KEYVAL_t allKvDef[NUMOF(allKvRam)];
+        const int nAllKvDef = reset == RX_RESET_FACTORY ?
+            rxGetConfig(rx, UBLOXCFG_LAYER_DEFAULT, keys, NUMOF(keys), allKvDef, NUMOF(allKvDef)) : 0;
+
+        // Check current configuration
+        for (int ixKvRam = 0; ixKvRam < nAllKvRam; ixKvRam++)
+        {
+            const UBLOXCFG_KEYVAL_t *kvRam = &allKvRam[ixKvRam];
+
+            // Check all items from config file
+            bool itemIsInCfg = false;
+            for (int ixKvCfg = 0; ixKvCfg < nAllKvCfg; ixKvCfg++)
+            {
+                const UBLOXCFG_KEYVAL_t *kvCfg = &allKvCfg[ixKvCfg];
+                if (kvRam->id == kvCfg->id)
+                {
+                    itemIsInCfg = true;
+                    if (kvRam->val._raw != kvCfg->val._raw)
+                    {
+                        configNeedsUpdate = true;
+                        char strCfg[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
+                        char strRam[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
+                        if ( ubloxcfg_stringifyKeyVal(strCfg, sizeof(strCfg), kvCfg) &&
+                             ubloxcfg_stringifyKeyVal(strRam, sizeof(strRam), kvRam) )
+                        {
+                            DEBUG("Config (%s) differs from current config (%s)", strCfg, strRam);
+                        }
+                    }
+                }
+            }
+
+            // Check if different from config, if factory reset requested, and unless item set by cfg file
+            if (!itemIsInCfg && (nAllKvDef > 0))
+            {
+                for (int ixKvDef = 0; ixKvDef < nAllKvDef; ixKvDef++)
+                {
+                    const UBLOXCFG_KEYVAL_t *kvDef = &allKvDef[ixKvDef];
+                    if (kvRam->id == kvDef->id)
+                    {
+                        if (kvRam->val._raw != kvDef->val._raw)
+                        {
+                            configNeedsUpdate = true;
+                            char strDef[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
+                            char strRam[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
+                            if ( ubloxcfg_stringifyKeyVal(strDef, sizeof(strDef), kvDef) &&
+                                 ubloxcfg_stringifyKeyVal(strRam, sizeof(strRam), kvRam) )
+                            {
+                                DEBUG("Default (%s) differs from current config (%s)", strDef, strRam);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // reset == RX_RESET_FACTORY
+        if (configNeedsUpdate)
+        {
+            PRINT("Current configuration differs from requestd config.");
+        }
+        else
+        {
+            PRINT("Current configuration is up to date. Skipping configuring receiver.");
+            free(allKvCfg);
+            rxClose(rx);
+            free(rx);
+            return EXIT_SUCCESS;
+        }
+    }
+
     if ( (resetArg != NULL) && !rxReset(rx, reset))
     {
-        free(kv);
+        free(allKvCfg);
         rxClose(rx);
         free(rx);
         return EXIT_RXFAIL;
     }
 
-    bool res = rxSetConfig(rx, kv, nKv, ram, bbr, flash);
+    bool res = rxSetConfig(rx, allKvCfg, nAllKvCfg, ram, bbr, flash);
 
     if (res && applyConfig)
     {
         PRINT("Applying configuration");
         if (!rxReset(rx, RX_RESET_SOFT))
         {
-            free(kv);
+            free(allKvCfg);
             rxClose(rx);
             free(rx);
             return EXIT_RXFAIL;
@@ -212,7 +296,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
 
     rxClose(rx);
     free(rx);
-    free(kv);
+    free(allKvCfg);
     return res ? EXIT_SUCCESS : EXIT_OTHERFAIL;
 }
 

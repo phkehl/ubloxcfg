@@ -77,7 +77,6 @@ GuiWinData3d::~GuiWinData3d()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-
 #define SHADER_MODE_GRID     (int32_t)0
 #define SHADER_MODE_CUBES    (int32_t)1
 #define SHADER_MODE_TRAJ     (int32_t)2
@@ -131,7 +130,7 @@ void main()
         fragmentColor = vertexColor;   // pass-through
     }
     fragmentNormal = vertexNormal; // pass-through FIXME: should be * model perhaps?
-};
+}
 )glsl";
 
 // ---------------------------------------------------------------------------------------------------------------------

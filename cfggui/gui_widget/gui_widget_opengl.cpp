@@ -42,6 +42,7 @@ GuiWidgetOpenGl::GuiWidgetOpenGl() :
     _cullFace          { true },
     _cullBack          { true },
     _cullCcw           { true },
+    _wireframe         { false },
     _forceRender       { false },
     _isDragging        { ImGuiMouseButton_COUNT },
     _ambientLight      { 0.5f, 0.5f, 0.5f },
@@ -137,6 +138,7 @@ bool GuiWidgetOpenGl::BeginDraw(const ImVec2 &size, const bool forceRender)
         {
             glDisable(GL_CULL_FACE);
         }
+        glPolygonMode(GL_FRONT_AND_BACK, _wireframe ? GL_LINE : GL_FILL);
 
         ImGui::SetCursorScreenPos(_pos0);
 
@@ -440,6 +442,10 @@ bool GuiWidgetOpenGl::_DrawDebugControls()
         changed = true;
     }
     ImGui::EndDisabled();
+    if (ImGui::Checkbox("Wireframe", &_wireframe))
+    {
+        changed = true;
+    }
     ImGui::Checkbox("Force render", &_forceRender);
 
     return changed;

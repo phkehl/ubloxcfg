@@ -65,6 +65,7 @@ int parseRun(const bool extraInfo, const bool doEpoch)
     uint32_t nUbx  = 0, sUbx  = 0;
     uint32_t nRtcm = 0, sRtcm = 0;
     uint32_t nGarb = 0, sGarb = 0;
+    uint32_t nNova = 0, sNova = 0;
     uint32_t nMsgs = 0, sMsgs = 0;
     uint32_t nEpochs = 0;
 
@@ -124,6 +125,11 @@ int parseRun(const bool extraInfo, const bool doEpoch)
                     nRtcm++;
                     sRtcm += msg.size;
                     break;
+                case PARSER_MSGTYPE_NOVATEL:
+                    prot = "NOVATEL";
+                    nNova++;
+                    sNova += msg.size;
+                    break;
                 case PARSER_MSGTYPE_GARBAGE:
                     prot = "GARBAGE";
                     nGarb++;
@@ -143,11 +149,12 @@ int parseRun(const bool extraInfo, const bool doEpoch)
         }
     }
 
-    ioOutputStr("stats UBX      count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats NMEA     count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats RTCM3    count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats GARBAGE  count %5u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats Total    count %5u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    ioOutputStr("stats UBX      count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NMEA     count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats RTCM3    count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nRtcm, nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NOVATEL  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nNova, nMsgs > 0 ? (double)nNova / (double)nMsgs * 1e2 : 0.0, sNova, sMsgs > 0 ? (double)sNova / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats GARBAGE  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats Total    count %6u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
     if (doEpoch)
     {
         ioOutputStr("stats EPOCH    count %5u (%5.1f%%)\n", nEpochs, nMsgs > 0 ? (double)nEpochs / (double)nMsgs * 1e2 : 0.0);

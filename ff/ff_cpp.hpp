@@ -35,7 +35,7 @@ namespace Ff
     {
         ParserMsg(const PARSER_MSG_t *_msg);
 
-        enum Type_e { UBX, NMEA, RTCM3, GARBAGE };
+        enum Type_e { UBX, NMEA, RTCM3, NOVATEL, GARBAGE };
         enum Type_e type;
         std::string typeStr;
         uint8_t     data[PARSER_MAX_ANY_SIZE];

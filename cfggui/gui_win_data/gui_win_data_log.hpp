@@ -43,6 +43,7 @@ class GuiWinDataLog : public GuiWinData
         uint32_t             _nUbx;
         uint32_t             _nNmea;
         uint32_t             _nRtcm3;
+        uint32_t             _nNovatel;
         uint32_t             _nGarbage;
         uint32_t             _nEpoch;
 };

@@ -69,8 +69,12 @@ void GuiWinDataLog::_ProcessData(const InputData &data)
                     _nNmea++;
                     break;
                 case Ff::ParserMsg::RTCM3:
-                _log.AddLine(tmp, GUI_COLOUR(LOG_MSGRTCM3));
-                _nRtcm3++;
+                    _log.AddLine(tmp, GUI_COLOUR(LOG_MSGRTCM3));
+                    _nRtcm3++;
+                    break;
+                case Ff::ParserMsg::NOVATEL:
+                    _log.AddLine(tmp, GUI_COLOUR(LOG_MSGNOVATEL));
+                    _nNovatel++;
                     break;
                 case Ff::ParserMsg::GARBAGE:
                     _log.AddLine(tmp, GUI_COLOUR(LOG_MSGGARBAGE));
@@ -104,6 +108,7 @@ void GuiWinDataLog::_ClearData()
     _nUbx     = 0;
     _nNmea    = 0;
     _nRtcm3   = 0;
+    _nNovatel = 0;
     _nGarbage = 0;
     _nEpoch   = 0;
 }
@@ -154,6 +159,15 @@ void GuiWinDataLog::_DrawContent()
     ImGui::PopStyleColor();
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGRTCM3));
+    ImGui::Text("%u", _nRtcm3);
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
+    ImGui::TextUnformatted(", NOVATEL: ");
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGNOVATEL));
     ImGui::Text("%u", _nRtcm3);
     ImGui::PopStyleColor();
     ImGui::SameLine();

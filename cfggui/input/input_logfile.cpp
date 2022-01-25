@@ -522,6 +522,8 @@ void InputLogfile::_Thread(Ff::Thread *thread)
             _playPos += msg.size;
             _playPosRel = (double)_playPos / (double)_playSize;
 
+            msg.src = PARSER_MSGSRC_LOG;
+
             // Update database
             _inputDatabase->AddMsg(&msg);
 

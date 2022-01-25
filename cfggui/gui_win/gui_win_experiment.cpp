@@ -30,8 +30,9 @@
 
 GuiWinExperiment::GuiWinExperiment() :
     GuiWin("Experiments"),
-    _openFileDialog{_winName + "OpenFileDialog"},
-    _saveFileDialog{_winName + "SaveFileDialog"}
+    _tabItemFlags   { ImGuiTabItemFlags_SetSelected },
+    _openFileDialog { _winName + "OpenFileDialog" },
+    _saveFileDialog { _winName + "SaveFileDialog" }
 {
     _winSize = { 100, 50 };
     _winFlags |= ImGuiWindowFlags_NoDocking;
@@ -65,6 +66,12 @@ void GuiWinExperiment::DrawWindow()
         if (ImGui::BeginTabItem("GuiWidgetMap"))
         {
             _DrawGuiWidgetMap();
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Matrix"))//, nullptr, _tabItemFlags))
+        {
+            _tabItemFlags = ImGuiTabItemFlags_None;
+            _DrawMatrix();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -147,7 +154,7 @@ void GuiWinExperiment::_DrawGuiNotify()
     }
     if (ImGui::Button("Warning: no title, text"))
     {
-        GuiNotify::Warning("", "blabla", 10);
+        GuiNotify::Warning("", "blabla (10s)", 10);
     }
     if (ImGui::Button("Success: title, looooong text"))
     {
@@ -206,6 +213,20 @@ void GuiWinExperiment::_DrawGuiWidgetMap()
         {
             _map->EndDraw();
         }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinExperiment::_DrawMatrix()
+{
+    const FfVec2f pos = ImGui::GetCursorScreenPos();
+    const FfVec2f size = ImGui::GetContentRegionAvail();
+    ImGui::Text("matrix %.0fx%.0f", size.x, size.y);
+    void *tex = _matrix.Render(size.x, size.y);
+    if (tex)
+    {
+        ImGui::GetWindowDrawList()->AddImage(tex, pos, pos + size, ImVec2(0, 1), ImVec2(1, 0));
     }
 }
 

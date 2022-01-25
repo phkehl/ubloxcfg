@@ -227,8 +227,8 @@ typedef union UBLOXCFG_VALUE_u
     int16_t   E2; //!< #UBLOXCFG_TYPE_E2 type value
     int32_t   E4; //!< #UBLOXCFG_TYPE_E4 type value
     bool      L;  //!< #UBLOXCFG_TYPE_L type value
-    uint8_t  _bytes[8]; //!< raw bytes
-    uint64_t _raw;      //!< raw value
+    uint8_t  _bytes[8]; //!< raw bytes, unused bytes shall be 0x00
+    uint64_t _raw;      //!< raw value, unused bytes shall be 0x00
 } UBLOXCFG_VALUE_t;
 
 //! Key-value pair

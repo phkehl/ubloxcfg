@@ -687,6 +687,7 @@ bool ubloxcfg_valueFromString(const char *str, UBLOXCFG_TYPE_t type, const UBLOX
     double   valDouble;
     int      numChar;
     const int len = strlen(str);
+    memset(value, 0, sizeof(*value));
     switch (type)
     {
         case UBLOXCFG_TYPE_L:
