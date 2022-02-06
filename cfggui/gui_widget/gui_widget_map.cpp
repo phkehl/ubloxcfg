@@ -318,7 +318,7 @@ void GuiWidgetMap::_DrawMapTile(ImDrawList *draw, const int ix, const int dx, co
             {
                 if (_mapTiles)
                 {
-                    draw->AddImage(_mapTiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, FfVec2f(0,0), FfVec2f(1.0,1.0), _tintColour);
+                    draw->AddImage(_mapTiles->GetTileTex(tx, ty, _zLevel), tile0, tile1, FfVec2f(0,0), FfVec2f(1,1), _tintColour);
                 }
                 if (_debugTiles)
                 {

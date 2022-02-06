@@ -30,7 +30,8 @@
 #include "gui_widget_map.hpp"
 #include "gui_win_filedialog.hpp"
 #include "gui_notify.hpp"
-#include "matrix.hpp"
+#include "glmatrix.hpp"
+#include "opengl.hpp"
 
 /* ***** Experiment ************************************************************************************************* */
 
@@ -41,6 +42,7 @@ class GuiWinExperiment : public GuiWin
        ~GuiWinExperiment();
 
         void DrawWindow() final;
+        //void Loop(const uint32_t &frame, const double &now) final;
 
     protected:
 
@@ -62,7 +64,9 @@ class GuiWinExperiment : public GuiWin
 
         // Matrix
         void _DrawMatrix();
-        Matrix _matrix;
+        OpenGL::FrameBuffer _framebuffer;
+        GlMatrix _matrix;
+        bool _matrixInit;
 };
 
 /* ****************************************************************************************************************** */

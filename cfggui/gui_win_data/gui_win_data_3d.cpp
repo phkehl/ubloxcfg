@@ -88,91 +88,91 @@ GuiWinData3d::~GuiWinData3d()
 #define SHADER_ATTR_INST_COLOUR   4
 
 /*static*/ const char *GuiWinData3d::VERTEX_SHADER_SRC = R"glsl(
-#version 330 core
+    #version 330 core
 
-// Vertex attributes
-layout (location = 0) in vec3 vertexPos;
-layout (location = 1) in vec3 vertexNormal;
-layout (location = 2) in vec4 vertexColor;
+    // Vertex attributes
+    layout (location = 0) in vec3 vertexPos;
+    layout (location = 1) in vec3 vertexNormal;
+    layout (location = 2) in vec4 vertexColor;
 
-// Instance attributes
-layout (location = 3) in vec3 instanceOffset; // vertex offset (world space)
-layout (location = 4) in vec4 instanceColour;
+    // Instance attributes
+    layout (location = 3) in vec3 instanceOffset; // vertex offset (world space)
+    layout (location = 4) in vec4 instanceColour;
 
-uniform int shaderMode;
+    uniform int shaderMode;
 
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
 
-out vec3 fragmentNormal;
-out vec4 fragmentColor;
+    out vec3 fragmentNormal;
+    out vec4 fragmentColor;
 
-const int SHADER_MODE_GRID  = 0;
-const int SHADER_MODE_CUBES = 1;
-const int SHADER_MODE_TRAJ  = 2;
+    const int SHADER_MODE_GRID  = 0;
+    const int SHADER_MODE_CUBES = 1;
+    const int SHADER_MODE_TRAJ  = 2;
 
-void main()
-{
-    if (shaderMode == SHADER_MODE_CUBES)
+    void main()
     {
-        gl_Position = projection * view * ((model * vec4(vertexPos, 1.0)) + vec4(instanceOffset, 0.0));
-        fragmentColor = vertexColor * instanceColour;
+        if (shaderMode == SHADER_MODE_CUBES)
+        {
+            gl_Position = projection * view * ((model * vec4(vertexPos, 1.0)) + vec4(instanceOffset, 0.0));
+            fragmentColor = vertexColor * instanceColour;
+        }
+        else if (shaderMode == SHADER_MODE_TRAJ)
+        {
+            gl_Position = projection * view * model * vec4(vertexPos, 1.0);
+            fragmentColor = vertexColor;
+        }
+        else if (shaderMode == SHADER_MODE_GRID)
+        {
+            gl_Position = projection * view * model * vec4(vertexPos, 1.0); // x, y, z, w = 1
+            fragmentColor = vertexColor;   // pass-through
+        }
+        fragmentNormal = vertexNormal; // pass-through FIXME: should be * model perhaps?
     }
-    else if (shaderMode == SHADER_MODE_TRAJ)
-    {
-        gl_Position = projection * view * model * vec4(vertexPos, 1.0);
-        fragmentColor = vertexColor;
-    }
-    else if (shaderMode == SHADER_MODE_GRID)
-    {
-        gl_Position = projection * view * model * vec4(vertexPos, 1.0); // x, y, z, w = 1
-        fragmentColor = vertexColor;   // pass-through
-    }
-    fragmentNormal = vertexNormal; // pass-through FIXME: should be * model perhaps?
-}
 )glsl";
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 /*static*/ const char *GuiWinData3d::FRAGMENT_SHADER_SRC = R"glsl(
-#version 330 core
+    #version 330 core
 
-in vec3 fragmentNormal;
-in vec4 fragmentColor;
+    in vec3 fragmentNormal;
+    in vec4 fragmentColor;
 
-uniform int shaderMode;        // shared with vertex shader
+    uniform int shaderMode;        // shared with vertex shader
 
-uniform vec3 ambientLight;     // ambient light (colour/level)
-uniform vec3 diffuseLight;     // diffuse light (colour/level)
-uniform vec3 diffuseDirection; // diffuse light (direction)
+    uniform vec3 ambientLight;     // ambient light (colour/level)
+    uniform vec3 diffuseLight;     // diffuse light (colour/level)
+    uniform vec3 diffuseDirection; // diffuse light (direction)
 
-out vec4 OutColor;
+    out vec4 OutColor;
 
-const int SHADER_MODE_GRID  = 0;
-const int SHADER_MODE_CUBES = 1;
-const int SHADER_MODE_TRAJ  = 2;
+    const int SHADER_MODE_GRID  = 0;
+    const int SHADER_MODE_CUBES = 1;
+    const int SHADER_MODE_TRAJ  = 2;
 
-void main()
-{
-    if (shaderMode == SHADER_MODE_CUBES)
+    void main()
     {
-        // ambient light only
-        // OutColor = vec4( ambientLight * fragmentColor.xyz, fragmentColor.w );
-        // add diffuse light
-        float diffuseFact = max( dot( normalize(fragmentNormal), normalize(diffuseDirection) ), 0.0 );
-        vec3 diffuse = diffuseFact * diffuseLight;
-        OutColor = vec4( (ambientLight + diffuse) * fragmentColor.xyz, fragmentColor.w );
+        if (shaderMode == SHADER_MODE_CUBES)
+        {
+            // ambient light only
+            // OutColor = vec4( ambientLight * fragmentColor.xyz, fragmentColor.w );
+            // add diffuse light
+            float diffuseFact = max( dot( normalize(fragmentNormal), normalize(diffuseDirection) ), 0.0 );
+            vec3 diffuse = diffuseFact * diffuseLight;
+            OutColor = vec4( (ambientLight + diffuse) * fragmentColor.xyz, fragmentColor.w );
+        }
+        else if (shaderMode == SHADER_MODE_TRAJ)
+        {
+            OutColor = fragmentColor;
+        }
+        else if (shaderMode == SHADER_MODE_GRID)
+        {
+            OutColor = fragmentColor;
+        }
     }
-    else if (shaderMode == SHADER_MODE_TRAJ)
-    {
-        OutColor = fragmentColor;
-    }
-    else if (shaderMode == SHADER_MODE_GRID)
-    {
-        OutColor = fragmentColor;
-    }
-}
 )glsl";
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -193,7 +193,7 @@ void GuiWinData3d::_UpdatePoints()
     _markerVertices.clear();
     _markerVertices = CUBE_VERTICES;
     glBindBuffer(GL_ARRAY_BUFFER, _markerVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, _markerVertices.size() * sizeof(_markerVertices[0]), _markerVertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _markerVertices.size() * OpenGL::Vertex::SIZE, _markerVertices.data(), GL_STATIC_DRAW);
 
     // Instances (= markers) and trajectory
     _markerInstances.clear();

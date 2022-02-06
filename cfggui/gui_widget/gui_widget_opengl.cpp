@@ -34,15 +34,10 @@ GuiWidgetOpenGl::GuiWidgetOpenGl() :
     _controlsDebug     { false },
     _cameraFieldOfView { 45.0f },
     _cameraLookAt      { 0.0f, 0.0f, 0.0f },
-    _cameraAzim        {  25.0f },
-    _cameraElev        {  45.0f },
-    _cameraDist        {  20.0f },
-    _cameraRoll        {   0.0f },
-    _depthTest         { true },
-    _cullFace          { true },
-    _cullBack          { true },
-    _cullCcw           { true },
-    _wireframe         { false },
+    _cameraAzim        { 25.0f },
+    _cameraElev        { 45.0f },
+    _cameraDist        { 20.0f },
+    _cameraRoll        {  0.0f },
     _forceRender       { false },
     _isDragging        { ImGuiMouseButton_COUNT },
     _ambientLight      { 0.5f, 0.5f, 0.5f },
@@ -119,26 +114,7 @@ bool GuiWidgetOpenGl::BeginDraw(const ImVec2 &size, const bool forceRender)
         }
 
         // Setup OpenGL drawing
-        if (_depthTest)
-        {
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LESS);
-        }
-        else
-        {
-            glDisable(GL_DEPTH_TEST);
-        }
-        if (_cullFace)
-        {
-            glEnable(GL_CULL_FACE);
-            glCullFace(_cullBack ? GL_BACK : GL_FRONT);
-            glFrontFace(_cullCcw ? GL_CCW : GL_CW);
-        }
-        else
-        {
-            glDisable(GL_CULL_FACE);
-        }
-        glPolygonMode(GL_FRONT_AND_BACK, _wireframe ? GL_LINE : GL_FILL);
+        _glState.Apply();
 
         ImGui::SetCursorScreenPos(_pos0);
 
@@ -158,8 +134,7 @@ void GuiWidgetOpenGl::EndDraw()
     _stuffChanged = false;
 
     // Place rendered texture into ImGui draw list
-    ImGui::GetWindowDrawList()->AddImage(_framebuffer.GetTexture(),
-        _pos0, _pos0 + _size, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::GetWindowDrawList()->AddImage(_framebuffer.GetTexture(), _pos0, _pos0 + _size);
 
     ImGui::EndChild();
 }
@@ -236,13 +211,12 @@ void GuiWidgetOpenGl::_UpdateViewAndProjection()
     view = glm::translate(view, _cameraLookAt);
     view = glm::rotate(view, glm::radians(_cameraRoll), glm::vec3(0.0f, 0.0f, 1.0f));
     view = glm::rotate(view, glm::radians(_cameraAzim), glm::vec3(0.0f, 1.0f, 0.0f));
-    view = glm::rotate(view, -glm::radians(_cameraElev), glm::vec3(1.0f, 0.0f, 0.0f));
+    view = glm::rotate(view, glm::radians(_cameraElev), glm::vec3(1.0f, 0.0f, 0.0f));
 
     _diffuseDirection = glm::normalize(view * glm::vec4(1.0f, 1.0f, 1.0f, 0.0f)); // TODO... hmmm...
 
     view = glm::translate(view, glm::vec3(0.0f, 0.0f, _cameraDist));
     _view = glm::inverse(view);
-
 
     // Projection matrix
     _projection = glm::perspective(glm::radians(_cameraFieldOfView), _size.y > 0.0f ? _size.x / _size.y : 1.0f, 0.1f, 500.0f);
@@ -422,33 +396,113 @@ bool GuiWidgetOpenGl::_DrawDebugControls()
 
     ImGui::TextUnformatted("Flags:");
 
-    if (ImGui::Checkbox("Depth test", &_depthTest))
+    if (ImGui::Checkbox("Depth test", &_glState.depthTestEnable))
     {
         changed = true;
     }
-    if (ImGui::Checkbox("Cull face", &_cullFace))
-    {
-        changed = true;
-    }
-    ImGui::BeginDisabled(!_cullFace);
+    ImGui::BeginDisabled(!_glState.depthTestEnable);
     ImGui::SameLine();
-    if (ImGui::Checkbox("Cull CCW", &_cullCcw))
-    {
-        changed = true;
-    }
-    ImGui::SameLine();
-    if (ImGui::Checkbox("Cull back", &_cullBack))
+    if (_StateEnumCombo("##depthFunc", _glState.depthFunc, OpenGL::State::DEPTH_FUNC))
     {
         changed = true;
     }
     ImGui::EndDisabled();
-    if (ImGui::Checkbox("Wireframe", &_wireframe))
+
+    if (ImGui::Checkbox("Cull face", &_glState.cullFaceEnable))
     {
         changed = true;
     }
+    ImGui::BeginDisabled(!_glState.cullFaceEnable);
+    ImGui::SameLine();
+    if (_StateEnumCombo("##cullFace", _glState.cullFace, OpenGL::State::CULL_FACE))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##cullFrontFace", _glState.cullFrontFace, OpenGL::State::CULL_FRONTFACE))
+    {
+        changed = true;
+    }
+    ImGui::EndDisabled();
+
+    if (_StateEnumCombo("Polygon mode", _glState.polygonMode, OpenGL::State::POLYGONMODE_MODE))
+    {
+        changed = true;
+    }
+
+    if (ImGui::Checkbox("Blend", &_glState.blendEnable))
+    {
+        changed = true;
+    }
+    ImGui::BeginDisabled(!_glState.blendEnable);
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendSrcRgb", _glState.blendSrcRgb, OpenGL::State::BLENDFUNC_FACTOR))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendDstRgb", _glState.blendDstRgb, OpenGL::State::BLENDFUNC_FACTOR))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendSrcAlpha", _glState.blendSrcAlpha, OpenGL::State::BLENDFUNC_FACTOR))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendDstAlpha", _glState.blendDstAlpha, OpenGL::State::BLENDFUNC_FACTOR))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendEqModeRgb", _glState.blendEqModeRgb, OpenGL::State::BLENDEQ_MODE))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (_StateEnumCombo("##blendEqModeAlpha", _glState.blendEqModeAlpha, OpenGL::State::BLENDEQ_MODE))
+    {
+        changed = true;
+    }
+    ImGui::EndDisabled();
+
     ImGui::Checkbox("Force render", &_forceRender);
 
     return changed;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiWidgetOpenGl::_StateEnumCombo(const char *label, uint32_t &value, const std::vector<OpenGL::Enum> enums)
+{
+    const char *preview = "?";
+    for (auto &e: enums)
+    {
+        if (e.value == value)
+        {
+            preview = e.label;
+            break;
+        }
+    }
+
+    bool res = false;
+    ImGui::PushItemWidth(GuiSettings::charSize.x * 12);
+    if (ImGui::BeginCombo(label, preview))
+    {
+        for (auto &e: enums)
+        {
+            if (ImGui::Selectable(e.label, e.value == value))
+            {
+                value = e.value;
+                res = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::PopItemWidth();
+    return res;
+}
+
 
 /* ****************************************************************************************************************** */

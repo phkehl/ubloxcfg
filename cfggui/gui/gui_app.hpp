@@ -34,6 +34,8 @@
 #include "gui_win_input_logfile.hpp"
 #include "gui_notify.hpp"
 #include "gui_win_ntrip.hpp"
+#include "glmatrix.hpp"
+#include "opengl.hpp"
 
 struct GuiAppEarlyLog
 {
@@ -120,6 +122,15 @@ class GuiApp
         void _DrawDebugWin();
         static void _DebugLogCb(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG_t *cfg);
         static void _DebugLogAdd(const DEBUG_LEVEL_t level, const char *str, GuiWidgetLog *logWidget);
+
+        // H4xx0r mode
+        bool                 _h4xx0rMode;
+        GlMatrix             _matrix;
+        GlMatrix::Options    _matrixOpts;
+        OpenGL::FrameBuffer  _matrixFb;
+        bool _ConfigH4xx0r(const bool enable);
+        void _DrawH4xx0r();
+        void _DrawH4xx0rConfig();
 
         using PerfMeas_t = std::array<float, 250>;
         struct PerfData

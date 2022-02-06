@@ -73,7 +73,8 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     _statsRss      { },
     _debugWinOpen  { false },
     _debugWinDim   { true },
-    _versionInfos  { versionInfos }
+    _versionInfos  { versionInfos },
+    _h4xx0rMode    { false }
 {
     UNUSED(argv);
     DEBUG("GuiApp()");
@@ -239,7 +240,14 @@ void GuiApp::NewFrame()
 
 ImVec4 GuiApp::BackgroundColour()
 {
-    return ImGui::ColorConvertU32ToFloat4(GUI_COLOUR(APP_BACKGROUND));
+    if (_h4xx0rMode)
+    {
+        return ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    else
+    {
+        return ImGui::ColorConvertU32ToFloat4(GUI_COLOUR(APP_BACKGROUND));
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -343,6 +351,11 @@ void GuiApp::DrawFrame()
     if (_debugWinOpen)
     {
         _DrawDebugWin();
+    }
+
+    if (_h4xx0rMode)
+    {
+        _DrawH4xx0r();
     }
 
     // Notifications
@@ -568,6 +581,15 @@ void GuiApp::_MainMenu()
             ImGui::Separator();
 
             ImGui::MenuItem("Debug", NULL, &_debugWinOpen);
+            if (ImGui::MenuItem("H4xx0r", NULL, &_h4xx0rMode))
+            {
+                _h4xx0rMode = _ConfigH4xx0r(_h4xx0rMode);
+            }
+            if (!_h4xx0rMode && ImGui::BeginPopupContextItem("H4xx0rConfig"))
+            {
+                _DrawH4xx0rConfig();
+                ImGui::EndPopup();
+            }
 
             ImGui::EndMenu();
         }
@@ -898,6 +920,106 @@ void GuiApp::PerfToc(const enum Perf_e perf)
     if (perf < _NUM_PERF)
     {
         _perfData[perf].Toc();
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiApp::_ConfigH4xx0r(const bool enable)
+{
+    DEBUG("H4xx0r mode: %s", enable ? "enable" : "disable");
+    if (enable)
+    {
+        // _matrixOpts.debugFrames = true;
+        // _matrixOpts.debugGrid = true;
+        if (!_matrix.Init(_matrixOpts))
+        {
+            return false;
+        }
+    }
+    else
+    {
+        _matrix.Destroy();
+    }
+    return enable;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::_DrawH4xx0r()
+{
+    if (!_h4xx0rMode)
+    {
+        return;
+    }
+
+    _matrix.Animate();
+
+    //ImGuiIO &io = ImGui::GetIO();
+    ImGuiViewport *viewPort = ImGui::GetMainViewport();
+    //DEBUG("%.0f %.0f %.0f %.0f", viewPort->Pos.x, viewPort->Pos.y, viewPort->Size.x, viewPort->Size.y);
+
+    if (_matrixFb.Begin(viewPort->Size.x, viewPort->Size.y))
+    {
+        //_framebuffer.Clear(1.0,0.0,0.0,1.0);
+        _matrix.Render(viewPort->Size.x, viewPort->Size.y);
+
+        _matrixFb.End();
+        void *tex = _matrixFb.GetTexture();
+        if (tex)
+        {
+            FfVec2f pos = viewPort->Pos;
+            FfVec2f size = viewPort->Size;
+            ImDrawList *draw = ImGui::GetBackgroundDrawList();
+            draw->AddImage(tex, pos, pos + size, ImVec2(0,1), ImVec2(1,0));
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiApp::_DrawH4xx0rConfig()
+{
+    const struct { enum GlMatrix::Options::Mode_e mode; const char *label; } modes[] =
+    {
+        { GlMatrix::Options::MATRIX,      "MATRIX"      },
+        { GlMatrix::Options::DNA,         "DNA"         },
+        { GlMatrix::Options::BINARY,      "BINARY"      },
+        { GlMatrix::Options::HEXADECIMAL, "HEXADECIMAL" },
+        { GlMatrix::Options::DECIMAL,     "DECIMAL"     },
+    };
+    const char *modeStr = "?";
+    for (int ix = 0; ix < NUMOF(modes); ix++)
+    {
+        if (modes[ix].mode == _matrixOpts.mode)
+        {
+            modeStr = modes[ix].label;
+            break;
+        }
+    }
+    if (ImGui::BeginCombo("Mode", modeStr))
+    {
+        for (int ix = 0; ix < NUMOF(modes); ix++)
+        {
+            if (ImGui::Selectable(modes[ix].label, modes[ix].mode == _matrixOpts.mode))
+            {
+                _matrixOpts.mode = modes[ix].mode;
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::SliderFloat("Speed",        &_matrixOpts.speed, 0.1f, 5.0f);
+    ImGui::SliderFloat("Density",      &_matrixOpts.density, 1.0f, 200.0f, "%.0f");
+    ImGui::Checkbox(   "Clock",        &_matrixOpts.doClock);
+    ImGui::Checkbox(   "Fog",          &_matrixOpts.doFog);
+    ImGui::Checkbox(   "Waves",        &_matrixOpts.doWaves);
+    ImGui::Checkbox(   "Rotate",       &_matrixOpts.doRotate);
+    ImGui::Checkbox(   "Debug grid",   &_matrixOpts.debugGrid);
+    ImGui::Checkbox(   "Debug frames", &_matrixOpts.debugFrames);
+    if (ImGui::Button("Defaults"))
+    {
+        _matrixOpts = GlMatrix::Options();
     }
 }
 

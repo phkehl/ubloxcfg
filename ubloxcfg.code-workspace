@@ -53,7 +53,7 @@
         // https://code.visualstudio.com/docs/cpp/c-cpp-properties-schema-reference)
         "C_Cpp.default.includePath":           [ "${workspaceFolder}/**" ], // do no add more here, it confuses IntelliSense
         // no defines required, it should use gen/make_defines.h and std_build.h
-        "C_Cpp.default.defines":               [ "FP_BUILD_DEBUG" ],
+        "C_Cpp.default.defines":               [ "FF_BUILD_DEBUG" ],
         //"C_Cpp.default.compileCommands":       "",
         //"C_Cpp.default.forcedIncludes":      [ ],
         "C_Cpp.default.intelliSenseMode":        "gcc-x64",
@@ -61,10 +61,10 @@
         "C_Cpp.default.cStandard":               "gnu99",
         "C_Cpp.default.cppStandard":             "gnu++17",
         "C_Cpp.default.browse.path":           [ "${workspaceFolder}/**" ],
-        "C_Cpp.default.configurationProvider": "b2.catkin_tools",
+        //"C_Cpp.default.configurationProvider": "b2.catkin_tools",
         "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode-cache/browse.db",
         "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
-        "C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 120 }",
+        //"C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 120 }",
         "editor.formatOnSave": false,
 
         // Help VSCode to recognise some unusually named files correctly

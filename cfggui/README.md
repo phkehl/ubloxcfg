@@ -5,6 +5,8 @@
 This is a *very experimental* GUI for controlling u-blox 9 (and perhaps later ones) positioning receivers, analysing
 data, recording and replaying logs.
 
+![screenshot](./doc/screenshot3.jpg)
+
 ## Building
 
 This needs Linux. It won't work on Windoze. We need gcc (>= 8.0, maybe >= 10.0) and GNU libc.

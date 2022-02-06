@@ -56,27 +56,28 @@ Notes
 
 */
 
+namespace OpenGL {
 /* ****************************************************************************************************************** */
 
-OpenGL::ImageTexture::ImageTexture() :
+ImageTexture::ImageTexture() :
     _width   { 0 },
     _height  { 0 },
     _texture { 0 }
 {
 }
 
-OpenGL::ImageTexture::~ImageTexture()
+ImageTexture::~ImageTexture()
 {
     Destroy();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void  OpenGL::ImageTexture::Destroy()
+void ImageTexture::Destroy()
 {
     if (_texture != 0)
     {
-        //DEBUG("OpenGL::Destroy() %u", _texture);
+        //DEBUG("Destroy() %u", _texture);
         glDeleteTextures(1, &_texture);
         _texture = 0;
     }
@@ -84,13 +85,13 @@ void  OpenGL::ImageTexture::Destroy()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(OpenGL::ImageTexture &&rhs) :
+ImageTexture::ImageTexture(ImageTexture &&rhs) :
     ImageTexture()
 {
     std::swap(_texture, rhs._texture);
 }
 
-OpenGL::ImageTexture &OpenGL::ImageTexture::operator=(OpenGL::ImageTexture &&rhs)
+ImageTexture &ImageTexture::operator=(ImageTexture &&rhs)
 {
     std::swap(_texture, rhs._texture);
     return *this;
@@ -98,7 +99,7 @@ OpenGL::ImageTexture &OpenGL::ImageTexture::operator=(OpenGL::ImageTexture &&rhs
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const std::string &pngPath, const bool genMipmap) :
+ImageTexture::ImageTexture(const std::string &pngPath, const bool genMipmap) :
     ImageTexture()
 {
     int width = 0;
@@ -116,12 +117,12 @@ OpenGL::ImageTexture::ImageTexture(const std::string &pngPath, const bool genMip
 
     stbi_image_free(data);
 
-    //DEBUG("OpenGL::ImageTexture() %s %dx%d %u", pngPath.c_str(), _width, _height, _texture);
+    //DEBUG("ImageTexture() %s %dx%d %u", pngPath.c_str(), _width, _height, _texture);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize, const bool genMipmap) :
+ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize, const bool genMipmap) :
     ImageTexture()
 {
     int width = 0;
@@ -139,48 +140,57 @@ OpenGL::ImageTexture::ImageTexture(const uint8_t *pngData, const int pngSize, co
 
     stbi_image_free(data);
 
-    //DEBUG("OpenGL::ImageTexture() png %dx%d %u", _width, _height, _texture);
+    //DEBUG("ImageTexture() png %dx%d %u", _width, _height, _texture);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::ImageTexture::ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap) :
+ImageTexture::ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap) :
     _width   { width },
     _height  { height },
     _texture { _MakeTex(width, height, rgbaData.data(), genMipmap) }
 {
-    //DEBUG("OpenGL::ImageTexture() rgba %dx%d %u", _width, _height, _texture);
+    //DEBUG("ImageTexture() rgba %dx%d %u", _width, _height, _texture);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int OpenGL::ImageTexture::GetWidth()
+ImageTexture::ImageTexture(const int width, const int height, const uint8_t *rgbaData, const bool genMipmap) :
+    _width   { width },
+    _height  { height },
+    _texture { _MakeTex(width, height, rgbaData, genMipmap) }
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+int ImageTexture::GetWidth()
 {
     return _width;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int OpenGL::ImageTexture::GetHeight()
+int ImageTexture::GetHeight()
 {
     return _height;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void *OpenGL::ImageTexture::GetImageTexture()
+void *ImageTexture::GetImageTexture()
 {
     return (void *)(uintptr_t)_texture;
 }
 
-unsigned int OpenGL::ImageTexture::GetTexture()
+uint32_t ImageTexture::GetTexture()
 {
     return _texture;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-/* static */ unsigned int OpenGL::ImageTexture::_MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap)
+/* static */ uint32_t ImageTexture::_MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap)
 {
     GLint lastTex;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &lastTex);
@@ -193,7 +203,7 @@ unsigned int OpenGL::ImageTexture::GetTexture()
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
     // Minifying/magnifying parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, genMipmap ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -215,7 +225,7 @@ unsigned int OpenGL::ImageTexture::GetTexture()
 
 /* ****************************************************************************************************************** */
 
-OpenGL::FrameBuffer::FrameBuffer() :
+FrameBuffer::FrameBuffer() :
     _width        { 0 },
     _height       { 0 },
     _fbok         { false },
@@ -225,7 +235,7 @@ OpenGL::FrameBuffer::FrameBuffer() :
 {
 }
 
-OpenGL::FrameBuffer::~FrameBuffer()
+FrameBuffer::~FrameBuffer()
 {
     if (_framebuffer != 0)
     {
@@ -244,7 +254,7 @@ OpenGL::FrameBuffer::~FrameBuffer()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool OpenGL::FrameBuffer::Begin(const int width, const int height)
+bool FrameBuffer::Begin(const int width, const int height)
 {
     _fbok = false;
 
@@ -290,7 +300,7 @@ bool OpenGL::FrameBuffer::Begin(const int width, const int height)
         glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
         glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-        //DEBUG("OpenGL::FrameBuffer: %dx%d, fb %u rb %u tex %u", width, height, _framebuffer, _renderbuffer, _texture);
+        //DEBUG("FrameBuffer: %dx%d, fb %u rb %u tex %u", width, height, _framebuffer, _renderbuffer, _texture);
     }
 
     // Activate framebuffer
@@ -299,7 +309,7 @@ bool OpenGL::FrameBuffer::Begin(const int width, const int height)
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _renderbuffer);
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
-        WARNING("OpenGL::FrameBuffer: incomplete");
+        WARNING("FrameBuffer: incomplete");
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         // FIXME: detach renderbuffer, too?
         return false;
@@ -307,10 +317,6 @@ bool OpenGL::FrameBuffer::Begin(const int width, const int height)
 
     // Set viewport
     glViewport(0, 0, width, height);
-
-    //glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_LESS);
-    //glEnable(GL_CULL_FACE);
 
     // We should be good to go
     _fbok    = true;
@@ -321,7 +327,7 @@ bool OpenGL::FrameBuffer::Begin(const int width, const int height)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void OpenGL::FrameBuffer::Clear(const float r, const float g, const float b, const float a)
+void FrameBuffer::Clear(const float r, const float g, const float b, const float a)
 {
     if (_fbok)
     {
@@ -332,7 +338,7 @@ void OpenGL::FrameBuffer::Clear(const float r, const float g, const float b, con
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void OpenGL::FrameBuffer::End()
+void FrameBuffer::End()
 {
     if (_fbok)
     {
@@ -343,21 +349,21 @@ void OpenGL::FrameBuffer::End()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void *OpenGL::FrameBuffer::GetTexture()
+void *FrameBuffer::GetTexture()
 {
     return _fbok ? (void *)(uintptr_t)_texture : nullptr;
 }
 
 /* ****************************************************************************************************************** */
 
-OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const char *geometryCode) :
+Shader::Shader(const char *vertexCode, const char *fragmentCode, const char *geometryCode) :
     _shaderProgram  { 0 }
 {
     // Compile vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, (const GLchar **)&vertexCode, NULL);
     glCompileShader(vertexShader);
-    if (!_CheckShader(vertexShader, "OpenGL::Shader() vertex"))
+    if (!_CheckShader(vertexShader, "Shader() vertex"))
     {
         glDeleteShader(vertexShader);
         vertexShader = 0;
@@ -367,7 +373,7 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, (const GLchar **)&fragmentCode, NULL);
     glCompileShader(fragmentShader);
-    if (!_CheckShader(fragmentShader, "OpenGL::Shader() fragment"))
+    if (!_CheckShader(fragmentShader, "Shader() fragment"))
     {
         glDeleteShader(fragmentShader);
         fragmentShader = 0;
@@ -380,7 +386,7 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
         geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
         glShaderSource(geometryShader, 1, (const GLchar **)&geometryCode, NULL);
         glCompileShader(geometryShader);
-        if (!_CheckShader(geometryShader, "OpenGL::Shader() geometry"))
+        if (!_CheckShader(geometryShader, "Shader() geometry"))
         {
             glDeleteShader(geometryShader);
             fragmentShader = 0;
@@ -391,7 +397,7 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
     if ( (vertexShader != 0) && (fragmentShader != 0) && (!geometryCode || (geometryShader !=0)) )
     {
         _shaderProgram = glCreateProgram();
-        DEBUG("OpenGL::Shader() vertex %u, fragment %u, geometry %u -> program %u",
+        DEBUG("Shader() vertex %u, fragment %u, geometry %u -> program %u",
             vertexShader, fragmentShader, geometryShader, _shaderProgram);
         glAttachShader(_shaderProgram, vertexShader);
         glAttachShader(_shaderProgram, fragmentShader);
@@ -400,21 +406,21 @@ OpenGL::Shader::Shader(const char *vertexCode, const char *fragmentCode, const c
             glAttachShader(_shaderProgram, geometryShader);
         }
         glLinkProgram(_shaderProgram);
-        if (!_CheckProgram(_shaderProgram, "OpenGL::Shader() program"))
+        if (!_CheckProgram(_shaderProgram, "Shader() program"))
         {
             glDeleteProgram(_shaderProgram);
             _shaderProgram = 0;
         }
     }
 
-    DEBUG("OpenGL::Shader() program %u", _shaderProgram);
+    DEBUG("Shader() program %u", _shaderProgram);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::Shader::~Shader()
+Shader::~Shader()
 {
-    DEBUG("OpenGL::~Shader() %u", _shaderProgram);
+    DEBUG("~Shader() %u", _shaderProgram);
     if (_shaderProgram != 0)
     {
         glDeleteProgram(_shaderProgram);
@@ -424,13 +430,13 @@ OpenGL::Shader::~Shader()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool OpenGL::Shader::Ready()
+bool Shader::Ready()
 {
     return _shaderProgram != 0;
 }
 // ---------------------------------------------------------------------------------------------------------------------
 
-void OpenGL::Shader::Use()
+void Shader::Use()
 {
     if (_shaderProgram != 0)
     {
@@ -440,74 +446,74 @@ void OpenGL::Shader::Use()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void OpenGL::Shader::SetUniform(const char *name, const bool b)
+void Shader::SetUniform(const char *name, const bool b)
 {
     glUniform1i( glGetUniformLocation(_shaderProgram, name), b ? GL_TRUE : GL_FALSE );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const float f)
+void Shader::SetUniform(const char *name, const float f)
 {
     glUniform1f( glGetUniformLocation(_shaderProgram, name), f );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const int32_t i)
+void Shader::SetUniform(const char *name, const int32_t i)
 {
     glUniform1i( glGetUniformLocation(_shaderProgram, name), i );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const uint32_t u)
+void Shader::SetUniform(const char *name, const uint32_t u)
 {
     glUniform1ui( glGetUniformLocation(_shaderProgram, name), u );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::vec2 &v)
+void Shader::SetUniform(const char *name, const glm::vec2 &v)
 {
     glUniform2fv( glGetUniformLocation(_shaderProgram, name), 1, glm::value_ptr(v) );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::vec3 &v)
+void Shader::SetUniform(const char *name, const glm::vec3 &v)
 {
     glUniform3fv( glGetUniformLocation(_shaderProgram, name), 1, glm::value_ptr(v) );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::vec4 &v)
+void Shader::SetUniform(const char *name, const glm::vec4 &v)
 {
     glUniform4fv( glGetUniformLocation(_shaderProgram, name), 1, glm::value_ptr(v) );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const float x, const float y)
+void Shader::SetUniform(const char *name, const float x, const float y)
 {
     glUniform2f( glGetUniformLocation(_shaderProgram, name), x, y );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const float x, const float y, const float z)
+void Shader::SetUniform(const char *name, const float x, const float y, const float z)
 {
     glUniform3f( glGetUniformLocation(_shaderProgram, name), x, y, z );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const float x, const float y, const float z, const float w)
+void Shader::SetUniform(const char *name, const float x, const float y, const float z, const float w)
 {
     glUniform4f( glGetUniformLocation(_shaderProgram, name), x, y, z, w );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::mat2 &m)
+void Shader::SetUniform(const char *name, const glm::mat2 &m)
 {
     glUniformMatrix2fv( glGetUniformLocation(_shaderProgram, name), 1, GL_FALSE, glm::value_ptr(m) );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::mat3 &m)
+void Shader::SetUniform(const char *name, const glm::mat3 &m)
 {
     glUniformMatrix3fv( glGetUniformLocation(_shaderProgram, name), 1, GL_FALSE, glm::value_ptr(m) );
 }
 
-void OpenGL::Shader::SetUniform(const char *name, const glm::mat4 &m)
+void Shader::SetUniform(const char *name, const glm::mat4 &m)
 {
     glUniformMatrix4fv( glGetUniformLocation(_shaderProgram, name), 1, GL_FALSE, glm::value_ptr(m) );
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool OpenGL::Shader::_CheckShader(const unsigned int shader, const char *info)
+bool Shader::_CheckShader(const uint32_t shader, const char *info)
 {
     GLint success;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -539,7 +545,7 @@ bool OpenGL::Shader::_CheckShader(const unsigned int shader, const char *info)
     return success == GL_TRUE;
 }
 
-bool OpenGL::Shader::_CheckProgram(const unsigned int program, const char *info)
+bool Shader::_CheckProgram(const uint32_t program, const char *info)
 {
     GLint success;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
@@ -573,16 +579,161 @@ bool OpenGL::Shader::_CheckProgram(const unsigned int program, const char *info)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-OpenGL::Vertex::Vertex(const glm::vec3 &_pos, const glm::vec3 &_normal, const glm::vec4 &_colour) :
+Vertex::Vertex(const glm::vec3 &_pos, const glm::vec3 &_normal, const glm::vec4 &_colour, const glm::vec2 &_tex) :
     pos    { _pos },
     normal { _normal },
-    colour { _colour }
+    colour { _colour },
+    tex    { _tex }
+{
+}
+
+Vertex::Vertex(const glm::vec3 &_pos, const glm::vec3 &_normal, const glm::vec2 &_tex) :
+    pos    { _pos },
+    normal { _normal },
+    colour { 0.0f, 0.0f, 0.0f, 0.0f },
+    tex    { _tex }
+{
+}
+
+Vertex::Vertex(const glm::vec3 &_pos, const glm::vec2 &_tex) :
+    pos    { _pos },
+    normal { 0.0f, 0.0f, 0.0f },
+    colour { 0.0f, 0.0f, 0.0f, 0.0f },
+    tex    { _tex }
 {
 }
 
 /* ****************************************************************************************************************** */
 
-const char *OpenGL::GetGlErrorStr()
+State::State() :
+    depthTestEnable   { true },
+    depthFunc         { GL_LESS },
+
+    cullFaceEnable    { true },
+    cullFace          { GL_BACK },
+    cullFrontFace     { GL_CCW },
+
+    polygonMode       { GL_FILL },
+
+    blendEnable       { false },
+    blendSrcRgb       { GL_ONE },
+    blendDstRgb       { GL_ZERO },
+    blendSrcAlpha     { GL_ONE },
+    blendDstAlpha     { GL_ZERO },
+    blendEqModeRgb    { GL_FUNC_ADD },
+    blendEqModeAlpha  { GL_FUNC_ADD }
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ const std::vector<Enum> State::DEPTH_FUNC
+{
+    { GL_NEVER,    "GL_NEVER"    },
+    { GL_LESS,     "GL_LESS"     },
+    { GL_EQUAL,    "GL_EQUAL"    },
+    { GL_LEQUAL,   "GL_LEQUAL"   },
+    { GL_GREATER,  "GL_GREATER"  },
+    { GL_NOTEQUAL, "GL_NOTEQUAL" },
+    { GL_GEQUAL,   "GL_GEQUAL"   },
+    { GL_ALWAYS,   "GL_ALWAYS"   },
+};
+
+/*static*/ const std::vector<Enum> State::CULL_FACE
+{
+    { GL_FRONT,          "GL_FRONT"          },
+    { GL_BACK,           "GL_BACK"           },
+    { GL_FRONT_AND_BACK, "GL_FRONT_AND_BACK" },
+};
+
+/*static*/ const std::vector<Enum> State::CULL_FRONTFACE
+{
+    { GL_CW,  "GL_CW"  },
+    { GL_CCW, "GL_CCW" },
+};
+
+/*static*/ const std::vector<Enum> State::POLYGONMODE_MODE
+{
+    { GL_POINT,  "GL_POINT" },
+    { GL_LINE,   "GL_LINE"  },
+    { GL_FILL,   "GL_FILL"  },
+};
+
+/*static*/ const std::vector<Enum> State::BLENDFUNC_FACTOR
+{
+    { GL_ZERO,                     "GL_ZERO"                     },
+    { GL_ONE,                      "GL_ONE"                      },
+    { GL_SRC_COLOR,                "GL_SRC_COLOR"                },
+    { GL_SRC_ALPHA,                "GL_SRC_ALPHA"                },
+    { GL_SRC_ALPHA_SATURATE,       "GL_SRC_ALPHA_SATURATE"       },
+    { GL_SRC1_COLOR,               "GL_SRC1_COLOR"               },
+    { GL_SRC1_ALPHA,               "GL_SRC1_ALPHA"               },
+    { GL_DST_COLOR,                "GL_DST_COLOR"                },
+    { GL_DST_ALPHA,                "GL_DST_ALPHA"                },
+    { GL_CONSTANT_ALPHA,           "GL_CONSTANT_ALPHA"           },
+    { GL_CONSTANT_COLOR,           "GL_CONSTANT_COLOR"           },
+    { GL_ONE_MINUS_SRC_COLOR,      "GL_ONE_MINUS_SRC_COLOR"      },
+    { GL_ONE_MINUS_DST_COLOR,      "GL_ONE_MINUS_DST_COLOR"      },
+    { GL_ONE_MINUS_SRC_ALPHA,      "GL_ONE_MINUS_SRC_ALPHA"      },
+    { GL_ONE_MINUS_DST_ALPHA,      "GL_ONE_MINUS_DST_ALPHA"      },
+    { GL_ONE_MINUS_CONSTANT_COLOR, "GL_ONE_MINUS_CONSTANT_COLOR" },
+    { GL_ONE_MINUS_CONSTANT_ALPHA, "GL_ONE_MINUS_CONSTANT_ALPHA" },
+    { GL_ONE_MINUS_SRC1_COLOR,     "GL_ONE_MINUS_SRC1_COLOR"     },
+    { GL_ONE_MINUS_SRC1_ALPHA,     "GL_ONE_MINUS_SRC1_ALPHA"     },
+};
+
+/*static*/ const std::vector<Enum> State::BLENDEQ_MODE
+{
+    { GL_FUNC_ADD,              "GL_FUNC_ADD"              },
+    { GL_FUNC_SUBTRACT,         "GL_FUNC_SUBTRACT"         },
+    { GL_FUNC_REVERSE_SUBTRACT, "GL_FUNC_REVERSE_SUBTRACT" },
+    { GL_MIN,                   "GL_MIN"                   },
+    { GL_MAX,                   "GL_MAX"                   },
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void State::Apply()
+{
+    if (depthTestEnable)
+    {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(depthFunc);
+    }
+    else
+    {
+        glDisable(GL_DEPTH_TEST);
+    }
+
+    if (cullFaceEnable)
+    {
+        glEnable(GL_CULL_FACE);
+        glCullFace(cullFace);
+        glFrontFace(cullFrontFace);
+    }
+    else
+    {
+        glDisable(GL_CULL_FACE);
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
+
+    if (blendEnable)
+    {
+        glEnable(GL_BLEND);
+        glBlendFuncSeparate(blendSrcRgb, blendDstRgb, blendSrcAlpha, blendDstAlpha);
+        glBlendEquationSeparate(blendEqModeRgb, blendEqModeAlpha);
+    }
+    else
+    {
+        glDisable(GL_BLEND);
+    }
+
+}
+
+/* ****************************************************************************************************************** */
+
+const char *GetGlErrorStr()
 {
     const GLenum err = glGetError();
     switch (err)
@@ -602,3 +753,4 @@ const char *OpenGL::GetGlErrorStr()
 }
 
 /* ****************************************************************************************************************** */
+} // namespace OpenGL

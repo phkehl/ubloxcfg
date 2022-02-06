@@ -37,11 +37,12 @@ class ImageTexture
 
         // Create OpenGL image texture from raw RGBA data
         ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap = false);
+        ImageTexture(const int width, const int height, const uint8_t *rgbaData, const bool genMipmap = false);
 
         int GetWidth();
         int GetHeight();
         void *GetImageTexture();
-        unsigned int GetTexture();
+        uint32_t GetTexture();
 
         // Destroy OpenGL image texture, actively or on destruct
         void Destroy();
@@ -57,13 +58,12 @@ class ImageTexture
 
     private:
 
-        int          _width;
-        int          _height;
-        unsigned int _texture;
+        int     _width;
+        int      _height;
+        uint32_t _texture;
 
-        static unsigned int _MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap);
+        static uint32_t _MakeTex(const int width, const int height, const uint8_t *data, const bool genMipmap);
 };
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -89,12 +89,12 @@ class FrameBuffer
 
     private:
 
-        int          _width;
-        int          _height;
-        bool         _fbok;
-        unsigned int _framebuffer;
-        unsigned int _renderbuffer;
-        unsigned int _texture;
+        int      _width;
+        int      _height;
+        bool     _fbok;
+        uint32_t _framebuffer;
+        uint32_t _renderbuffer;
+        uint32_t _texture;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -130,10 +130,10 @@ class Shader
 
     private:
 
-        unsigned int _shaderProgram;
+        uint32_t _shaderProgram;
 
-        bool _CheckShader(const unsigned int shader, const char *info);
-        bool _CheckProgram(const unsigned int program, const char *info);
+        bool _CheckShader(const uint32_t shader, const char *info);
+        bool _CheckProgram(const uint32_t program, const char *info);
 
 };
 
@@ -143,17 +143,64 @@ struct Vertex
 {
     Vertex(const glm::vec3 &_pos    = { 0.0f, 0.0f, 0.0f },
            const glm::vec3 &_normal = { 0.0f, 0.0f, 0.0f },
-           const glm::vec4 &_colour = { 0.0f, 0.0f, 0.0f, 1.0f });
+           const glm::vec4 &_colour = { 0.0f, 0.0f, 0.0f, 1.0f },
+           const glm::vec2 &_tex    = { 0.0f, 0.0f });
+    Vertex(const glm::vec3 &_pos    = { 0.0f, 0.0f, 0.0f },
+           const glm::vec3 &_normal = { 0.0f, 0.0f, 0.0f },
+           const glm::vec2 &_tex    = { 0.0f, 0.0f });
+    Vertex(const glm::vec3 &_pos    = { 0.0f, 0.0f, 0.0f },
+           const glm::vec2 &_tex    = { 0.0f, 0.0f });
     glm::vec3 pos;
     glm::vec3 normal;
     glm::vec4 colour;
+    glm::vec2 tex;
     static constexpr uint32_t POS_OFFS    = 0;
     static constexpr int32_t  POS_NUM     = 3;
     static constexpr uint32_t NORMAL_OFFS = sizeof(pos);
     static constexpr int32_t  NORMAL_NUM  = 3;
     static constexpr uint32_t COLOUR_OFFS = sizeof(pos) + sizeof(normal);
     static constexpr int32_t  COLOUR_NUM  = 4;
-    static constexpr uint32_t SIZE        = sizeof(pos) + sizeof(normal) + sizeof(colour);
+    static constexpr uint32_t TEX_OFFS    = sizeof(pos) + sizeof(normal) + sizeof(colour);
+    static constexpr int32_t  TEX_NUM     = 2;
+    static constexpr uint32_t SIZE        = sizeof(pos) + sizeof(normal) + sizeof(colour) + sizeof(tex);
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+struct Enum
+{
+    uint32_t    value;
+    const char *label;
+};
+
+struct State
+{
+    State();
+
+    void Apply();
+
+    bool     depthTestEnable;
+    uint32_t depthFunc;
+    static const std::vector<Enum> DEPTH_FUNC;
+
+    bool     cullFaceEnable;
+    uint32_t cullFace;
+    uint32_t cullFrontFace;
+    static const std::vector<Enum> CULL_FACE;
+    static const std::vector<Enum> CULL_FRONTFACE;
+
+    uint32_t polygonMode;
+    static const std::vector<Enum> POLYGONMODE_MODE;
+
+    bool     blendEnable;
+    uint32_t blendSrcRgb;
+    uint32_t blendDstRgb;
+    uint32_t blendSrcAlpha;
+    uint32_t blendDstAlpha;
+    uint32_t blendEqModeRgb;
+    uint32_t blendEqModeAlpha;
+    static const std::vector<Enum> BLENDFUNC_FACTOR;
+    static const std::vector<Enum> BLENDEQ_MODE;
 };
 
 // ---------------------------------------------------------------------------------------------------------------------

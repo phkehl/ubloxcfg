@@ -70,7 +70,7 @@ static void sGlfwErrorCallback(int error, const char* description)
 
 static int sWindowActivity; // boost framerate temporarily
 
-static void sCursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
+static void sGlfwCursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
 {
     UNUSED(window);
     UNUSED(xpos);
@@ -78,7 +78,7 @@ static void sCursorPositionCallback(GLFWwindow *window, double xpos, double ypos
     sWindowActivity = 10;
 }
 
-static void sMouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+static void sGlfwMouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
     UNUSED(window);
     UNUSED(button);
@@ -87,7 +87,7 @@ static void sMouseButtonCallback(GLFWwindow *window, int button, int action, int
     sWindowActivity = 20;
 }
 
-static void sKeyCallback (GLFWwindow *window, int key, int scancode, int action, int mods)
+static void sGlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     UNUSED(window);
     UNUSED(key);
@@ -246,7 +246,8 @@ int main(int argc, char **argv)
     GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, kWindowTitle, NULL, NULL);
     if (window == NULL)
     {
-        return 1;
+        glfwTerminate();
+        return EXIT_FAILURE;
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
@@ -254,9 +255,9 @@ int main(int argc, char **argv)
     glfwSetWindowIcon(window, 1, appIcon());
 
     // User activity detection, for frame rate control
-    glfwSetCursorPosCallback(window, sCursorPositionCallback);
-    glfwSetMouseButtonCallback(window, sMouseButtonCallback);
-    glfwSetKeyCallback(window, sKeyCallback);
+    glfwSetCursorPosCallback(window, sGlfwCursorPositionCallback);
+    glfwSetMouseButtonCallback(window, sGlfwMouseButtonCallback);
+    glfwSetKeyCallback(window, sGlfwKeyCallback);
 
 #ifdef FF_BUILD_DEBUG
     glDebugMessageCallback(sGlHandleDebug, nullptr);
@@ -362,7 +363,7 @@ int main(int argc, char **argv)
             lastMark = ((now + (markInterval / 2 )) / markInterval) * markInterval;
         }
 
-        if ( (sWindowActivity > 0) || ((now - lastDraw) > (1000/10)))
+        if ( (sWindowActivity > 0) || ((now - lastDraw) >= (1000/10)))
         {
             lastDraw = now;
             sWindowActivity--;
@@ -423,7 +424,7 @@ int main(int argc, char **argv)
             app->PerfToc(GuiApp::Perf_e::TOTAL);
 
             glfwSwapBuffers(window);
-            glFlush();
+            //glFlush();
         }
         else
         {
@@ -431,7 +432,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (GL_APPLE_rgb_422)
+    if (app)
     {
         // Save window geometry
         glfwGetWindowSize(window, &windowWidth, &windowHeight);

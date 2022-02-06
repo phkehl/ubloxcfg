@@ -77,12 +77,9 @@ class GuiWidgetOpenGl
         glm::mat4 _view;       // Camera (view, eye) matrix: world -> view
         glm::mat4 _projection; // Projection matrix: view -> clip
 
-        bool _depthTest;
-        bool _cullFace;
-        bool _cullBack;
-        bool _cullCcw;
-        bool _wireframe;
+        OpenGL::State _glState;
         bool _forceRender;
+        bool _StateEnumCombo(const char *label, uint32_t &value, const std::vector<OpenGL::Enum> enums);
 
         static constexpr float FIELD_OF_VIEW_MIN =  10.0f;
         static constexpr float FIELD_OF_VIEW_MAX = 100.0f;

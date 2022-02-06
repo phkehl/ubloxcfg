@@ -50,6 +50,7 @@ extern "C" {
 #define NOVATEL_RXSTATUS_MSGID            93
 #define NOVATEL_TIME_MSGID               101
 #define NOVATEL_RAWIMUSX_MSGID          1462
+#define NOVATEL_RAWDMI_MSGID            2269
 
 #define NOVATEL_MESSAGES(_P_) \
     _P_(NOVATEL_BESTPOS_MSGID,          "BESTPOS") \
@@ -66,7 +67,8 @@ extern "C" {
     _P_(NOVATEL_PSRDOP2_MSGID,          "PSRDOP2") \
     _P_(NOVATEL_RXSTATUS_MSGID,         "RXSTATUS") \
     _P_(NOVATEL_TIME_MSGID,             "TIME") \
-    _P_(NOVATEL_RAWIMUSX_MSGID,         "RAWIMUSX")
+    _P_(NOVATEL_RAWIMUSX_MSGID,         "RAWIMUSX") \
+    _P_(NOVATEL_RAWDMI_MSGID,           "RAWDMI")
 
 bool novatelMessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
 bool novatelMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);

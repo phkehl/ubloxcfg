@@ -32,7 +32,8 @@ GuiWinExperiment::GuiWinExperiment() :
     GuiWin("Experiments"),
     _tabItemFlags   { ImGuiTabItemFlags_SetSelected },
     _openFileDialog { _winName + "OpenFileDialog" },
-    _saveFileDialog { _winName + "SaveFileDialog" }
+    _saveFileDialog { _winName + "SaveFileDialog" },
+    _matrixInit     { false }
 {
     _winSize = { 100, 50 };
     _winFlags |= ImGuiWindowFlags_NoDocking;
@@ -68,7 +69,7 @@ void GuiWinExperiment::DrawWindow()
             _DrawGuiWidgetMap();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Matrix"))//, nullptr, _tabItemFlags))
+        if (ImGui::BeginTabItem("Matrix")) //, nullptr, _tabItemFlags))
         {
             _tabItemFlags = ImGuiTabItemFlags_None;
             _DrawMatrix();
@@ -220,13 +221,53 @@ void GuiWinExperiment::_DrawGuiWidgetMap()
 
 void GuiWinExperiment::_DrawMatrix()
 {
-    const FfVec2f pos = ImGui::GetCursorScreenPos();
-    const FfVec2f size = ImGui::GetContentRegionAvail();
-    ImGui::Text("matrix %.0fx%.0f", size.x, size.y);
-    void *tex = _matrix.Render(size.x, size.y);
-    if (tex)
+    if (!_matrixInit)
     {
-        ImGui::GetWindowDrawList()->AddImage(tex, pos, pos + size, ImVec2(0, 1), ImVec2(1, 0));
+        if (ImGui::Button("start"))
+        {
+            _matrixInit = _matrix.Init();
+        }
+    }
+    else
+    {
+        if (ImGui::Button("stop"))
+        {
+            _matrix.Destroy();
+            _matrixInit = false;
+        }
+    }
+
+    if (_matrixInit)
+    {
+        const FfVec2f pos = ImGui::GetCursorScreenPos();
+        const FfVec2f size = ImGui::GetContentRegionAvail();
+        ImGui::Text("matrix %.0fx%.0f", size.x, size.y);
+
+        if (_framebuffer.Begin(size.x, size.y))
+        {
+            ImGui::TextUnformatted("framebuffer ok");
+            ImGui::Text("frame %u", ImGui::GetFrameCount());
+
+            //_framebuffer.Clear(1.0,0.0,0.0,1.0);
+            _matrix.Animate();
+            _matrix.Render(size.x, size.y);
+
+            _framebuffer.End();
+            void *tex = _framebuffer.GetTexture();
+            if (tex)
+            {
+                ImGui::Text("texture %p", tex);
+                ImGui::GetWindowDrawList()->AddImage(tex, pos, pos + size, ImVec2(0,1), ImVec2(1,0));
+            }
+            else
+            {
+                ImGui::TextUnformatted("no texture");
+            }
+        }
+        else
+        {
+            ImGui::TextUnformatted("no framebuffer");
+        }
     }
 }
 
