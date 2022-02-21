@@ -122,12 +122,12 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
 
     // Load settings
     GuiSettings::GetValue("App.debugWindow", _debugWinOpen, false);
-    GuiSettings::GetValue("App.settingsWindow",   *_appWindows[APP_WIN_SETTINGS]->GetOpenFlag(), false);
-    GuiSettings::GetValue("App.aboutWindow",      *_appWindows[APP_WIN_ABOUT]->GetOpenFlag(), false);
-    GuiSettings::GetValue("App.helpWindow",       *_appWindows[APP_WIN_HELP]->GetOpenFlag(), false);
-    GuiSettings::GetValue("App.playWindow",       *_appWindows[APP_WIN_PLAY]->GetOpenFlag(), false);
-    GuiSettings::GetValue("App.legendWindow",     *_appWindows[APP_WIN_LEGEND]->GetOpenFlag(), false);
-    GuiSettings::GetValue("App.experimentWindow", *_appWindows[APP_WIN_EXPERIMENT]->GetOpenFlag(), false);
+    GuiSettings::GetValue("App.settingsWindow",   *_appWindows[APP_WIN_SETTINGS]->WinOpenFlag(), false);
+    GuiSettings::GetValue("App.aboutWindow",      *_appWindows[APP_WIN_ABOUT]->WinOpenFlag(), false);
+    GuiSettings::GetValue("App.helpWindow",       *_appWindows[APP_WIN_HELP]->WinOpenFlag(), false);
+    GuiSettings::GetValue("App.playWindow",       *_appWindows[APP_WIN_PLAY]->WinOpenFlag(), false);
+    GuiSettings::GetValue("App.legendWindow",     *_appWindows[APP_WIN_LEGEND]->WinOpenFlag(), false);
+    GuiSettings::GetValue("App.experimentWindow", *_appWindows[APP_WIN_EXPERIMENT]->WinOpenFlag(), false);
     _debugLog.SetSettings(GuiSettings::GetValue("App.debugLog"));
 
     // Load previous receiver and logfile windows
@@ -181,32 +181,32 @@ void GuiApp::Shutdown()
 
     // Remember some settings
     GuiSettings::SetValue("App.debugWindow",      _debugWinOpen);
-    GuiSettings::SetValue("App.settingsWindow",   _appWindows[APP_WIN_SETTINGS]->IsOpen());
-    GuiSettings::SetValue("App.aboutWindow",      _appWindows[APP_WIN_ABOUT]->IsOpen());
-    GuiSettings::SetValue("App.helpWindow",       _appWindows[APP_WIN_HELP]->IsOpen());
-    GuiSettings::SetValue("App.playWindow",       _appWindows[APP_WIN_PLAY]->IsOpen());
-    GuiSettings::SetValue("App.legendWindow",     _appWindows[APP_WIN_LEGEND]->IsOpen());
-    GuiSettings::SetValue("App.experimentWindow", _appWindows[APP_WIN_EXPERIMENT]->IsOpen());
+    GuiSettings::SetValue("App.settingsWindow",   _appWindows[APP_WIN_SETTINGS]->WinIsOpen());
+    GuiSettings::SetValue("App.aboutWindow",      _appWindows[APP_WIN_ABOUT]->WinIsOpen());
+    GuiSettings::SetValue("App.helpWindow",       _appWindows[APP_WIN_HELP]->WinIsOpen());
+    GuiSettings::SetValue("App.playWindow",       _appWindows[APP_WIN_PLAY]->WinIsOpen());
+    GuiSettings::SetValue("App.legendWindow",     _appWindows[APP_WIN_LEGEND]->WinIsOpen());
+    GuiSettings::SetValue("App.experimentWindow", _appWindows[APP_WIN_EXPERIMENT]->WinIsOpen());
     GuiSettings::SetValue("App.debugLog", _debugLog.GetSettings());
 
     std::vector<std::string> openReceiverWinNames;
     for (auto &win: _receiverWindows)
     {
-        openReceiverWinNames.push_back(win->GetName());
+        openReceiverWinNames.push_back(win->WinName());
     }
     GuiSettings::SetValueList("App.receiverWindows", openReceiverWinNames, ",", MAX_SAVED_WINDOWS);
 
     std::vector<std::string> openLogfileWinNames;
     for (auto &win: _logfileWindows)
     {
-        openLogfileWinNames.push_back(win->GetName());
+        openLogfileWinNames.push_back(win->WinName());
     }
     GuiSettings::SetValueList("App.logfileWindows", openLogfileWinNames, ",", MAX_SAVED_WINDOWS);
 
     std::vector<std::string> openNtripWinNames;
     for (auto &win: _ntripWindows)
     {
-        openNtripWinNames.push_back(win->GetName());
+        openNtripWinNames.push_back(win->WinName());
     }
     GuiSettings::SetValueList("App.ntripWindows", openNtripWinNames, ",", MAX_SAVED_WINDOWS);
 
@@ -242,11 +242,11 @@ ImVec4 GuiApp::BackgroundColour()
 {
     if (_h4xx0rMode)
     {
-        return ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+        return ImVec4(0.0f, 0.0f, 0.0f, GUI_COLOUR4(APP_BACKGROUND).w);
     }
     else
     {
-        return ImGui::ColorConvertU32ToFloat4(GUI_COLOUR(APP_BACKGROUND));
+        return GUI_COLOUR4(APP_BACKGROUND);
     }
 }
 
@@ -280,6 +280,11 @@ void GuiApp::Loop(const uint32_t &frame, const double &now)
     }
 
     _notifications.Loop(now);
+
+    if (_h4xx0rMode)
+    {
+        _LoopMatrix(frame, now);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -291,7 +296,7 @@ void GuiApp::DrawFrame()
     // Draw app windows
     for (auto &win: _appWindows)
     {
-        if (win->IsOpen())
+        if (win->WinIsOpen())
         {
             win->DrawWindow();
         }
@@ -301,7 +306,7 @@ void GuiApp::DrawFrame()
     for (auto iter = _ntripWindows.begin(); iter != _ntripWindows.end(); )
     {
         auto &ntripWin = *iter;
-        if (ntripWin->IsOpen())
+        if (ntripWin->WinIsOpen())
         {
             ntripWin->DrawWindow();
             iter++;
@@ -316,7 +321,7 @@ void GuiApp::DrawFrame()
     for (auto iter = _receiverWindows.begin(); iter != _receiverWindows.end(); )
     {
         auto &receiverWin = *iter;
-        if (receiverWin->IsOpen())
+        if (receiverWin->WinIsOpen())
         {
             receiverWin->DrawWindow();
             receiverWin->DrawDataWindows();
@@ -333,7 +338,7 @@ void GuiApp::DrawFrame()
     for (auto iter = _logfileWindows.begin(); iter != _logfileWindows.end(); )
     {
         auto &logfileWin = *iter;
-        if (logfileWin->IsOpen())
+        if (logfileWin->WinIsOpen())
         {
             logfileWin->DrawWindow();
             logfileWin->DrawDataWindows();
@@ -355,7 +360,7 @@ void GuiApp::DrawFrame()
 
     if (_h4xx0rMode)
     {
-        _DrawH4xx0r();
+        _DrawMatrix();
     }
 
     // Notifications
@@ -370,7 +375,7 @@ template<typename T> void GuiApp::_CreateInputWindow(
     std::vector<std::string> existingWinNames;
     for (auto &win: inputWindows)
     {
-        existingWinNames.push_back(win->GetName());
+        existingWinNames.push_back(win->WinName());
     }
 
     int winNumber = 0;
@@ -404,14 +409,14 @@ template<typename T> void GuiApp::_CreateInputWindow(
         try
         {
             auto win = std::make_unique<T>(baseName + std::to_string(winNumber));
-            win->Open();
-            win->SetTitle(baseName + " " + std::to_string(winNumber));
+            win->WinOpen();
+            win->WinSetTitle(baseName + " " + std::to_string(winNumber));
             win->OpenPreviousDataWin();
             inputWindows.push_back(std::move(win));
             std::sort(inputWindows.begin(), inputWindows.end(),
                 [](const std::unique_ptr<T> &a, const std::unique_ptr<T> &b)
                 {
-                    return a->GetName() < b->GetName();
+                    return a->WinName() < b->WinName();
                 });
         }
         catch (std::exception &e)
@@ -429,7 +434,7 @@ void GuiApp::_CreateNtripWindow(const std::string &prevWinName)
     std::vector<std::string> existingWinNames;
     for (auto &win: _ntripWindows)
     {
-        existingWinNames.push_back(win->GetName());
+        existingWinNames.push_back(win->WinName());
     }
 
     int winNumber = 0;
@@ -461,14 +466,14 @@ void GuiApp::_CreateNtripWindow(const std::string &prevWinName)
     if (winNumber > 0)
     {
         auto win = std::make_unique<GuiWinNtrip>(baseName + std::to_string(winNumber));
-        win->Open();
-        win->SetTitle("NTRIP client " + std::to_string(winNumber));
+        win->WinOpen();
+        win->WinSetTitle("NTRIP client " + std::to_string(winNumber));
         _ntripWindows.emplace_back(std::move(win));
 
         std::sort(_ntripWindows.begin(), _ntripWindows.end(),
             [](const auto &a, const auto &b)
             {
-                return a->GetName() < b->GetName();
+                return a->WinName() < b->WinName();
             });
     }
 }
@@ -491,6 +496,7 @@ void GuiApp::_UpdateNtripWindows()
 
 void GuiApp::_MainMenu()
 {
+    bool h4xx0rPopup = false;
     if (ImGui::BeginMainMenuBar())
     {
         // Store menu bar height FIXME: is there a better way than doing this here for every frame?
@@ -510,7 +516,7 @@ void GuiApp::_MainMenu()
                 ImGui::Separator();
                 for (auto &receiverWin: _receiverWindows)
                 {
-                    if (ImGui::BeginMenu(receiverWin->GetTitle().c_str()))
+                    if (ImGui::BeginMenu(receiverWin->WinTitle().c_str()))
                     {
                         receiverWin->DataWinMenu();
                         ImGui::EndMenu();
@@ -531,7 +537,7 @@ void GuiApp::_MainMenu()
                 ImGui::Separator();
                 for (auto &logfileWin: _logfileWindows)
                 {
-                    if (ImGui::BeginMenu(logfileWin->GetTitle().c_str()))
+                    if (ImGui::BeginMenu(logfileWin->WinTitle().c_str()))
                     {
                         logfileWin->DataWinMenu();
                         ImGui::EndMenu();
@@ -550,9 +556,9 @@ void GuiApp::_MainMenu()
             for (int ix = 0; ix < NUMOF(toolMenuEntries); ix++)
             {
                 auto &win = _appWindows[toolMenuEntries[ix]];
-                if (ImGui::MenuItem(win->GetName().c_str()))
+                if (ImGui::MenuItem(win->WinName().c_str()))
                 {
-                    win->Open();
+                    win->WinOpen();
                 }
             }
             ImGui::Separator();
@@ -569,9 +575,9 @@ void GuiApp::_MainMenu()
                     ImGui::Separator();
                     for (auto &win: _ntripWindows)
                     {
-                        if (ImGui::MenuItem(win->GetTitle().c_str()))
+                        if (ImGui::MenuItem(win->WinTitle().c_str()))
                         {
-                            win->Open();
+                            win->WinOpen();
                         }
                     }
                 }
@@ -581,16 +587,19 @@ void GuiApp::_MainMenu()
             ImGui::Separator();
 
             ImGui::MenuItem("Debug", NULL, &_debugWinOpen);
-            if (ImGui::MenuItem("H4xx0r", NULL, &_h4xx0rMode))
-            {
-                _h4xx0rMode = _ConfigH4xx0r(_h4xx0rMode);
-            }
-            if (!_h4xx0rMode && ImGui::BeginPopupContextItem("H4xx0rConfig"))
-            {
-                _DrawH4xx0rConfig();
-                ImGui::EndPopup();
-            }
 
+            bool h4xx0r = _h4xx0rMode;
+            if (ImGui::MenuItem("H4xx0r", NULL, &h4xx0r))
+            {
+                if (h4xx0r)
+                {
+                    h4xx0rPopup = true;
+                }
+                else
+                {
+                    _h4xx0rMode = _ConfigMatrix(false);
+                }
+            }
             ImGui::EndMenu();
         }
 
@@ -647,6 +656,22 @@ void GuiApp::_MainMenu()
             _debugWinOpen = !_debugWinOpen;
         }
         ImGui::EndMainMenuBar();
+    }
+
+    if (h4xx0rPopup)
+    {
+        ImGui::OpenPopup("H4xx0rConfig");
+    }
+    if (ImGui::BeginPopup("H4xx0rConfig"))
+    {
+        _DrawMatrixConfig();
+        ImGui::Separator();
+        if (ImGui::Button("Start!"))
+        {
+            _h4xx0rMode = _ConfigMatrix(true);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 }
 
@@ -734,13 +759,13 @@ void GuiApp::_DrawDebugWin()
                     }
                     if (ImGui::Button(buttons[ix].label, buttonSize) && _appWindows[buttons[ix].win])
                     {
-                        if (!_appWindows[buttons[ix].win]->IsOpen())
+                        if (!_appWindows[buttons[ix].win]->WinIsOpen())
                         {
-                            _appWindows[buttons[ix].win]->Open();
+                            _appWindows[buttons[ix].win]->WinOpen();
                         }
                         else
                         {
-                            _appWindows[buttons[ix].win]->Focus();
+                            _appWindows[buttons[ix].win]->WinFocus();
                         }
                     }
                 }
@@ -764,12 +789,14 @@ void GuiApp::_DrawDebugWin()
                     { "##CPU",          "CPU load",      Perf_e::CPU },
                 };
 
-                ImPlot::SetNextPlotLimitsY(0, 100, ImGuiCond_Once);
-                ImPlot::SetNextPlotLimitsX(0, _perfData[0].data.size(), ImGuiCond_Always);
-                if (ImPlot::BeginPlot("##Performance", nullptr, nullptr, plotSize1,
-                    ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus, ImPlotAxisFlags_NoTickLabels, ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale))
+                if (ImPlot::BeginPlot("##Performance", plotSize1, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus))
                 {
-                    ImPlot::SetLegendLocation(ImPlotLocation_South, ImPlotOrientation_Horizontal, true);
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100, ImGuiCond_Once);
+                    ImPlot::SetupAxisLimits(ImAxis_X1, 0, _perfData[0].data.size(), ImGuiCond_Always);
+                    ImPlot::SetupLegend(ImPlotLocation_South, ImPlotLegendFlags_Horizontal);
+                    ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels);
+                    ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale);
+                    ImPlot::SetupFinish();
                     for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
                     {
                         PerfData *pd = &_perfData[plots[plotIx].perf];
@@ -786,11 +813,11 @@ void GuiApp::_DrawDebugWin()
                 const ImPlotRange range; // (0.0, 2.0);
                 for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
                 {
-                    if (ImPlot::BeginPlot(plots[plotIx].title, nullptr, nullptr, plotSize2,
-                        ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend,
-                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks,
-                        ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks))
+                    if (ImPlot::BeginPlot(plots[plotIx].title, plotSize2, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend))
                     {
+                        ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks);
+                        ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks);
+                        ImPlot::SetupFinish();
                         PerfData &pd = _perfData[plots[plotIx].perf];
                         ImPlot::SetNextFillStyle(ImPlot::GetColormapColor(plotIx));
                         ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.data.size(), ImPlotBin_Sturges, false, false, range, true, 0.8);
@@ -925,17 +952,16 @@ void GuiApp::PerfToc(const enum Perf_e perf)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiApp::_ConfigH4xx0r(const bool enable)
+bool GuiApp::_ConfigMatrix(const bool enable)
 {
     DEBUG("H4xx0r mode: %s", enable ? "enable" : "disable");
     if (enable)
     {
-        // _matrixOpts.debugFrames = true;
-        // _matrixOpts.debugGrid = true;
         if (!_matrix.Init(_matrixOpts))
         {
             return false;
         }
+        _matrixLastRender = ImGui::GetTime();
     }
     else
     {
@@ -946,22 +972,27 @@ bool GuiApp::_ConfigH4xx0r(const bool enable)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiApp::_DrawH4xx0r()
+void GuiApp::_LoopMatrix(const uint32_t &frame, const double &now)
 {
-    if (!_h4xx0rMode)
+    UNUSED(frame);
+    const double rate = 50.0; // 1/s
+    int nIter = (now - _matrixLastRender + (0.5 / rate)) * rate;
+    _matrixLastRender = now;
+    nIter = CLIP(nIter, 1, 10);
+    while (nIter > 0)
     {
-        return;
+        _matrix.Animate();
+        nIter--;
     }
+}
 
-    _matrix.Animate();
+// ---------------------------------------------------------------------------------------------------------------------
 
-    //ImGuiIO &io = ImGui::GetIO();
+void GuiApp::_DrawMatrix()
+{
     ImGuiViewport *viewPort = ImGui::GetMainViewport();
-    //DEBUG("%.0f %.0f %.0f %.0f", viewPort->Pos.x, viewPort->Pos.y, viewPort->Size.x, viewPort->Size.y);
-
     if (_matrixFb.Begin(viewPort->Size.x, viewPort->Size.y))
     {
-        //_framebuffer.Clear(1.0,0.0,0.0,1.0);
         _matrix.Render(viewPort->Size.x, viewPort->Size.y);
 
         _matrixFb.End();
@@ -978,7 +1009,7 @@ void GuiApp::_DrawH4xx0r()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiApp::_DrawH4xx0rConfig()
+void GuiApp::_DrawMatrixConfig()
 {
     const struct { enum GlMatrix::Options::Mode_e mode; const char *label; } modes[] =
     {

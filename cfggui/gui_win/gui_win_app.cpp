@@ -54,7 +54,7 @@ void GuiWinAppAbout::DrawWindow()
     ImGui::PopFont();
 
     ImGui::PushFont(GuiSettings::fontSans);
-    ImGui::TextUnformatted( "Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)");
+    ImGui::TextUnformatted( "Copyright (c) 2020-2022 Philippe Kehl (flipflip at oinkzwurgl dot org)");
     Gui::TextLink(          "https://oinkzwurgl.org/hacking/ubloxcfg/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("This consists of the following parts:");
@@ -272,7 +272,7 @@ GuiWinAppImguiDemo::GuiWinAppImguiDemo() :
 
 void GuiWinAppImguiDemo::DrawWindow()
 {
-    ImGui::ShowDemoWindow(GetOpenFlag());
+    ImGui::ShowDemoWindow(WinOpenFlag());
 }
 
 GuiWinAppImplotDemo::GuiWinAppImplotDemo() :
@@ -283,7 +283,7 @@ GuiWinAppImplotDemo::GuiWinAppImplotDemo() :
 
 void GuiWinAppImplotDemo::DrawWindow()
 {
-    ImPlot::ShowDemoWindow(GetOpenFlag());
+    ImPlot::ShowDemoWindow(WinOpenFlag());
 }
 
 #endif
@@ -301,7 +301,7 @@ GuiWinAppImguiMetrics::GuiWinAppImguiMetrics() :
 
 void GuiWinAppImguiMetrics::DrawWindow()
 {
-    ImGui::ShowMetricsWindow(GetOpenFlag());
+    ImGui::ShowMetricsWindow(WinOpenFlag());
 }
 #endif
 
@@ -316,7 +316,7 @@ GuiWinAppImplotMetrics::GuiWinAppImplotMetrics() :
 
 void GuiWinAppImplotMetrics::DrawWindow()
 {
-    ImPlot::ShowMetricsWindow(GetOpenFlag());
+    ImPlot::ShowMetricsWindow(WinOpenFlag());
 }
 
 /* ****************************************************************************************************************** */
@@ -325,7 +325,7 @@ GuiWinAppImguiStyles::GuiWinAppImguiStyles() :
     GuiWinApp("DearImGuiStyles")
 {
     _winSize = { 70, 40 };
-    SetTitle("Dear ImGui styles");
+    WinSetTitle("Dear ImGui styles");
 }
 
 void GuiWinAppImguiStyles::DrawWindow()
@@ -346,7 +346,7 @@ GuiWinAppImplotStyles::GuiWinAppImplotStyles() :
     GuiWinApp("ImPlotStyles")
 {
     _winSize = { 70, 40 };
-    SetTitle("ImPlot styles");
+    WinSetTitle("ImPlot styles");
 }
 
 void GuiWinAppImplotStyles::DrawWindow()

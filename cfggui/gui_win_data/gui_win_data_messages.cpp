@@ -168,15 +168,6 @@ void GuiWinDataMessages::_ProcessData(const InputData &data)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataMessages::_Loop(const uint32_t &frame, const double &now)
-{
-    UNUSED(frame);
-    _nowIm = now;
-    _nowTs = TIME();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 GuiWinDataMessages::MsgInfo::MsgInfo(const std::string &_name, std::unique_ptr<GuiMsg> _renderer) :
     name{_name}, msg{nullptr}, count{0}, dt{}, dtIx{0}, rate{0.0}, age{0.0}, flag{false},
     hexdump{}, renderer{std::move(_renderer)}

@@ -1070,12 +1070,12 @@ bool GuiWinDataConfig::_DrawControls()
             {
                 _cfgSaveFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
                 _cfgSaveFileDialog.SetFilename( Ff::Strftime("config_%Y%m%d_%H%M.cfg") );
-                _cfgSaveFileDialog.SetTitle(_winTitle + " - Save configuration...");
+                _cfgSaveFileDialog.WinSetTitle(_winTitle + " - Save configuration...");
                 _cfgSaveFileDialog.SetFileFilter("\\.(cfg)", true);
             }
             else
             {
-                _cfgSaveFileDialog.Focus();
+                _cfgSaveFileDialog.WinFocus();
             }
         }
         Gui::ItemTooltip("Save configuration to file");

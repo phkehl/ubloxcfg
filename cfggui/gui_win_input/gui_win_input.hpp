@@ -91,6 +91,8 @@ class GuiWinInput : public GuiWin
 
         void _UpdateTitle();
 
+        void _SummonDataWindows();
+
     private:
 };
 

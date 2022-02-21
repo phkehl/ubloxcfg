@@ -39,7 +39,6 @@ class GuiWinDataMessages : public GuiWinData
 
     protected:
 
-        void _Loop(const uint32_t &frame, const double &now) final;
         void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;

@@ -94,7 +94,7 @@ void GuiWinExperiment::_DrawGuiWinFileDialog()
         }
         else
         {
-            _openFileDialog.Focus();
+            _openFileDialog.WinFocus();
         }
     }
     ImGui::SameLine();
@@ -107,12 +107,12 @@ void GuiWinExperiment::_DrawGuiWinFileDialog()
         {
             _saveFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
             _saveFileDialog.SetFilename("saveme.txt");
-            _saveFileDialog.SetTitle("blablabla...");
+            _saveFileDialog.WinSetTitle("blablabla...");
             //_saveFileDialog->SetConfirmOverwrite(false);
         }
         else
         {
-            _saveFileDialog.Focus();
+            _saveFileDialog.WinFocus();
         }
     }
     ImGui::SameLine();

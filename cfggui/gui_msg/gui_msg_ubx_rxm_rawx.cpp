@@ -153,8 +153,8 @@ bool GuiMsgUbxRxmRawx::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
         ImGui::TextUnformatted("Measurements:");
         ImGui::SameLine(dataOffs);
         ImGui::Text("%d", (int)_rawInfos.size());
-        ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     _table.DrawTable(sizeAvail - topSize);
 

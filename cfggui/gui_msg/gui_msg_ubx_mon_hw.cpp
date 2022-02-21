@@ -157,8 +157,8 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfV
         _RenderStatusFlag(_aPowerFlags,   hw.aPower,                                         "Antenna power",  dataOffs);
         _RenderStatusFlag(_safebootFlags, CHKBITS(hw.flags, UBX_MON_HW_V0_FLAGS_SAFEBOOT),   "Safeboot mode",  dataOffs);
         _RenderStatusFlag(_jammingFlags,  UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_GET(hw.flags),    "Jamming status", dataOffs);
-        ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     //Gui::VerticalSeparator();
     ImGui::SameLine();
@@ -187,9 +187,8 @@ bool GuiMsgUbxMonHw::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const FfV
         const float jam = (float)hw.jamInd / (float)UBX_MON_HW_V0_JAMIND_MAX;
         snprintf(str, sizeof(str), "%.1f%%", jam * 1e2f);
         ImGui::ProgressBar(jam, ImVec2(-1.0f,0.0f), str);
-
-        ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     _table.DrawTable(sizeAvail - topSize);
 

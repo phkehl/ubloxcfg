@@ -27,7 +27,7 @@
 
 GuiMsgUbxMonSpan::GuiMsgUbxMonSpan(std::shared_ptr<InputReceiver> receiver, std::shared_ptr<InputLogfile> logfile) :
     GuiMsg(receiver, logfile),
-    _resetPlotRange{true}
+    _resetPlotRange { true }
 {
 }
 
@@ -112,7 +112,7 @@ void GuiMsgUbxMonSpan::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         spect.count += 1.0;
 
         spect.tab = Ff::Sprintf("RF%d (%.6fMHz)", spectIx, spect.center);
-        spect.title = Ff::Sprintf("RF%d (PGA %.0fdB)##%p", spectIx, spect.pga, std::addressof(spect));
+        spect.title = Ff::Sprintf("RF%d (PGA %.0fdB)###%p", spectIx, spect.pga, std::addressof(spect));
         spect.xlabel = Ff::Sprintf("Frequency (center %.6fMHz)", spect.center);
     }
 }
@@ -183,17 +183,19 @@ bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
 
 void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
 {
-    if (_resetPlotRange)
+    if (ImPlot::BeginPlot(spect.title.c_str(), size, ImPlotFlags_Crosshairs))
     {
-        ImPlot::SetNextPlotLimitsX(-0.5 * spect.span, 0.5 * spect.span, ImGuiCond_Always);
-        ImPlot::SetNextPlotLimitsY(1.0, 99.0, ImGuiCond_Always);
-    }
+        ImPlot::SetupAxis(ImAxis_X1, spect.xlabel.c_str());
+        ImPlot::SetupAxis(ImAxis_Y1, "Amplitude");
+        if (_resetPlotRange)
+        {
+            ImPlot::SetupAxisLimits(ImAxis_X1, -0.5 * spect.span, 0.5 * spect.span, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 1.0, 99.0, ImGuiCond_Always);
+        }
+        ImPlot::SetupFinish();
 
-    const ImPlotFlags plotFlags = ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs;
-    if (ImPlot::BeginPlot(spect.title.c_str(), spect.xlabel.c_str(), "Amplitude", size, plotFlags))
-    {
         // Labels
-        const ImPlotLimits limits = ImPlot::GetPlotLimits();
+        const ImPlotRect limits = ImPlot::GetPlotLimits();
         for (auto &label: FREQ_LABELS)
         {
             if (std::fabs(spect.center - label.freq) < spect.span)

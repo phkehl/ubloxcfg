@@ -61,8 +61,8 @@ bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     const float valuesFail[] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
     const ImPlotAxisFlags axesFlags  = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
-    const ImPlotFlags     plotFlags  = ImPlotFlags_NoLegend | ImPlotFlags_NoMousePos | ImPlotFlags_NoMenus |
-                                       ImPlotFlags_NoBoxSelect | ImPlotFlags_NoHighlight;
+    const ImPlotFlags     plotFlags  = ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText | ImPlotFlags_NoMenus |
+                                       ImPlotFlags_NoBoxSelect;
     const char * const    xyLabels[] = { "N", "E", "D" };
     const float           scaleMin   = 0; //-1e-3 * 1e-3; // mm
     const float           scaleMax   = 0; //1e3 * 1e3;    // km
@@ -72,10 +72,14 @@ bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     const ImVec2          plotSize   { MIN(plotWidth, sizeAvail.y), MIN(plotWidth, sizeAvail.y) };
 
     ImPlot::PushColormap(colMap);
-    ImPlot::SetNextPlotTicksX(0 + 1.0/6.0, 1 - 1.0/6.0, 3, xyLabels);
-    ImPlot::SetNextPlotTicksY(1 - 1.0/6.0, 0 + 1.0/6.0, 3, xyLabels);
-    if (ImPlot::BeginPlot("Position NED [m^2]##pos", NULL, NULL, plotSize, plotFlags, axesFlags, axesFlags))
+
+    if (ImPlot::BeginPlot("Position NED [m^2]##pos", plotSize, plotFlags))
     {
+        ImPlot::SetupAxisTicks(ImAxis_X1, 0 + 1.0/6.0, 1 - 1.0/6.0, 3, xyLabels);
+        ImPlot::SetupAxisTicks(ImAxis_Y1, 1 - 1.0/6.0, 0 + 1.0/6.0, 3, xyLabels);
+        ImPlot::SetupAxis(ImAxis_X1, nullptr, axesFlags);
+        ImPlot::SetupAxis(ImAxis_Y1, nullptr, axesFlags);
+        ImPlot::SetupFinish();
         ImPlot::PlotHeatmap("heat", cov.posCovValid ? valuesPos : valuesFail, 3, 3, scaleMin, scaleMax, numFmt);
         ImPlot::EndPlot();
     }
@@ -83,10 +87,13 @@ bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
     ImGui::SameLine();
 
     ImPlot::PushColormap(colMap);
-    ImPlot::SetNextPlotTicksX(0 + 1.0/6.0, 1 - 1.0/6.0, 3, xyLabels);
-    ImPlot::SetNextPlotTicksY(1 - 1.0/6.0, 0 + 1.0/6.0, 3, xyLabels);
-    if (ImPlot::BeginPlot("Velocity NED [m^2/s^2]##vel", NULL, NULL, plotSize, plotFlags, axesFlags, axesFlags))
+    if (ImPlot::BeginPlot("Velocity NED [m^2/s^2]##vel", plotSize, plotFlags))
     {
+        ImPlot::SetupAxisTicks(ImAxis_X1, 0 + 1.0/6.0, 1 - 1.0/6.0, 3, xyLabels);
+        ImPlot::SetupAxisTicks(ImAxis_Y1, 1 - 1.0/6.0, 0 + 1.0/6.0, 3, xyLabels);
+        ImPlot::SetupAxis(ImAxis_X1, nullptr, axesFlags);
+        ImPlot::SetupAxis(ImAxis_Y1, nullptr, axesFlags);
+        ImPlot::SetupFinish();
         ImPlot::PlotHeatmap("heat", cov.velCovValid ? valuesVel : valuesFail, 3, 3, scaleMin, scaleMax, numFmt);
         ImPlot::EndPlot();
     }

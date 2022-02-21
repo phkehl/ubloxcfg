@@ -77,19 +77,22 @@ GuiSettings::GuiSettings() :
 
     // Tune ImGui styles
     ImGuiStyle *imguiStyle = &(ImGui::GetCurrentContext()->Style);
-    imguiStyle->Colors[ImGuiCol_PopupBg] = ImColor(IM_COL32(0x34, 0x34, 0x34, 0xf8));
-    imguiStyle->FrameBorderSize          = 1.0f;
-    imguiStyle->TabBorderSize            = 1.0f;
-    imguiStyle->WindowTitleAlign.x       = 0.5f;
-    imguiStyle->WindowMenuButtonPosition = ImGuiDir_Left;
-    imguiStyle->FrameRounding            = 3.0f;
-    //imguiStyle->WindowBorderSize         = 5.0f;
-    imguiStyle->WindowRounding           = 5.0f;
+    imguiStyle->Colors[ImGuiCol_PopupBg]          = ImColor(IM_COL32(0x34, 0x34, 0x34, 0xf8));
+    imguiStyle->Colors[ImGuiCol_TitleBg]          = ImVec4(0.232f, 0.201f, 0.271f, 1.00f);
+    imguiStyle->Colors[ImGuiCol_TitleBgActive]    = ImVec4(0.502f, 0.075f, 0.256f, 1.00f);
+    imguiStyle->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.200f, 0.220f, 0.270f, 0.75f);
+    imguiStyle->FrameBorderSize                   = 1.0f;
+    imguiStyle->TabBorderSize                     = 1.0f;
+    imguiStyle->WindowTitleAlign.x                = 0.0f;
+    imguiStyle->WindowMenuButtonPosition          = ImGuiDir_Left;
+    imguiStyle->FrameRounding                     = 3.0f;
+    //imguiStyle->WindowBorderSize                  = 5.0f;
+    imguiStyle->WindowRounding                    = 5.0f;
 
     // Tune ImPlot styles
     ImPlotStyle *implotStyle = &(ImPlot::GetCurrentContext()->Style);
     implotStyle->LineWeight              = 2.0;
-    //implotStyle->AntiAliasedLines      = true;
+    //implotStyle->AntiAliasedLines      = true; // TODO: enable MSAA (how?!), see ImGui FAQ
     implotStyle->UseLocalTime            = false;
     implotStyle->UseISO8601              = true;
     implotStyle->Use24HourClock          = true;

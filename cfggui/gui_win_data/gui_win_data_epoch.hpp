@@ -19,6 +19,7 @@
 #define __GUI_WIN_DATA_EPOCH_HPP__
 
 #include "gui_win_data.hpp"
+#include "gui_widget_table.hpp"
 
 /* ***** Epoch details ********************************************************************************************** */
 
@@ -29,7 +30,11 @@ class GuiWinDataEpoch : public GuiWinData
 
     protected:
 
+        GuiWidgetTable _table;
+
         void _DrawContent() final;
+        void _ProcessData(const InputData &data) final;
+        void _ClearData() final;
 };
 
 /* ****************************************************************************************************************** */

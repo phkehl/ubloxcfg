@@ -237,8 +237,8 @@ void GuiWinDataScatter::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            const float east  = epoch.enuAbs[_E_];
-            const float north = epoch.enuAbs[_N_];
+            const float east  = epoch.enuRef[_E_];
+            const float north = epoch.enuRef[_N_];
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
             draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), GuiSettings::GetFixColour(&epoch.raw));
@@ -246,7 +246,7 @@ void GuiWinDataScatter::_DrawContent()
             _histNumPoints++;
 
             // const ImVec4 fc = GuiSettings::GetFixColour4(&epoch.raw);
-            // DEBUG("%03d %6.3f %6.3f %6.3f   %.3f %.3f %.3f %.3f", ix, epoch.enuAbs[_E_], epoch.enuAbs[_N_], epoch.enuAbs[Database::_U_], fc.x, fc.y, fc.z, fc.w);
+            // DEBUG("%03d %6.3f %6.3f %6.3f   %.3f %.3f %.3f %.3f", ix, epoch.enuRef[_E_], epoch.enuRef[_N_], epoch.enuRef[Database::_U_], fc.x, fc.y, fc.z, fc.w);
 
             if (_showHistogram)
             {
@@ -315,16 +315,16 @@ void GuiWinDataScatter::_DrawContent()
     // Draw min/max/mean
     if (_showStats && havePoints)
     {
-        const float minEastX = cent.x + std::floor((stats.enuAbs[_E_].min * m2px) + 0.5);
-        const float maxEastX = cent.x + std::floor((stats.enuAbs[_E_].max * m2px) + 0.5);
+        const float minEastX = cent.x + std::floor((stats.enuRef[_E_].min * m2px) + 0.5);
+        const float maxEastX = cent.x + std::floor((stats.enuRef[_E_].max * m2px) + 0.5);
         draw->AddLine(ImVec2(minEastX, top), ImVec2(minEastX, bot), GUI_COLOUR(PLOT_STATS_MINMAX));
         draw->AddLine(ImVec2(maxEastX, top), ImVec2(maxEastX, bot), GUI_COLOUR(PLOT_STATS_MINMAX));
-        const float minNorthY = cent.y - std::floor((stats.enuAbs[_N_].min * m2px) + 0.5);
-        const float maxNorthY = cent.y - std::floor((stats.enuAbs[_N_].max * m2px) + 0.5);
+        const float minNorthY = cent.y - std::floor((stats.enuRef[_N_].min * m2px) + 0.5);
+        const float maxNorthY = cent.y - std::floor((stats.enuRef[_N_].max * m2px) + 0.5);
         draw->AddLine(ImVec2(left, minNorthY), ImVec2(right, minNorthY), GUI_COLOUR(PLOT_STATS_MINMAX));
         draw->AddLine(ImVec2(left, maxNorthY), ImVec2(right, maxNorthY), GUI_COLOUR(PLOT_STATS_MINMAX));
-        const float meanEastX = cent.x + std::floor((stats.enuAbs[_E_].mean * m2px) + 0.5);
-        const float meanNorthY = cent.y - std::floor((stats.enuAbs[_N_].mean * m2px) + 0.5);
+        const float meanEastX = cent.x + std::floor((stats.enuRef[_E_].mean * m2px) + 0.5);
+        const float meanNorthY = cent.y - std::floor((stats.enuRef[_N_].mean * m2px) + 0.5);
         if (refPos != Database::REFPOS_MEAN)
         {
             draw->AddLine(ImVec2(meanEastX, top), ImVec2(meanEastX, bot), GUI_COLOUR(PLOT_STATS_MEAN));
@@ -334,19 +334,19 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_STATS_MINMAX));
         char label[20];
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_E_].min);
+        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].min);
         ImGui::SetCursorScreenPos(ImVec2(minEastX - (GuiSettings::charSize.x * strlen(label)) - 2, top));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_E_].max);
+        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].max);
         ImGui::SetCursorScreenPos(ImVec2(maxEastX + 2, top));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_N_].min);
+        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].min);
         ImGui::SetCursorScreenPos(ImVec2(left, minNorthY));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_N_].max);
+        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].max);
         ImGui::SetCursorScreenPos(ImVec2(left, maxNorthY - lineHeight));
         ImGui::TextUnformatted(label);
 
@@ -357,11 +357,11 @@ void GuiWinDataScatter::_DrawContent()
         {
             ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_STATS_MEAN));
 
-            std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_E_].mean);
+            std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].mean);
             ImGui::SetCursorScreenPos(ImVec2(meanEastX + 2, top + lineHeight));
             ImGui::TextUnformatted(label);
 
-            std::snprintf(label, sizeof(label), "%+.3f", stats.enuAbs[_N_].mean);
+            std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].mean);
             ImGui::SetCursorScreenPos(ImVec2(left + 2 + (GuiSettings::charSize.x * 6), meanNorthY - lineHeight));
             ImGui::TextUnformatted(label);
 
@@ -384,8 +384,8 @@ void GuiWinDataScatter::_DrawContent()
             ImVec2 points[100];
             const double cosOmega = std::cos(stats.enErrEll.omega);
             const double sinOmega = std::sin(stats.enErrEll.omega);
-            const double x0 = stats.enuAbs[_E_].mean * m2px;
-            const double y0 = stats.enuAbs[_N_].mean * m2px;
+            const double x0 = stats.enuRef[_E_].mean * m2px;
+            const double y0 = stats.enuRef[_N_].mean * m2px;
             const double scale = SIGMA_SCALES[sIx];
             const double a = scale * stats.enErrEll.a;
             const double b = scale * stats.enErrEll.b;
@@ -411,8 +411,8 @@ void GuiWinDataScatter::_DrawContent()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            const float east  = epoch.enuAbs[_E_];
-            const float north = epoch.enuAbs[_N_];
+            const float east  = epoch.enuRef[_E_];
+            const float north = epoch.enuRef[_N_];
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
             const ImU32 c = epoch.raw.fixOk ? GUI_COLOUR(PLOT_FIX_HL_OK) : GUI_COLOUR(PLOT_FIX_HL_MASKED);
@@ -427,7 +427,7 @@ void GuiWinDataScatter::_DrawContent()
             draw->AddLine(cent + ImVec2(dx + 3, dy), cent + ImVec2(dx + l, dy), c, w);
             draw->AddLine(cent + ImVec2(dx, dy - l), cent + ImVec2(dx, dy - 3), c, w);
             draw->AddLine(cent + ImVec2(dx, dy + 3), cent + ImVec2(dx, dy + l), c, w);
-            //std::memcpy(lastEnu, epoch.enuAbs, sizeof(lastEnu));
+            //std::memcpy(lastEnu, epoch.enuRef, sizeof(lastEnu));
             //std::memcpy(lastLlh, epoch.llh, sizeof(lastLlh));
             return false;
         }
@@ -502,7 +502,7 @@ void GuiWinDataScatter::_DrawContent()
 
     if (_triggerSnapRadius)
     {
-        _plotRadius = MIN(MAX(stats.enuAbs[_E_].max, stats.enuAbs[_N_].max), maxRadiusM);
+        _plotRadius = MIN(MAX(stats.enuRef[_E_].max, stats.enuRef[_N_].max), maxRadiusM);
     }
 
     // Range control using mouse wheel (but not while dragging)

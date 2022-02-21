@@ -25,7 +25,6 @@
 #include "ff_utils.hpp"
 
 #include "gui_inc.hpp"
-#include "imgui_internal.h"
 
 #include "gui_win_data_config.hpp"
 #include "gui_win_data_fwupdate.hpp"
@@ -59,11 +58,12 @@ GuiWinInput::GuiWinInput(const std::string &name) :
 
     // Prevent other (data win, other input win) windows from docking into center of the input window, i.e. other
     // windows can only split this a input window but not "overlap" (add a tab)
-    // FIXME: Shouldn't ImGuiDockNodeFlags_NoDockingInCentralNode allone have that effect? bug?
-    // FIXME: This doesn't quite work... :-/
-    _winClass = std::make_unique<ImGuiWindowClass>();
-    _winClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingInCentralNode |
-         /* from imgui_internal.h: */ImGuiDockNodeFlags_CentralNode;
+    //_winClass = std::make_unique<ImGuiWindowClass>();
+    //_winClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingInCentralNode; // FIXME; doesn't seem to work
+    //_winClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverMe; // FIXME: but this seems to do the trick..
+    // FIXME: but then again, we would also have to prevent the input window from docking over data windows..
+    // so we just disable docking altogether for this window
+    _winFlags |= ImGuiWindowFlags_NoDocking;
 
     // Load saved settings
     GuiSettings::GetValue(_winName + ".autoHideDatawin", _autoHideDatawin, true);
@@ -80,7 +80,7 @@ GuiWinInput::~GuiWinInput()
     std::vector<std::string> openWinNames;
     for (auto &dataWin: _dataWindows)
     {
-        openWinNames.push_back(dataWin->GetName());
+        openWinNames.push_back(dataWin->WinName());
     }
     GuiSettings::SetValueList(_winName + ".dataWindows", openWinNames, ",", MAX_SAVED_WINDOWS);
     GuiSettings::SetValue(_winName + ".autoHideDatawin", _autoHideDatawin);
@@ -171,6 +171,7 @@ void GuiWinInput::DrawWindow()
     {
         return;
     }
+    bool summonDataWindows = false;
 
     // Options, other actions
     if (ImGui::Button(ICON_FK_COG "##Options"))
@@ -183,6 +184,10 @@ void GuiWinInput::DrawWindow()
         ImGui::Checkbox("Autohide data windows", &_autoHideDatawin);
         Gui::ItemTooltip("Automatically hide all data windows if this window is collapsed\n"
                          "respectively invisible while docked into another window.");
+        if (ImGui::Button("Summon data windows"))
+        {
+            summonDataWindows = true;
+        }
         ImGui::EndPopup();
     }
     Gui::VerticalSeparator();
@@ -221,6 +226,11 @@ void GuiWinInput::DrawWindow()
 
     _DrawLog();
 
+    if (summonDataWindows)
+    {
+        _SummonDataWindows();
+    }
+
     _DrawWindowEnd();
 }
 
@@ -238,7 +248,7 @@ void GuiWinInput::DrawDataWindows()
     {
         auto &dataWin = *iter;
 
-        if (dataWin->IsOpen())
+        if (dataWin->WinIsOpen())
         {
             dataWin->DrawWindow();
             iter++;
@@ -254,17 +264,17 @@ void GuiWinInput::DataWinMenu()
 {
     if (ImGui::MenuItem("Main"))
     {
-        Focus();
+        WinFocus();
     }
     if (!_dataWindows.empty())
     {
         ImGui::Separator();
-        const int offs = GetTitle().size() + 3;
+        const int offs = WinTitle().size() + 3;
         for (auto &win: _dataWindows)
         {
-            if (ImGui::MenuItem(win->GetTitle().substr(offs).c_str()))
+            if (ImGui::MenuItem(win->WinTitle().substr(offs).c_str()))
             {
-                win->Open();
+                win->WinOpen();
             }
         }
     }
@@ -300,7 +310,7 @@ void GuiWinInput::_DrawDataWinButtons()
         ImGui::BeginDisabled(!CHKBITS_ANY(def.reqs, _dataWinCaps));
         if (ImGui::Button(def.button, GuiSettings::iconSize))
         {
-            const std::string baseName = GetName() + def.name; // Receiver1Map, Logfile4Stats, ...
+            const std::string baseName = WinName() + def.name; // Receiver1Map, Logfile4Stats, ...
             int winNumber = 1;
             while (winNumber < 1000)
             {
@@ -308,7 +318,7 @@ void GuiWinInput::_DrawDataWinButtons()
                 bool nameUnused = true;
                 for (auto &dataWin: _dataWindows)
                 {
-                    if (winName == dataWin->GetName())
+                    if (winName == dataWin->WinName())
                     {
                         nameUnused = false;
                         break;
@@ -319,8 +329,8 @@ void GuiWinInput::_DrawDataWinButtons()
                     try
                     {
                         std::unique_ptr<GuiWinData> dataWin = def.create(winName, _database);
-                        dataWin->Open();
-                        dataWin->SetTitle(GetTitle() + std::string(" - ") + def.title + std::string(" ") + std::to_string(winNumber));
+                        dataWin->WinOpen();
+                        dataWin->WinSetTitle(WinTitle() + std::string(" - ") + def.title + std::string(" ") + std::to_string(winNumber));
                         _AddDataWindow(std::move(dataWin));
                     }
                     catch (std::exception &e)
@@ -343,7 +353,7 @@ void GuiWinInput::_DrawDataWinButtons()
 
 void GuiWinInput::OpenPreviousDataWin()
 {
-    const std::string winName = GetName(); // "Receiver1", "Logfile3", ...
+    const std::string winName = WinName(); // "Receiver1", "Logfile3", ...
     const std::vector<std::string> dataWinNames = GuiSettings::GetValueList(winName + ".dataWindows", ",", MAX_SAVED_WINDOWS);
     for (const auto &dataWinName: dataWinNames) // "Receiver1Scatter1", "Logfile3Map1", ...
     {
@@ -359,8 +369,8 @@ void GuiWinInput::OpenPreviousDataWin()
                 }
                 std::string dataWinName2 = winName + name; // "Receiver1Map1"
                 auto win = def.create(dataWinName2, _database);
-                win->Open();
-                win->SetTitle(GetTitle() + std::string(" - ") + def.title + std::string(" ") + name.substr(nameLen));
+                win->WinOpen();
+                win->WinSetTitle(WinTitle() + std::string(" - ") + def.title + std::string(" ") + name.substr(nameLen));
                 _AddDataWindow(std::move(win));
                 break;
             }
@@ -728,7 +738,7 @@ void GuiWinInput::_DrawLog()
 
 void GuiWinInput::_UpdateTitle()
 {
-    std::string mainTitle = GetTitle(); // "Receiver X" or "Receiver X: version"
+    std::string mainTitle = WinTitle(); // "Receiver X" or "Receiver X: version"
 
     {
         const auto pos = mainTitle.find(':');
@@ -742,20 +752,40 @@ void GuiWinInput::_UpdateTitle()
             mainTitle += std::string(": ") + _rxVerStr;
         }
 
-        SetTitle(mainTitle);
+        WinSetTitle(mainTitle);
     }
 
     // "Receiver X - child" or "Receiver X: version - child"
     for (auto &dataWin: _dataWindows)
     {
-        std::string childTitle = dataWin->GetTitle();
+        std::string childTitle = dataWin->WinTitle();
         const auto pos = childTitle.find(" - ");
         if (pos != std::string::npos)
         {
             childTitle.replace(0, pos, mainTitle);
-            dataWin->SetTitle(childTitle);
+            dataWin->WinSetTitle(childTitle);
         }
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinInput::_SummonDataWindows()
+{
+    const FfVec2f sep = GuiSettings::charSize * 2;
+    FfVec2f pos = ImGui::GetWindowPos();
+    pos.y += ImGui::GetWindowSize().y + GuiSettings::style->ItemSpacing.y;
+    for (auto &win: _dataWindows)
+    {
+        //if (!win->WinIsDocked())
+        {
+            win->WinMoveTo(pos);
+            win->WinResize();
+            win->WinFocus();
+            pos += sep;
+        }
+    }
+    WinFocus();
 }
 
 /* ****************************************************************************************************************** */

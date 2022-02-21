@@ -128,9 +128,11 @@ class GuiApp
         GlMatrix             _matrix;
         GlMatrix::Options    _matrixOpts;
         OpenGL::FrameBuffer  _matrixFb;
-        bool _ConfigH4xx0r(const bool enable);
-        void _DrawH4xx0r();
-        void _DrawH4xx0rConfig();
+        double               _matrixLastRender;
+        bool _ConfigMatrix(const bool enable);
+        void _LoopMatrix(const uint32_t &frame, const double &now);
+        void _DrawMatrix();
+        void _DrawMatrixConfig();
 
         using PerfMeas_t = std::array<float, 250>;
         struct PerfData

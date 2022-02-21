@@ -40,7 +40,7 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 {
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
-    SetTitle("Receiver X");
+    WinSetTitle("Receiver X");
 
     _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
@@ -68,7 +68,7 @@ GuiWinInputReceiver::~GuiWinInputReceiver()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWinInputReceiver::IsOpen()
+bool GuiWinInputReceiver::WinIsOpen()
 {
     // Keep window open as long as receiver is still connected (during disconnect)
     return _winOpen || !_receiver->IsIdle();
@@ -280,12 +280,12 @@ void GuiWinInputReceiver::_DrawActionButtons()
                 _recordFilePath = "";
                 _recordFileDialog.InitDialog(GuiWinFileDialog::FILE_SAVE);
                 _recordFileDialog.SetFilename( Ff::Strftime("log_%Y%m%d_%H%M") + (io.KeyCtrl ? ".ubx.gz" : ".ubx") );
-                _recordFileDialog.SetTitle(_winTitle + " - Record logfile...");
+                _recordFileDialog.WinSetTitle(_winTitle + " - Record logfile...");
                 _recordFileDialog.SetFileFilter("\\.(ubx|raw|ubz|ubx\\.gz)", true);
             }
             else
             {
-                _recordFileDialog.Focus();
+                _recordFileDialog.WinFocus();
             }
         }
         Gui::ItemTooltip("Record logfile\n(CTRL+click for compressed file)");

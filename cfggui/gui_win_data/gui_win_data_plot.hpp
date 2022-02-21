@@ -67,7 +67,7 @@ class GuiWinDataPlot : public GuiWinData
             PlotVar           *plotVarY;
             PlotType           type;
             Database          *db;
-            ImPlotYAxis        axis;
+            ImAxis             yAxis;
             PlotVarGetter_t    getter;
         };
         std::vector<PlotData> _plotData;
@@ -78,12 +78,11 @@ class GuiWinDataPlot : public GuiWinData
         double               _epochPeriod; // [s]
         uint32_t             _epochPrevTs;
         bool                 _dndHovered;
-        ImPlotFlags          _plotFlags;
-        std::string          _yLabels[3];
+        std::string          _yLabels[ImAxis_COUNT];
         ImPlotColormap       _colormap;
 
         void _SetVarX(PlotVar *plotVar);
-        void _AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis = ImPlotYAxis_1);
+        void _AddToPlot(PlotVar *plotVar, const ImAxis yAxis = ImAxis_Y1);
         void _RemoveFromPlot(PlotVar *plotVar);
         void _SavePlots();
         void _LoadPlots();

@@ -64,28 +64,28 @@ namespace Ff
         T x, y;
         Vec2() : x{0.0}, y{0.0} { }
         Vec2(const T _x, const T _y) : x{_x}, y{_y} { }
-        inline Vec2  operator *  (const T f)     const { return Vec2(x * f,   y * f);   }   // Vec2 * x
-        inline Vec2  operator /  (const T f)     const { return Vec2(x / f,   y / f);   }   // Vec2 / x
-        inline Vec2  operator *  (const Vec2 &v) const { return Vec2(x * v.x, y * v.y); }   // Vec2 * Vec2
-        inline Vec2  operator /  (const Vec2 &v) const { return Vec2(x / v.x, y / v.y); }   // Vec2 / Vec2
-        inline Vec2  operator +  (const Vec2 &v) const { return Vec2(x + v.x, y + v.y); }   // Vec2 + Vec2
-        inline Vec2  operator -  (const Vec2 &v) const { return Vec2(x - v.x, y - v.y); }   // Vec2 - Vec2
-        inline Vec2 &operator *= (const T f)           { x *= f;   y *= f; }                // Vec2 *= x;
-        inline Vec2 &operator /= (const T f)           { x /= f;   y /= f; }                // Vec2 /= x;
-        inline Vec2 &operator *= (const Vec2 &v)       { x *= v.x; y *= v.y; }              // Vec2 *= Vec2;
-        inline Vec2 &operator /= (const Vec2 &v)       { x /= v.x; y /= v.y; }              // Vec2 /= Vec2;
-        inline Vec2 &operator += (const Vec2 &v)       { x += v.x; y += v.y; }              // Vec2 += Vec2;
-        inline Vec2 &operator -= (const Vec2 &v)       { x -= v.x; y -= v.y; }              // Vec2 -= Vec2;
+        inline Vec2  operator *  (const T f)     const { return Vec2(x * f,   y * f);   }    // Vec2 * x
+        inline Vec2  operator /  (const T f)     const { return Vec2(x / f,   y / f);   }    // Vec2 / x
+        inline Vec2  operator *  (const Vec2 &v) const { return Vec2(x * v.x, y * v.y); }    // Vec2 * Vec2
+        inline Vec2  operator /  (const Vec2 &v) const { return Vec2(x / v.x, y / v.y); }    // Vec2 / Vec2
+        inline Vec2  operator +  (const Vec2 &v) const { return Vec2(x + v.x, y + v.y); }    // Vec2 + Vec2
+        inline Vec2  operator -  (const Vec2 &v) const { return Vec2(x - v.x, y - v.y); }    // Vec2 - Vec2
+        inline Vec2 &operator *= (const T f)           { x *= f;   y *= f; }                 // Vec2 *= x;
+        inline Vec2 &operator /= (const T f)           { x /= f;   y /= f; }                 // Vec2 /= x;
+        inline Vec2 &operator *= (const Vec2 &v)       { x *= v.x; y *= v.y; return *this; } // Vec2 *= Vec2;
+        inline Vec2 &operator /= (const Vec2 &v)       { x /= v.x; y /= v.y; return *this; } // Vec2 /= Vec2;
+        inline Vec2 &operator += (const Vec2 &v)       { x += v.x; y += v.y; return *this; } // Vec2 += Vec2;
+        inline Vec2 &operator -= (const Vec2 &v)       { x -= v.x; y -= v.y; return *this; } // Vec2 -= Vec2;
 
         template<typename TT = float>
-        Vec2(const Vec2<double> &v) : x{(T)v.x}, y{(T)v.y} { }                              // Vec2<float> = Vec2<double>
+        Vec2(const Vec2<double> &v) : x{(T)v.x}, y{(T)v.y} { }                               // Vec2<float> = Vec2<double>
 
         template<typename TT = double>
-        Vec2(const Vec2<float>  &v) : x{(T)v.x}, y{(T)v.y} { }                              // Vec2<double> = Vec2<float>
+        Vec2(const Vec2<float>  &v) : x{(T)v.x}, y{(T)v.y} { }                               // Vec2<double> = Vec2<float>
     };
 
     template <typename T>
-    inline Vec2<T> operator * (const T f, Vec2<T> const &v) { return v * f; }               // x * Vec2
+    inline Vec2<T> operator * (const T f, Vec2<T> const &v) { return v * f; }                // x * Vec2
 };
 
 /* ****************************************************************************************************************** */

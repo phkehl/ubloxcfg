@@ -28,124 +28,58 @@ GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Databa
 {
     _winSize = { 80, 25 };
 
-    ClearData();
+    _table.AddColumn("Variable");
+    _table.AddColumn("Count", 0.0f, GuiWidgetTable::ALIGN_RIGHT);
+    _table.AddColumn("Min",   0.0f, GuiWidgetTable::ALIGN_RIGHT);
+    _table.AddColumn("Mean",  0.0f, GuiWidgetTable::ALIGN_RIGHT);
+    _table.AddColumn("Std",   0.0f, GuiWidgetTable::ALIGN_RIGHT);
+    _table.AddColumn("Max",   0.0f, GuiWidgetTable::ALIGN_RIGHT);
 
-    _rows.push_back(Row("Latitude [deg]", [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
-        [](const Database::Stats &st, Row &row)
+    _rows.emplace_back("Latitude [deg]",
+        [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
+        [](const double value) { return Ff::Sprintf("%.12f", rad2deg(value)); });
+    _rows.emplace_back("Longitude [deg]",
+        [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
+        [](const double value) { return Ff::Sprintf("%.12f", rad2deg(value)); });
+    _rows.emplace_back("Height [m]",
+        [](const Database::EpochStats &es) { return es.llh[Database::_HEIGHT_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", value); });
+    _rows.emplace_back("Latitude [deg, min, sec]",
+        [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
+        [](const double value)
         {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%+17.12f", rad2deg(st.min));
-            row.max   = Ff::Sprintf("%+17.12f", rad2deg(st.max));
-            row.mean  = Ff::Sprintf("%+17.12f", rad2deg(st.mean));
-            row.std   = std::isnan(st.std) ? "0" : Ff::Sprintf("%.12f", rad2deg(st.std));
-        }));
-    _rows.push_back(Row("Longitude [deg]", [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
-        [](const Database::Stats &st, Row &row)
+            int d, m;
+            double s;
+            deg2dms(rad2deg(value), &d, &m, &s);
+            return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
+        });
+    _rows.emplace_back("Longitude [deg, min, sec]",
+        [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
+        [](const double value)
         {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%+17.12f", rad2deg(st.min));
-            row.max   = Ff::Sprintf("%+17.12f", rad2deg(st.max));
-            row.mean  = Ff::Sprintf("%+17.12f", rad2deg(st.mean));
-            row.std   = std::isnan(st.std) ? "0" : Ff::Sprintf("%.12f", rad2deg(st.std));
-        }));
-    _rows.push_back(Row("Height [m]", [](const Database::EpochStats &es) { return es.llh[Database::_HEIGHT_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%.3f", st.min);
-            row.max   = Ff::Sprintf("%.3f", st.max);
-            row.mean  = Ff::Sprintf("%.3f", st.mean);
-            row.std   = Ff::Sprintf("%.3f", st.std);
-        }));
-    _rows.push_back(Row("Latitude [deg, min, sec]",  [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            auto fmt = [](const double r)
-            {
-                int d, m;
-                double s;
-                deg2dms(rad2deg(r), &d, &m, &s);
-                return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
-            };
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = fmt(st.min);
-            row.max   = fmt(st.max);
-            row.mean  = fmt(st.mean);
-            row.std   = std::isnan(st.std) ? "0" : fmt(st.std);
-        }
-    ));
-    _rows.push_back(Row("Longitude [deg, min, sec]",  [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            auto fmt = [](const double r)
-            {
-                int d, m;
-                double s;
-                deg2dms(rad2deg(r), &d, &m, &s);
-                return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'W' : 'E');
-            };
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = fmt(st.min);
-            row.max   = fmt(st.max);
-            row.mean  = fmt(st.mean);
-            row.std   = std::isnan(st.std) ? "0" : fmt(st.std);
-        }));
-
-    _rows.push_back(Row("East (abs) [m]", [](const Database::EpochStats &es) { return es.enuAbs[Database::_E_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
-    _rows.push_back(Row("North (abs) [m]", [](const Database::EpochStats &es) { return es.enuAbs[Database::_N_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
-    _rows.push_back(Row("Up (abs) [m]", [](const Database::EpochStats &es) { return es.enuAbs[Database::_U_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
-
-    _rows.push_back(Row("East (mean) [m]", [](const Database::EpochStats &es) { return es.enuMean[Database::_E_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
-    _rows.push_back(Row("North (mean) [m]", [](const Database::EpochStats &es) { return es.enuMean[Database::_N_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
-    _rows.push_back(Row("Up (mean) [m]", [](const Database::EpochStats &es) { return es.enuMean[Database::_U_]; },
-        [](const Database::Stats &st, Row &row)
-        {
-            row.count = Ff::Sprintf("%d", st.count);
-            row.min   = Ff::Sprintf("%8.3f", st.min);
-            row.max   = Ff::Sprintf("%8.3f", st.max);
-            row.mean  = Ff::Sprintf("%8.3f", st.mean);
-            row.std   = Ff::Sprintf("%8.3f", st.std);
-        }));
+            int d, m;
+            double s;
+            deg2dms(rad2deg(value), &d, &m, &s);
+            return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
+        });
+    _rows.emplace_back("East (ref) [m]",
+        [](const Database::EpochStats &es) { return es.enuRef[Database::_E_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
+    _rows.emplace_back("North (ref) [m]",
+        [](const Database::EpochStats &es) { return es.enuRef[Database::_N_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
+    _rows.emplace_back("Up (ref) [m]",
+        [](const Database::EpochStats &es) { return es.enuRef[Database::_U_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
+    _rows.emplace_back("East (mean) [m]",
+        [](const Database::EpochStats &es) { return es.enuMean[Database::_E_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
+    _rows.emplace_back("North (mean) [m]",
+        [](const Database::EpochStats &es) { return es.enuMean[Database::_N_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
+    _rows.emplace_back("Up (mean) [m]",
+        [](const Database::EpochStats &es) { return es.enuMean[Database::_U_]; },
+        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -155,13 +89,19 @@ void GuiWinDataStats::_ProcessData(const InputData &data)
     // New epoch means database stats have updated, render row contents
     if (data.type == InputData::DATA_EPOCH)
     {
-        const auto stats = _database->GetStats();
+        _table.ClearRows();
+        const Database::EpochStats stats = _database->GetStats();
         for (auto &row: _rows)
         {
             if (row.getter && row.formatter)
             {
-                auto &s = row.getter(stats);
-                row.formatter(s, row);
+                auto &st = row.getter(stats);
+                _table.AddCellText(row.label);
+                _table.AddCellTextF("%d", st.count);
+                _table.AddCellText(row.formatter(st.min));
+                _table.AddCellText(row.formatter(st.mean));
+                _table.AddCellText(row.formatter(st.std));
+                _table.AddCellText(row.formatter(st.max));
             }
         }
     }
@@ -171,67 +111,24 @@ void GuiWinDataStats::_ProcessData(const InputData &data)
 
 void GuiWinDataStats::_ClearData()
 {
-    for (auto &row: _rows)
-    {
-        row.Clear();
-    }
+    _table.ClearRows();
+
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataStats::Row::Row(const char *_label, StatsGetter _getter, RowFormatter _formatter) :
-    label{_label}, getter{_getter}, formatter{_formatter}
+GuiWinDataStats::Row::Row(const char *_label, StatsGetter _getter, ValFormatter _formatter) :
+    label     { _label },
+    getter    { _getter },
+    formatter { _formatter }
 {
-    Clear();
-}
-
-void GuiWinDataStats::Row::Clear()
-{
-    count = "-";
-    min   = "-";
-    mean  = "-";
-    std   = "-";
-    max   = "-";
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinDataStats::_DrawContent()
 {
-    constexpr ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable |
-        ImGuiTableFlags_Hideable | /*ImGuiTableFlags_Sortable |*/
-        ImGuiTableFlags_BordersV /* ImGuiTableFlags_Borders */ |
-        ImGuiTableFlags_RowBg;
-
-    if (ImGui::BeginTable("stats", 6, flags))
-    {
-        ImGui::TableSetupColumn("Variable");
-        ImGui::TableSetupColumn("Count");
-        ImGui::TableSetupColumn("Min");
-        ImGui::TableSetupColumn("Mean");
-        ImGui::TableSetupColumn("Std");
-        ImGui::TableSetupColumn("Max");
-        ImGui::TableHeadersRow();
-
-        for (auto &row: _rows)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::TextUnformatted(row.label.c_str());
-            ImGui::TableSetColumnIndex(1);
-            ImGui::TextUnformatted(row.count.c_str());
-            ImGui::TableSetColumnIndex(2);
-            ImGui::TextUnformatted(row.min.c_str());
-            ImGui::TableSetColumnIndex(3);
-            ImGui::TextUnformatted(row.mean.c_str());
-            ImGui::TableSetColumnIndex(4);
-            ImGui::TextUnformatted(row.std.c_str());
-            ImGui::TableSetColumnIndex(5);
-            ImGui::TextUnformatted(row.max.c_str());
-        }
-
-        ImGui::EndTable();
-    }
+    _table.DrawTable();
 }
 
 /* ****************************************************************************************************************** */

@@ -217,9 +217,9 @@ void GuiWinData3d::_UpdatePoints()
         (void)ix;
         if (epoch.raw.havePos)
         {
-            const float east  = epoch.enuAbs[_E_];
-            const float north = epoch.enuAbs[_N_];
-            const float up    = epoch.enuAbs[_U_];
+            const float east  = epoch.enuRef[_E_];
+            const float north = epoch.enuRef[_N_];
+            const float up    = epoch.enuRef[_U_];
             const ImVec4 col = GuiSettings::GetFixColour4(&epoch.raw);
             // E/N/U: X/Y/Z = E/U/-N
             _markerInstances.emplace_back(glm::vec3(east, up, -north), glm::vec4(col.x, col.y, col.z, col.w));

@@ -30,14 +30,14 @@
 /* ****************************************************************************************************************** */
 
 Database::Database(const int size) :
-    _size{size},
-    _epochs{},
-    _epochIx{},
-    _epochIxLast{-1},
-    _stats{},
-    _refPos{REFPOS_MEAN},
-    _refPosXyz{0.0, 0.0, 0.0},
-    _refPosLlh{0.0, 0.0, 0.0}
+    _size        { size },
+    _epochs      { },
+    _epochIx     { },
+    _epochIxLast { -1 },
+    _stats       { },
+    _refPos      { REFPOS_MEAN },
+    _refPosXyz   { 0.0, 0.0, 0.0 },
+    _refPosLlh   { 0.0, 0.0, 0.0 }
 {
     DEBUG("Database(%d)", _size);
     Clear();
@@ -350,22 +350,22 @@ void Database::_Sync()
     }
 
     // Calculate East/North/Up (relative to refPos)
-    stats.enuAbs[_E_].Begin();
-    stats.enuAbs[_N_].Begin();
-    stats.enuAbs[_U_].Begin();
+    stats.enuRef[_E_].Begin();
+    stats.enuRef[_N_].Begin();
+    stats.enuRef[_U_].Begin();
     for (auto &e: _epochs)
     {
         if (e.valid && e.raw.havePos)
         {
-            xyz2enu_vec(e.raw.xyz, _refPosXyz, _refPosLlh, e.enuAbs); // epoch
-            stats.enuAbs[_E_].Add(e.enuAbs[_E_]);
-            stats.enuAbs[_N_].Add(e.enuAbs[_N_]);
-            stats.enuAbs[_U_].Add(e.enuAbs[_U_]);
+            xyz2enu_vec(e.raw.xyz, _refPosXyz, _refPosLlh, e.enuRef); // epoch
+            stats.enuRef[_E_].Add(e.enuRef[_E_]);
+            stats.enuRef[_N_].Add(e.enuRef[_N_]);
+            stats.enuRef[_U_].Add(e.enuRef[_U_]);
         }
     }
-    stats.enuAbs[_E_].End();
-    stats.enuAbs[_N_].End();
-    stats.enuAbs[_U_].End();
+    stats.enuRef[_E_].End();
+    stats.enuRef[_N_].End();
+    stats.enuRef[_U_].End();
 
     // Calculate East/North/Up (relative to mean pos)
     stats.enuMean[_E_].Begin();
@@ -422,7 +422,7 @@ void Database::AddMsg(const PARSER_MSG_t *msg)
 /* ****************************************************************************************************************** */
 
 Database::Epoch::Epoch(const EPOCH_t *_raw) :
-    valid{false}, raw{}, enuAbs{0, 0, 0}, enuMean{0, 0, 0}
+    valid{false}, raw{}, enuRef{0, 0, 0}, enuMean{0, 0, 0}
 {
     if ( (_raw != NULL) && (_raw->valid) )
     {
@@ -463,7 +463,10 @@ void Database::Stats::End()
     if (count > 1)
     {
         const double var = (_sum2 - ((_sum * _sum) / (double)count)) / (double)(count - 1);
-        std = std::sqrt(var);
+        if (var > 0.0)
+        {
+            std = std::sqrt(var);
+        }
     }
     else if (count < 1)
     {
@@ -482,7 +485,7 @@ Database::ErrEll::ErrEll() :
 /* ****************************************************************************************************************** */
 
 Database::EpochStats::EpochStats() :
-    llh{}, enuAbs{}, enuMean{}, enErrEll{}
+    llh{}, enuRef{}, enuMean{}, enErrEll{}
 {
 }
 

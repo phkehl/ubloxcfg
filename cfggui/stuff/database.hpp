@@ -50,7 +50,7 @@ class Database
             bool    valid;
             EPOCH_t raw;
             double  ts;                 // Timestamp [s]
-            double  enuAbs[_NUM_POS_];  // ENU relative to reference position
+            double  enuRef[_NUM_POS_];  // ENU relative to reference position
             double  enuMean[_NUM_POS_]; // ENU relative to mean position
         };
         struct Stats
@@ -81,7 +81,7 @@ class Database
         {
             EpochStats();
             Stats  llh[_NUM_POS_];
-            Stats  enuAbs[_NUM_POS_];  //!< ENU relative to reference position
+            Stats  enuRef[_NUM_POS_];  //!< ENU relative to reference position
             Stats  enuMean[_NUM_POS_]; //!< ENU relative to mean position
             ErrEll enErrEll;
         };

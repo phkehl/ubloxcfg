@@ -261,17 +261,18 @@ bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
 
     if (_resetPlotRange || _autoPlotRange)
     {
-        ImPlot::SetNextPlotLimitsX(0, MAX_PLOT_DATA, ImGuiCond_Always);
-        ImPlot::FitNextPlotAxes(false, true);
-        _resetPlotRange = false;
+        ImPlot::SetNextAxesToFit();
     }
-
-    const ImPlotFlags plotFlags = ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs;
-    const ImPlotAxisFlags xAxisFlags = ImPlotAxisFlags_NoTickLabels;
-//    ImPlot:: SetNextPlotLimitsX(0, MAX_PLOT_DATA, ImGuiCond_Once);
-    if (ImPlot::BeginPlot("##meas", nullptr, nullptr,
-        ImVec2(sizeAvail.x, sizeAvail.y - tableSize.y - GuiSettings::style->ItemSpacing.y), plotFlags, xAxisFlags))
+    if (ImPlot::BeginPlot("##meas", ImVec2(sizeAvail.x, sizeAvail.y - tableSize.y - GuiSettings::style->ItemSpacing.y),
+        ImPlotFlags_Crosshairs))
     {
+        ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels);
+        if (_resetPlotRange || _autoPlotRange)
+        {
+            ImPlot::SetupAxesLimits(ImAxis_X1, 0, MAX_PLOT_DATA, ImGuiCond_Always);
+        }
+        ImPlot::SetupFinish();
+
         for (auto &entry: _measInfos)
         {
             if (!_table.IsSelected(entry.first))
@@ -279,6 +280,7 @@ bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
                 continue;
             }
             auto &info = entry.second;
+
             ImPlot::PlotLineG(info.name.c_str(), [](void *arg, int ix)
                 {
                     const std::deque<double> *pd = (const std::deque<double> *)arg;
@@ -288,6 +290,8 @@ bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
 
         ImPlot::EndPlot();
     }
+
+    _resetPlotRange = false;
 
     return true;
 }

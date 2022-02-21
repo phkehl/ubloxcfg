@@ -31,9 +31,9 @@
 
 GuiWinDataPlot::GuiWinDataPlot(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _plotVars{}, _plotVarX{nullptr}, _dndHovered{false},
-    _plotFlags{ImPlotFlags_AntiAliased | ImPlotFlags_Crosshairs}, _yLabels{"", "", ""},
-    _colormap { ImPlotColormap_Deep }
+    _plotVarX   { nullptr },
+    _dndHovered { false },
+    _colormap   { ImPlotColormap_Deep }
 {
     _winSize = { 80, 25 };
 
@@ -87,7 +87,7 @@ void GuiWinDataPlot::_ClearData()
 GuiWinDataPlot::PlotData::PlotData(PlotVar *_plotVarX, PlotVar *_plotVarY, PlotType _type, Database *_db)
     : plotVarX{_plotVarX}, plotVarY{_plotVarY}, type{_type}, db{_db}
 {
-    axis = ImPlotYAxis_1;
+    yAxis = ImAxis_Y1;
     getter = [](void *arg, int ix) -> ImPlotPoint
     {
         PlotData *pd = (PlotData *)arg;
@@ -282,7 +282,7 @@ void GuiWinDataPlot::_DrawVars()
         }
 
         ImGui::SameLine(GuiSettings::charSize.x * (VAR_WIDTH - 4.0)); // reserve some space for vertical scrollbar
-        ImGui::Text("y%d", data.axis + 1);
+        ImGui::Text("y%d", data.yAxis + 1 - ImAxis_Y1);
     }
 
     // Reorder list of plots, placing src in front of dst
@@ -375,19 +375,31 @@ void GuiWinDataPlot::_DrawVars()
 void GuiWinDataPlot::_DrawPlot()
 {
     PlotVar *droppedVar = nullptr;
-    enum : int { DD_PLOT = -2, DD_X = -1, DD_Y1 = ImPlotYAxis_1, DD_Y2 = ImPlotYAxis_2, DD_Y3 = ImPlotYAxis_3 };
-    ImPlotYAxis droppedAxis = DD_PLOT;
+    enum : int { DD_PLOT = -2, DD_X = -1, DD_Y1 = ImAxis_Y1, DD_Y2 = ImAxis_Y2, DD_Y3 = ImAxis_Y3 };
+    ImAxis droppedAxis = DD_PLOT;
 
-    const ImPlotFlags hoverPlotFlags = _dndHovered ? ImPlotFlags_YAxis2 | ImPlotFlags_YAxis3 : ImPlotFlags_None;
-    ImPlot::SetNextPlotLimitsX(0, 60, ImGuiCond_Once);
-    ImPlot::SetNextPlotLimitsY(-10, +10, ImGuiCond_Once);
     const char *xLabel = _plotVarX ? _plotVarX->tooltip.c_str() : NULL;
     ImPlot::PushColormap(_colormap);
-    if (ImPlot::BeginPlot(_PLOT_ID, xLabel, _yLabels[ImPlotYAxis_1].empty() ? NULL : _yLabels[ImPlotYAxis_1].data(),
-        ImVec2(-1,-1), _plotFlags | hoverPlotFlags, 0, 0, 0, 0,
-        _yLabels[ImPlotYAxis_2].empty() ? NULL : _yLabels[ImPlotYAxis_2].data(),
-        _yLabels[ImPlotYAxis_3].empty() ? NULL : _yLabels[ImPlotYAxis_3].data()))
+
+    if (ImPlot::BeginPlot(_PLOT_ID, ImVec2(-1,-1), ImPlotFlags_Crosshairs))
     {
+        ImPlot::SetupAxis(ImAxis_X1, xLabel);
+        if (!_yLabels[ImAxis_Y1].empty() || _dndHovered)
+        {
+            ImPlot::SetupAxis(ImAxis_Y1, _yLabels[ImAxis_Y1].c_str());
+        }
+        if (!_yLabels[ImAxis_Y2].empty() || _dndHovered)
+        {
+            ImPlot::SetupAxis(ImAxis_Y2, _yLabels[ImAxis_Y2].c_str());
+        }
+        if (!_yLabels[ImAxis_Y3].empty() || _dndHovered)
+        {
+            ImPlot::SetupAxis(ImAxis_Y3, _yLabels[ImAxis_Y3].c_str());
+        }
+        ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Once);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -10, +10, ImGuiCond_Once);
+        ImPlot::SetupFinish();
+
         // Add data
         _database->BeginGetEpoch();
         const int numEpochs = _database->NumEpochs();
@@ -395,7 +407,7 @@ void GuiWinDataPlot::_DrawPlot()
         for (auto &data: _plotData)
         {
             const char *label = data.plotVarY->label.c_str();
-            ImPlot::SetPlotYAxis(data.axis);
+            ImPlot::SetAxis(data.yAxis);
             switch (data.type)
             {
                 case PlotType::LINE:
@@ -435,7 +447,7 @@ void GuiWinDataPlot::_DrawPlot()
         }
 
         // Detect drops on the plot
-        if (ImPlot::BeginDragDropTarget())
+        if (ImPlot::BeginDragDropTargetPlot())
         {
             const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
             if (imPayload)
@@ -446,7 +458,7 @@ void GuiWinDataPlot::_DrawPlot()
             ImPlot::EndDragDropTarget();
         }
         // Detect drops on the x axis
-        if (ImPlot::BeginDragDropTargetX())
+        if (ImPlot::BeginDragDropTargetAxis(ImAxis_X1))
         {
             const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
             if (imPayload)
@@ -457,9 +469,9 @@ void GuiWinDataPlot::_DrawPlot()
             ImPlot::EndDragDropTarget();
         }
         // Detect drops on the y axes
-        for (ImPlotYAxis yAxis = ImPlotYAxis_1; yAxis <= ImPlotYAxis_3; yAxis++)
+        for (ImAxis yAxis = ImAxis_Y1; yAxis <= ImAxis_Y3; yAxis++)
         {
-            if (ImPlot::BeginDragDropTargetY(yAxis))
+            if (ImPlot::BeginDragDropTargetAxis(yAxis))
             {
                 const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
                 if (imPayload)
@@ -527,7 +539,7 @@ void GuiWinDataPlot::_SetVarX(PlotVar *plotVar)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis)
+void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImAxis yAxis)
 {
     // Update existing plot data
     bool addNew = true;
@@ -535,8 +547,9 @@ void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis)
     {
         if (data.plotVarY->label == plotVar->label)
         {
-            DEBUG("Update <%s><%s> Y%d->%d", data.plotVarX->label.c_str(), data.plotVarY->label.c_str(), data.axis, yAxis);
-            data.axis = yAxis;
+            DEBUG("Update <%s><%s> Y%d->%d", data.plotVarX->label.c_str(), data.plotVarY->label.c_str(),
+                data.yAxis - ImAxis_Y1 + 1, yAxis - ImAxis_Y1 + 1);
+            data.yAxis = yAxis;
             addNew = false;
             break;
         }
@@ -546,7 +559,7 @@ void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis)
     {
         DEBUG("Add <%s><%s> Y%d", _plotVarX->label.c_str(), plotVar->label.c_str(), yAxis);
         auto data = PlotData(_plotVarX, plotVar, PlotType::LINE, _database.get());
-        data.axis = yAxis;
+        data.yAxis = yAxis;
         plotVar->used = true;
         _plotData.push_back(std::move(data));
     }
@@ -559,36 +572,33 @@ void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImPlotYAxis yAxis)
 void GuiWinDataPlot::_UpdatePlotFlags()
 {
     // Update plot flags and y axis labels
-    CLRBITS(_plotFlags, ImPlotFlags_YAxis2 | ImPlotFlags_YAxis3);
-    _yLabels[ImPlotYAxis_1].clear();
-    _yLabels[ImPlotYAxis_2].clear();
-    _yLabels[ImPlotYAxis_3].clear();
+    _yLabels[ImAxis_Y1].clear();
+    _yLabels[ImAxis_Y2].clear();
+    _yLabels[ImAxis_Y3].clear();
     for (auto &data: _plotData)
     {
-        switch (data.axis)
+        switch (data.yAxis)
         {
-            case ImPlotYAxis_1:
-                if (!_yLabels[ImPlotYAxis_1].empty())
+            case ImAxis_Y1:
+                if (!_yLabels[ImAxis_Y1].empty())
                 {
-                    _yLabels[ImPlotYAxis_1] += " / ";
+                    _yLabels[ImAxis_Y1] += " / ";
                 }
-                _yLabels[ImPlotYAxis_1] += data.plotVarY->label;
+                _yLabels[ImAxis_Y1] += data.plotVarY->label;
                 break;
-            case ImPlotYAxis_2:
-                if (!_yLabels[ImPlotYAxis_2].empty())
+            case ImAxis_Y2:
+                if (!_yLabels[ImAxis_Y2].empty())
                 {
-                    _yLabels[ImPlotYAxis_2] += " / ";
+                    _yLabels[ImAxis_Y2] += " / ";
                 }
-                _yLabels[ImPlotYAxis_2] += data.plotVarY->label;
-                _plotFlags |= ImPlotFlags_YAxis2;
+                _yLabels[ImAxis_Y2] += data.plotVarY->label;
                 break;
-            case ImPlotYAxis_3:
-                if (!_yLabels[ImPlotYAxis_3].empty())
+            case ImAxis_Y3:
+                if (!_yLabels[ImAxis_Y3].empty())
                 {
-                    _yLabels[ImPlotYAxis_3] += " / ";
+                    _yLabels[ImAxis_Y3] += " / ";
                 }
-                _yLabels[ImPlotYAxis_3] += data.plotVarY->label;
-                _plotFlags |= ImPlotFlags_YAxis3;
+                _yLabels[ImAxis_Y3] += data.plotVarY->label;
                 break;
         }
     }
@@ -625,7 +635,7 @@ void  GuiWinDataPlot::_SavePlots()
         plot += "/";
         plot += data.plotVarY->label;
         plot += "/";
-        plot += std::to_string(data.axis);
+        plot += std::to_string(data.yAxis - ImAxis_Y1 + 1);
         plots.push_back(plot);
     }
     GuiSettings::SetValue(_winName + ".plots", Ff::StrJoin(plots, ","));
@@ -648,7 +658,7 @@ void  GuiWinDataPlot::_LoadPlots()
         PlotVar *yVar = _PlotVarByLabel(parts[1]);
         std::size_t num;
         int yAxis = std::stol(parts[2], &num, 0);
-        if (!xVar || !yVar || (num <= 0) || (yAxis < ImPlotYAxis_1) || (yAxis > ImPlotYAxis_3))
+        if (!xVar || !yVar || (num <= 0) || (yAxis < ImAxis_Y1) || (yAxis > ImAxis_Y3))
         {
             continue;
         }

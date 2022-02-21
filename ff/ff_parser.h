@@ -34,7 +34,7 @@ extern "C" {
 
 #define PARSER_BUF_SIZE        32768 // must be >= 2*PARSER_MAX_ANY_SIZE (FIXME: does it?)
 #define PARSER_MAX_UBX_SIZE     4096 // messages larger than this will be GARBAGE
-#define PARSER_MAX_NMEA_SIZE     200 // messages larger than this will be GARBAGE
+#define PARSER_MAX_NMEA_SIZE     400 // messages larger than this will be GARBAGE
 #define PARSER_MAX_RTCM3_SIZE   4096 // messages larger than this will be GARBAGE
 #define PARSER_MAX_NOVATEL_SIZE 4096 // messages larger than this will be GARBAGE
 #define PARSER_MAX_GARB_SIZE    4096

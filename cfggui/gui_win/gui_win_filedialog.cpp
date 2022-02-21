@@ -72,16 +72,16 @@ void GuiWinFileDialog::InitDialog(const Mode_e mode)
         case FILE_OPEN:
             _confirmSelect    = false;
             _confirmOverwrite = false;
-            SetTitle("Open file...");
+            WinSetTitle("Open file...");
             break;
         case FILE_SAVE:
             _confirmSelect    = false;
             _confirmOverwrite = true;
-            SetTitle("Save file...");
+            WinSetTitle("Save file...");
             break;
     }
-    Open();
-    Focus();
+    WinOpen();
+    WinFocus();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ bool GuiWinFileDialog::DrawDialog()
         return false;
     }
 
-    if (!IsOpen())
+    if (!WinIsOpen())
     {
         _selectedFileValid = false;
         _Done();
@@ -235,7 +235,7 @@ bool GuiWinFileDialog::DrawDialog()
                 }
             }
             ImGui::PopStyleColor();
-            ImGui::EndChildFrame();
+            ImGui::EndChild();
 
             _DrawWindowEnd();
         }
@@ -268,7 +268,7 @@ void GuiWinFileDialog::_Done()
     _selectedFileValid = false;
     _selectedFileName.clear();
     _selectedPath.clear();
-    Close();
+    WinClose();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

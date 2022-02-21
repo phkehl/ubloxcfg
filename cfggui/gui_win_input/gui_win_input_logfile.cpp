@@ -27,7 +27,7 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
 {
     DEBUG("GuiWinInputLogfile(%s)", _winName.c_str());
 
-    SetTitle("Logfile X");
+    WinSetTitle("Logfile X");
 
     _dataWinCaps = DataWinDef::Cap_e::PASSIVE;
 
@@ -118,12 +118,12 @@ void GuiWinInputLogfile::_DrawControls()
             if (!_fileDialog.IsInit())
             {
                 _fileDialog.InitDialog(GuiWinFileDialog::FILE_OPEN);
-                _fileDialog.SetTitle(_winTitle + " - Open logfile...");
+                _fileDialog.WinSetTitle(_winTitle + " - Open logfile...");
                 _fileDialog.SetFileFilter("\\.(ubx|raw|ubz|ubx\\.gz)", true);
             }
             else
             {
-                _fileDialog.Focus();
+                _fileDialog.WinFocus();
             }
         }
         Gui::ItemTooltip("Open logfile");

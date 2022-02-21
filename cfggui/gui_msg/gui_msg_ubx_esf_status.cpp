@@ -204,8 +204,8 @@ bool GuiMsgUbxEsfStatus::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const
         _RenderStatusFlag(_statusFlags012,  _wtInitStatus,  "Wheel-ticks status", dataOffs);
         _RenderStatusFlag(_statusFlags0123, _insInitStatus, "INS status",         dataOffs);
         _RenderStatusFlag(_statusFlags0123, _mntAlgStatus,  "Mount align status", dataOffs);
-        ImGui::EndChild();
     }
+    ImGui::EndChild();
 
     _table.DrawTable(sizeAvail - topSize);
 

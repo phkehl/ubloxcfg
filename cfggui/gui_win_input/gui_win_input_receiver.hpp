@@ -42,7 +42,7 @@ class GuiWinInputReceiver : public GuiWinInput
 
         void Loop(const uint32_t &frame, const double &now) final;
 
-        bool IsOpen() final;
+        bool WinIsOpen() final;
 
         std::shared_ptr<InputReceiver> GetReceiver();
 

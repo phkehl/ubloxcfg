@@ -241,6 +241,7 @@ int main(int argc, char **argv)
 #ifdef FF_BUILD_DEBUG
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     // Create window with graphics context
     GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, kWindowTitle, NULL, NULL);

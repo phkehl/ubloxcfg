@@ -25,6 +25,7 @@
 #include "gui_app.hpp"
 
 #include "gui_win.hpp"
+#include "imgui_internal.h"
 
 /* ****************************************************************************************************************** */
 
@@ -37,14 +38,17 @@ GuiWin::GuiWin(const std::string &name) :
     _winFlags         { ImGuiWindowFlags_None },
     _winSize          { 30, 30 }, // > 0: units of fontsize, < 0: = fraction of screen width/height
     _winSizeMin       { 0, 0 },
+    _winResize        { -1, 0 },
+    _winMoveTo        { -1, 0 },
     _winUid           { reinterpret_cast<std::uintptr_t>(this) },
     _winUidStr        { Ff::Sprintf("%016lx", _winUid) },
-    _winClass         { std::make_unique<ImGuiWindowClass>() }
+    _winClass         { std::make_unique<ImGuiWindowClass>() },
+    _winIsDocked      { false }
 {
     _winName = name;
     _newWinInitPos = NEW_WIN_POS[_newWinPosIx++];
     _newWinPosIx %= NEW_WIN_POS.size();
-    SetTitle(name); // by default the (internal) name (= ID) is also the displayed title
+    WinSetTitle(name); // by default the (internal) name (= ID) is also the displayed title
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -58,58 +62,58 @@ GuiWin::GuiWin(const std::string &name) :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWin::Open()
+void GuiWin::WinOpen()
 {
     _winOpen = true;
-    Focus();
+    WinFocus();
     ImGui::SetWindowCollapsed(_winImguiName.c_str(), false);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWin::Close()
+void GuiWin::WinClose()
 {
     _winOpen = false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWin::IsOpen()
+bool GuiWin::WinIsOpen()
 {
     return _winOpen;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWin::IsDrawn()
+bool GuiWin::WinIsDrawn()
 {
     return _winDrawn;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool *GuiWin::GetOpenFlag()
+bool *GuiWin::WinOpenFlag()
 {
     return &_winOpen;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-const std::string &GuiWin::GetName()
+const std::string &GuiWin::WinName()
 {
     return _winName;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-const std::string &GuiWin::GetTitle()
+const std::string &GuiWin::WinTitle()
 {
     return _winTitle;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWin::SetTitle(const std::string &title)
+void GuiWin::WinSetTitle(const std::string &title)
 {
     _winTitle = title;
     _winImguiName = _winTitle + std::string("###") + _winName;
@@ -117,16 +121,42 @@ void GuiWin::SetTitle(const std::string &title)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWin::Focus()
+void GuiWin::WinFocus()
 {
     ImGui::SetWindowFocus(_winImguiName.c_str());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-const std::string &GuiWin::GetUidStr()
+const std::string &GuiWin::WinUidStr()
 {
     return _winUidStr;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWin::WinMoveTo(const ImVec2 &pos)
+{
+    _winMoveTo = pos;
+}
+
+void GuiWin::WinResize(const ImVec2 &size)
+{
+    if ( (size.x <= _winSizeMin.x) || (size.y <= _winSizeMin.y) )
+    {
+        _winResize = _winSize;
+    }
+    else
+    {
+        _winResize = size;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiWin::WinIsDocked()
+{
+    return _winIsDocked;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -157,7 +187,16 @@ bool GuiWin::_DrawWindowBegin()
 
     if (!CHKBITS(_winFlags, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        ImGui::SetNextWindowSize(_WinSizeToVec(_winSize), ImGuiCond_FirstUseEver);
+        if (_winResize.x > 0.0f)
+        {
+            ImGui::SetNextWindowSize(_WinSizeToVec(_winSize), ImGuiCond_Always);
+            _winResize.x = -1.0f;
+            _winResize.y = 0.0f;
+        }
+        else
+        {
+            ImGui::SetNextWindowSize(_WinSizeToVec(_winSize), ImGuiCond_FirstUseEver);
+        }
         if (_winSizeMin.x != 0.0f)
         {
             ImGui::SetNextWindowSizeConstraints(_WinSizeToVec(_winSizeMin), ImVec2(FLT_MAX, FLT_MAX));
@@ -165,7 +204,15 @@ bool GuiWin::_DrawWindowBegin()
     }
 
     ImGui::SetNextWindowClass(_winClass.get());
-    ImGui::SetNextWindowPos(_newWinInitPos, ImGuiCond_FirstUseEver);
+    if ( (_winMoveTo.x > 0) && (_winMoveTo.y > 0) )
+    {
+        ImGui::SetNextWindowPos(_winMoveTo, ImGuiCond_Always);
+        _winMoveTo.x = -1.0f;
+    }
+    else
+    {
+        ImGui::SetNextWindowPos(_newWinInitPos, ImGuiCond_FirstUseEver);
+    }
 
     _winDrawn = ImGui::Begin(_winImguiName.c_str(), &_winOpen, _winFlags);
 
@@ -198,6 +245,8 @@ ImVec2 GuiWin::_WinSizeToVec(ImVec2 size)
 
 void GuiWin::_DrawWindowEnd()
 {
+    ImGuiWindow *win = ImGui::GetCurrentWindow();
+    _winIsDocked = win->DockIsActive;
     ImGui::End();
 }
 

@@ -29,12 +29,12 @@ GuiWinDataLog::GuiWinDataLog(const std::string &name, std::shared_ptr<Database> 
 
     _latestEpochEna = false;
 
-    _log.SetSettings(GuiSettings::GetValue(GetName()));
+    _log.SetSettings(GuiSettings::GetValue(WinName()));
 }
 
 GuiWinDataLog::~GuiWinDataLog()
 {
-    GuiSettings::SetValue(GetName(), _log.GetSettings());
+    GuiSettings::SetValue(WinName(), _log.GetSettings());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

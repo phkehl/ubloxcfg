@@ -51,6 +51,9 @@ extern "C" {
 #define NOVATEL_TIME_MSGID               101
 #define NOVATEL_RAWIMUSX_MSGID          1462
 #define NOVATEL_RAWDMI_MSGID            2269
+#define NOVATEL_RAWIMU_MSGID             268
+#define NOVATEL_INSPVA_MSGID             507
+#define NOVATEL_BESTGNSSPOS_MSGID       1429
 
 #define NOVATEL_MESSAGES(_P_) \
     _P_(NOVATEL_BESTPOS_MSGID,          "BESTPOS") \
@@ -68,7 +71,10 @@ extern "C" {
     _P_(NOVATEL_RXSTATUS_MSGID,         "RXSTATUS") \
     _P_(NOVATEL_TIME_MSGID,             "TIME") \
     _P_(NOVATEL_RAWIMUSX_MSGID,         "RAWIMUSX") \
-    _P_(NOVATEL_RAWDMI_MSGID,           "RAWDMI")
+    _P_(NOVATEL_RAWDMI_MSGID,           "RAWDMI") \
+    _P_(NOVATEL_RAWIMU_MSGID,           "RAWIMU") \
+    _P_(NOVATEL_INSPVA_MSGID,           "INSPVA") \
+    _P_(NOVATEL_BESTGNSSPOS_MSGID,      "BESTGNSSPOS")
 
 bool novatelMessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
 bool novatelMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);

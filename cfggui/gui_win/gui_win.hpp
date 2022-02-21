@@ -34,16 +34,19 @@ class GuiWin
         GuiWin(const std::string &name);
         virtual ~GuiWin() {};
 
-        void                 Open();
-        void                 Close();
-        virtual bool         IsOpen();
-        bool                 IsDrawn();
-        bool                *GetOpenFlag();
-        const std::string   &GetName();
-        const std::string   &GetTitle(); // Title with ID ("title###id")
-        void                 SetTitle(const std::string &title);
-        void                 Focus();
-        const std::string   &GetUidStr(); // Run-time (!) UID
+        void                 WinOpen();
+        void                 WinClose();
+        virtual bool         WinIsOpen();
+        bool                 WinIsDrawn();
+        bool                *WinOpenFlag();
+        const std::string   &WinName();
+        const std::string   &WinTitle(); // Title with ID ("title###id")
+        void                 WinSetTitle(const std::string &title);
+        void                 WinFocus();
+        const std::string   &WinUidStr(); // Run-time (!) UID
+        void                 WinMoveTo(const ImVec2 &pos);
+        void                 WinResize(const ImVec2 &size = ImVec2(0,0));
+        bool                 WinIsDocked();
 
         virtual void         Loop(const uint32_t &frame, const double &now);
 
@@ -59,9 +62,12 @@ class GuiWin
         ImGuiWindowFlags     _winFlags;
         ImVec2               _winSize;
         ImVec2               _winSizeMin;
+        ImVec2               _winResize;
+        ImVec2               _winMoveTo;
         uint64_t             _winUid;
         std::string          _winUidStr;
         std::unique_ptr<ImGuiWindowClass> _winClass;
+        bool                 _winIsDocked;
 
         bool                 _DrawWindowBegin();
         void                 _DrawWindowEnd();

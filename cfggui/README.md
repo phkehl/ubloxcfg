@@ -92,7 +92,6 @@ See the [main README](../README.md) for more.
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
   Can we implement seekpos()? Maybe re-open file at a certain position? And gzseek() is commented-out in zlib.h anyway... (?!)
 * Fix memory leaks... valgrind isn't too happy.. :-/
-* Use GuiWidgetTable for GuiWinDataEpoch
 * Use Ff::Thread in GuiWinPlay
 * Write parser for swisstopo wmts capabilities xml to generate mapparams
 * Maybe use some global event queue for all input data stuff and have the data windows subscribe (to one or multiple sources)

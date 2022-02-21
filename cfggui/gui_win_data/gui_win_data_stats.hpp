@@ -19,6 +19,7 @@
 #define __GUI_WIN_DATA_STATS_HPP__
 
 #include "gui_win_data.hpp"
+#include "gui_widget_table.hpp"
 
 /* ***** Statistics ************************************************************************************************* */
 
@@ -33,22 +34,17 @@ class GuiWinDataStats : public GuiWinData
         void _DrawContent() final;
         void _ClearData() final;
 
+        GuiWidgetTable _table;
+
         typedef std::function<const Database::Stats (const Database::EpochStats &)> StatsGetter;
-        struct Row;
-        typedef std::function<void (const Database::Stats &, Row &)> RowFormatter;
+        typedef std::function<std::string (const double)> ValFormatter;
 
         struct Row
         {
-            Row(const char *_label, StatsGetter _getter, RowFormatter _formatter);
-            void Clear();
+            Row(const char *_label, StatsGetter _getter, ValFormatter _formatter);
             std::string  label;
-            std::string  count;
-            std::string  min;
-            std::string  mean;
-            std::string  std;
-            std::string  max;
             StatsGetter  getter;
-            RowFormatter formatter;
+            ValFormatter formatter;
         };
 
         std::vector<Row> _rows;
