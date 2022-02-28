@@ -526,8 +526,8 @@ static bool _portOpenSer(PORT_t *port)
     if (tcsetattr(fileno, TCSANOW, &settings) != 0)
     {
         PORT_WARNING("Failed configuring device: %s", _portErrStr(port, 0));
-        close(fileno);
         flock(fileno, LOCK_UN);
+        close(fileno);
         return false;
     }
 
@@ -559,8 +559,8 @@ static void _portCloseSer(PORT_t *port)
 #ifdef _WIN32
     CloseHandle((HANDLE)port->handle);
 #else
-    close(port->fd);
     flock(port->fd, LOCK_UN);
+    close(port->fd);
 #endif
 }
 
