@@ -30,6 +30,7 @@ extern "C" {
 
     Sources:
     - u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG
+    - u-blox ZED-F9T Interface Description (R02) (https://www.u-blox.com/en/docs/UBX-19003606), copyright (c) 2020 u-blox AG
     - u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG
     - u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG
     - u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG
@@ -5889,47 +5890,46 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1 CFG-MSGOUT-UBX_TIM_SVIN_UART1 (Output rate of the UBX-TIM-SVIN message on port UART1)
     @{
 */
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_ID           0x20910179                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_UART1
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_STR          "CFG-MSGOUT-UBX_TIM_SVIN_UART1"           //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_UART1
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_TYPE         U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_ID          0x20910098                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_STR         "CFG-MSGOUT-UBX_TIM_SVIN_UART1"          //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_UART1
 ///@}
 
 /*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2 CFG-MSGOUT-UBX_TIM_SVIN_UART2 (Output rate of the UBX-TIM-SVIN message on port UART2)
     @{
 */
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_ID           0x2091017a                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_UART2
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_STR          "CFG-MSGOUT-UBX_TIM_SVIN_UART2"           //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_UART2
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_TYPE         U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_ID          0x20910099                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_STR         "CFG-MSGOUT-UBX_TIM_SVIN_UART2"          //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_TYPE        U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_UART2
 ///@}
 
 /*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI CFG-MSGOUT-UBX_TIM_SVIN_SPI (Output rate of the UBX-TIM-SVIN message on port SPI)
     @{
 */
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_ID             0x2091017c                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_SPI
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_STR            "CFG-MSGOUT-UBX_TIM_SVIN_SPI"             //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_SPI
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_ID            0x2091009b                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_STR           "CFG-MSGOUT-UBX_TIM_SVIN_SPI"            //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_SPI
 ///@}
 
 /*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C CFG-MSGOUT-UBX_TIM_SVIN_I2C (Output rate of the UBX-TIM-SVIN message on port I2C)
     @{
 */
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_ID             0x20910178                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_I2C
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_STR            "CFG-MSGOUT-UBX_TIM_SVIN_I2C"             //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_I2C
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_ID            0x20910097                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_STR           "CFG-MSGOUT-UBX_TIM_SVIN_I2C"            //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_I2C
 ///@}
 
 /*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB CFG-MSGOUT-UBX_TIM_SVIN_USB (Output rate of the UBX-TIM-SVIN message on port USB)
     @{
 */
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_ID             0x2091017b                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_USB
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_STR            "CFG-MSGOUT-UBX_TIM_SVIN_USB"             //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_USB
-#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_TYPE           U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_ID            0x2091009a                               //!< ID of CFG-MSGOUT-UBX_TIM_SVIN_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_STR           "CFG-MSGOUT-UBX_TIM_SVIN_USB"            //!< Name of CFG-MSGOUT-UBX_TIM_SVIN_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_TYPE          U1                                       //!< Type of CFG-MSGOUT-UBX_TIM_SVIN_USB
 ///@}
-
 
 /*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_TIM_TM2_UART1 CFG-MSGOUT-UBX_TIM_TM2_UART1 (Output rate of the UBX-TIM-TM2 message on port UART1)
@@ -11753,22 +11753,22 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
     \defgroup UBLOXCFG_MSGOUT_UBX_TIM_SVIN UBX-TIM-SVIN
     @{
 */
-#define UBLOXCFG_UBX_TIM_SVIN_STR                           "UBX-TIM-SVIN"                                      //!< Message UBX-TIM-SVIN name
-#define UBLOXCFG_UBX_TIM_SVIN_UART1_ID                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_ID           //!< Config item ID for UBX-TIM-SVIN rate on port UART1
-#define UBLOXCFG_UBX_TIM_SVIN_UART1_STR                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_STR          //!< Config item name for UBX-TIM-SVIN rate on port UART1
-#define UBLOXCFG_UBX_TIM_SVIN_UART1_TYPE                    UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_TYPE         //!< Config item type for UBX-TIM-SVIN rate on port UART1
-#define UBLOXCFG_UBX_TIM_SVIN_UART2_ID                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_ID           //!< Config item ID for UBX-TIM-SVIN rate on port UART2
-#define UBLOXCFG_UBX_TIM_SVIN_UART2_STR                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_STR          //!< Config item name for UBX-TIM-SVIN rate on port UART2
-#define UBLOXCFG_UBX_TIM_SVIN_UART2_TYPE                    UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_TYPE         //!< Config item type for UBX-TIM-SVIN rate on port UART2
-#define UBLOXCFG_UBX_TIM_SVIN_SPI_ID                        UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_ID             //!< Config item ID for UBX-TIM-SVIN rate on port SPI
-#define UBLOXCFG_UBX_TIM_SVIN_SPI_STR                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_STR            //!< Config item name for UBX-TIM-SVIN rate on port SPI
-#define UBLOXCFG_UBX_TIM_SVIN_SPI_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_TYPE           //!< Config item type for UBX-TIM-SVIN rate on port SPI
-#define UBLOXCFG_UBX_TIM_SVIN_I2C_ID                        UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_ID             //!< Config item ID for UBX-TIM-SVIN rate on port I2C
-#define UBLOXCFG_UBX_TIM_SVIN_I2C_STR                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_STR            //!< Config item name for UBX-TIM-SVIN rate on port I2C
-#define UBLOXCFG_UBX_TIM_SVIN_I2C_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_TYPE           //!< Config item type for UBX-TIM-SVIN rate on port I2C
-#define UBLOXCFG_UBX_TIM_SVIN_USB_ID                        UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_ID             //!< Config item ID for UBX-TIM-SVIN rate on port USB
-#define UBLOXCFG_UBX_TIM_SVIN_USB_STR                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_STR            //!< Config item name for UBX-TIM-SVIN rate on port USB
-#define UBLOXCFG_UBX_TIM_SVIN_USB_TYPE                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_TYPE           //!< Config item type for UBX-TIM-SVIN rate on port USB
+#define UBLOXCFG_UBX_TIM_SVIN_STR                          "UBX-TIM-SVIN"                                     //!< Message UBX-TIM-SVIN name
+#define UBLOXCFG_UBX_TIM_SVIN_UART1_ID                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_ID          //!< Config item ID for UBX-TIM-SVIN rate on port UART1
+#define UBLOXCFG_UBX_TIM_SVIN_UART1_STR                    UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_STR         //!< Config item name for UBX-TIM-SVIN rate on port UART1
+#define UBLOXCFG_UBX_TIM_SVIN_UART1_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART1_TYPE        //!< Config item type for UBX-TIM-SVIN rate on port UART1
+#define UBLOXCFG_UBX_TIM_SVIN_UART2_ID                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_ID          //!< Config item ID for UBX-TIM-SVIN rate on port UART2
+#define UBLOXCFG_UBX_TIM_SVIN_UART2_STR                    UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_STR         //!< Config item name for UBX-TIM-SVIN rate on port UART2
+#define UBLOXCFG_UBX_TIM_SVIN_UART2_TYPE                   UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_UART2_TYPE        //!< Config item type for UBX-TIM-SVIN rate on port UART2
+#define UBLOXCFG_UBX_TIM_SVIN_SPI_ID                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_ID            //!< Config item ID for UBX-TIM-SVIN rate on port SPI
+#define UBLOXCFG_UBX_TIM_SVIN_SPI_STR                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_STR           //!< Config item name for UBX-TIM-SVIN rate on port SPI
+#define UBLOXCFG_UBX_TIM_SVIN_SPI_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_SPI_TYPE          //!< Config item type for UBX-TIM-SVIN rate on port SPI
+#define UBLOXCFG_UBX_TIM_SVIN_I2C_ID                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_ID            //!< Config item ID for UBX-TIM-SVIN rate on port I2C
+#define UBLOXCFG_UBX_TIM_SVIN_I2C_STR                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_STR           //!< Config item name for UBX-TIM-SVIN rate on port I2C
+#define UBLOXCFG_UBX_TIM_SVIN_I2C_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_I2C_TYPE          //!< Config item type for UBX-TIM-SVIN rate on port I2C
+#define UBLOXCFG_UBX_TIM_SVIN_USB_ID                       UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_ID            //!< Config item ID for UBX-TIM-SVIN rate on port USB
+#define UBLOXCFG_UBX_TIM_SVIN_USB_STR                      UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_STR           //!< Config item name for UBX-TIM-SVIN rate on port USB
+#define UBLOXCFG_UBX_TIM_SVIN_USB_TYPE                     UBLOXCFG_CFG_MSGOUT_UBX_TIM_SVIN_USB_TYPE          //!< Config item type for UBX-TIM-SVIN rate on port USB
 ///@}
 
 /*!
@@ -11845,7 +11845,7 @@ const void **_ubloxcfg_allItems(void);
 const void **_ubloxcfg_allRates(void);
 #define _UBLOXCFG_MAX_ITEM_LEN 35
 #define _UBLOXCFG_MAX_CONSTS_LEN 449
-#define _UBLOXCFG_NUM_SOURCES 5
+#define _UBLOXCFG_NUM_SOURCES 6
 const char **_ubloxcfg_allSources(void);
 #endif
 
