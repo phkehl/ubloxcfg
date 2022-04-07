@@ -183,6 +183,7 @@ extern "C" {
 #define UBX_SEC_UNIQUEID_MSGID       0x03
 
 #define UBX_TIM_CLSID                0x0d
+#define UBX_TIM_SVIN_MSGID           0x04
 #define UBX_TIM_TM2_MSGID            0x03
 #define UBX_TIM_TP_MSGID             0x01
 #define UBX_TIM_VRFY_MSGID           0x06
@@ -330,6 +331,7 @@ extern "C" {
     _P_(UBX_RXM_CLSID, UBX_RXM_QZSSL6_MSGID,      "UBX-RXM-QZSSL6") \
     _P_(UBX_RXM_CLSID, UBX_RXM_SPARTNKEY_MSGID,   "UBX-RXM-SPARTNKEY") \
     _P_(UBX_SEC_CLSID, UBX_SEC_UNIQUEID_MSGID,    "UBX-SEC-UNIQUEID") \
+    _P_(UBX_TIM_CLSID, UBX_TIM_SVIN_MSGID,        "UBX-TIM-SVIN") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TM2_MSGID,         "UBX-TIM-TM2") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TP_MSGID,          "UBX-TIM-TP") \
     _P_(UBX_TIM_CLSID, UBX_TIM_VRFY_MSGID,        "UBX-TIM-VRFY") \
@@ -1676,6 +1678,24 @@ typedef struct UBX_TIME_TP_V0_GROUP0_s
 #define UBX_TIM_TP_V0_UTCSTANDARD_SU                                 6
 #define UBX_TIM_TP_V0_UTCSTANDARD_NTSC                               7
 #define UBX_TIM_TP_V0_UTCSTANDARD_UNNOWN                             15
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-TIM_SVIN payload
+typedef struct UBX_TIME_SVIN_V0_GROUP0_s
+{
+    uint32_t dur;
+    int32_t  meanX;
+    int32_t  meanY;
+    int32_t  meanZ;
+    uint32_t meanV;
+    uint32_t obs;
+    uint8_t  valid;
+    uint8_t  active;
+    uint16_t reserved;
+} UBX_TIME_SVIN_V0_GROUP0_t;
+
+#define UBX_TIM_SVIN_V0_SIZE    ((int)(sizeof(UBX_TIME_SVIN_V0_GROUP0_t) + UBX_FRAME_SIZE))
 
 /* ****************************************************************************************************************** */
 
