@@ -830,6 +830,12 @@
     { "id" : "0x20910605", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_I2C",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port I2C" },
     { "id" : "0x20910608", "name" : "CFG-MSGOUT-UBX_RXM_SPARTN_USB",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-RXM-SPARTN message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x20910098", "name" : "CFG-MSGOUT-UBX_TIM_SVIN_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-SVIN message on port UART1" },
+    { "id" : "0x20910099", "name" : "CFG-MSGOUT-UBX_TIM_SVIN_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-SVIN message on port UART2" },
+    { "id" : "0x2091009b", "name" : "CFG-MSGOUT-UBX_TIM_SVIN_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-SVIN message on port SPI" },
+    { "id" : "0x20910097", "name" : "CFG-MSGOUT-UBX_TIM_SVIN_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-SVIN message on port I2C" },
+    { "id" : "0x2091009a", "name" : "CFG-MSGOUT-UBX_TIM_SVIN_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-SVIN message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x20910179", "name" : "CFG-MSGOUT-UBX_TIM_TM2_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port UART1" },
     { "id" : "0x2091017a", "name" : "CFG-MSGOUT-UBX_TIM_TM2_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port UART2" },
     { "id" : "0x2091017c", "name" : "CFG-MSGOUT-UBX_TIM_TM2_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-TM2 message on port SPI" },

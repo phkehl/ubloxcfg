@@ -18,6 +18,7 @@
 
 // Sources:
 // - u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG
+// - u-blox ZED-F9T Interface Description (Version 29.00) (https://content.u-blox.com/sites/default/files/RCB-F9T_InterfaceDescription_%28UBX-19003606%29.pdf), copyright (c) 2020 u-blox AG
 // - u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG
 // - u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG
 // - u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG
@@ -4263,6 +4264,36 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxSecSigUsb =
     .order =  649, .title ="Output rate of the UBX-SEC-SIG message on port USB"
 };
 
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxTimSvinUart1 =
+{
+    .id = 0x20910098, .name = "CFG-MSGOUT-UBX_TIM_SVIN_UART1",                   .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
+    .order =  650, .title ="Output rate of the UBX-TIM-SVIN message on port UART1"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxTimSvinUart2 =
+{
+    .id = 0x20910099, .name = "CFG-MSGOUT-UBX_TIM_SVIN_UART2",                   .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
+    .order =  651, .title ="Output rate of the UBX-TIM-SVIN message on port UART2"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxTimSvinSpi =
+{
+    .id = 0x2091009b, .name = "CFG-MSGOUT-UBX_TIM_SVIN_SPI",                     .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
+    .order =  652, .title ="Output rate of the UBX-TIM-SVIN message on port SPI"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxTimSvinI2c =
+{
+    .id = 0x20910097, .name = "CFG-MSGOUT-UBX_TIM_SVIN_I2C",                     .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
+    .order =  653, .title ="Output rate of the UBX-TIM-SVIN message on port I2C"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgMsgoutUbxTimSvinUsb =
+{
+    .id = 0x2091009a, .name = "CFG-MSGOUT-UBX_TIM_SVIN_USB",                     .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
+    .order =  654, .title ="Output rate of the UBX-TIM-SVIN message on port USB"
+};
+
 static const UBLOXCFG_CONST_t ubloxcfg_cfgNavhpgDgnssmode_consts[2] =
 {
     {
@@ -7097,7 +7128,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestE4 =
     .nConsts =   5, .consts = ubloxcfg_cfgUbloxcfgtestE4_consts
 };
 
-static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[925] =
+static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[930] =
 {
     &ubloxcfg_cfgBdsUseGeoPrn,
     &ubloxcfg_cfgGeofenceConflvl,
@@ -7743,6 +7774,11 @@ static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[925] =
     &ubloxcfg_cfgMsgoutUbxTimVrfySpi,
     &ubloxcfg_cfgMsgoutUbxTimVrfyI2c,
     &ubloxcfg_cfgMsgoutUbxTimVrfyUsb,
+    &ubloxcfg_cfgMsgoutUbxTimSvinUart1,
+    &ubloxcfg_cfgMsgoutUbxTimSvinUart2,
+    &ubloxcfg_cfgMsgoutUbxTimSvinSpi,
+    &ubloxcfg_cfgMsgoutUbxTimSvinI2c,
+    &ubloxcfg_cfgMsgoutUbxTimSvinUsb,
     &ubloxcfg_cfgMsgoutUbxSecSigUart1,
     &ubloxcfg_cfgMsgoutUbxSecSigUart2,
     &ubloxcfg_cfgMsgoutUbxSecSigSpi,
@@ -9185,7 +9221,18 @@ static const UBLOXCFG_MSGRATE_t ubloxcfg_ubxTimVrfy =
     .itemI2c   = &ubloxcfg_cfgMsgoutUbxTimVrfyI2c,
     .itemUsb   = &ubloxcfg_cfgMsgoutUbxTimVrfyUsb
 };
-static const UBLOXCFG_MSGRATE_t * const ubloxcfg_allRates[116] =
+
+static const UBLOXCFG_MSGRATE_t ubloxcfg_ubxTimSvin =
+{
+    .msgName   = "UBX-TIM-SVIN",
+    .itemUart1 = &ubloxcfg_cfgMsgoutUbxTimSvinUart1,
+    .itemUart2 = &ubloxcfg_cfgMsgoutUbxTimSvinUart2,
+    .itemSpi   = &ubloxcfg_cfgMsgoutUbxTimSvinSpi,
+    .itemI2c   = &ubloxcfg_cfgMsgoutUbxTimSvinI2c,
+    .itemUsb   = &ubloxcfg_cfgMsgoutUbxTimSvinUsb
+};
+
+static const UBLOXCFG_MSGRATE_t * const ubloxcfg_allRates[117] =
 {
     &ubloxcfg_nmeaPubxPosition,
     &ubloxcfg_nmeaPubxSvstatus,
@@ -9302,7 +9349,8 @@ static const UBLOXCFG_MSGRATE_t * const ubloxcfg_allRates[116] =
     &ubloxcfg_ubxSecSig,
     &ubloxcfg_ubxTimTm2,
     &ubloxcfg_ubxTimTp,
-    &ubloxcfg_ubxTimVrfy
+    &ubloxcfg_ubxTimVrfy,
+    &ubloxcfg_ubxTimSvin
 };
 static const char * const ubloxcfg_allSources[5] =
 {
