@@ -115,8 +115,8 @@ const uint32_t GuiWinDataConfig::_baudItemIds[NUM_PORTS] =
 
 void GuiWinDataConfig::_Loop(const uint32_t &frame, const double &now)
 {
-    (void)frame;
-    (void)now;
+    UNUSED(frame);
+    UNUSED(now);
     switch (_dbPollState)
     {
         case POLL_INIT:

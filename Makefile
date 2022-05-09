@@ -98,7 +98,7 @@ $(CFILES_test_m32): $(BUILDDIR)/config.h
 $(CFILES_test_m64): $(BUILDDIR)/config.h
 
 # cfgtool
-CFILES_cfgtool        := $(wildcard cfgtool/*.c) 3rdparty/stuff/crc24q.c
+CFILES_cfgtool        := $(wildcard cfgtool/*.c)
 CFLAGS_cfgtool        := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 LDFLAGS_cfgtool       := -lm
 ifeq ($(WIN),64)
@@ -110,7 +110,7 @@ $(CFILES_cfgtool): $(BUILDDIR)/config.h
 # cfggui
 CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
 CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) $(wildcard 3rdparty/stuff/*.cpp)
-CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/crc24q.c 3rdparty/stuff/tetris.c  3rdparty/stuff/gl3w.c $(wildcard 3rdparty/nanovg/*.c)
+CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/tetris.c  3rdparty/stuff/gl3w.c $(wildcard 3rdparty/nanovg/*.c)
 CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
 CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
 LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++ -ldl
@@ -134,7 +134,7 @@ ifeq ($(WIN),)
 $(eval $(call makeTarget, cfggui-release$(EXE),   $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_release) $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfggui)))
 $(eval $(call makeTarget, cfggui-debug$(EXE),     $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_debug)   $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfggui)))
 endif
-$(eval $(call makeTarget, libubloxcfg.so,         $(CFILES_ubloxcfg) $(CFILES_ff) 3rdparty/stuff/crc24q.c,               $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_library),                                                        , $(LDFLAGS_ALL) $(LDFLAGS_release) $(LDFLAGS_library)))
+$(eval $(call makeTarget, libubloxcfg.so,         $(CFILES_ubloxcfg) $(CFILES_ff),                                       $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_library),                                                        , $(LDFLAGS_ALL) $(LDFLAGS_release) $(LDFLAGS_library)))
 ########################################################################################################################
 
 # Make config.h
@@ -235,7 +235,6 @@ $(OUTPUTDIR)/cfgtool_$(VERSION).bin: $(OUTPUTDIR)/cfgtool-release Makefile | $(O
 	$(V)$(RM) $@.tmp
 	$(V)$(CP) ff/LICENSE                      $(OUTPUTDIR)/ff_LICENSE
 	$(V)$(CP) ubloxcfg/LICENSE                $(OUTPUTDIR)/ubloxcfg_LICENSE
-	$(V)$(CP) 3rdparty/stuff/crc24q.LICENSE   $(OUTPUTDIR)/crc24q_LICENSE
 
 cfgtool.txt: $(OUTPUTDIR)/cfgtool-release
 	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"

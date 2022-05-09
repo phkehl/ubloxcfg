@@ -73,6 +73,7 @@ class GuiWinInputReceiver : public GuiWinInput
         void _DrawActionButtons() final;
         void _DrawControls() final;
         void _ProcessData(const InputData &data) final;
+
         void _ClearData() final;
         void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
         void _LogOpen(const std::string &path);

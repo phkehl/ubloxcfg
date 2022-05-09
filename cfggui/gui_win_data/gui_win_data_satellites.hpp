@@ -19,6 +19,7 @@
 #define __GUI_WIN_DATA_SATELLITES_HPP__
 
 #include "gui_widget_table.hpp"
+#include "gui_widget_tabbar.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -69,6 +70,9 @@ class GuiWinDataSatellites : public GuiWinData
         Count _countQzss;
         GuiWidgetTable _table;
         std::map<uint32_t, bool> _selSats;
+
+        GuiWidgetTabbar _tabbar1;
+        GuiWidgetTabbar _tabbar2;
 
         void _UpdateSatellites();
         void _DrawSky(const EPOCH_GNSS_t filter);

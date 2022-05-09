@@ -30,12 +30,22 @@
 
 GuiWinDataCustom::GuiWinDataCustom(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _currentTab{nullptr},
-    _dataIsStr{false},
-    _textLfToCrLf{false},
-    _ubxMessage{nullptr}, _ubxClsId{0},_ubxMsgId{0}, _ubxLength{0}, _ubxLengthUser{false},
-    _ubxChecksum{0}, _ubxChecksumUser{false}, _ubxChecksumBad{false},
-    _nmeaTalkerChoiceIx{0}, _nmeaFormatterChoiceIx{0}, _nmeaChecksumUser{false}, _nmeaChecksumBad{false}
+    _currentTab            { nullptr },
+    _tabbar                { WinName() },
+    _dataIsStr             { false },
+    _textLfToCrLf          { false },
+    _ubxMessage            { nullptr },
+    _ubxClsId              { 0 },
+    _ubxMsgId              { 0 },
+    _ubxLength             { 0 },
+    _ubxLengthUser         { false },
+    _ubxChecksum           { 0 },
+    _ubxChecksumUser       { false },
+    _ubxChecksumBad        { false },
+    _nmeaTalkerChoiceIx    { 0 },
+    _nmeaFormatterChoiceIx { 0 },
+    _nmeaChecksumUser      { false },
+    _nmeaChecksumBad       { false }
 {
     _winSize = { 80, 20 };
 
@@ -129,7 +139,7 @@ void GuiWinDataCustom::_DrawContent()
 
     if (ImGui::BeginChild("##Edit", editSize))
     {
-        if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_FittingPolicyScroll))
+        if (_tabbar.Begin())
         {
             const char *rawTab   = "Raw";
             const char *ubxTab   = "UBX";
@@ -138,38 +148,49 @@ void GuiWinDataCustom::_DrawContent()
             const char *textTab  = "Text";
             const char *prevTab = _currentTab;
 
-            if (ImGui::BeginTabItem(rawTab))
-            {
-                _currentTab = rawTab;
-                _DrawEditRaw(prevTab != _currentTab);
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem(ubxTab))
-            {
-                _currentTab = ubxTab;
-                _DrawEditUbx(prevTab != _currentTab);
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem(nmeaTab))
-            {
-                _currentTab = nmeaTab;
-                _DrawEditNmea(prevTab != _currentTab);
-                ImGui::EndTabItem();
-            }
-            // if (ImGui::BeginTabItem(rtcm3Tab))
-            // {
-            //     _currentTab = rtcm3Tab;
-            //     _DrawEditRtcm3(prevTab != _currentTab);
-            //     ImGui::EndTabItem();
-            // }
-            if (ImGui::BeginTabItem(textTab))
-            {
-                _currentTab = textTab;
-                _DrawEditText(prevTab != _currentTab);
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
+            _tabbar.Item(rawTab,   [&]() { _currentTab = rawTab;   _DrawEditRaw(prevTab != _currentTab); });
+            _tabbar.Item(ubxTab,   [&]() { _currentTab = ubxTab;   _DrawEditUbx(prevTab != _currentTab); });
+            _tabbar.Item(nmeaTab,  [&]() { _currentTab = nmeaTab;  _DrawEditNmea(prevTab != _currentTab); });
+            //_tabbar.Item(rtcm3Tab, [&]() { _currentTab = rtcm3Tab; _DrawEditRtcm3(prevTab != _currentTab); });
+            _tabbar.Item(textTab,  [&]() { _currentTab = textTab;  _DrawEditText(prevTab != _currentTab); });
+
+            _tabbar.End();
         }
+        // if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_FittingPolicyScroll))
+        // {
+
+        //     if (ImGui::BeginTabItem(rawTab))
+        //     {
+        //         _currentTab = rawTab;
+        //         _DrawEditRaw(prevTab != _currentTab);
+        //         ImGui::EndTabItem();
+        //     }
+        //     if (ImGui::BeginTabItem(ubxTab))
+        //     {
+        //         _currentTab = ubxTab;
+        //         _DrawEditUbx(prevTab != _currentTab);
+        //         ImGui::EndTabItem();
+        //     }
+        //     if (ImGui::BeginTabItem(nmeaTab))
+        //     {
+        //         _currentTab = nmeaTab;
+        //         _DrawEditNmea(prevTab != _currentTab);
+        //         ImGui::EndTabItem();
+        //     }
+        //     // if (ImGui::BeginTabItem(rtcm3Tab))
+        //     // {
+        //     //     _currentTab = rtcm3Tab;
+        //     //     _DrawEditRtcm3(prevTab != _currentTab);
+        //     //     ImGui::EndTabItem();
+        //     // }
+        //     if (ImGui::BeginTabItem(textTab))
+        //     {
+        //         _currentTab = textTab;
+        //         _DrawEditText(prevTab != _currentTab);
+        //         ImGui::EndTabItem();
+        //     }
+        //     ImGui::EndTabBar();
+        // }
     }
     ImGui::EndChild();
 

@@ -232,9 +232,8 @@ void GuiWinDataScatter::_DrawContent()
     std::memset(_histogramE, 0, sizeof(_histogramE));
     _histNumPoints = 0;
     bool havePoints = false;
-    _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+    _database->ProcEpochs([&](const Database::Epoch &epoch)
     {
-        (void)ix;
         if (epoch.raw.havePos)
         {
             const float east  = epoch.enuRef[_E_];
@@ -406,9 +405,8 @@ void GuiWinDataScatter::_DrawContent()
     // Highlight last point, draw accuracy estimate circle
     //double lastEnu[3] = { 0.0, 0.0, 0.0 };
     //double lastLlh[3] = { 0.0, 0.0, 0.0 };
-    _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+    _database->ProcEpochs([&](const Database::Epoch &epoch)
     {
-        (void)ix;
         if (epoch.raw.havePos)
         {
             const float east  = epoch.enuRef[_E_];

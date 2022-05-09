@@ -52,6 +52,7 @@ class GuiWinDataConfig : public GuiWinData
         int                  _dbPollProgress;
         int                  _dbPollProgressMax;
         bool                 _dbPollDataAvail;
+
         enum SetState_e { SET_IDLE, SET_START, SET_WAIT, SET_DONE };
         enum SetState_e      _dbSetState;
         int                  _dbSetNumValset;

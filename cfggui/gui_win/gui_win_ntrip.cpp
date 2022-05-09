@@ -34,6 +34,7 @@
 
 GuiWinNtrip::GuiWinNtrip(const std::string &name) :
     GuiWin(name),
+    _guiDataSerial { 0 },
     _ggaAuto       { true },
     _ggaInt        { "5.0" },
     _ggaLastUpdate { 0.0 },
@@ -61,34 +62,28 @@ GuiWinNtrip::~GuiWinNtrip()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinNtrip::AddReceiver(std::shared_ptr<InputReceiver> receiver)
-{
-    std::unique_lock<std::mutex> lock(_mutex);
-    _receivers.push_back(receiver);
-    _dstReceivers[receiver->GetName()] = false;
-    // Use first receiver by default
-    if (!_srcReceiver)
-    {
-        _srcReceiver = receiver;
-        _dstReceivers[receiver->GetName()] = true;
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinNtrip::RemoveReceivers()
-{
-    std::unique_lock<std::mutex> lock(_mutex);
-    _srcReceiver = nullptr;
-    _receivers.clear();
-    _dstReceivers.clear();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 void GuiWinNtrip::Loop(const uint32_t &frame, const double &now)
 {
     UNUSED(frame);
+
+    // Update list of receivers
+    if (_guiDataSerial != GuiData::serial)
+    {
+        _guiDataSerial = GuiData::serial;
+        std::unique_lock<std::mutex> lock(_mutex);
+        _receivers = GuiData::Receivers();
+
+        // Source receiver still present?
+        if (_srcReceiver)
+        {
+            auto entry = std::find(_receivers.begin(), _receivers.end(), _srcReceiver);
+            if (entry == _receivers.end())
+            {
+                _srcReceiver = nullptr;
+            }
+        }
+    }
+
     if ( (now - _ggaLastUpdate) > 0.25 )
     {
         _UpdateGga();
@@ -212,6 +207,7 @@ void GuiWinNtrip::DrawWindow()
         {
             _ntripClient.SendPos();
         }
+        Gui::ItemTooltip("Force send GGA");
         ImGui::EndDisabled();
 
         Gui::VerticalSeparator();
@@ -224,7 +220,7 @@ void GuiWinNtrip::DrawWindow()
         {
             DEBUG("update auto %s", _ggaAuto ? "true" : "false");
         }
-        Gui::ItemTooltip("Automatic position update");
+        Gui::ItemTooltip("Automatic position update (from receiver position)");
 
         ImGui::SameLine();
 
@@ -258,6 +254,7 @@ void GuiWinNtrip::DrawWindow()
         {
             _UpdateGga();
         }
+        Gui::ItemTooltip("Number of satellites used");
         ImGui::PopItemWidth();
         ImGui::SameLine();
         if (ImGui::Checkbox("##GgaFix", &_ggaFix))
@@ -505,6 +502,7 @@ void GuiWinNtrip::_Thread(Ff::Thread *thread)
             // Send RTCM3 messages to the receivers
             if (msg.type == PARSER_MSGTYPE_RTCM3)
             {
+                std::unique_lock<std::mutex> lock(_mutex);
                 for (auto &receiver: _receivers)
                 {
                     if (_dstReceivers[receiver->GetName()])
@@ -512,8 +510,6 @@ void GuiWinNtrip::_Thread(Ff::Thread *thread)
                         receiver->Send(msg.data, msg.size);
                     }
                 }
-
-                // ...TODO
             }
             else
             {

@@ -51,6 +51,8 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
         _port = recent[0];
     }
 
+    GuiData::AddReceiver(_receiver);
+
     _ClearData();
 };
 
@@ -59,6 +61,8 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
 GuiWinInputReceiver::~GuiWinInputReceiver()
 {
     DEBUG("~GuiWinInputReceiver(%s)", _winName.c_str());
+
+    GuiData::RemoveReceiver(_receiver);
 
     if (_receiver)
     {
@@ -178,7 +182,7 @@ void GuiWinInputReceiver::_ClearData()
 void GuiWinInputReceiver::_AddDataWindow(std::unique_ptr<GuiWinData> dataWin)
 {
     dataWin->SetReceiver(_receiver);
-    _dataWindows.push_back(std::move(dataWin));
+    GuiWinInput::_AddDataWindow(std::move(dataWin));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -36,8 +36,9 @@ GuiWinApp::GuiWinApp(const std::string &name) :
 
 /* ****************************************************************************************************************** */
 
-GuiWinAppAbout::GuiWinAppAbout() :
-    GuiWinApp("About")
+GuiWinAppAbout::GuiWinAppAbout(const std::vector<std::string> &versions) :
+    GuiWinApp("About"),
+    _versions { versions }
 {
     _winFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 }
@@ -55,7 +56,7 @@ void GuiWinAppAbout::DrawWindow()
 
     ImGui::PushFont(GuiSettings::fontSans);
     ImGui::TextUnformatted( "Copyright (c) 2020-2022 Philippe Kehl (flipflip at oinkzwurgl dot org)");
-    Gui::TextLink(          "https://oinkzwurgl.org/hacking/ubloxcfg/");
+    Gui::TextLink(          "https://oinkzwurgl.org/projaeggd/ubloxcfg/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("This consists of the following parts:");
 
@@ -70,14 +71,10 @@ void GuiWinAppAbout::DrawWindow()
 
     _DrawEntry("Dear Imgui",                  "MIT license",          "https://github.com/ocornut/imgui");
     _DrawEntry("ImPlot",                      "MIT license",          "https://github.com/epezent/implot");
-    _DrawEntry("CRC24Q routines (from GPSD)", "BSD-2-Clause license", "https://gitlab.com/gpsd");
     _DrawEntry("PlatformFolders",             "MIT license",          "https://github.com/sago007/PlatformFolders");
     _DrawEntry("DejaVu fonts",                "unnamed license",      "https://dejavu-fonts.github.io");
-  //_DrawEntry("ProggyClean font",            "unnamed license",      "https://proggyfonts.net");
     _DrawEntry("ForkAwesome font",            "MIT license",          "https://forkaweso.me", "https://github.com/ForkAwesome/Fork-Awesome");
     _DrawEntry("Tetris",                      "Revised BSD license",  "https://brennan.io/2015/06/12/tetris-reimplementation/");
-  //_DrawEntry("NanoVG",                      "Zlib license",         "https://github.com/memononen/nanovg", "https://github.com/inniyah/nanovg");
-  //_DrawEntry("Miniz",                       "MIT license",          "https://github.com/richgel999/miniz");
     _DrawEntry("zfstream",                    "unnamed license",      "https://github.com/madler/zlib/tree/master/contrib/iostream3");
     _DrawEntry("Base64",                      "MIT license",          "https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594");
     _DrawEntry("glm",                         "Happy Bunny license",  "https://github.com/g-truc/glm");
@@ -93,6 +90,12 @@ void GuiWinAppAbout::DrawWindow()
     for (int ix = 0; ix < nSources; ix++)
     {
         ImGui::Text("- %s", sources[ix]);
+    }
+    ImGui::Separator();
+    ImGui::TextUnformatted("Versions:");
+    for (const auto &version: _versions)
+    {
+        ImGui::Text("- %s", version.c_str());
     }
     ImGui::PopFont();
 
@@ -132,9 +135,9 @@ void GuiWinAppAbout::_DrawEntry(const char *name, const char *license, const cha
 
 /* ****************************************************************************************************************** */
 
-GuiWinAppSettings::GuiWinAppSettings(std::function<void()> drawCb) :
+GuiWinAppSettings::GuiWinAppSettings() :
     GuiWinApp("Settings"),
-    _drawCb { drawCb }
+    _tabbar { WinName() }
 {
     _winSize    = { 75, 25 };
     _winSizeMin = { 75, 15 };
@@ -147,14 +150,18 @@ void GuiWinAppSettings::DrawWindow()
         return;
     }
 
-    if (_drawCb)
+    if (_tabbar.Begin())
     {
-        _drawCb();
+        _tabbar.Item("Font",    GuiSettings::DrawSettingsEditorFont);
+        _tabbar.Item("Colours", GuiSettings::DrawSettingsEditorColours);
+        _tabbar.Item("Maps",    GuiSettings::DrawSettingsEditorMaps);
+        _tabbar.Item("Misc",    GuiSettings::DrawSettingsEditorMisc);
+        _tabbar.Item("Tools",   GuiSettings::DrawSettingsEditorTools);
+        _tabbar.End();
     }
 
     _DrawWindowEnd();
 }
-
 
 /* ****************************************************************************************************************** */
 

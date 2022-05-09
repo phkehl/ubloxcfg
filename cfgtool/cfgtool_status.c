@@ -63,7 +63,8 @@ typedef struct INFO_s
     uint32_t       nEpoch;
     uint32_t       nNmea;
     uint32_t       nUbx;
-    uint32_t       nRtcm;
+    uint32_t       nRtcm3;
+    uint32_t       nSpartn;
     uint32_t       nNova;
     uint32_t       nGarb;
     uint32_t       nMsgs;
@@ -116,8 +117,8 @@ static void _statusColour(const STATUS_COLOUR_t colour)
 
 static bool _printInfo(const bool colours, const INFO_t *info, const EPOCH_t *epoch)
 {
-    ioOutputStr("%4u %4u %4u %4u %4u %5u | ",
-        info->nUbx, info->nNmea, info->nRtcm, info->nNova, info->nGarb, epoch != NULL ? epoch->seq : 0);
+    ioOutputStr("%4u %4u %4u %4u %4u %4u %5u | ",
+        info->nUbx, info->nNmea, info->nRtcm3, info->nSpartn, info->nNova, info->nGarb, epoch != NULL ? epoch->seq : 0);
 
     const char *epochStr = "no navigation data";
 
@@ -196,7 +197,7 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
 
     PRINT("Dumping receiver status...");
 
-    ioOutputStr("UBX  NMEA RTCM NOVA GARB Epoch | %s\n", epochStrHeader());
+    ioOutputStr("UBX  NMEA RTCM SPAR NOVA GARB Epoch | %s\n", epochStrHeader());
     ioWriteOutput(false);
 
     uint32_t lastEpoch = TIME();
@@ -241,7 +242,10 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
                     info.nNmea++;
                     break;
                 case PARSER_MSGTYPE_RTCM3:
-                    info.nRtcm++;
+                    info.nRtcm3++;
+                    break;
+                case PARSER_MSGTYPE_SPARTN:
+                    info.nSpartn++;
                     break;
                 case PARSER_MSGTYPE_NOVATEL:
                     info.nNova++;

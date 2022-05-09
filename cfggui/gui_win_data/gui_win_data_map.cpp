@@ -58,9 +58,8 @@ void GuiWinDataMap::_DrawContent()
     // Draw points
     constexpr int _LAT_ = Database::_LAT_;
     constexpr int _LON_ = Database::_LON_;
-    _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+    _database->ProcEpochs([&](const Database::Epoch &epoch)
     {
-        (void)ix;
         if (epoch.raw.havePos)
         {
             const FfVec2f xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
@@ -71,9 +70,8 @@ void GuiWinDataMap::_DrawContent()
 
     // Highlight last point, draw accuracy estimate circle
     const Database::Epoch *lastEpoch = nullptr;
-    _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+    _database->ProcEpochs([&](const Database::Epoch &epoch)
     {
-        (void)ix;
         if (epoch.raw.havePos)
         {
             const FfVec2f xy = _map.LonLatToScreen(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_]);
@@ -103,37 +101,35 @@ void GuiWinDataMap::_DrawContent()
     // Draw basestation
     if (lastEpoch && lastEpoch->raw.havePos && lastEpoch->raw.haveRelPos)
     {
-        {
-            // Calculate approximate basestation coordinates given NED *at* base station
-            // FIXE: is this correct?
-            double llh[3];
-            memcpy(llh, lastEpoch->raw.llh, sizeof(llh));
+        // Calculate approximate basestation coordinates given NED *at* base station
+        // FIXE: is this correct?
+        double llh[3];
+        memcpy(llh, lastEpoch->raw.llh, sizeof(llh));
 
-            // Approx. base lat/lon using rover lat/lon and North/East
-            constexpr double WGS84_A = 6378137.0;
-            const double m2r = 1.0 / WGS84_A; // metres per rad at equator
-            const double m2rAtLat = m2r / cos( llh[0] ); // at our latitude
-            llh[0] -= lastEpoch->raw.relNed[0] * m2r;
-            llh[1] -= lastEpoch->raw.relNed[1] * m2rAtLat;
-            llh[2] += lastEpoch->raw.relNed[2];
-            // This is quite close already, but it gets better (more stable) if we do the following...
+        // Approx. base lat/lon using rover lat/lon and North/East
+        constexpr double WGS84_A = 6378137.0;
+        const double m2r = 1.0 / WGS84_A; // metres per rad at equator
+        const double m2rAtLat = m2r / cos( llh[0] ); // at our latitude
+        llh[0] -= lastEpoch->raw.relNed[0] * m2r;
+        llh[1] -= lastEpoch->raw.relNed[1] * m2rAtLat;
+        llh[2] += lastEpoch->raw.relNed[2];
+        // This is quite close already, but it gets better (more stable) if we do the following...
 
-            // Get XYZ vector from NED vector at approx. base
-            double xyz[3];
-            xyz2ned_vec(lastEpoch->raw.relNed, llh, xyz);
+        // Get XYZ vector from NED vector at approx. base
+        double xyz[3];
+        xyz2ned_vec(lastEpoch->raw.relNed, llh, xyz);
 
-            // Base ECEF
-            xyz[0] = lastEpoch->raw.xyz[0] - xyz[0];
-            xyz[1] = lastEpoch->raw.xyz[1] - xyz[1];
-            xyz[2] = lastEpoch->raw.xyz[2] - xyz[2];
-            // Base LLH
-            xyz2llh_vec(xyz, llh);
+        // Base ECEF
+        xyz[0] = lastEpoch->raw.xyz[0] - xyz[0];
+        xyz[1] = lastEpoch->raw.xyz[1] - xyz[1];
+        xyz[2] = lastEpoch->raw.xyz[2] - xyz[2];
+        // Base LLH
+        xyz2llh_vec(xyz, llh);
 
-            const FfVec2f xyBase  = _map.LonLatToScreen(llh[0], llh[1]);
-            const FfVec2f xyRover = _map.LonLatToScreen(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1]);
-            draw->AddLine(xyBase, xyRover, GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
-            draw->AddCircleFilled(xyBase, 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
-        }
+        const FfVec2f xyBase  = _map.LonLatToScreen(llh[0], llh[1]);
+        const FfVec2f xyRover = _map.LonLatToScreen(lastEpoch->raw.llh[0], lastEpoch->raw.llh[1]);
+        draw->AddLine(xyBase, xyRover, GUI_COLOUR(PLOT_MAP_BASELINE), 4.0f);
+        draw->AddCircleFilled(xyBase, 6.0f, GUI_COLOUR(PLOT_MAP_BASELINE));
     }
 
     _map.EndDraw();

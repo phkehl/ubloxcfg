@@ -34,7 +34,8 @@ GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name, std::shared_
     _countGal  { "GAL" },
     _countSbas { "SBAS" },
     _countQzss { "QZSS" },
-    _selSats   { }
+    _tabbar1   { WinName() + "Tabbar1" },
+    _tabbar2   { WinName() + "Tabbar2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton }
 {
     _winSize = { 80, 25 };
 
@@ -86,14 +87,14 @@ void GuiWinDataSatellites::Count::Reset()
     num = 0;
     used = 0;
     visible = 0;
-    std::strncpy(labelSky, name, sizeof(labelSky) - 1);
-    std::strncpy(labelList, name, sizeof(labelList) - 1);
+    std::snprintf(labelSky,  sizeof(labelSky),  "%s###%s", name, name);
+    std::snprintf(labelList, sizeof(labelList), "%s###%s", name, name);
 }
 
 void GuiWinDataSatellites::Count::Update()
 {
-    std::snprintf(labelSky, sizeof(labelSky), "%s (%d/%d)###%s", name, used, visible, name);
-    std::snprintf(labelList, sizeof(labelList), "%s (%d/%d)###%s", name, used, num, name);
+    std::snprintf(labelSky,  sizeof(labelSky),  "%s (%d/%d)###%s", name, used, visible, name);
+    std::snprintf(labelList, sizeof(labelList), "%s (%d/%d)###%s", name, used, num,     name);
 }
 
 void GuiWinDataSatellites::Count::Add(const SatInfo &sat)
@@ -234,33 +235,25 @@ void GuiWinDataSatellites::_DrawContent()
     bool doList = false;
     EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
 
-    if (ImGui::BeginTabBar("##tabs1", ImGuiTabBarFlags_FittingPolicyScroll))
+    if (_tabbar1.Begin())
     {
-        if (ImGui::BeginTabItem("Sky"))
-        {
-            doSky = true;
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("List"))
-        {
-            doList = true;
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+        _tabbar1.Item("Sky", [&doSky]() { doSky = true; });
+        _tabbar1.Item("List", [&doList]() { doList = true; });
+        _tabbar1.End();
     }
 
     Gui::VerticalSeparator();
 
-    if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton/*ImGuiTabBarFlags_FittingPolicyScroll*/))
+    if (_tabbar2.Begin())
     {
-        if (ImGui::BeginTabItem(doSky ? _countAll.labelSky  : _countAll.labelList )) { filter = EPOCH_GNSS_UNKNOWN; ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countGps.labelSky  : _countGps.labelList )) { filter = EPOCH_GNSS_GPS;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countGlo.labelSky  : _countGlo.labelList )) { filter = EPOCH_GNSS_GLO;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countGal.labelSky  : _countGal.labelList )) { filter = EPOCH_GNSS_GAL;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countBds.labelSky  : _countBds.labelList )) { filter = EPOCH_GNSS_BDS;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countSbas.labelSky : _countSbas.labelList)) { filter = EPOCH_GNSS_SBAS;    ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(doSky ? _countQzss.labelSky : _countQzss.labelList)) { filter = EPOCH_GNSS_QZSS;    ImGui::EndTabItem(); }
-        ImGui::EndTabBar();
+        _tabbar2.Item(doSky ? _countAll.labelSky  : _countAll.labelList,  [&filter]() { filter = EPOCH_GNSS_UNKNOWN; });
+        _tabbar2.Item(doSky ? _countGps.labelSky  : _countGps.labelList,  [&filter]() { filter = EPOCH_GNSS_GPS;     });
+        _tabbar2.Item(doSky ? _countGlo.labelSky  : _countGlo.labelList,  [&filter]() { filter = EPOCH_GNSS_GLO;     });
+        _tabbar2.Item(doSky ? _countGal.labelSky  : _countGal.labelList,  [&filter]() { filter = EPOCH_GNSS_GAL;     });
+        _tabbar2.Item(doSky ? _countBds.labelSky  : _countBds.labelList,  [&filter]() { filter = EPOCH_GNSS_BDS;     });
+        _tabbar2.Item(doSky ? _countSbas.labelSky : _countSbas.labelList, [&filter]() { filter = EPOCH_GNSS_SBAS;    });
+        _tabbar2.Item(doSky ? _countQzss.labelSky : _countQzss.labelList, [&filter]() { filter = EPOCH_GNSS_QZSS;    });
+        _tabbar2.End();
     }
 
     if (doSky)

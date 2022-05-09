@@ -246,6 +246,7 @@ void GuiWinDataMessages::_ClearData()
 
 void GuiWinDataMessages::_UpdateInfo()
 {
+    _nowTs = TIME();
     for (auto entry = _messages.begin(); entry != _messages.end(); entry++)
     {
         auto &info = entry->second;
@@ -544,29 +545,8 @@ void GuiWinDataMessages::_DrawList()
     const bool showDeltaTime = _receiver && !_receiver->IsIdle();
 
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-    ImGui::TextUnformatted("  Count: Age: Rate: Name:");
+    ImGui::TextUnformatted("      Count: Age: Rate: Name:");
     ImGui::PopStyleColor();
-
-    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    // if (ImGui::TreeNode("Foo1"))
-    // {
-    //     ImGui::TextUnformatted("blabla");
-    //     ImGui::TextUnformatted("blabla");
-    //     ImGui::TreePop();
-    // }
-    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    // if (ImGui::TreeNode("Foo2"))
-    // {
-    //     ImGui::TreePop();
-    // }
-    // ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    // if (ImGui::TreeNode("Foo3"))
-    // {
-    //     ImGui::TextUnformatted("blabla");
-    //     ImGui::TextUnformatted("blabla");
-    //     ImGui::TreePop();
-    // }
-
 
     _displayedEntry = _selectedEntry;
     uint64_t prevGroupId = 0;

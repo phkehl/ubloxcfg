@@ -19,9 +19,10 @@
 #define __DATABASE_HPP__
 
 #include <mutex>
-#include <vector>
+#include <deque>
 #include <string>
 #include <functional>
+#include <unordered_map>
 
 #include "ubloxcfg.h"
 #include "ff_parser.h"
@@ -33,11 +34,13 @@
 class Database
 {
     public:
-        Database(const int size);
+        Database(const int size, const std::string &name);
+       ~Database();
+
+        const std::string &GetName();
 
         void Clear();
         void AddEpoch(const EPOCH_t *raw);
-        void AddMsg(const PARSER_MSG_t *msg);
 
         enum PosIx_e { _X_   = 0, _Y_   = 1, _Z_      = 2,
                        _LAT_ = 0, _LON_ = 1, _HEIGHT_ = 2,
@@ -88,14 +91,18 @@ class Database
         EpochStats           GetStats();
 
         // Epoch data access
-        void                 ProcEpochs(std::function<bool(const int ix, const Epoch &)> cb, const bool backwards = false);
+        void                 ProcEpochs(std::function<bool(const Epoch &)> cb, const bool backwards = false);
         const Epoch         *LatestEpoch();
 
         void                 BeginGetEpoch();        //!< Lock mutex
-        int                  NumEpochs();
         const Epoch         &operator[](const int ix); //!< Access epochs
         const Epoch         &GetEpoch(const int ix); //!< Access epochs
         void                 EndGetEpoch();          //!< Unlock mutex
+
+        // Database status
+        int                  Size();
+        int                  MaxSize();
+        bool                 Changed(const void *uid);
 
         // Reference position
         enum RefPos_e { REFPOS_MEAN, REFPOS_LAST, REFPOS_USER };
@@ -106,25 +113,21 @@ class Database
         void                 SetRefPosLlh(double llh[_NUM_POS_]);
         void                 SetRefPosXyz(double xyz[_NUM_POS_]);
 
-        // Database status
-        int GetSize();
-        int GetUsage();
-
     protected:
 
-        int                  _size;
-        std::vector<Epoch>   _epochs;
-        int                  _epochIx;
-        int                  _epochIxLast;
-        int                  _epochsValidCnt;
+        std::string          _name;
+        int                  _maxSize;
+        std::deque<Epoch>    _epochs;
         uint32_t             _epochsT0;
         EpochStats           _stats;
         std::mutex           _mutex;
         enum RefPos_e        _refPos;
         double               _refPosXyz[3];
         double               _refPosLlh[3];
-        void                 _ProcEpochs(std::function<bool(const int ix, const Epoch &)> cb, const bool backwards = false);
+        void                 _ProcEpochs(std::function<bool(const Epoch &)> cb, const bool backwards = false);
         void                 _Sync();
+        uint32_t             _serial;
+        std::unordered_map<const void *, uint32_t> _changed;
 
     private:
 };

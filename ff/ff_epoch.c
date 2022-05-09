@@ -28,6 +28,7 @@
 #include "ff_trafo.h"
 #include "ff_debug.h"
 #include "ff_trafo.h"
+#include "ff_time.h"
 
 #include "ff_epoch.h"
 
@@ -1418,6 +1419,17 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
             offs += snprintf(&epoch->uptimeStr[offs], sizeof(epoch->uptimeStr) - offs, anyway ? " %.1fs" : "%.1fs", val);
         }
     }
+
+    // Time and date
+    if (epoch->haveGpsWeek && epoch->haveGpsTow)
+    {
+        epoch->posixTime = ts2posix(wnoTow2ts(epoch->gpsWeek, epoch->gpsTow), epoch->leapSeconds, epoch->haveLeapSeconds);
+        epoch->havePosixTime = true;
+    }
+    // else if (epoch->haveDate && epoch->haveTime) // FIXME TODO
+    // {
+    //     ...
+    // }
 
     // Epoch info stringification
     snprintf(epoch->str, sizeof(epoch->str),

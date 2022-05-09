@@ -366,6 +366,9 @@ typedef struct EPOCH_s
     double              gpsTow;
     double              gpsTowAcc;
 
+    bool                havePosixTime;
+    double              posixTime;
+
     EPOCH_SIGINFO_t     signals[100];
     int                 numSignals;
 

@@ -69,7 +69,6 @@ See the [main README](../README.md) for more.
 * Implement Logfile::Read(), Seek(), Tell(), Size(), and gzipped read/write/seek/tell/size
 * Make database size dynamic / configurable
 * Navigation status page (same stuff as in input window + velocity gage, artificial horizon, etc.)?
-* Button to open/arrange all data windows?
 * Implement A-GNSS
 * Add epoch rate [Hz] to nav status (also for logfile!)
 * Messages data win: show tree anyway if hidden but selected message not present (until it is present...)
@@ -82,7 +81,6 @@ See the [main README](../README.md) for more.
 * File dialog: load dir entries async, and as needed (make _RefreshDir() run in background)
 * (started) Implement epoch info page (table with all details / fields of EPOCH_t etc.)
 * FIXMEs and TODOs all over...
-* Deque for Database
 * Application crashes if (e.g. receiver) thread  is running on close. Explicitly calling _receiver->Stop() in
   GuiWinInputReceiver::~GuiWinInputReceiver(). Maybe this is now fixed with the GuiSettings rework.
   seems to help (and in ~GuiWinInputLogfile)
@@ -91,10 +89,11 @@ See the [main README](../README.md) for more.
 * Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
   Can we implement seekpos()? Maybe re-open file at a certain position? And gzseek() is commented-out in zlib.h anyway... (?!)
-* Fix memory leaks... valgrind isn't too happy.. :-/
+* Fix memory leaks... valgrind isn't too happy.. :-/ (Is it?)
 * Use Ff::Thread in GuiWinPlay
 * Write parser for swisstopo wmts capabilities xml to generate mapparams
-* Maybe use some global event queue for all input data stuff and have the data windows subscribe (to one or multiple sources)
+* Use https://github.com/raysan5/raylib/blob/master/src/raymath.h instead of glm (1 file vs 1000000 files)
+* example_emscripten_wgpu, can we do that?
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out <https://github.com/bkaradzic/bgfx>

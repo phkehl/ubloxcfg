@@ -76,6 +76,10 @@ class GuiWidgetOpenGl
 
         glm::mat4 _view;       // Camera (view, eye) matrix: world -> view
         glm::mat4 _projection; // Projection matrix: view -> clip
+        enum Projection_e { PERSPECTIVE = 0, ORTHOGRAPHIC = 1};
+        int       _projType;
+        float     _cullNear;
+        float     _cullFar;
 
         OpenGL::State _glState;
         bool _forceRender;

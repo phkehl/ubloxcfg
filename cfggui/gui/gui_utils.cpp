@@ -294,14 +294,7 @@ bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, 
             res = true;
         }
         if (!enabled) { ImGui::PopStyleColor(); }
-        if (tooltipOff == NULL)
-        {
-            Gui::ItemTooltip(tooltipOn);
-        }
-        else
-        {
-            Gui::ItemTooltip(enabled ? tooltipOn : tooltipOff);
-        }
+
     }
     else
     {
@@ -312,7 +305,6 @@ bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, 
                 *toggle = false;
                 res = true;
             }
-            Gui::ItemTooltip(tooltipOn);
         }
         else
         {
@@ -321,9 +313,28 @@ bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, 
                 *toggle = true;
                 res = true;
             }
-            Gui::ItemTooltip(tooltipOff != NULL ? tooltipOff : tooltipOn);
         }
     }
+
+    if (enabled)
+    {
+        if (tooltipOn != NULL)
+        {
+            Gui::ItemTooltip(tooltipOn);
+        }
+    }
+    else
+    {
+        if (tooltipOff != NULL)
+        {
+            Gui::ItemTooltip(tooltipOff);
+        }
+        else if (tooltipOn != NULL)
+        {
+            Gui::ItemTooltip(tooltipOn);
+        }
+    }
+
     return res;
 }
 

@@ -33,6 +33,7 @@ Ff::ParserMsg::ParserMsg(const PARSER_MSG_t *_msg) :
         case PARSER_MSGTYPE_UBX:     type = UBX;     typeStr = "UBX";     break;
         case PARSER_MSGTYPE_NMEA:    type = NMEA;    typeStr = "NMEA";    break;
         case PARSER_MSGTYPE_RTCM3:   type = RTCM3;   typeStr = "RTCM3";   break;
+        case PARSER_MSGTYPE_SPARTN:  type = SPARTN;  typeStr = "SPARTN";   break;
         case PARSER_MSGTYPE_NOVATEL: type = NOVATEL; typeStr = "NOVATEL"; break;
         case PARSER_MSGTYPE_GARBAGE: type = GARBAGE; typeStr = "GARBAGE"; break;
     }

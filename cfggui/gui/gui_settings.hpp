@@ -41,17 +41,18 @@ class GuiSettings
 {
     public:
 
-        // ---- Main control instance -----
+        // ---- Main control (cfggui.cpp) -----
 
-        GuiSettings();
-       ~GuiSettings();
-
-        void LoadConf(const std::string &file);
-        void SaveConf(const std::string &file);
-
-        bool UpdateFonts();
-        bool UpdateSizes();
-        void DrawSettingsEditor();
+        static void Init();
+        static void LoadConf(const std::string &file);
+        static void SaveConf(const std::string &file);
+        static bool UpdateFonts();
+        static bool UpdateSizes();
+        static void DrawSettingsEditorFont();
+        static void DrawSettingsEditorColours();
+        static void DrawSettingsEditorMaps();
+        static void DrawSettingsEditorMisc();
+        static void DrawSettingsEditorTools();
 
         // ---- Globally available functions and variables
         //      (read-only, resp. set/updated at run-time by the control instance ) -----
@@ -93,8 +94,8 @@ class GuiSettings
         static ImFont   *fontSans;    // Alternative sans-serif font
         static ImFont   *fontBold;    // Alternative sans-serif font (bold)
         static ImFont   *fontOblique; // Alternative sans-serif font (italics)
-        static FfVec2f    charSize; // Char size (of a fontMono character)
-        static FfVec2f    iconSize; // Size for ImGui::Button() with just an icon (ICON_FK_...)
+        static FfVec2f   charSize;    // Char size (of a fontMono character)
+        static FfVec2f   iconSize;    // Size for ImGui::Button() with just an icon (ICON_FK_...)
 
         // Colours
         enum Colour_e : int { _DUMMY = -1, GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_ENUM) _NUM_COLOURS };
@@ -108,6 +109,18 @@ class GuiSettings
 
         // Maps
         static std::vector<MapParams> maps;
+
+        // Database
+        static int dbNumEpochs; // Number of epochs in database
+        static constexpr int DB_NUM_EPOCHS_MIN =  1000;
+        static constexpr int DB_NUM_EPOCHS_DEF = 10000;
+        static constexpr int DB_NUM_EPOCHS_MAX = 20000;
+
+        // Other stuff
+        static int minFrameRate;
+        static constexpr int MIN_FRAME_RATE_MIN =   5;
+        static constexpr int MIN_FRAME_RATE_DEF =  15;
+        static constexpr int MIN_FRAME_RATE_MAX = 100;
 
         // Helpers
         static const ImGuiStyle   *style;     // Shortcut to ImGui styles
@@ -124,27 +137,28 @@ class GuiSettings
         static constexpr float    FONT_SIZE_MIN = 10.0;
         static constexpr float    FONT_SIZE_MAX = 30.0;
 
-        bool                      _fontDirty;
-        bool                      _sizesDirty;
-        float                     _widgetOffs;
+        static bool               _fontDirty;
+        static bool               _sizesDirty;
 
         static std::map<std::string, std::vector<std::string>> _recentItems;
 
         // Freetype2 config
-        uint32_t                  _ftBuilderFlags;
-        float                     _ftRasterizerMultiply;
+        static uint32_t           _ftBuilderFlags;
+        static float              _ftRasterizerMultiply;
         static constexpr uint32_t FT_BUILDER_FLAGS_DEF = (1 << 2); // ImGuiFreeTypeBuilderFlags_ForceAutoHint
         static constexpr float    FT_RASTERIZER_MULTIPLY_DEF = 1.0f;
         static constexpr float    FT_RASTERIZER_MULTIPLY_MIN = 0.2f;
         static constexpr float    FT_RASTERIZER_MULTIPLY_MAX = 2.0f;
 
         static Ff::ConfFile       _confFile;
-        bool                      _clearSettingsOnExit;
+        static bool               _clearSettingsOnExit;
+
+        static float _widgetOffs;
 };
 
-#define GUI_COLOUR(which) GuiSettings::colours[GuiSettings::which]
+#define GUI_COLOUR(which)  GuiSettings::colours[GuiSettings::which]
 #define GUI_COLOUR4(which) GuiSettings::colours4[GuiSettings::which]
-#define GUI_COLOUR_NONE   IM_COL32(0x00, 0x00, 0x00, 0x00)
+#define GUI_COLOUR_NONE    IM_COL32(0x00, 0x00, 0x00, 0x00)
 
 
 /* ****************************************************************************************************************** */

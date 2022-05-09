@@ -303,7 +303,7 @@ bool InputLogfile::CanStop()
 
 bool InputLogfile::CanPause()
 {
-    return (_playState == PLAYING) || (_playState == STOPPED);
+    return (_playState == PLAYING); // || (_playState == STOPPED);
 }
 
 bool InputLogfile::CanStep()
@@ -523,9 +523,6 @@ void InputLogfile::_Thread(Ff::Thread *thread)
             _playPosRel = (double)_playPos / (double)_playSize;
 
             msg.src = PARSER_MSGSRC_LOG;
-
-            // Update database
-            _inputDatabase->AddMsg(&msg);
 
             // Collect epochs
             if (epochCollect(&coll, &msg, &epoch))

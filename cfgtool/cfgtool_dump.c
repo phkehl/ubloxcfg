@@ -83,77 +83,41 @@ int dumpRun(const char *portArg, const bool extraInfo, const bool noProbe)
         return EXIT_RXFAIL;
     }
 
-    uint32_t nNmea = 0, sNmea = 0;
-    uint32_t nUbx  = 0, sUbx  = 0;
-    uint32_t nRtcm = 0, sRtcm = 0;
-    uint32_t nNova = 0, sNova = 0;
-    uint32_t nGarb = 0, sGarb = 0;
-    uint32_t nMsgs = 0, sMsgs = 0;
-
     gAbort = false;
     signal(SIGINT, _sigHandler);
     signal(SIGTERM, _sigHandler);
     NOT_WIN( signal(SIGHUP, _sigHandler) );
 
     const uint32_t tOffs = TIME() - timeOfDay(); // Offset between wall clock and parser time reference
-
+    uint32_t nEpochs = 0;
     EPOCH_t coll;
     EPOCH_t epoch;
     epochInit(&coll);
 
     PRINT("Dumping received data...");
+    const PARSER_t *parser = rxGetParser(rx);
     while (!gAbort)
     {
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL)
         {
             const uint32_t latency = (msg->ts - tOffs) % 1000; // Relative to wall clock top of second
-            nMsgs++;
-            sMsgs += msg->size;
             if (epochCollect(&coll, msg, &epoch))
             {
+                nEpochs++;
                 ioOutputStr("epoch %4u, %s\n", epoch.seq, epoch.str);
-                if (!ioWriteOutput(nMsgs == 1 ? false : true))
+                if (!ioWriteOutput(parser->nMsgs == 1 ? false : true))
                 {
                     break;
                 }
             }
-            const char *prot = "?";
-            switch (msg->type)
-            {
-                case PARSER_MSGTYPE_UBX:
-                    prot = "UBX";
-                    nUbx++;
-                    sUbx += msg->size;
-                    break;
-                case PARSER_MSGTYPE_NMEA:
-                    prot = "NMEA";
-                    nNmea++;
-                    sNmea += msg->size;
-                    break;
-                case PARSER_MSGTYPE_RTCM3:
-                    prot = "RTMC3";
-                    nRtcm++;
-                    sRtcm += msg->size;
-                    break;
-                case PARSER_MSGTYPE_NOVATEL:
-                    prot = "NOVATEL";
-                    nNova++;
-                    sNova += msg->size;
-                    break;
-                case PARSER_MSGTYPE_GARBAGE:
-                    prot = "GARBAGE";
-                    nGarb++;
-                    sGarb += msg->size;
-                    break;
-            }
             ioOutputStr("message %4u, dt %4u, size %4d, %-8s %-20s %s\n",
-                msg->seq, latency, msg->size, prot, msg->name, msg->info != NULL ? msg->info : "n/a");
+                msg->seq, latency, msg->size, parserMsgtypeName(msg->type), msg->name, msg->info != NULL ? msg->info : "n/a");
             if (extraInfo)
             {
                 ioAddOutputHexdump(msg->data, msg->size);
             }
-            if (!ioWriteOutput(nMsgs == 1 ? false : true))
+            if (!ioWriteOutput(parser->nMsgs == 1 ? false : true))
             {
                 break;
             }
@@ -165,13 +129,17 @@ int dumpRun(const char *portArg, const bool extraInfo, const bool noProbe)
         }
     }
 
-    ioOutputStr("stats UBX      count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats NMEA     count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats RTCM3    count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nRtcm, nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats NOVATEL  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nNova / (double)nMsgs * 1e2 : 0.0, sNova, sMsgs > 0 ? (double)sNova / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats GARBAGE  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats Total    count %6u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    ioOutputStr("stats UBX      count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nUbx,     parser->nMsgs > 0 ? (double)parser->nUbx     / (double)parser->nMsgs * 1e2 : 0.0, parser->sUbx,     parser->sMsgs > 0 ? (double)parser->sUbx     / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NMEA     count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nNmea,    parser->nMsgs > 0 ? (double)parser->nNmea    / (double)parser->nMsgs * 1e2 : 0.0, parser->sNmea,    parser->sMsgs > 0 ? (double)parser->sNmea    / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats RTCM3    count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nRtcm3,   parser->nMsgs > 0 ? (double)parser->nRtcm3   / (double)parser->nMsgs * 1e2 : 0.0, parser->sRtcm3,   parser->sMsgs > 0 ? (double)parser->sRtcm3   / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats SPARTN   count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nSpartn,  parser->nMsgs > 0 ? (double)parser->nSpartn  / (double)parser->nMsgs * 1e2 : 0.0, parser->sSpartn,  parser->sMsgs > 0 ? (double)parser->sSpartn  / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NOVATEL  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nUbx,     parser->nMsgs > 0 ? (double)parser->nNovatel / (double)parser->nMsgs * 1e2 : 0.0, parser->sNovatel, parser->sMsgs > 0 ? (double)parser->sNovatel / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats GARBAGE  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser->nGarbage, parser->nMsgs > 0 ? (double)parser->nGarbage / (double)parser->nMsgs * 1e2 : 0.0, parser->sGarbage, parser->sMsgs > 0 ? (double)parser->sGarbage / (double)parser->sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats Total    count %6u (100.0%%)  size %10u (100.0%%)\n", parser->nMsgs, parser->sMsgs);
+    ioOutputStr("stats EPOCH    count %6u (%5.1f%%)\n", nEpochs, parser->nMsgs > 0 ? (double)nEpochs / (double)parser->nMsgs * 1e2 : 0.0);
+
     bool res = ioWriteOutput(true);
+    const uint32_t nMsgs = parser->nMsgs;
 
     rxClose(rx);
     free(rx);

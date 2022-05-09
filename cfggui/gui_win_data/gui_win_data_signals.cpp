@@ -25,8 +25,15 @@
 
 GuiWinDataSignals::GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _countAll{"All"}, _countGps{"GPS"}, _countGlo{"GLO"}, _countBds{"BDS"}, _countGal{"GAL"}, _countSbas{"SBAS"}, _countQzss{"QZSS"},
-    _minSigUse{EPOCH_SIGUSE_ACQUIRED}, _selSigs{}
+    _countAll  { "All" },
+    _countGps  { "GPS" },
+    _countGlo  { "GLO" },
+    _countBds  { "BDS" },
+    _countGal  { "GAL" },
+    _countSbas { "SBAS" },
+    _countQzss { "QZSS" },
+    _minSigUse { EPOCH_SIGUSE_ACQUIRED },
+    _tabbar    { WinName(), ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton }
 {
     _winSize = { 115, 40 };
 
@@ -73,7 +80,7 @@ void GuiWinDataSignals::Count::Reset()
 {
     num = 0;
     used = 0;
-    std::strncpy(label, name, sizeof(label) - 1);
+    std::snprintf(label, sizeof(label), "%s###%s", name, name);
 }
 
 void GuiWinDataSignals::Count::Update()
@@ -291,16 +298,28 @@ void GuiWinDataSignals::_DrawToolbar()
 void GuiWinDataSignals::_DrawContent()
 {
     EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
-    if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton/*ImGuiTabBarFlags_FittingPolicyScroll*/))
+    // if (ImGui::BeginTabBar("##tabs2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton/*ImGuiTabBarFlags_FittingPolicyScroll*/))
+    // {
+    //     if (ImGui::BeginTabItem(_countAll.label )) { filter = EPOCH_GNSS_UNKNOWN; ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countGps.label )) { filter = EPOCH_GNSS_GPS;     ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countGlo.label )) { filter = EPOCH_GNSS_GLO;     ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countGal.label )) { filter = EPOCH_GNSS_GAL;     ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countBds.label )) { filter = EPOCH_GNSS_BDS;     ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countSbas.label)) { filter = EPOCH_GNSS_SBAS;    ImGui::EndTabItem(); }
+    //     if (ImGui::BeginTabItem(_countQzss.label)) { filter = EPOCH_GNSS_QZSS;    ImGui::EndTabItem(); }
+    //     ImGui::EndTabBar();
+    // }
+
+    if (_tabbar.Begin())
     {
-        if (ImGui::BeginTabItem(_countAll.label )) { filter = EPOCH_GNSS_UNKNOWN; ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countGps.label )) { filter = EPOCH_GNSS_GPS;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countGlo.label )) { filter = EPOCH_GNSS_GLO;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countGal.label )) { filter = EPOCH_GNSS_GAL;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countBds.label )) { filter = EPOCH_GNSS_BDS;     ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countSbas.label)) { filter = EPOCH_GNSS_SBAS;    ImGui::EndTabItem(); }
-        if (ImGui::BeginTabItem(_countQzss.label)) { filter = EPOCH_GNSS_QZSS;    ImGui::EndTabItem(); }
-        ImGui::EndTabBar();
+        _tabbar.Item(_countAll.label,  [&filter]() { filter = EPOCH_GNSS_UNKNOWN; });
+        _tabbar.Item(_countGps.label,  [&filter]() { filter = EPOCH_GNSS_GPS;     });
+        _tabbar.Item(_countGlo.label,  [&filter]() { filter = EPOCH_GNSS_GLO;     });
+        _tabbar.Item(_countGal.label,  [&filter]() { filter = EPOCH_GNSS_GAL;     });
+        _tabbar.Item(_countBds.label,  [&filter]() { filter = EPOCH_GNSS_BDS;     });
+        _tabbar.Item(_countSbas.label, [&filter]() { filter = EPOCH_GNSS_SBAS;    });
+        _tabbar.Item(_countQzss.label, [&filter]() { filter = EPOCH_GNSS_QZSS;    });
+        _tabbar.End();
     }
 
     _table.SetTableRowFilter(filter != EPOCH_GNSS_UNKNOWN ? filter : 0);

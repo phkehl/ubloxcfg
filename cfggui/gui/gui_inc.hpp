@@ -24,5 +24,6 @@
 
 #include "gui_settings.hpp"
 #include "gui_utils.hpp"
+#include "gui_data.hpp"
 
 #endif // __GUI_INC_HPP__

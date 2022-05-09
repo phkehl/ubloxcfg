@@ -199,6 +199,26 @@ static uint64_t bits(const uint8_t *data, const int offs, const int size)
     return val;
 }
 
+static int64_t sbits(const uint8_t *data, const int offs, const int size)
+{
+    uint64_t val = 0;
+    for (int bo = 0; bo < size; bo++)
+    {
+        val <<= 1;
+        const int bit = offs + bo;
+        val |= ( data[bit / 8] >> (7 - (bit % 8)) ) & 0x01;
+    }
+    // Sign-extend to full 64 bits
+    if ((val & ((uint64_t)1 << (size - 1))) != 0)
+    {
+        for (int bo = size; bo < 64; bo++)
+        {
+            val |= (uint64_t)1 << bo;
+        }
+    }
+    return (int64_t)val;
+}
+
 static int countbits(uint64_t mask)
 {
     int cnt = 0;
@@ -263,16 +283,16 @@ bool rtcm3GetArp(const uint8_t *msg, RTCM3_ARP_t *arp)
     {
         case 1005:
         case 1006:
-            arp->refStaId = bits(data,  12, 12);          // DF003
-            arp->X        = bits(data,  34, 38) * 0.0001; // DF025
-            arp->Y        = bits(data,  74, 38) * 0.0001; // DF026
-            arp->Z        = bits(data, 114, 38) * 0.0001; // DF027
+            arp->refStaId =          bits(data,  12, 12);          // DF003
+            arp->X        = (double)sbits(data,  34, 38) * 0.0001; // DF025
+            arp->Y        = (double)sbits(data,  74, 38) * 0.0001; // DF026
+            arp->Z        = (double)sbits(data, 114, 38) * 0.0001; // DF027
             break;
         case 1032:
-            arp->refStaId = bits(data,  12, 12);          // DF003
-            arp->X        = bits(data,  42, 38) * 0.0001; // DF025
-            arp->Y        = bits(data,  80, 38) * 0.0001; // DF026
-            arp->Z        = bits(data, 118, 38) * 0.0001; // DF027
+            arp->refStaId =          bits(data,  12, 12);          // DF003
+            arp->X        = (double)sbits(data,  42, 38) * 0.0001; // DF025
+            arp->Y        = (double)sbits(data,  80, 38) * 0.0001; // DF026
+            arp->Z        = (double)sbits(data, 118, 38) * 0.0001; // DF027
             break;
         default:
             res = false;

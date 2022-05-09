@@ -38,6 +38,9 @@ GuiWidgetOpenGl::GuiWidgetOpenGl() :
     _cameraElev        { 45.0f },
     _cameraDist        { 20.0f },
     _cameraRoll        {  0.0f },
+    _projType          { PERSPECTIVE },
+    _cullNear          { 0.01 },
+    _cullFar           { 1000.0 },
     _forceRender       { false },
     _isDragging        { ImGuiMouseButton_COUNT },
     _ambientLight      { 0.5f, 0.5f, 0.5f },
@@ -219,7 +222,16 @@ void GuiWidgetOpenGl::_UpdateViewAndProjection()
     _view = glm::inverse(view);
 
     // Projection matrix
-    _projection = glm::perspective(glm::radians(_cameraFieldOfView), _size.y > 0.0f ? _size.x / _size.y : 1.0f, 0.1f, 500.0f);
+    const float aspect = _size.y > 0.0f ? _size.x / _size.y : 1.0f;
+    switch (_projType)
+    {
+        case PERSPECTIVE:
+            _projection = glm::perspective(glm::radians(_cameraFieldOfView), aspect, _cullNear, _cullFar);
+            break;
+        case ORTHOGRAPHIC:
+            _projection = glm::ortho(-_cameraDist * aspect, _cameraDist * aspect, -_cameraDist, _cameraDist, _cullNear, _cullFar);
+            break;
+    }
 
     // Light
     _diffuseDirection = glm::normalize(_diffuseDirection);
@@ -253,8 +265,8 @@ bool GuiWidgetOpenGl::_HandleMouse()
             // mouse wheel: forward/backwards
             if (io.MouseWheel != 0.0)
             {
-                float step = io.KeyShift ? 0.1 : (io.KeyCtrl ? 1.0 : 0.5);
-                //DEBUG("wheel %.1f %.1f", io.MouseWheel, step);
+                const float step = io.KeyShift ? 0.1 : (io.KeyCtrl ? 1.0 : 0.5);
+                DEBUG("wheel %.1f %.1f", io.MouseWheel, step);
                 _cameraDist -= (step * io.MouseWheel);
                 changed = true;
             }
@@ -370,6 +382,24 @@ bool GuiWidgetOpenGl::_DrawDebugControls()
         changed = true;
     }
     if (ImGui::SliderFloat("Dist", &_cameraDist, CAMERA_DIST_MIN, CAMERA_DIST_MAX, "%.1f"))
+    {
+        changed = true;
+    }
+    ImGui::PopItemWidth();
+
+    ImGui::TextUnformatted("Projection:");
+    ImGui::PushItemWidth(controlWidth);
+    if (ImGui::Combo("##ProjType", &_projType, "Perspective\0Orhometric\0"))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SliderFloat("Near", &_cullNear, 0.01, 1.0, "%.2f"))
+    {
+        changed = true;
+    }
+    ImGui::SameLine();
+    if (ImGui::SliderFloat("Far", &_cullFar, 100.0, 2000.0, "%.0f"))
     {
         changed = true;
     }

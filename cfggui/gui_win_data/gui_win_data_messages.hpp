@@ -72,8 +72,7 @@ class GuiWinDataMessages : public GuiWinData
         MsgsMap_t::iterator _selectedEntry;
         std::string         _selectedName;
         MsgsMap_t::iterator _displayedEntry;
-        double   _nowIm;
-        uint32_t _nowTs;
+        uint32_t            _nowTs;
         std::vector<std::string> _classNames;
 
         struct MsgRate

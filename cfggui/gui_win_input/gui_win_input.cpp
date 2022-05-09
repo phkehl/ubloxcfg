@@ -47,7 +47,7 @@
 
 GuiWinInput::GuiWinInput(const std::string &name) :
     GuiWin(name),
-    _database        { std::make_shared<Database>(10000) },
+    _database        { std::make_shared<Database>(GuiSettings::dbNumEpochs, name) },
     _logWidget       { 1000 },
     _dataWinCaps     { DataWinDef::Cap_e::ALL },
     _autoHideDatawin { true }
@@ -404,8 +404,8 @@ void GuiWinInput::_DrawActionButtons()
         ICON_FK_BATTERY_THREE_QUARTERS  /* "##DbStatus" */, // 60% ..  80%
         ICON_FK_BATTERY_FULL            /* "##DbStatus" */, // 80% .. 100%
     };
-    const int dbSize  = _database->GetSize();
-    const int dbUsage = _database->GetUsage();
+    const int dbSize  = _database->MaxSize();
+    const int dbUsage = _database->Size();
     const float dbFull = (float)dbUsage / (float)dbSize;
     const int dbIconIx = CLIP(dbFull, 0.0f, 1.0f) * (float)(NUMOF(dbIcons) - 1);
     const ImVec2 cursor = ImGui::GetCursorPos();

@@ -87,6 +87,14 @@ static void sGlfwMouseButtonCallback(GLFWwindow *window, int button, int action,
     sWindowActivity = 20;
 }
 
+static void sGlfwScScrollCallback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    UNUSED(window);
+    UNUSED(xoffset);
+    UNUSED(yoffset);
+    sWindowActivity = 20;
+}
+
 static void sGlfwKeyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     UNUSED(window);
@@ -162,11 +170,13 @@ int main(int argc, char **argv)
 
     /* ***** Command line arguments ********************************************************************************* */
 
-    std::vector<std::string> appArgv;
-    for (int ix = 0; ix < argc; ix++)
-    {
-        appArgv.push_back(std::string(argv[ix]));
-    }
+    // std::vector<std::string> appArgv;
+    // for (int ix = 0; ix < argc; ix++)
+    // {
+    //     appArgv.push_back(std::string(argv[ix]));
+    // }
+    UNUSED(argc);
+    UNUSED(argv);
 
     if (!Platform::Init())
     {
@@ -258,6 +268,7 @@ int main(int argc, char **argv)
     // User activity detection, for frame rate control
     glfwSetCursorPosCallback(window, sGlfwCursorPositionCallback);
     glfwSetMouseButtonCallback(window, sGlfwMouseButtonCallback);
+    glfwSetScrollCallback(window, sGlfwScScrollCallback);
     glfwSetKeyCallback(window, sGlfwKeyCallback);
 
 #ifdef FF_BUILD_DEBUG
@@ -274,13 +285,19 @@ int main(int argc, char **argv)
 
     ImGuiIO &io = ImGui::GetIO();
 
-    // Enable these early, the rest is in GuiSettings()
+    // Enable these early, the rest is in GuiSettings::Init();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // FIXME: will need more work, see example (ImGui::UpdatePlatformWindows() etc.)
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    // Load settings
+    GuiSettings::Init();
+    const std::string settingsFile = Platform::ConfigFile("cfggui.conf");
+    GuiSettings::LoadConf(settingsFile);
+
 
     /* ***** Create application ************************************************************************************* */
 
@@ -290,11 +307,11 @@ int main(int argc, char **argv)
         CONFIG_VERSION, CONFIG_VERSION_MAJOR, CONFIG_VERSION_MINOR, CONFIG_GITHASH, CONFIG_DATE, CONFIG_TIME));
     versionInfos.push_back(openGlVersion);
     versionInfos.push_back(Ff::Sprintf("GLFW %s", glfwGetVersionString()));
-    versionInfos.push_back(Ff::Sprintf("ImGui %s"
+    versionInfos.push_back(Ff::Sprintf("ImGui %s (%d)"
 #ifdef IMGUI_HAS_DOCK
         " (Docking branch)"
 #endif
-        " (%s, %s)", ImGui::GetVersion(),
+        " (%s, %s)", ImGui::GetVersion(), IMGUI_VERSION_NUM,
         io.BackendPlatformName ? io.BackendPlatformName : "?",
         io.BackendRendererName ? io.BackendRendererName : "?"));
     versionInfos.push_back("ImPlot " IMPLOT_VERSION);
@@ -319,7 +336,7 @@ int main(int argc, char **argv)
     std::unique_ptr<GuiApp> app = nullptr;
     try
     {
-        app = std::make_unique<GuiApp>(appArgv, earlyLog, versionInfos);
+        app = std::make_unique<GuiApp>(earlyLog, versionInfos);
         earlyLog.Clear();
         versionInfos.clear();
     }
@@ -364,7 +381,7 @@ int main(int argc, char **argv)
             lastMark = ((now + (markInterval / 2 )) / markInterval) * markInterval;
         }
 
-        if ( (sWindowActivity > 0) || ((now - lastDraw) >= (1000/10)))
+        if ( (sWindowActivity > 0) || ((int)(now - lastDraw) >= (1000 / GuiSettings::minFrameRate)) )
         {
             lastDraw = now;
             sWindowActivity--;
@@ -373,19 +390,19 @@ int main(int argc, char **argv)
             app->PerfTic(GuiApp::Perf_e::NEWFRAME);
 
             // Update fonts if necessary
-            if (app->PrepFrame())
+            if (GuiSettings::UpdateFonts())
             {
-                ImGui_ImplOpenGL3_DestroyDeviceObjects();
-                ImGui_ImplOpenGL3_CreateDeviceObjects();
-                //ImGui_ImplOpenGL3_DestroyFontsTexture();
-                //ImGui_ImplOpenGL3_CreateFontsTexture();
+                //ImGui_ImplOpenGL3_DestroyDeviceObjects();
+                //ImGui_ImplOpenGL3_CreateDeviceObjects();
+                ImGui_ImplOpenGL3_DestroyFontsTexture();
+                ImGui_ImplOpenGL3_CreateFontsTexture();
             }
 
             // Start the Dear ImGui frame
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            app->NewFrame();
+            GuiSettings::UpdateSizes();
 
             app->PerfToc(GuiApp::Perf_e::NEWFRAME);
 
@@ -441,11 +458,17 @@ int main(int argc, char **argv)
         GuiSettings::SetValue("Cfggui.geometry", Ff::Sprintf("%d,%d,%d,%d", windowWidth, windowHeight, windowPosX, windowPosY));
 
         // Tear down
-        app->Shutdown();
         app = nullptr;
     }
 
     DEBUG("Adios!");
+
+    // Save settings
+    if (!settingsFile.empty())
+    {
+        GuiSettings::SaveConf(settingsFile);
+    }
+
 
     /* ***** Cleanup ************************************************************************************************ */
 

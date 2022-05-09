@@ -408,8 +408,8 @@ PARSER_MSG_t NtripClient::_MakeGga()
     {
         return msg;
     }
-    const double lat = std::abs(std::floor(_pos.lat));
-    const double lon = std::abs(std::floor(_pos.lon));
+    const double lat = std::floor(std::abs(_pos.lat));
+    const double lon = std::floor(std::abs(_pos.lon));
     std::string payload = Ff::Strftime("%H%M%S.00", 0, true) +
         Ff::Sprintf(",%02.0f%8.5f,%c,%03.0f%8.5f,%c,%c,%d,1.00,%.1f,M,0.0,M,,",
             lat, (std::abs(_pos.lat) - lat) * 60.0, _pos.lat < 0 ? 'S' : 'N',

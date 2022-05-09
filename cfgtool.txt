@@ -71,11 +71,6 @@ License:
     You should have received a copy of the GNU General Public License along with
     this program. If not, see https://www.gnu.org/licenses/.
 
-Third-party code:
-
-    This program includes CRC24Q routines from the GPSD project, under a
-    BSD-2-Clause license. See source code or https://gitlab.com/gpsd/.
-
 Third-party data:
 
     This program includes data, such as identifiers, constants and descriptions

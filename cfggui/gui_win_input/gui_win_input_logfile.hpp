@@ -36,6 +36,8 @@ class GuiWinInputLogfile : public GuiWinInput
 
         void Loop(const uint32_t &frame, const double &now) final;
 
+        std::shared_ptr<InputLogfile> GetLogfile();
+
     protected:
 
         std::shared_ptr<InputLogfile>  _logfile;

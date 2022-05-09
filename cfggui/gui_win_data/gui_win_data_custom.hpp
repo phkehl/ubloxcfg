@@ -19,7 +19,9 @@
 #define __GUI_WIN_DATA_CUSTOM_HPP__
 
 #include <vector>
-#include <cinttypes>
+#include <cstdint>
+
+#include "gui_widget_tabbar.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -36,6 +38,7 @@ class GuiWinDataCustom : public GuiWinData
 
         // Global state
         const char *_currentTab;
+        GuiWidgetTabbar _tabbar;
 
         // Final data
         std::vector<uint8_t>     _data;

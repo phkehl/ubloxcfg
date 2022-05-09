@@ -20,8 +20,8 @@
 
 #include <string>
 #include <vector>
-#include <functional>
 
+#include "gui_widget_tabbar.hpp"
 #include "gui_win.hpp"
 
 /* ***** Base class ************************************************************************************************* */
@@ -30,7 +30,6 @@ class GuiWinApp : public GuiWin
 {
     public:
         GuiWinApp(const std::string &name);
-
 };
 
 /* ***** About ****************************************************************************************************** */
@@ -38,9 +37,10 @@ class GuiWinApp : public GuiWin
 class GuiWinAppAbout : public GuiWinApp
 {
     public:
-        GuiWinAppAbout();
+        GuiWinAppAbout(const std::vector<std::string> &versions);
         void DrawWindow() final;
     private:
+        std::vector<std::string> _versions;
         void _DrawEntry(const char *name, const char *license, const char *link = nullptr, const char *link2 = nullptr);
 };
 
@@ -49,10 +49,10 @@ class GuiWinAppAbout : public GuiWinApp
 class GuiWinAppSettings : public GuiWinApp
 {
     public:
-        GuiWinAppSettings(std::function<void()> drawCb);
+        GuiWinAppSettings();
         void DrawWindow() final;
     private:
-        std::function<void()> _drawCb;
+        GuiWidgetTabbar _tabbar;
 };
 
 /* ***** Help ******************************************************************************************************* */

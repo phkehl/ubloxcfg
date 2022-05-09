@@ -39,6 +39,8 @@ GuiWinInputLogfile::GuiWinInputLogfile(const std::string &name) :
     _logfile->SetPlaySpeed(_playSpeed);
     _playSpeed = _logfile->GetPlaySpeed();
 
+    GuiData::AddLogfile(_logfile);
+
     _ClearData();
 };
 
@@ -48,6 +50,8 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
 {
     DEBUG("~GuiWinInputLogfile(%s)", _winName.c_str());
 
+    GuiData::RemoveLogfile(_logfile);
+
     GuiSettings::SetValue(_winName + ".playSpeed", _playSpeed);
     GuiSettings::SetValue(_winName + ".limitPlaySpeed", _limitPlaySpeed);
 
@@ -55,6 +59,13 @@ GuiWinInputLogfile::~GuiWinInputLogfile()
     {
         _logfile->Close();
     }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::shared_ptr<InputLogfile> GuiWinInputLogfile::GetLogfile()
+{
+    return _logfile;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -87,7 +98,7 @@ void GuiWinInputLogfile::_ClearData()
 void GuiWinInputLogfile::_AddDataWindow(std::unique_ptr<GuiWinData> dataWin)
 {
     dataWin->SetLogfile(_logfile);
-    _dataWindows.push_back(std::move(dataWin));
+    GuiWinInput::_AddDataWindow(std::move(dataWin));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -198,15 +209,8 @@ void GuiWinInputLogfile::_DrawControls()
 
     // Play / pause
     {
-        if (canPlay)
-        {
-            if (ImGui::Button(ICON_FK_PLAY "##PlayPause", GuiSettings::iconSize))
-            {
-                _logfile->Play();
-            }
-            Gui::ItemTooltip("Play");
-        }
-        else if (canPause)
+        ImGui::BeginDisabled(!canPlay && !canPause);
+        if (canPause)
         {
             if (ImGui::Button(ICON_FK_PAUSE "##PlayPause", GuiSettings::iconSize))
             {
@@ -214,8 +218,14 @@ void GuiWinInputLogfile::_DrawControls()
             }
             Gui::ItemTooltip("Pause");
         }
-
-        ImGui::BeginDisabled(!canPlay);
+        else
+        {
+            if (ImGui::Button(ICON_FK_PLAY "##PlayPause", GuiSettings::iconSize))
+            {
+                _logfile->Play();
+            }
+            Gui::ItemTooltip("Play");
+        }
         ImGui::EndDisabled();
     }
 

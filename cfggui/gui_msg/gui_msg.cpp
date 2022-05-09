@@ -34,6 +34,7 @@
 #include "gui_msg_ubx_nav_dop.hpp"
 #include "gui_msg_ubx_rxm_rawx.hpp"
 #include "gui_msg_ubx_rxm_rtcm.hpp"
+#include "gui_msg_ubx_rxm_spartn.hpp"
 #include "gui_msg_ubx_rxm_sfrbx.hpp"
 
 /* ****************************************************************************************************************** */
@@ -153,6 +154,7 @@ void GuiMsg::_RenderStatusFlag(const std::vector<StatusFlags> &flags, const int 
     else if (msgName == "UBX-NAV-DOP")       { return std::make_unique<GuiMsgUbxNavDop>(receiver, logfile);      }
     else if (msgName == "UBX-RXM-RAWX")      { return std::make_unique<GuiMsgUbxRxmRawx>(receiver, logfile);     }
     else if (msgName == "UBX-RXM-RTCM")      { return std::make_unique<GuiMsgUbxRxmRtcm>(receiver, logfile);     }
+    else if (msgName == "UBX-RXM-SPARTN")    { return std::make_unique<GuiMsgUbxRxmSpartn>(receiver, logfile);     }
     else if (msgName == "UBX-RXM-SFRBX")     { return std::make_unique<GuiMsgUbxRxmSfrbx>(receiver, logfile);    }
     else                                     { return std::make_unique<GuiMsg>(receiver, logfile);               }
 }

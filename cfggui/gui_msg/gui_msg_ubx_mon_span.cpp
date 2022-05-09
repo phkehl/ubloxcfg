@@ -200,7 +200,7 @@ void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
         {
             if (std::fabs(spect.center - label.freq) < spect.span)
             {
-                double freq = spect.center - label.freq;
+                double freq = label.freq - spect.center;
                 ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(0));
                 ImPlot::PlotVLines(label.id.c_str(), &freq, 1);
                 ImPlot::PopStyleColor();

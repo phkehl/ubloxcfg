@@ -26,6 +26,7 @@
 
 #include "gui_settings.hpp"
 
+
 /* ***** Window base class ********************************************************************** */
 
 class GuiWin

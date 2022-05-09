@@ -20,9 +20,11 @@
 #include <fstream>
 #include <cstring>
 #include <cerrno>
+#include <cstdio>
 #include <exception>
 #include <chrono>
 
+#include <unistd.h>
 #include <sys/prctl.h>
 
 #include "ff_debug.h"
@@ -358,6 +360,38 @@ void WipeCache(const std::string &path, const double maxAge)
 
     CacheWiper wiper(path, maxAge);
     wiper.Wipe();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+MemUsage::MemUsage() :
+    size     { 0.0f },
+    resident { 0.0f },
+    shared   { 0.0f },
+    text     { 0.0f },
+    data     { 0.0f }
+{
+}
+
+MemUsage GetMemUsage()
+{
+    MemUsage memUsage;
+    FILE *fh = fopen( "/proc/self/statm", "r");
+    if (fh != NULL)
+    {
+        float size, resident, shared, text, data;
+        if (fscanf(fh, "%f %f %f %f %*s %f", &size, &resident, &shared, &text, &data) == 5)
+        {
+            const float pageSize = (float)sysconf(_SC_PAGESIZE) * (1.0f/1024.0f/1024.0f);
+            memUsage.size     = size     * pageSize;
+            memUsage.resident = resident * pageSize;
+            memUsage.shared   = shared   * pageSize;
+            memUsage.text     = text     * pageSize;
+            memUsage.data     = data     * pageSize;
+        }
+        fclose(fh);
+    }
+    return memUsage;
 }
 
 

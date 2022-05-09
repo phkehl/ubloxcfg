@@ -72,9 +72,9 @@ void GuiMsgUbxRxmRtcm::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
         // UID for this entry, also the std::map sort
         const uint32_t uid =
-            ((uint32_t)MAX(rtcm.refStation, 0) << 24) |
+            ((uint32_t)MAX(rtcm.refStation, 0)      ) |
             ((uint32_t)rtcm.subType            << 12) |
-             (uint32_t)rtcm.msgType;
+            ((uint32_t)rtcm.msgType            << 24);
 
         RtcmInfo *info = nullptr;
         auto entry = _rtcmInfos.find(uid);

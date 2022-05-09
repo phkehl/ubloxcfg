@@ -17,13 +17,14 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "crc24q.h"
 #include "ff_debug.h"
 #include "ff_stuff.h"
 #include "ff_ubx.h"
 #include "ff_rtcm3.h"
+#include "ff_spartn.h"
 #include "ff_nmea.h"
 #include "ff_novatel.h"
+#include "ff_crc.h"
 
 #include "ff_parser.h"
 
@@ -74,6 +75,7 @@ const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
         case PARSER_MSGTYPE_UBX:     return "UBX";
         case PARSER_MSGTYPE_NMEA:    return "NMEA";
         case PARSER_MSGTYPE_RTCM3:   return "RTCM3";
+        case PARSER_MSGTYPE_SPARTN:  return "SPARTN";
         case PARSER_MSGTYPE_NOVATEL: return "NOVATEL";
         case PARSER_MSGTYPE_GARBAGE: return "GARBAGE";
     }
@@ -85,6 +87,7 @@ const char *parserMsgtypeName(const PARSER_MSGTYPE_t type)
 static int _isUbxMessage(const uint8_t *buf, const int size);
 static int _isNmeaMessage(const uint8_t *buf, const int size);
 static int _isRtcm3Message(const uint8_t *buf, const int size);
+static int _isSpartnMessage(const uint8_t *buf, const int size);
 static int _isNovatelMessage(const uint8_t *buf, const int size);
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg);
 static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType, const bool info);
@@ -101,6 +104,7 @@ static const PARSER_FUNC_t kParserFuncs[] =
     { .func = _isUbxMessage,     .type = PARSER_MSGTYPE_UBX,     .name = "UBX"     },
     { .func = _isNmeaMessage,    .type = PARSER_MSGTYPE_NMEA,    .name = "NMEA"    },
     { .func = _isRtcm3Message,   .type = PARSER_MSGTYPE_RTCM3,   .name = "RTCM3"   },
+    { .func = _isSpartnMessage,  .type = PARSER_MSGTYPE_SPARTN,  .name = "SPARTN"  },
     { .func = _isNovatelMessage, .type = PARSER_MSGTYPE_NOVATEL, .name = "NOVATEL" },
 };
 
@@ -181,6 +185,22 @@ bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg, const bool info)
     return false;
 }
 
+bool parserFlush(PARSER_t *parser, PARSER_MSG_t *msg)
+{
+    const int rem = parser->offs + parser->size;
+    if (rem > 0)
+    {
+        parser->offs += parser->size;
+        _emitGarbage(parser, msg);
+        parser->size = 0;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 /* ****************************************************************************************************************** */
 
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
@@ -197,14 +217,16 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
     //PARSER_XTRA_TRACE("garb move 0 <- %d (%d) ", size, parser->size);
     memmove(&parser->buf[0], &parser->buf[size], parser->size);
     parser->offs = 0;
-    parser->msg++;
-    parser->tot += size;
+    parser->nMsgs++;
+    parser->sMsgs += size;
+    parser->nGarbage++;
+    parser->sGarbage += size;
 
     // Make message
     msg->type = PARSER_MSGTYPE_GARBAGE;
     msg->size = size;
     msg->data = parser->tmp;
-    msg->seq  = parser->msg;
+    msg->seq  = parser->nMsgs;
     msg->ts   = now;
     msg->src  = PARSER_MSGSRC_UNKN;
     msg->name = "GARBAGE";
@@ -232,13 +254,13 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     {
         memmove(&parser->buf[0], &parser->buf[msgSize], parser->size);
     }
-    parser->tot += msgSize;
-    parser->msg++;
+    parser->sMsgs += msgSize;
+    parser->nMsgs++;
     // Make message
     msg->type = msgType;
     msg->size = msgSize;
     msg->data = parser->tmp;
-    msg->seq  = parser->msg;
+    msg->seq  = parser->nMsgs;
     msg->ts   = now;
     msg->src  = PARSER_MSGSRC_UNKN;
     parser->name[0] = '\0';
@@ -246,6 +268,8 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
     switch (msgType)
     {
         case PARSER_MSGTYPE_UBX:
+            parser->nUbx++;
+            parser->sUbx += msgSize;
             msg->name = (ubxMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "UBX-?-?");
             if (info)
@@ -255,6 +279,8 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
             }
             break;
         case PARSER_MSGTYPE_NMEA:
+            parser->nNmea++;
+            parser->sNmea += msgSize;
             msg->name = (nmeaMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "NMEA-?-?");
             if (info)
@@ -264,6 +290,8 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
             }
             break;
         case PARSER_MSGTYPE_RTCM3:
+            parser->nRtcm3++;
+            parser->sRtcm3 += msgSize;
             msg->name = (rtcm3MessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "RTCM3-?");
             if (info)
@@ -272,7 +300,20 @@ static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize,
                     parser->info : NULL);
             }
             break;
+        case PARSER_MSGTYPE_SPARTN:
+            parser->nSpartn++;
+            parser->sSpartn += msgSize;
+            msg->name = (spartnMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
+                parser->name : "SPARTN-?");
+            if (info)
+            {
+                msg->info = (spartnMessageInfo(parser->info, sizeof(parser->info), parser->tmp, msgSize) ?
+                    parser->info : NULL);
+            }
+            break;
         case PARSER_MSGTYPE_NOVATEL:
+            parser->nNovatel++;
+            parser->sNovatel += msgSize;
             msg->name = (novatelMessageName(parser->name, sizeof(parser->name), parser->tmp, msgSize) ?
                 parser->name : "NOVATEL-?");
             if (info)
@@ -452,7 +493,8 @@ static int _isRtcm3Message(const uint8_t *buf, const int size)
     }
 
     // CRC okay?
-    if (crc24q_check((const unsigned char *)buf, msgSize))
+    const uint32_t crc = ((uint32_t)buf[msgSize - 3] << 16) | ((uint32_t)buf[msgSize - 2] << 8) | ((uint32_t)buf[msgSize - 1]);
+    if (crc == crcRtcm3(&buf[0], msgSize - 3))
     {
         return msgSize;
     }
@@ -460,30 +502,124 @@ static int _isRtcm3Message(const uint8_t *buf, const int size)
     return 0;
 }
 
-
 // ---------------------------------------------------------------------------------------------------------------------
 
-// https://docs.novatel.com/OEM7/Content/Messages/32_Bit_CRC.htm
-static uint32_t crc32(const uint8_t *data, const int size)
+static int _isSpartnMessage(const uint8_t *buf, const int size)
 {
-    uint32_t crc = 0;
-    for (int i = 0; i < size; i++)
+    // Not RTCM3 preamble?
+    if (buf[0] != SPARTN_PREAMBLE)
     {
-        crc ^= data[i];
-        for (int j = 0; j < 8; j++)
-        {
-            if (crc & 1)
-            {
-                 crc= (crc >> 1) ^ 0xedb88320u;
-            }
-            else
-            {
-                crc >>= 1;
-            }
-        }
+        return 0;
     }
-    return crc;
+
+    // Wait for enough data to look at header
+    if (size < SPARTN_MIN_HEAD_SIZE)
+    {
+        return -1;
+    }
+
+    // byte 0    0b11111111   8 bits  preamble
+    // byte 1    0b1111111.   7 bits  message type
+    //const int msgType = (buf[1] & 0xfe) >> 1;
+    //           0b.......1 .
+    // byte 2    0b11111111  10 bits  payload length
+    // byte 3    0b1....... .
+    const int payloadSize = ((uint16_t)(buf[1] & 0x01) << 9) | ((uint16_t)buf[2] << 1) | (((uint16_t)buf[3] & 0x80) >> 7);
+    //           0b.1......   1 bit   encryption and authentication flag
+    const int encAuthFlag = (buf[3] & 0x40) >> 6;
+    //           0b..11....   2 bits  crc type
+    const int crcType = (buf[3] & 0x30) >> 4;
+    //           0b....1111   4 bits  frame crc
+    const uint32_t frameCrc = (buf[3] & 0x0f);
+    uint8_t tmp[3] = { buf[1], buf[2], buf[3] & 0xf0 };
+    if (frameCrc != crcSpartn4(tmp, sizeof(tmp)))
+    {
+        //WARNING("SPARTN frame crc fail");
+        return 0;
+    }
+    // byte 4    0b1111....   4 bits  message subtype
+    //const int msgSubType = (buf[4] & 0xf0) >> 4;
+    //           0b....1...   1 bit   time tag type
+    const int timeTagType = (buf[4] & 0x08) >> 3;
+    //           0b.....111 .
+    // byte 5    0b11111111  16 bits  gnss time tag
+    //         6 0b11111111  or 32
+    //         7 0b11111111
+    // byte 6  8 0b11111... .
+    //           0b.....111 .
+    // byte 7  9 0b1111.... . 7 bits  solution id
+    //           0b....1111   4 bits  slution processor id
+    int msgSize = (timeTagType ? 10 : 8);
+    if (size < msgSize)
+    {
+        return -1;
+    }
+    // if ea flag is set
+    // byte s    0b1111....   4 bits  encryption id
+    // byte s+1  0b....1111 .
+    //           0b11...... - 6 bits  encryption sequence number
+    //           0b..111... - 3 bits  authentication indicator
+    const int authInd = (buf[msgSize + 1] & 38) >> 3;
+    //           0b.....111 - 3 bits  embedded authentication length
+    int eaLength = -1;
+    if (encAuthFlag)
+    {
+        if (authInd > 1)
+        {
+            /*const int*/ eaLength = (buf[msgSize + 1] & 0x07);
+            const int eaLengths[8] = { 8, 12, 16, 32, 64, 0, 0, 0};
+            msgSize += eaLengths[eaLength];
+        }
+        msgSize += 2;
+    }
+    // byte s+2...  payload
+    msgSize += payloadSize;
+    // message crc
+    const int crcSizes[4] = { 1, 2, 3, 4 };
+    msgSize += crcSizes[crcType];
+
+    if (size < msgSize)
+    {
+        return -1;
+    }
+
+    //DEBUG("msgType=%d payloadSize=%d encAuthFlag=%d authInd=%d eaLength=%d crcType=%d frameCrc=%u (%u) msgSubType=%d timeTagType=%d msgSize=%d",
+    //    msgType, payloadSize, encAuthFlag, authInd, eaLength, crcType, frameCrc, crcSpartn4(tmp, sizeof(tmp)), msgSubType, timeTagType, msgSize);
+
+    uint32_t msgCrc = 0;
+    uint32_t chkCrc = 0;
+    switch (crcType)
+    {
+        case 0: // untested
+            msgCrc = (uint32_t)buf[msgSize - 1];
+            chkCrc = crcSpartn8(&buf[1], msgSize - 1 - crcSizes[crcType]);
+            break;
+        case 1: // untested
+            msgCrc = ((uint32_t)buf[msgSize - 2] << 8) | ((uint32_t)buf[msgSize - 1]);
+            chkCrc = crcSpartn16(&buf[1], msgSize - 1 - crcSizes[crcType]);
+            break;
+        case 2: // OK
+            msgCrc = ((uint32_t)buf[msgSize - 3] << 16) | ((uint32_t)buf[msgSize - 2] << 8) | ((uint32_t)buf[msgSize - 1]);
+            chkCrc = crcSpartn24(&buf[1], msgSize - 1 - crcSizes[crcType]);
+            break;
+        case 3: // untested
+            msgCrc = ((uint32_t)buf[msgSize - 4] << 24) | ((uint32_t)buf[msgSize - 3] << 16) | ((uint32_t)buf[msgSize - 2] << 8) | ((uint32_t)buf[msgSize - 1]);
+            chkCrc = crcSpartn32(&buf[1], msgSize - 1 - crcSizes[crcType]);
+            break;
+    }
+
+    if (msgCrc != chkCrc)
+    {
+        //WARNING("SPARTN crc fail");
+        return 0;
+    }
+
+    //DEBUG("crcType=%d size=%d 0x%08x 0x%08x %s", crcType, crcSizes[crcType], msgCrc, chkCrc, msgCrc == chkCrc ? "OK" : ":-(");
+
+    return msgSize;
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 static int _isNovatelMessage(const uint8_t *buf, const int size)
 {
@@ -549,7 +685,7 @@ static int _isNovatelMessage(const uint8_t *buf, const int size)
     }
 
     const uint32_t crc = (buf[len - 1] << 24) | (buf[len - 2] << 16) | (buf[len - 3] << 8) | (buf[len - 4]);
-    if (crc == crc32(buf, len - sizeof(uint32_t)))
+    if (crc == crcNovatel32(buf, len - sizeof(uint32_t)))
     {
         return len;
     }

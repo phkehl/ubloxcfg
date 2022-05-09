@@ -212,9 +212,8 @@ void GuiWinData3d::_UpdatePoints()
     constexpr int _E_ = Database::_E_;
     constexpr int _N_ = Database::_N_;
     constexpr int _U_ = Database::_U_;
-    _database->ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+    _database->ProcEpochs([&](const Database::Epoch &epoch)
     {
-        (void)ix;
         if (epoch.raw.havePos)
         {
             const float east  = epoch.enuRef[_E_];

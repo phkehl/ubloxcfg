@@ -54,6 +54,19 @@ void SetThreadName(const std::string &name);
 
 void WipeCache(const std::string &path, const double maxAge);
 
+struct MemUsage
+{
+    MemUsage();
+    // all in  [MiB]
+    float size;     // total size
+    float resident; // resident set size
+    float shared;   // resident shared
+    float text;     // text (code)
+    float data;     // data + stack
+};
+
+MemUsage GetMemUsage();
+
 /* ****************************************************************************************************************** */
 } // namespace Platform
 #endif // __PLATFORM_HPP__

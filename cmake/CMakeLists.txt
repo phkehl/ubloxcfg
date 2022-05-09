@@ -31,17 +31,20 @@ project(ubloxcfg
 add_library(${PROJECT_NAME} SHARED
     ../ubloxcfg/ubloxcfg.c
     ../ubloxcfg/ubloxcfg_gen.c
+    ../ff/ff_crc.c
     ../ff/ff_debug.c
     ../ff/ff_epoch.c
     ../ff/ff_nmea.c
+    ../ff/ff_novatel.c
     ../ff/ff_parser.c
     ../ff/ff_port.c
     ../ff/ff_rtcm3.c
     ../ff/ff_rx.c
+    ../ff/ff_spartn.c
     ../ff/ff_stuff.c
+    ../ff/ff_time.c
     ../ff/ff_trafo.c
     ../ff/ff_ubx.c
-    ../3rdparty/stuff/crc24q.c
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -77,14 +80,18 @@ include(GNUInstallDirs)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "\
 ../ubloxcfg/ubloxcfg.h;\
 ../ubloxcfg/ubloxcfg_gen.h;\
+../ff/ff_crc.h;\
 ../ff/ff_debug.h;\
 ../ff/ff_epoch.h;\
 ../ff/ff_nmea.h;\
+../ff/ff_novatel.h;\
 ../ff/ff_parser.h;\
 ../ff/ff_port.h;\
 ../ff/ff_rtcm3.h;\
 ../ff/ff_rx.h;\
+../ff/ff_spartn.h;\
 ../ff/ff_stuff.h;\
+../ff/ff_time.h;\
 ../ff/ff_trafo.h;\
 ../ff/ff_ubx.h;\
 ")

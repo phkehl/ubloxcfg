@@ -29,13 +29,17 @@
 
 #include "imgui.h"
 
+#include "platform.hpp"
 #include "gui_settings.hpp"
 #include "gui_win_input_receiver.hpp"
 #include "gui_win_input_logfile.hpp"
 #include "gui_notify.hpp"
 #include "gui_win_ntrip.hpp"
+#include "gui_win_multi.hpp"
 #include "glmatrix.hpp"
 #include "opengl.hpp"
+#include "gui_widget_tabbar.hpp"
+#include "gui_data.hpp"
 
 struct GuiAppEarlyLog
 {
@@ -48,19 +52,11 @@ struct GuiAppEarlyLog
 class GuiApp
 {
     public:
-        GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog,
-            const std::vector<std::string> &versionInfos);
+        GuiApp(const GuiAppEarlyLog &earlyLog, const std::vector<std::string> &versions);
        ~GuiApp();
-
-        static GuiApp &GetInstance();
 
         // Main application loop, do what needs to be done regularly
         void Loop(const uint32_t &frame, const double &now);
-
-        // Called in between ImGui::Render() and ImGui::NewFrame()
-        bool PrepFrame();
-        // Called just after ImGui::NewFrame();
-        void NewFrame();
 
         // Draw one app frame, call all windows drawing methods
         void DrawFrame();
@@ -73,15 +69,9 @@ class GuiApp
         void PerfTic(const enum Perf_e perf);
         void PerfToc(const enum Perf_e perf);
 
-        void Shutdown();
-
     private:
 
         void _MainMenu();
-
-        std::string _settingsFile;
-        GuiSettings _settings;
-        void _DrawSettingsEditor();
 
         // Application windows
         enum
@@ -99,12 +89,17 @@ class GuiApp
         std::vector< std::unique_ptr<GuiWinInputLogfile>  > _logfileWindows;
         static constexpr int MAX_SAVED_WINDOWS = 20;
         template<typename T> void _CreateInputWindow(
-            const std::string &baseName, std::vector< std::unique_ptr<T> > &inputWindows, const std::string &prevWinName = "");
+            const std::string &baseName, std::vector< std::unique_ptr<T> > &inputWindows, const std::string &prevWinName);
+        void _CreateReceiverWindow(const std::string &prevWinName = "");
+        void _CreateLogfileWindow(const std::string &prevWinName = "");
 
         // NTRIP clients
         std::vector< std::unique_ptr<GuiWinNtrip> > _ntripWindows;
         void _CreateNtripWindow(const std::string &prevWinName = "");
-        void _UpdateNtripWindows();
+
+        // Multiview windows
+        std::vector< std::unique_ptr<GuiWinMulti> > _multiWindows;
+        void _CreateMultiWindow(const std::string &prevWinName = "");
 
         // Debugging
         std::mutex           _debugMutex;
@@ -113,12 +108,12 @@ class GuiApp
         double               _statsLast;
         struct timespec      _statsTime;
         float                _statsCpu;
-        float                _statsRss;
+        Platform::MemUsage   _memUsage;
         bool                 _debugWinOpen;
         bool                 _debugWinDim;
         GuiWidgetLog         _debugLog;
         float                _menuBarHeight;
-        std::vector<std::string> _versionInfos;
+        GuiWidgetTabbar      _debugTabbar;
         void _DrawDebugWin();
         static void _DebugLogCb(const DEBUG_LEVEL_t level, const char *str, const DEBUG_CFG_t *cfg);
         static void _DebugLogAdd(const DEBUG_LEVEL_t level, const char *str, GuiWidgetLog *logWidget);
@@ -146,6 +141,8 @@ class GuiApp
             void Add(const float value);
         };
         std::array<PerfData, _NUM_PERF> _perfData;
+
+        //GuiEvents _events;
 };
 
 /* ****************************************************************************************************************** */

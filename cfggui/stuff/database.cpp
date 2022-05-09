@@ -29,18 +29,28 @@
 
 /* ****************************************************************************************************************** */
 
-Database::Database(const int size) :
-    _size        { size },
-    _epochs      { },
-    _epochIx     { },
-    _epochIxLast { -1 },
-    _stats       { },
+Database::Database(const int size, const std::string &name) :
+    _name        { name },
+    _maxSize     { size },
     _refPos      { REFPOS_MEAN },
     _refPosXyz   { 0.0, 0.0, 0.0 },
-    _refPosLlh   { 0.0, 0.0, 0.0 }
+    _refPosLlh   { 0.0, 0.0, 0.0 },
+    _serial      { 0 }
 {
-    DEBUG("Database(%d)", _size);
+    DEBUG("Database(%d)", _maxSize);
     Clear();
+}
+
+Database::~Database()
+{
+    DEBUG("~Database()");
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+const std::string &Database::GetName()
+{
+    return _name;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -109,67 +119,32 @@ void Database::SetRefPosXyz(double xyz[_NUM_POS_])
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Database::ProcEpochs(std::function<bool(const int ix, const Database::Epoch &)> cb, const bool backwards)
+void Database::ProcEpochs(std::function<bool(const Database::Epoch &)> cb, const bool backwards)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _ProcEpochs(cb, backwards);
 }
 
-void Database::_ProcEpochs(std::function<bool(const int ix, const Database::Epoch &)> cb, const bool backwards)
+void Database::_ProcEpochs(std::function<bool(const Database::Epoch &)> cb, const bool backwards)
 {
-    int ix = 0;
     bool abort = false;
     if (!backwards)
     {
-        for (int epochIx = _epochIx; !abort && (epochIx < (int)_epochs.size()); epochIx++)
+        for (auto entry = _epochs.cbegin(); !abort && (entry != _epochs.cend()); entry++)
         {
-            if (_epochs[epochIx].valid)
+            if (!cb(*entry))
             {
-                if (!cb(ix, _epochs[epochIx]))
-                {
-                    abort = true;
-                    break;
-                }
-                ix++;
-            }
-        }
-        for (int epochIx = 0; !abort && (epochIx < _epochIx); epochIx++)
-        {
-            if (_epochs[epochIx].valid)
-            {
-                if (!cb(ix, _epochs[epochIx]))
-                {
-                    abort = true;
-                    break;
-                }
-                ix++;
+                abort = true;
             }
         }
     }
     else
     {
-        for (int epochIx = _epochIx - 1; !abort && (epochIx >= 0); epochIx--)
+        for (auto entry = _epochs.crbegin(); !abort && (entry != _epochs.crend()); entry++)
         {
-            if (_epochs[epochIx].valid)
+            if (!cb(*entry))
             {
-                if (!cb(ix, _epochs[epochIx]))
-                {
-                    abort = true;
-                    break;
-                }
-                ix++;
-            }
-        }
-        for (int epochIx = (int)_epochs.size() - 1; !abort && (epochIx >= _epochIx); epochIx--)
-        {
-            if (_epochs[epochIx].valid)
-            {
-                if (!cb(ix, _epochs[epochIx]))
-                {
-                    abort = true;
-                    break;
-                }
-                ix++;
+                abort = true;
             }
         }
     }
@@ -179,22 +154,10 @@ void Database::_ProcEpochs(std::function<bool(const int ix, const Database::Epoc
 
 const Database::Epoch *Database::LatestEpoch()
 {
-    if (_epochIxLast < 0)
-    {
-        return nullptr;
-    }
-    else
-    {
-        return &_epochs[_epochIxLast];
-    }
+    return _epochs.empty() ? nullptr : &_epochs.back();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
-
-int Database::NumEpochs()
-{
-    return _epochsValidCnt;
-}
 
 void Database::BeginGetEpoch()
 {
@@ -203,22 +166,12 @@ void Database::BeginGetEpoch()
 
 const Database::Epoch &Database::GetEpoch(const int ix)
 {
-    int iix = _epochIx - _epochsValidCnt + ix;
-    if (iix < 0)
-    {
-        iix += _epochs.size();
-    }
-    return _epochs[iix];
+    return _epochs[ix];
 }
 
 const Database::Epoch &Database::operator[](const int ix)
 {
-    int iix = _epochIx - _epochsValidCnt + ix;
-    if (iix < 0)
-    {
-        iix += _epochs.size();
-    }
-    return _epochs[iix];
+    return _epochs[ix];
 }
 
 void Database::EndGetEpoch()
@@ -233,26 +186,21 @@ void Database::Clear()
     std::lock_guard<std::mutex> lock(_mutex);
 
     _epochs.clear();
-    _epochs.resize(_size, NULL);
-    _epochIx = 0;
-    _epochIxLast = -1;
     _epochsT0 = 0.0;
-    _epochsValidCnt = 0;
-
-    EpochStats stats;
-    _stats = stats;
+    _stats = EpochStats();
+    _serial++;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int Database::GetSize()
+int Database::Size()
 {
-    return _size;
+    return _epochs.size();
 }
 
-int Database::GetUsage()
+int Database::MaxSize()
 {
-    return _epochsValidCnt;
+    return _maxSize;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -261,27 +209,27 @@ void Database::AddEpoch(const EPOCH_t *raw)
 {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    // ----- Add epoch to database ---------------------------------------------
-
     //DEBUG("Database::AddEpoch() %s", raw->str);
 
     auto epoch = Epoch(raw);
 
     // Timestamp
-    if (_epochIxLast < 0)
+    if (_epochs.empty())
     {
         _epochsT0 = epoch.raw.ts;
         epoch.ts = 0.0;
     }
     else
     {
-        epoch.ts = (double)(_epochs[_epochIxLast].raw.ts - _epochsT0) * 1e-3;
+        epoch.ts = (double)(epoch.raw.ts - _epochsT0) * 1e-3;
     }
 
-    _epochs[_epochIx] = epoch;
-    _epochIxLast = _epochIx;
-    _epochIx++;
-    _epochIx %= _epochs.size();
+    _epochs.push_back(epoch);
+
+    while ((int)_epochs.size() > _maxSize)
+    {
+        _epochs.pop_front();
+    }
 
     _Sync();
 }
@@ -298,13 +246,8 @@ void Database::_Sync()
     stats.llh[_LAT_].Begin();
     stats.llh[_LON_].Begin();
     stats.llh[_HEIGHT_].Begin();
-    _epochsValidCnt = 0;
     for (const auto &e: _epochs)
     {
-        if (e.valid)
-        {
-            _epochsValidCnt++;
-        }
         if (e.valid && e.raw.havePos)
         {
             stats.llh[_LAT_].Add(e.raw.llh[_LAT_]);
@@ -331,9 +274,8 @@ void Database::_Sync()
         }
         case REFPOS_LAST:
         {
-            _ProcEpochs([&](const int ix, const Database::Epoch &epoch)
+            _ProcEpochs([&](const Database::Epoch &epoch)
             {
-                (void)ix;
                 if (epoch.raw.havePos)
                 {
                     std::memcpy(_refPosLlh, epoch.raw.llh, sizeof(_refPosLlh));
@@ -410,19 +352,40 @@ void Database::_Sync()
     {
         _stats = stats;
     }
+
+    _serial++;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Database::AddMsg(const PARSER_MSG_t *msg)
+bool Database::Changed(const void *uid)
 {
-    (void)msg;
+    bool res = false;
+    auto entry = _changed.find(uid);
+    if (entry != _changed.end())
+    {
+        if (entry->second != _serial)
+        {
+            res = true;
+            entry->second = _serial;
+        }
+    }
+    else
+    {
+        _changed.emplace(uid, _serial);
+        res = true;
+    }
+    return res;
 }
 
 /* ****************************************************************************************************************** */
 
 Database::Epoch::Epoch(const EPOCH_t *_raw) :
-    valid{false}, raw{}, enuRef{0, 0, 0}, enuMean{0, 0, 0}
+    valid   { false },
+    raw     { },
+    ts      { 0 },
+    enuRef  { 0, 0, 0 },
+    enuMean { 0, 0, 0 }
 {
     if ( (_raw != NULL) && (_raw->valid) )
     {
@@ -434,7 +397,13 @@ Database::Epoch::Epoch(const EPOCH_t *_raw) :
 /* ****************************************************************************************************************** */
 
 Database::Stats::Stats() :
-    min{0.0}, max{0.0}, mean{0.0}, std{0.0}, count{0}, _sum{0.0}, _sum2{0.0}
+    min   { 0.0 },
+    max   { 0.0 },
+    mean  { 0.0 },
+    std   { 0.0 },
+    count { 0 },
+    _sum  { 0.0 },
+    _sum2 { 0.0 }
 {
 }
 
@@ -478,14 +447,15 @@ void Database::Stats::End()
 /* ****************************************************************************************************************** */
 
 Database::ErrEll::ErrEll() :
-    a{0.0}, b{0.0}, omega{0.0}
+    a     { 0.0 },
+    b     { 0.0 },
+    omega { 0.0 }
 {
 }
 
 /* ****************************************************************************************************************** */
 
-Database::EpochStats::EpochStats() :
-    llh{}, enuRef{}, enuMean{}, enErrEll{}
+Database::EpochStats::EpochStats()
 {
 }
 

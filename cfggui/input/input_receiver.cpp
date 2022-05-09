@@ -495,7 +495,6 @@ void InputReceiver::_Thread(Ff::Thread *thread)
                 _inputDatabase->AddEpoch(&epoch);
                 _SendEvent(std::make_unique<ReceiverEventEpoch>(&epoch));
             }
-            _inputDatabase->AddMsg(msg);
             _SEND_EVENT(ReceiverEventMsg, msg);
 
             switch (msg->type)

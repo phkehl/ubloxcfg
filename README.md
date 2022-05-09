@@ -138,14 +138,6 @@ A *very experimental* GUI is available. See [here](./cfggui/README.md).
 
 See the individual source files, scripts and other files for details.
 
-## Third-party code
-
-The tool uses the following third-party code:
-
-* _CRC-24Q_ routines from _GPSd_ (<https://gitlab.com/gpsd/>)
-  See the included source code ([`crc24q.c`](./3rdparty/stuff/crc24q.c)) and license
-  ([`crc24q.LICENSE`](./3rdparty/stuff/crc24q.LICENSE)).
-
 ## Todo, ideas
 
 * Document ff_* better.

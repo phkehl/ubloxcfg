@@ -56,29 +56,16 @@ void GuiAppEarlyLog::Clear()
 
 /* ****************************************************************************************************************** */
 
-static GuiApp *gGuiAppInstance;
-
-GuiApp &GuiApp::GetInstance()
-{
-    return *gGuiAppInstance;
-}
-
-/* ****************************************************************************************************************** */
-
-GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &earlyLog,
-    const std::vector<std::string> &versionInfos) :
+GuiApp::GuiApp(const GuiAppEarlyLog &earlyLog, const std::vector<std::string> &versions) :
     _statsLast     { },
     _statsTime     { },
     _statsCpu      { },
-    _statsRss      { },
     _debugWinOpen  { false },
     _debugWinDim   { true },
-    _versionInfos  { versionInfos },
+    _debugTabbar   { "GuiAppDebug" },
     _h4xx0rMode    { false }
 {
-    UNUSED(argv);
     DEBUG("GuiApp()");
-    gGuiAppInstance = this;
 
     // Add early log entries to log widget and re-configure logging
     for (const auto &entry: earlyLog.log)
@@ -97,14 +84,10 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     // -c <configfile>
     // ...
 
-    // Load settings
-    _settingsFile = Platform::ConfigFile("cfggui.conf");
-    _settings.LoadConf(_settingsFile);
-
     // Create application windows
     _appWindows.resize(_NUM_APP_WIN);
-    _appWindows[APP_WIN_ABOUT]            = std::make_unique<GuiWinAppAbout>();
-    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinAppSettings>(std::bind(&GuiApp::_DrawSettingsEditor, this));
+    _appWindows[APP_WIN_ABOUT]            = std::make_unique<GuiWinAppAbout>(versions);
+    _appWindows[APP_WIN_SETTINGS]         = std::make_unique<GuiWinAppSettings>();
     _appWindows[APP_WIN_HELP]             = std::make_unique<GuiWinAppHelp>();
 #ifndef IMGUI_DISABLE_DEMO_WINDOWS
     _appWindows[APP_WIN_IMGUI_DEMO]       = std::make_unique<GuiWinAppImguiDemo>();
@@ -136,7 +119,7 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     {
         for (auto &winName: receiverWinNames)
         {
-            _CreateInputWindow("Receiver", _receiverWindows, winName);
+            _CreateReceiverWindow(winName);
         }
     }
     const std::vector<std::string> logfileWinNames = GuiSettings::GetValueList("App.logfileWindows", ",", MAX_SAVED_WINDOWS);
@@ -144,7 +127,7 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
     {
         for (auto &winName: logfileWinNames)
         {
-            _CreateInputWindow("Logfile", _logfileWindows, winName);
+            _CreateLogfileWindow(winName);
         }
     }
 
@@ -156,7 +139,15 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
             _CreateNtripWindow(winName);
         }
     }
-    _UpdateNtripWindows();
+
+    const std::vector<std::string> multiWinNames = GuiSettings::GetValueList("App.multiWindows", ",", MAX_SAVED_WINDOWS);
+    if (!multiWinNames.empty())
+    {
+        for (auto &winName: multiWinNames)
+        {
+            _CreateMultiWindow(winName);
+        }
+    }
 
     // Say hello
     NOTICE("cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
@@ -168,16 +159,9 @@ GuiApp::GuiApp(const std::vector<std::string> &argv, const GuiAppEarlyLog &early
 GuiApp::~GuiApp()
 {
     DEBUG("GuiApp::~GuiApp()");
-}
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiApp::Shutdown()
-{
     // Reconfigure debug output to terminal only
     debugSetup(&_debugCfgOrig);
-
-    DEBUG("GuiApp::Shutdown()");
 
     // Remember some settings
     GuiSettings::SetValue("App.debugWindow",      _debugWinOpen);
@@ -210,30 +194,12 @@ void GuiApp::Shutdown()
     }
     GuiSettings::SetValueList("App.ntripWindows", openNtripWinNames, ",", MAX_SAVED_WINDOWS);
 
-    // Destroy child windows, so that they can save their settings before we save the file below
-    _appWindows.clear();
-    _receiverWindows.clear();
-    _logfileWindows.clear();
-
-    // Save settings file
-    if (_settingsFile.size() > 0)
+    std::vector<std::string> openMultiWinNames;
+    for (auto &win: _multiWindows)
     {
-        _settings.SaveConf(_settingsFile);
+        openMultiWinNames.push_back(win->WinName());
     }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-bool GuiApp::PrepFrame()
-{
-    return _settings.UpdateFonts();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiApp::NewFrame()
-{
-    _settings.UpdateSizes();
+    GuiSettings::SetValueList("App.multiWindows", openMultiWinNames, ",", MAX_SAVED_WINDOWS);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -252,15 +218,25 @@ ImVec4 GuiApp::BackgroundColour()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiApp::_DrawSettingsEditor()
-{
-    _settings.DrawSettingsEditor();
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 void GuiApp::Loop(const uint32_t &frame, const double &now)
 {
+    // Update (some) performance info
+    const double delta = now - _statsLast;
+    if (delta >= 1.0)
+    {
+        _memUsage = Platform::GetMemUsage();
+        struct timespec time;
+        double cpu = 0.0;
+        if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time) == 0)
+        {
+            cpu = ((double)(time.tv_sec - _statsTime.tv_sec))
+                + ((double)(time.tv_nsec - _statsTime.tv_nsec) * 1e-9);
+            _statsTime = time;
+        }
+        _statsCpu = cpu / delta;
+        _statsLast = now;
+    }
+
     // Run windows loops
     for (auto &win: _appWindows)
     {
@@ -275,6 +251,10 @@ void GuiApp::Loop(const uint32_t &frame, const double &now)
         win->Loop(frame, now);
     }
     for (auto &win: _logfileWindows)
+    {
+        win->Loop(frame, now);
+    }
+    for (auto &win: _multiWindows)
     {
         win->Loop(frame, now);
     }
@@ -330,7 +310,6 @@ void GuiApp::DrawFrame()
         else
         {
             iter = _receiverWindows.erase(iter);
-            _UpdateNtripWindows();
         }
     }
 
@@ -347,6 +326,21 @@ void GuiApp::DrawFrame()
         else
         {
             iter = _logfileWindows.erase(iter);
+        }
+    }
+
+    // Draw multiview windows, remove and destroy closed ones
+    for (auto iter = _multiWindows.begin(); iter != _multiWindows.end(); )
+    {
+        auto &multiWin = *iter;
+        if (multiWin->WinIsOpen())
+        {
+            multiWin->DrawWindow();
+            iter++;
+        }
+        else
+        {
+            iter = _multiWindows.erase(iter);
         }
     }
 
@@ -426,6 +420,16 @@ template<typename T> void GuiApp::_CreateInputWindow(
     }
 }
 
+void GuiApp::_CreateReceiverWindow(const std::string &prevWinName)
+{
+    _CreateInputWindow("Receiver", _receiverWindows, prevWinName);
+}
+
+void GuiApp::_CreateLogfileWindow(const std::string &prevWinName)
+{
+    _CreateInputWindow("Logfile", _logfileWindows, prevWinName);
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiApp::_CreateNtripWindow(const std::string &prevWinName)
@@ -480,15 +484,53 @@ void GuiApp::_CreateNtripWindow(const std::string &prevWinName)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiApp::_UpdateNtripWindows()
+void GuiApp::_CreateMultiWindow(const std::string &prevWinName)
 {
-    for (auto &ntripWin: _ntripWindows)
+    const std::string baseName = "MultiView";
+    std::vector<std::string> existingWinNames;
+    for (auto &win: _multiWindows)
     {
-        ntripWin->RemoveReceivers();
-        for (auto &receiverWin: _receiverWindows)
+        existingWinNames.push_back(win->WinName());
+    }
+
+    int winNumber = 0;
+    // Open a previous window
+    if (!prevWinName.empty())
+    {
+        if (std::find(existingWinNames.begin(), existingWinNames.end(), prevWinName) == existingWinNames.end())
         {
-            ntripWin->AddReceiver(receiverWin->GetReceiver());
+            try { winNumber = std::stoi(prevWinName.substr(baseName.size())); } catch (...) { }
         }
+    }
+    // Find next free
+    else
+    {
+        int n = 1;
+        while (n < 1000)
+        {
+            const std::string newWinName = baseName + std::to_string(n); // BaseName1, BaseName2, ...
+            if (std::find(existingWinNames.begin(), existingWinNames.end(), newWinName) == existingWinNames.end())
+            {
+                winNumber = n;
+                break;
+            }
+            n++;
+        }
+    }
+
+    // Create it
+    if (winNumber > 0)
+    {
+        auto win = std::make_unique<GuiWinMulti>(baseName + std::to_string(winNumber));
+        win->WinOpen();
+        win->WinSetTitle("Multiview " + std::to_string(winNumber));
+        _multiWindows.emplace_back(std::move(win));
+
+        std::sort(_multiWindows.begin(), _multiWindows.end(),
+            [](const auto &a, const auto &b)
+            {
+                return a->WinName() < b->WinName();
+            });
     }
 }
 
@@ -496,7 +538,6 @@ void GuiApp::_UpdateNtripWindows()
 
 void GuiApp::_MainMenu()
 {
-    bool h4xx0rPopup = false;
     if (ImGui::BeginMainMenuBar())
     {
         // Store menu bar height FIXME: is there a better way than doing this here for every frame?
@@ -508,8 +549,7 @@ void GuiApp::_MainMenu()
         {
             if (ImGui::MenuItem("New"))
             {
-                _CreateInputWindow("Receiver", _receiverWindows);
-                _UpdateNtripWindows();
+                _CreateReceiverWindow();
             }
             if (!_receiverWindows.empty())
             {
@@ -530,7 +570,7 @@ void GuiApp::_MainMenu()
         {
             if (ImGui::MenuItem("New"))
             {
-                _CreateInputWindow("Logfile", _logfileWindows);
+                _CreateLogfileWindow();
             }
             if (!_logfileWindows.empty())
             {
@@ -551,7 +591,7 @@ void GuiApp::_MainMenu()
         {
             const int toolMenuEntries[] =
             {
-                APP_WIN_ABOUT, APP_WIN_SETTINGS, APP_WIN_HELP, APP_WIN_PLAY
+                APP_WIN_ABOUT, APP_WIN_SETTINGS, APP_WIN_HELP, APP_WIN_PLAY, APP_WIN_LEGEND
             };
             for (int ix = 0; ix < NUMOF(toolMenuEntries); ix++)
             {
@@ -568,7 +608,6 @@ void GuiApp::_MainMenu()
                 if (ImGui::MenuItem("New client"))
                 {
                     _CreateNtripWindow();
-                    _UpdateNtripWindows();
                 }
                 if (!_ntripWindows.empty())
                 {
@@ -584,48 +623,50 @@ void GuiApp::_MainMenu()
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Multiview"))
+            {
+                if (ImGui::MenuItem("New multiview window"))
+                {
+                    _CreateMultiWindow();
+                }
+                if (!_multiWindows.empty())
+                {
+                    ImGui::Separator();
+                    for (auto &win: _multiWindows)
+                    {
+                        if (ImGui::MenuItem(win->WinTitle().c_str()))
+                        {
+                            win->WinOpen();
+                        }
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
             ImGui::Separator();
 
             ImGui::MenuItem("Debug", NULL, &_debugWinOpen);
 
-            bool h4xx0r = _h4xx0rMode;
-            if (ImGui::MenuItem("H4xx0r", NULL, &h4xx0r))
+            if (ImGui::BeginMenu("H4xx0r"))
             {
-                if (h4xx0r)
+                if (ImGui::MenuItem(_h4xx0rMode ? "Leave matrix" : "Enter matrix"))
                 {
-                    h4xx0rPopup = true;
+                    _h4xx0rMode = _ConfigMatrix(!_h4xx0rMode);
                 }
-                else
+                if (ImGui::TreeNode("Config"))
                 {
-                    _h4xx0rMode = _ConfigMatrix(false);
+                    ImGui::BeginDisabled(_h4xx0rMode);
+                    _DrawMatrixConfig();
+                    ImGui::EndDisabled();
+                    ImGui::TreePop();
                 }
+                ImGui::EndMenu();
             }
+
             ImGui::EndMenu();
         }
 
         ImGui::PopStyleColor();
-
-        // Update (some) performance info
-        const double now = ImGui::GetTime();
-        const double delta = now - _statsLast;
-        if (delta >= 1.0)
-        {
-            _statsLast = now;
-            struct rusage usage;
-            if (getrusage(RUSAGE_SELF, &usage) == 0)
-            {
-                _statsRss = (float)usage.ru_maxrss / 1024.0f;
-            }
-            struct timespec time;
-            double cpu = 0.0;
-            if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time) == 0)
-            {
-                cpu = ((double)(time.tv_sec - _statsTime.tv_sec))
-                    + ((double)(time.tv_nsec - _statsTime.tv_nsec) * 1e-9);
-                _statsTime = time;
-            }
-            _statsCpu = cpu / delta;
-        }
 
         // Draw performance info
         char text[200];
@@ -635,10 +676,11 @@ void GuiApp::_MainMenu()
             io.Framerate, // io.Framerate > FLT_EPSILON ? 1000.0f / io.Framerate : 0.0f,
             //io.DeltaTime > FLT_EPSILON ? 1.0 / io.DeltaTime : 0.0, io.DeltaTime * 1e3,
             ImGui::GetTime(), ImGui::GetFrameCount(),
-            _statsRss, _statsCpu * 1e2);
+            _memUsage.resident, _statsCpu * 1e2);
         const float w = ImGui::CalcTextSize(text).x + ImGui::GetStyle().WindowPadding.x;
         ImGui::SameLine(ImGui::GetWindowWidth() - w);
-        ImGui::PushStyleColor(ImGuiCol_Text, io.DeltaTime < 99e-3 ? GUI_COLOUR(C_BRIGHTWHITE) : GUI_COLOUR(C_WHITE));
+        ImGui::PushStyleColor(ImGuiCol_Text, io.DeltaTime < (1e-3 * ((1000-100) / GuiSettings::minFrameRate)) ?
+            GUI_COLOUR(C_BRIGHTWHITE) : GUI_COLOUR(C_WHITE));
         ImGui::TextUnformatted(text);
         ImGui::PopStyleColor();
         if (ImGui::IsItemHovered())
@@ -656,22 +698,6 @@ void GuiApp::_MainMenu()
             _debugWinOpen = !_debugWinOpen;
         }
         ImGui::EndMainMenuBar();
-    }
-
-    if (h4xx0rPopup)
-    {
-        ImGui::OpenPopup("H4xx0rConfig");
-    }
-    if (ImGui::BeginPopup("H4xx0rConfig"))
-    {
-        _DrawMatrixConfig();
-        ImGui::Separator();
-        if (ImGui::Button("Start!"))
-        {
-            _h4xx0rMode = _ConfigMatrix(true);
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
     }
 }
 
@@ -731,14 +757,14 @@ void GuiApp::_DrawDebugWin()
     // Draw window
     if (isOpen)
     {
-        if (ImGui::BeginTabBar("tabs", ImGuiTabBarFlags_FittingPolicyScroll))
+        if (_debugTabbar.Begin())
         {
-            if (ImGui::BeginTabItem("Log"))
+            _debugTabbar.Item("Log", [&]()
             {
                 _debugLog.DrawWidget();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Tools"))
+            });
+
+            _debugTabbar.Item("Tools", [&]()
             {
                 const ImVec2 buttonSize { GuiSettings::charSize.x * 20, 0 };
 
@@ -769,14 +795,14 @@ void GuiApp::_DrawDebugWin()
                         }
                     }
                 }
+            });
 
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Perf"))
+            _debugTabbar.Item("Perf", [&]()
             {
                 const ImVec2 sizeAvail = ImGui::GetContentRegionAvail();
-                const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - GuiSettings::style->ItemSpacing.y };
-                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * GuiSettings::style->ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y - GuiSettings::style->ItemSpacing.y };
+                const float bottom = GuiSettings::lineHeight -GuiSettings::style->ItemSpacing.y;
+                const ImVec2 plotSize1 { sizeAvail.x, (sizeAvail.y * 2 / 3) - GuiSettings::style->ItemSpacing.y};
+                const ImVec2 plotSize2 { ( (sizeAvail.x - ((_NUM_PERF - 1) * GuiSettings::style->ItemSpacing.x)) / _NUM_PERF), sizeAvail.y - plotSize1.y - GuiSettings::style->ItemSpacing.y - bottom};
 
                 const struct { const char *title; const char *label; enum Perf_e perf; } plots[] =
                 {
@@ -828,19 +854,35 @@ void GuiApp::_DrawDebugWin()
                         ImGui::SameLine();
                     }
                 }
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Versions"))
+
+                ImGui::Text("Memory usage [MB]: Total %.1f, RSS %.1f, shared %.1f, text %.1f, data %.1f",
+                    _memUsage.size, _memUsage.resident, _memUsage.shared, _memUsage.text, _memUsage.data);
+
+            });
+
+            _debugTabbar.Item("Data", [&]()
             {
-                ImGui::PushTextWrapPos(0.0f);
-                for (const auto &info: _versionInfos)
+                Gui::TextTitle("Receivers");
+                for (auto &receiver: GuiData::Receivers())
                 {
-                    ImGui::TextUnformatted(info.c_str());
+                    ImGui::Text("%s (%s)", receiver->GetName().c_str(), receiver->GetRxVer().c_str());
                 }
-                ImGui::PopTextWrapPos();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
+                ImGui::Spacing();
+                Gui::TextTitle("Logfiles");
+                for (auto &logfile: GuiData::Logfiles())
+                {
+                    ImGui::Text("%s (%s)", logfile->GetName().c_str(), logfile->GetRxVer().c_str());
+                }
+                ImGui::Spacing();
+                Gui::TextTitle("Databases");
+                for (auto &database: GuiData::Databases())
+                {
+                    ImGui::Text("%s (%d/%d)", database->GetName().c_str(), database->Size(), database->MaxSize());
+                }
+
+            });
+
+            _debugTabbar.End();
         }
     }
 

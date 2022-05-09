@@ -58,7 +58,7 @@ class ImageTexture
 
     private:
 
-        int     _width;
+        int      _width;
         int      _height;
         uint32_t _texture;
 

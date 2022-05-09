@@ -21,6 +21,7 @@
 #include "ff_epoch.h"
 
 #include "gui_widget_table.hpp"
+#include "gui_widget_tabbar.hpp"
 
 #include "gui_win_data.hpp"
 
@@ -61,6 +62,7 @@ class GuiWinDataSignals : public GuiWinData
         Count _countQzss;
         EPOCH_SIGUSE_t       _minSigUse;
         GuiWidgetTable       _table;
+        GuiWidgetTabbar      _tabbar;
         std::map<uint32_t, bool> _selSigs;
 
         void _UpdateSignals();

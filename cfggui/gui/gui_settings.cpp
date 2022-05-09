@@ -27,6 +27,7 @@
 #include "ff_cpp.hpp"
 
 #include "platform.hpp"
+#include "database.hpp"
 
 #include "gui_inc.hpp"
 #include "imgui_internal.h"
@@ -42,14 +43,7 @@
 
 /* ****************************************************************************************************************** */
 
-//#define _SETTINGS_COLOUR_COL(_str, _enum, _col) _col,
-
-GuiSettings::GuiSettings() :
-    _fontDirty                { true },
-    _sizesDirty               { true },
-    _ftBuilderFlags           { FT_BUILDER_FLAGS_DEF },
-    _ftRasterizerMultiply     { FT_RASTERIZER_MULTIPLY_DEF },
-    _clearSettingsOnExit      { false }
+/*static*/ void GuiSettings::Init()
 {
     DEBUG("GuiSettings()");
 
@@ -81,6 +75,7 @@ GuiSettings::GuiSettings() :
     imguiStyle->Colors[ImGuiCol_TitleBg]          = ImVec4(0.232f, 0.201f, 0.271f, 1.00f);
     imguiStyle->Colors[ImGuiCol_TitleBgActive]    = ImVec4(0.502f, 0.075f, 0.256f, 1.00f);
     imguiStyle->Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.200f, 0.220f, 0.270f, 0.75f);
+    imguiStyle->Colors[ImGuiCol_TabActive]        = ImVec4(0.502f, 0.075f, 0.256f, 1.00f);
     imguiStyle->FrameBorderSize                   = 1.0f;
     imguiStyle->TabBorderSize                     = 1.0f;
     imguiStyle->WindowTitleAlign.x                = 0.0f;
@@ -103,11 +98,6 @@ GuiSettings::GuiSettings() :
     plotStyle = implotStyle;
 
     cachePath = Platform::CacheDir("tiles");
-}
-
-GuiSettings::~GuiSettings()
-{
-    DEBUG("~GuiSettings()");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -149,9 +139,20 @@ GuiSettings::~GuiSettings()
 
 /*static*/ Ff::ConfFile GuiSettings::_confFile;
 
+/*static*/ int GuiSettings::dbNumEpochs = DB_NUM_EPOCHS_DEF;
+
+/*static*/ int GuiSettings::minFrameRate = MIN_FRAME_RATE_DEF;
+
+/*static*/ bool               GuiSettings::_fontDirty            = true;
+/*static*/ bool               GuiSettings::_sizesDirty           = true;
+/*static*/ uint32_t           GuiSettings::_ftBuilderFlags       = FT_BUILDER_FLAGS_DEF;
+/*static*/ float              GuiSettings::_ftRasterizerMultiply = FT_RASTERIZER_MULTIPLY_DEF;
+/*static*/ bool               GuiSettings::_clearSettingsOnExit  = false;
+/*static*/ float              GuiSettings::_widgetOffs = 0;
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiSettings::LoadConf(const std::string &file)
+/*static*/ void GuiSettings::LoadConf(const std::string &file)
 {
     DEBUG("GuiSettings::LoadConf(%s)", file.c_str());
 
@@ -179,6 +180,12 @@ void GuiSettings::LoadConf(const std::string &file)
         LoadRecentItems(RECENT_LOGFILES);
         LoadRecentItems(RECENT_RECEIVERS);
         LoadRecentItems(RECENT_NTRIP_CASTERS);
+
+        GetValue("Settings.dbNumEpochs", dbNumEpochs, DB_NUM_EPOCHS_DEF);
+        dbNumEpochs = CLIP(dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX);
+
+        GetValue("Settings.minFrameRate", minFrameRate, MIN_FRAME_RATE_DEF);
+        minFrameRate = CLIP(minFrameRate, MIN_FRAME_RATE_MIN, MIN_FRAME_RATE_MAX);
     }
 
     // Load maps
@@ -274,7 +281,7 @@ void GuiSettings::LoadConf(const std::string &file)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiSettings::SaveConf(const std::string &file)
+/*static*/ void GuiSettings::SaveConf(const std::string &file)
 {
     DEBUG("GuiSettings::SaveConf(%s)", file.c_str());
 
@@ -295,6 +302,8 @@ void GuiSettings::SaveConf(const std::string &file)
     SetValue("Settings.fontSize",             fontSize);
     SetValue("Settings.ftBuilderFlags",       _ftBuilderFlags);
     SetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply);
+    SetValue("Settings.dbNumEpochs",          dbNumEpochs);
+    SetValue("Settings.minFrameRate",         minFrameRate);
 
     SaveRecentItems(RECENT_LOGFILES);
     SaveRecentItems(RECENT_RECEIVERS);
@@ -480,7 +489,7 @@ void GuiSettings::SaveConf(const std::string &file)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiSettings::UpdateFonts()
+/*static*/ bool GuiSettings::UpdateFonts()
 {
     if (!_fontDirty)
     {
@@ -555,7 +564,7 @@ bool GuiSettings::UpdateFonts()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiSettings::UpdateSizes()
+/*static*/ bool GuiSettings::UpdateSizes()
 {
     if (!_sizesDirty)
     {
@@ -567,6 +576,7 @@ bool GuiSettings::UpdateSizes()
     charSize = ImGui::CalcTextSize("X");
     lineHeight = ImGui::GetTextLineHeightWithSpacing();
     _widgetOffs = 25 * charSize.x;
+
     _sizesDirty = false;
     return true;
 }
@@ -687,245 +697,259 @@ bool GuiSettings::UpdateSizes()
     GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_COL)
 };
 
-/*static*/ void GuiSettings::DrawSettingsEditor()
+/*static*/ void GuiSettings::DrawSettingsEditorFont()
 {
-    if (ImGui::BeginTabBar("Settings"))
-    {
-        // Font
-        if (ImGui::BeginTabItem("Font"))
-        {
-            ImGui::AlignTextToFramePadding();
+    ImGui::AlignTextToFramePadding();
 
-            ImGui::TextUnformatted("Font size");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushItemWidth(12 * charSize.x);
-            float newFontSize = fontSize;
-            if (ImGui::InputFloat("##FontSize", &newFontSize, 1.0, 1.0, "%.1f", ImGuiInputTextFlags_EnterReturnsTrue))
-            {
-                if (std::fabs(newFontSize - fontSize) > 0.05)
-                {
-                    newFontSize = std::floor(newFontSize * 10.0f) / 10.0f;
-                    fontSize = CLIP(newFontSize, FONT_SIZE_MIN, FONT_SIZE_MAX);
-                    _fontDirty = true; // trigger change in main()
-                }
-            }
-            ImGui::PopItemWidth();
+    ImGui::TextUnformatted("Font size");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushItemWidth(12 * charSize.x);
+    float newFontSize = fontSize;
+    if (ImGui::InputFloat("##FontSize", &newFontSize, 1.0, 1.0, "%.1f", ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        if (std::fabs(newFontSize - fontSize) > 0.05)
+        {
+            newFontSize = std::floor(newFontSize * 10.0f) / 10.0f;
+            fontSize = CLIP(newFontSize, FONT_SIZE_MIN, FONT_SIZE_MAX);
+            _fontDirty = true; // trigger change in main()
+        }
+    }
+    ImGui::PopItemWidth();
 
 #ifdef IMGUI_ENABLE_FREETYPE
-            ImGui::Separator();
+    ImGui::Separator();
 
-            ImGui::TextUnformatted("Font renderer");
-            ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("Font renderer");
+    ImGui::SameLine(_widgetOffs);
 
-            const float offs = charSize.x * 16;
+    const float offs = charSize.x * 16;
 
-            if (ImGui::CheckboxFlags("NoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoHinting))
-            {
-                _fontDirty = true;
-            }
-            ImGui::SameLine(_widgetOffs + offs);
-            if (ImGui::CheckboxFlags("NoAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoAutoHint))
-            {
-                _fontDirty = true;
-            }
-            ImGui::SameLine(_widgetOffs + offs + offs);
-            if (ImGui::CheckboxFlags("ForceAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_ForceAutoHint))
-            {
-                _fontDirty = true;
-            }
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            if (ImGui::CheckboxFlags("LightHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_LightHinting))
-            {
-                _fontDirty = true;
-            }
-            ImGui::SameLine(_widgetOffs + offs);
-            if (ImGui::CheckboxFlags("MonoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_MonoHinting))
-            {
-                _fontDirty = true;
-            }
-            // if (ImGui::CheckboxFlags("Bold", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Bold))
-            // {
-            //     _fontDirty = true;
-            // }
-            // if (ImGui::CheckboxFlags("Oblique", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Oblique))
-            // {
-            //     _fontDirty = true;
-            // }
-            ImGui::SameLine(_widgetOffs + offs + offs);
-            if (ImGui::CheckboxFlags("Monochrome", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Monochrome))
-            {
-                _fontDirty = true;
-            }
+    if (ImGui::CheckboxFlags("NoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoHinting))
+    {
+        _fontDirty = true;
+    }
+    ImGui::SameLine(_widgetOffs + offs);
+    if (ImGui::CheckboxFlags("NoAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_NoAutoHint))
+    {
+        _fontDirty = true;
+    }
+    ImGui::SameLine(_widgetOffs + offs + offs);
+    if (ImGui::CheckboxFlags("ForceAutoHint", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_ForceAutoHint))
+    {
+        _fontDirty = true;
+    }
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    if (ImGui::CheckboxFlags("LightHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_LightHinting))
+    {
+        _fontDirty = true;
+    }
+    ImGui::SameLine(_widgetOffs + offs);
+    if (ImGui::CheckboxFlags("MonoHinting", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_MonoHinting))
+    {
+        _fontDirty = true;
+    }
+    // if (ImGui::CheckboxFlags("Bold", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Bold))
+    // {
+    //     _fontDirty = true;
+    // }
+    // if (ImGui::CheckboxFlags("Oblique", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Oblique))
+    // {
+    //     _fontDirty = true;
+    // }
+    ImGui::SameLine(_widgetOffs + offs + offs);
+    if (ImGui::CheckboxFlags("Monochrome", &_ftBuilderFlags, ImGuiFreeTypeBuilderFlags_Monochrome))
+    {
+        _fontDirty = true;
+    }
 
-            ImGui::Separator();
+    ImGui::Separator();
 
-            ImGui::TextUnformatted("Rasterizer multiply");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushItemWidth(12 * charSize.x);
-            float newMultiply = _ftRasterizerMultiply;
-            if (ImGui::DragFloat("##RasterizerMultiply", &newMultiply, 0.01f, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX, "%.2f"))
-            {
-                if (std::fabs(newMultiply - _ftRasterizerMultiply) > 0.01)
-                {
-                    newMultiply = std::floor(newMultiply * 100.0f) / 100.0f;
-                    _ftRasterizerMultiply = CLIP(newMultiply, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX);
-                    _fontDirty = true;
-                }
-            }
+    ImGui::TextUnformatted("Rasterizer multiply");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushItemWidth(12 * charSize.x);
+    float newMultiply = _ftRasterizerMultiply;
+    if (ImGui::DragFloat("##RasterizerMultiply", &newMultiply, 0.01f, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX, "%.2f"))
+    {
+        if (std::fabs(newMultiply - _ftRasterizerMultiply) > 0.01)
+        {
+            newMultiply = std::floor(newMultiply * 100.0f) / 100.0f;
+            _ftRasterizerMultiply = CLIP(newMultiply, FT_RASTERIZER_MULTIPLY_MIN, FT_RASTERIZER_MULTIPLY_MAX);
+            _fontDirty = true;
+        }
+    }
 #endif
-            // ImFontAtlas *atlas = ImGui::GetIO().Fonts;
-            // if (ImGui::DragInt("TexGlyphPadding", &atlas->TexGlyphPadding, 0.1f, 1, 16))
-            // {
-            //     _fontDirty = true;
-            // }
-            // if (ImGui::DragFloat("RasterizerMultiply", &_ftRasterizerMultiply, 0.001f, 0.0f, 2.0f))
-            // {
-            //     _fontDirty = true;
-            // }
+    // ImFontAtlas *atlas = ImGui::GetIO().Fonts;
+    // if (ImGui::DragInt("TexGlyphPadding", &atlas->TexGlyphPadding, 0.1f, 1, 16))
+    // {
+    //     _fontDirty = true;
+    // }
+    // if (ImGui::DragFloat("RasterizerMultiply", &_ftRasterizerMultiply, 0.001f, 0.0f, 2.0f))
+    // {
+    //     _fontDirty = true;
+    // }
 
+    ImGui::Separator();
+
+    ImGui::TextUnformatted("Default font");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushFont(GuiSettings::fontMono);
+    ImGui::TextUnformatted(GuiSettings::fontMono->ConfigData->Name);
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+    ImGui::PopFont();
+
+    ImGui::TextUnformatted("Sans font");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushFont(GuiSettings::fontSans);
+    ImGui::TextUnformatted(GuiSettings::fontSans->ConfigData->Name);
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+    ImGui::PopFont();
+
+    ImGui::TextUnformatted("Bold font");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushFont(GuiSettings::fontBold);
+    ImGui::TextUnformatted(GuiSettings::fontBold->ConfigData->Name);
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+    ImGui::PopFont();
+
+    ImGui::TextUnformatted("Oblique font");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushFont(GuiSettings::fontOblique);
+    ImGui::TextUnformatted(GuiSettings::fontOblique->ConfigData->Name);
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    ImGui::NewLine();
+    ImGui::SameLine(_widgetOffs);
+    ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
+    ImGui::PopFont();
+}
+
+/*static*/ void GuiSettings::DrawSettingsEditorColours()
+{
+    const float _widgetOffs = 25 * charSize.x;
+
+    if (ImGui::BeginChild("Colours"))
+    {
+        for (int ix = 0; ix < _NUM_COLOURS; ix++)
+        {
+            if (ix != 0)
+            {
+                ImGui::Separator();
+            }
+
+            ImGui::PushID(COLOUR_LABELS[ix]);
+
+            {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(COLOUR_LABELS[ix]);
+            }
+            ImGui::SameLine(_widgetOffs);
+            {
+                if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconSize))
+                {
+                    colours[ix] = COLOUR_DEFAULTS[ix];
+                }
+            }
+            ImGui::SameLine();
+            {
+                ImGui::PushItemWidth(charSize.x * 40);
+                if (ImGui::ColorEdit4("##ColourEdit", &colours4[ix].x, ImGuiColorEditFlags_AlphaPreviewHalf))
+                {
+                    colours[ix] = ImGui::ColorConvertFloat4ToU32(colours4[ix]);
+                }
+                ImGui::PopItemWidth();
+            }
+
+            ImGui::PopID();
+        }
+    }
+    ImGui::EndChild();
+}
+
+/*static*/ void GuiSettings::DrawSettingsEditorMaps()
+{
+    if (ImGui::BeginChild("Maps"))
+    {
+        for (auto &map: maps)
+        {
+            char str[100];
+            std::snprintf(str, sizeof(str), "%s (%s)##%p", map.title.c_str(), map.name.c_str(), &map);
+            ImGui::Checkbox(str, &map.enabled);
             ImGui::Separator();
-
-            ImGui::TextUnformatted("Default font");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushFont(GuiSettings::fontMono);
-            ImGui::TextUnformatted(GuiSettings::fontMono->ConfigData->Name);
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
-            ImGui::PopFont();
-
-            ImGui::TextUnformatted("Sans font");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushFont(GuiSettings::fontSans);
-            ImGui::TextUnformatted(GuiSettings::fontSans->ConfigData->Name);
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
-            ImGui::PopFont();
-
-            ImGui::TextUnformatted("Bold font");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushFont(GuiSettings::fontBold);
-            ImGui::TextUnformatted(GuiSettings::fontBold->ConfigData->Name);
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
-            ImGui::PopFont();
-
-            ImGui::TextUnformatted("Oblique font");
-            ImGui::SameLine(_widgetOffs);
-            ImGui::PushFont(GuiSettings::fontOblique);
-            ImGui::TextUnformatted(GuiSettings::fontOblique->ConfigData->Name);
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("abcdefghijklmnopqrstuvwxyz");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-            ImGui::NewLine();
-            ImGui::SameLine(_widgetOffs);
-            ImGui::TextUnformatted("0123456789+*%&/()=?{}[];,:.-_<>");
-            ImGui::PopFont();
-
-            ImGui::EndTabItem();
         }
-        // Colours
-        if (ImGui::BeginTabItem("Colours"))
+    }
+    ImGui::EndChild();
+}
+
+/*static*/ void GuiSettings::DrawSettingsEditorMisc()
+{
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Database size");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushItemWidth(25 * charSize.x);
+    if (ImGui::SliderInt("##dbNumEpochs", &dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX))
+    {
+        dbNumEpochs = CLIP(dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX);
+    }
+    ImGui::SameLine();
+    ImGui::Text("(~%.0fMB)", (double)(sizeof(Database::Epoch) * dbNumEpochs) * (1.0/1024.0/1024.0));
+    ImGui::PopItemWidth();
+
+    ImGui::TextUnformatted("Min framerate");
+    ImGui::SameLine(_widgetOffs);
+    ImGui::PushItemWidth(25 * charSize.x);
+    if (ImGui::SliderInt("##minFrameRate", &minFrameRate, MIN_FRAME_RATE_MIN, MIN_FRAME_RATE_MAX))
+    {
+        minFrameRate = CLIP(minFrameRate, MIN_FRAME_RATE_MIN, MIN_FRAME_RATE_MAX);
+    }
+    ImGui::SameLine();
+    ImGui::PopItemWidth();
+}
+
+/*static*/ void GuiSettings::DrawSettingsEditorTools()
+{
+    ImGui::BeginDisabled(_clearSettingsOnExit);
+    if (ImGui::Button("Clear settings on exit"))
+    {
+        _clearSettingsOnExit = true;
+    }
+    ImGui::EndDisabled();
+    if (_clearSettingsOnExit)
+    {
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel"))
         {
-            if (ImGui::BeginChild("Colours"))
-            {
-                for (int ix = 0; ix < _NUM_COLOURS; ix++)
-                {
-                    if (ix != 0)
-                    {
-                        ImGui::Separator();
-                    }
-
-                    ImGui::PushID(COLOUR_LABELS[ix]);
-
-                    {
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::TextUnformatted(COLOUR_LABELS[ix]);
-                    }
-                    ImGui::SameLine(_widgetOffs);
-                    {
-                        if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconSize))
-                        {
-                            colours[ix] = COLOUR_DEFAULTS[ix];
-                        }
-                    }
-                    ImGui::SameLine();
-                    {
-                        ImGui::PushItemWidth(charSize.x * 40);
-                        if (ImGui::ColorEdit4("##ColourEdit", &colours4[ix].x, ImGuiColorEditFlags_AlphaPreviewHalf))
-                        {
-                            colours[ix] = ImGui::ColorConvertFloat4ToU32(colours4[ix]);
-                        }
-                        ImGui::PopItemWidth();
-                    }
-
-                    ImGui::PopID();
-                }
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
+            _clearSettingsOnExit = false;
         }
-        // Maps
-        if (ImGui::BeginTabItem("Maps"))
-        {
-            if (ImGui::BeginChild("Maps"))
-            {
-                for (auto &map: maps)
-                {
-                    char str[100];
-                    std::snprintf(str, sizeof(str), "%s (%s)##%p", map.title.c_str(), map.name.c_str(), &map);
-                    ImGui::Checkbox(str, &map.enabled);
-                    ImGui::Separator();
-                }
-            }
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-        // Tools
-        if (ImGui::BeginTabItem("Allencheibs"))
-        {
-            ImGui::BeginDisabled(_clearSettingsOnExit);
-            if (ImGui::Button("Clear settings on exit"))
-            {
-                _clearSettingsOnExit = true;
-            }
-            ImGui::EndDisabled();
-            if (_clearSettingsOnExit)
-            {
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel"))
-                {
-                    _clearSettingsOnExit = false;
-                }
-                ImGui::TextUnformatted("Config file will be wiped on exit!");
-            }
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+        ImGui::TextUnformatted("Config file will be wiped on exit!");
     }
 }
 

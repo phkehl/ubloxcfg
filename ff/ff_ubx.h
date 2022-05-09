@@ -1362,6 +1362,28 @@ typedef struct UBX_RXM_RTCM_V2_GROUP0_s
 #define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_USED            0x02
 
 #define UBX_RXM_RTCM_V2_SIZE    ((int)(sizeof(UBX_RXM_RTCM_V2_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+#define UBX_RXM_SPARTN_VERSION_GET(msg)    (((uint8_t *)(msg))[UBX_HEAD_SIZE + 0])
+
+typedef struct UBX_RXM_SPARTN_V1_GROUP0_s
+{
+    uint8_t  version;
+    uint8_t  flags;
+    uint16_t subType;
+    uint8_t  reserved[2];
+    uint16_t msgType;
+} UBX_RXM_SPARTN_V1_GROUP0_t;
+
+#define UBX_RXM_SPARTN_V1_VERSION                       0x01
+#define UBX_RXM_SPARTN_V1_FLAGS_MSGUSED_GET(f)          ( ((f) >> 1) & 0x03 )
+#define UBX_RXM_SPARTN_V1_FLAGS_MSGUSED_UNKNOWN         0x00
+#define UBX_RXM_SPARTN_V1_FLAGS_MSGUSED_UNUSED          0x01
+#define UBX_RXM_SPARTN_V1_FLAGS_MSGUSED_USED            0x02
+
+#define UBX_RXM_SPARTN_V1_SIZE    ((int)(sizeof(UBX_RXM_SPARTN_V1_GROUP0_t) + UBX_FRAME_SIZE))
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define UBX_RXM_SFRBX_VERSION_GET(msg)    (((uint8_t *)(msg))[UBX_HEAD_SIZE + 6])

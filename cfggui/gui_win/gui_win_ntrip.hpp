@@ -30,10 +30,10 @@
 #include "gui_widget_log.hpp"
 #include "ntripclient.hpp"
 #include "input_receiver.hpp"
-
+#include "gui_data.hpp"
 #include "gui_win.hpp"
 
-/* ***** NTRIP cliebt *********************************************************************************************** */
+/* ***** NTRIP client *********************************************************************************************** */
 
 class GuiWinNtrip : public GuiWin
 {
@@ -44,17 +44,15 @@ class GuiWinNtrip : public GuiWin
         void Loop(const uint32_t &frame, const double &now) final;
         void DrawWindow() final;
 
-        void AddReceiver(std::shared_ptr<InputReceiver> receiver);
-        void RemoveReceivers();
-
     private:
 
         std::mutex _mutex;
 
         // Receivers
+        uint32_t _guiDataSerial;
         std::shared_ptr<InputReceiver> _srcReceiver;
         std::unordered_map<std::string, bool> _dstReceivers;
-        std::vector< std::shared_ptr<InputReceiver> > _receivers;
+        GuiData::ReceiverList _receivers;
 
         // NTRIP client
         NtripClient  _ntripClient;

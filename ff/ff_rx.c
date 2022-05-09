@@ -111,6 +111,10 @@ RX_t *rxInit(const char *port, const RX_ARGS_t *args)
     return rx;
 }
 
+const PARSER_t *rxGetParser(RX_t *rx)
+{
+    return rx != NULL ? &rx->parser : NULL;
+}
 
 static bool _rxOpenDetect(RX_t *rx);
 

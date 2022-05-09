@@ -59,6 +59,8 @@ bool rxSetBaudrate(RX_t *rx, const int baudrate);
 
 void rxAbort(RX_t *rx);
 
+const PARSER_t *rxGetParser(RX_t *rx);
+
 /* ****************************************************************************************************************** */
 
 bool rxGetVerStr(RX_t *rx, char *str, const int size);

@@ -69,6 +69,7 @@ void GuiWinDataLog::_ProcessData(const InputData &data)
                     _nNmea++;
                     break;
                 case Ff::ParserMsg::RTCM3:
+                case Ff::ParserMsg::SPARTN:
                     _log.AddLine(tmp, GUI_COLOUR(LOG_MSGRTCM3));
                     _nRtcm3++;
                     break;
@@ -155,7 +156,7 @@ void GuiWinDataLog::_DrawContent()
     ImGui::SameLine();
 
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_WHITE));
-    ImGui::TextUnformatted(", RTCM3: ");
+    ImGui::TextUnformatted(", RTCM3/SPARTN: ");
     ImGui::PopStyleColor();
     ImGui::SameLine();
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(LOG_MSGRTCM3));

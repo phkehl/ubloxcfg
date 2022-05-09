@@ -61,12 +61,6 @@ static void _sigHandler(int signal)
 
 int parseRun(const bool extraInfo, const bool doEpoch)
 {
-    uint32_t nNmea = 0, sNmea = 0;
-    uint32_t nUbx  = 0, sUbx  = 0;
-    uint32_t nRtcm = 0, sRtcm = 0;
-    uint32_t nGarb = 0, sGarb = 0;
-    uint32_t nNova = 0, sNova = 0;
-    uint32_t nMsgs = 0, sMsgs = 0;
     uint32_t nEpochs = 0;
 
     gAbort = false;
@@ -79,85 +73,69 @@ int parseRun(const bool extraInfo, const bool doEpoch)
 
     EPOCH_t coll;
     EPOCH_t epoch;
+    PARSER_MSG_t msg;
     epochInit(&coll);
-
-    while (!gAbort)
+    bool done = false;
+    while (!(gAbort || done))
     {
-        uint8_t buf[250];
+        uint8_t buf[1000];
         const int num = ioReadInput(buf, sizeof(buf));
         if (num < 0) // eof
         {
-            break;
+            done = true;
         }
         else if (num == 0) // wait
         {
             SLEEP(5);
             continue;
         }
-        parserAdd(&parser, buf, num);
+        if (num > 0)
+        {
+            parserAdd(&parser, buf, num);
+        }
 
-        PARSER_MSG_t msg;
         while (parserProcess(&parser, &msg, true))
         {
-            nMsgs++;
-            sMsgs += msg.size;
-
             if (doEpoch && epochCollect(&coll, &msg, &epoch))
             {
                 nEpochs++;
                 ioOutputStr("epoch   %4d, size    0, NONE     EPOCH                %s\n", nEpochs, epoch.str);
             }
-            const char *prot = "?";
-            switch (msg.type)
-            {
-                case PARSER_MSGTYPE_UBX:
-                    prot = "UBX";
-                    nUbx++;
-                    sUbx += msg.size;
-                    break;
-                case PARSER_MSGTYPE_NMEA:
-                    prot = "NMEA";
-                    nNmea++;
-                    sNmea += msg.size;
-                    break;
-                case PARSER_MSGTYPE_RTCM3:
-                    prot = "RTCM3";
-                    nRtcm++;
-                    sRtcm += msg.size;
-                    break;
-                case PARSER_MSGTYPE_NOVATEL:
-                    prot = "NOVATEL";
-                    nNova++;
-                    sNova += msg.size;
-                    break;
-                case PARSER_MSGTYPE_GARBAGE:
-                    prot = "GARBAGE";
-                    nGarb++;
-                    sGarb += msg.size;
-                    break;
-            }
             ioOutputStr("message %4u, size %4d, %-8s %-20s %s\n",
-                msg.seq, msg.size, prot, msg.name, msg.info != NULL ? msg.info : "n/a");
+                msg.seq, msg.size, parserMsgtypeName(msg.type), msg.name, msg.info != NULL ? msg.info : "n/a");
             if (extraInfo)
             {
                 ioAddOutputHexdump(msg.data, msg.size);
             }
-            if (!ioWriteOutput(nMsgs == 1 ? false : true))
+            if (!ioWriteOutput(parser.nMsgs == 1 ? false : true))
             {
                 break;
             }
         }
     }
 
-    ioOutputStr("stats UBX      count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nUbx,  nMsgs > 0 ? (double)nUbx  / (double)nMsgs * 1e2 : 0.0, sUbx,  sMsgs > 0 ? (double)sUbx  / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats NMEA     count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nNmea, nMsgs > 0 ? (double)nNmea / (double)nMsgs * 1e2 : 0.0, sNmea, sMsgs > 0 ? (double)sNmea / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats RTCM3    count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nRtcm, nMsgs > 0 ? (double)nRtcm / (double)nMsgs * 1e2 : 0.0, sRtcm, sMsgs > 0 ? (double)sRtcm / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats NOVATEL  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nNova, nMsgs > 0 ? (double)nNova / (double)nMsgs * 1e2 : 0.0, sNova, sMsgs > 0 ? (double)sNova / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats GARBAGE  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", nGarb, nMsgs > 0 ? (double)nGarb / (double)nMsgs * 1e2 : 0.0, sGarb, sMsgs > 0 ? (double)sGarb / (double)sMsgs * 1e2 : 0.0);
-    ioOutputStr("stats Total    count %6u (100.0%%)  size %10u (100.0%%)\n", nMsgs, sMsgs);
+    // Anything left in parser?
+    if (parserFlush(&parser, &msg))
+    {
+        ioOutputStr("message %4u, size %4d, %-8s %-20s %s\n",
+            msg.seq, msg.size, parserMsgtypeName(msg.type), msg.name, msg.info != NULL ? msg.info : "n/a");
+        if (extraInfo)
+        {
+            ioAddOutputHexdump(msg.data, msg.size);
+        }
+        ioWriteOutput(true);
+    }
+
+    ioOutputStr("stats UBX      count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nUbx,     parser.nMsgs > 0 ? (double)parser.nUbx     / (double)parser.nMsgs * 1e2 : 0.0, parser.sUbx,     parser.sMsgs > 0 ? (double)parser.sUbx     / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NMEA     count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nNmea,    parser.nMsgs > 0 ? (double)parser.nNmea    / (double)parser.nMsgs * 1e2 : 0.0, parser.sNmea,    parser.sMsgs > 0 ? (double)parser.sNmea    / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats RTCM3    count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nRtcm3,   parser.nMsgs > 0 ? (double)parser.nRtcm3   / (double)parser.nMsgs * 1e2 : 0.0, parser.sRtcm3,   parser.sMsgs > 0 ? (double)parser.sRtcm3   / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats SPARTN   count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nSpartn,  parser.nMsgs > 0 ? (double)parser.nSpartn  / (double)parser.nMsgs * 1e2 : 0.0, parser.sSpartn,  parser.sMsgs > 0 ? (double)parser.sSpartn  / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats NOVATEL  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nUbx,     parser.nMsgs > 0 ? (double)parser.nNovatel / (double)parser.nMsgs * 1e2 : 0.0, parser.sNovatel, parser.sMsgs > 0 ? (double)parser.sNovatel / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats GARBAGE  count %6u (%5.1f%%)  size %10u (%5.1f%%)\n", parser.nGarbage, parser.nMsgs > 0 ? (double)parser.nGarbage / (double)parser.nMsgs * 1e2 : 0.0, parser.sGarbage, parser.sMsgs > 0 ? (double)parser.sGarbage / (double)parser.sMsgs * 1e2 : 0.0);
+    ioOutputStr("stats Total    count %6u (100.0%%)  size %10u (100.0%%)\n", parser.nMsgs, parser.sMsgs);
     if (doEpoch)
     {
-        ioOutputStr("stats EPOCH    count %5u (%5.1f%%)\n", nEpochs, nMsgs > 0 ? (double)nEpochs / (double)nMsgs * 1e2 : 0.0);
+        ioOutputStr("stats EPOCH    count %6u (%5.1f%%)\n", nEpochs, parser.nMsgs > 0 ? (double)nEpochs / (double)parser.nMsgs * 1e2 : 0.0);
     }
 
     return ioWriteOutput(true) ? EXIT_SUCCESS : EXIT_OTHERFAIL;

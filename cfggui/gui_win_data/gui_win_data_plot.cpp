@@ -402,7 +402,7 @@ void GuiWinDataPlot::_DrawPlot()
 
         // Add data
         _database->BeginGetEpoch();
-        const int numEpochs = _database->NumEpochs();
+        const int numEpochs = _database->Size();
 
         for (auto &data: _plotData)
         {

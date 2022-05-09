@@ -51,9 +51,22 @@ typedef struct PARSER_s
     uint8_t   tmp[PARSER_MAX_ANY_SIZE];
     char      name[PARSER_MAX_NAME_SIZE];
     char      info[PARSER_MAX_INFO_SIZE];
-    // Statistics
-    uint32_t  msg;
-    uint32_t  tot;
+    // Statistics (number and size of all messages reps. of protocol)
+    uint32_t  nMsgs;
+    uint32_t  sMsgs;
+    uint32_t  nNmea;
+    uint32_t  sNmea;
+    uint32_t  nUbx;
+    uint32_t  sUbx;
+    uint32_t  nRtcm3;
+    uint32_t  sRtcm3;
+    uint32_t  nSpartn;
+    uint32_t  sSpartn;
+    uint32_t  nNovatel;
+    uint32_t  sNovatel;
+    uint32_t  nGarbage;
+    uint32_t  sGarbage;
+
 } PARSER_t;
 
 typedef enum PARSER_MSGTYPE_e
@@ -62,6 +75,7 @@ typedef enum PARSER_MSGTYPE_e
     PARSER_MSGTYPE_UBX,
     PARSER_MSGTYPE_NMEA,
     PARSER_MSGTYPE_RTCM3,
+    PARSER_MSGTYPE_SPARTN,
     PARSER_MSGTYPE_NOVATEL,
 } PARSER_MSGTYPE_t;
 
@@ -90,6 +104,7 @@ typedef struct PARSER_MSG_s
 void parserInit(PARSER_t *parser);
 bool parserAdd(PARSER_t *parser, const uint8_t *data, const int size);
 bool parserProcess(PARSER_t *parser, PARSER_MSG_t *msg, const bool info);
+bool parserFlush(PARSER_t *parser, PARSER_MSG_t *msg);
 
 const char *parserMsgtypeName(const PARSER_MSGTYPE_t type);
 
