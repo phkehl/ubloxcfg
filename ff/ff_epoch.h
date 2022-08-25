@@ -183,7 +183,7 @@ typedef enum EPOCH_SIGUSE_e
     EPOCH_SIGUSE_NONE,           //!< Signal not used
     EPOCH_SIGUSE_SEARCH,         //!< Signal is being searched
     EPOCH_SIGUSE_ACQUIRED,       //!< Signal was acquired
-    EPOCH_SIGUSE_UNUSED,         //!< Signal tracked but unused
+    EPOCH_SIGUSE_UNUSABLE,         //!< Signal tracked but unused
     EPOCH_SIGUSE_CODELOCK,       //!< Signal tracked and code locked
     EPOCH_SIGUSE_CARRLOCK,       //!< Signal tracked and carrier locked
     // Keep in sync with kEpochSiqUseStrs!

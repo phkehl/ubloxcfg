@@ -133,7 +133,7 @@ class MapTiles
         static uint32_t             _lastHousekeeping;
         static constexpr double     HOUSEKEEPING_INT    =   1234; // [ms]
         static constexpr uint32_t   TILE_MAX_AGE        =  60000; // 1 min
-        static constexpr uint32_t   TILE_MAX_AGE_FAILED = 300000; // 30 min
+        static constexpr uint32_t   TILE_MAX_AGE_FAILED = 300000; // 5 min
         static int                  _numInstances;
         static DebugStats           _debugStats;
         void _Cleanup(const uint32_t now);

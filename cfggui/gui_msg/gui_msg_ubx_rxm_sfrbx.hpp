@@ -60,8 +60,6 @@ class GuiMsgUbxRxmSfrbx : public GuiMsg
 
         std::map<uint32_t, SfrbxInfo> _sfrbxInfos;
         GuiWidgetTable _table;
-
-        static std::string GetNavMsg(const SfrbxInfo &info);
 };
 
 /* ****************************************************************************************************************** */

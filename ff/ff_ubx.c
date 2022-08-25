@@ -616,6 +616,7 @@ static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const i
 static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxRxmSfrbx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize);
@@ -703,6 +704,9 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
             {
                 case UBX_RXM_RAWX_MSGID:
                     len = _strUbxRxmRawx(info, size, msg, msgSize);
+                    break;
+                case UBX_RXM_SFRBX_MSGID:
+                    len = _strUbxRxmSfrbx(info, size, msg, msgSize);
                     break;
             }
             break;
@@ -1014,6 +1018,22 @@ static int _svListSort(const void *a, const void *b)
     }
 }
 
+static int _strUbxRxmSfrbx(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (UBX_RXM_SFRBX_VERSION_GET(msg) != UBX_RXM_SFRBX_V2_VERSION) || (msgSize < UBX_RXM_SFRBX_V2_MIN_SIZE) )
+    {
+        return 0;
+    }
+
+    if (size < 10)
+    {
+        return 0;
+    }
+    const int nDwrd = (msgSize - UBX_FRAME_SIZE - sizeof(UBX_RXM_SFRBX_V2_GROUP0_t)) / sizeof(uint32_t);
+    const int len = snprintf(info, size, "%s %d: ", ubxSvStr(msg[UBX_HEAD_SIZE], msg[UBX_HEAD_SIZE + 1]), nDwrd);
+    return len + ubxRxmSfrbxInfo(&info[len], size - len, msg, msgSize);
+}
+
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
     return ubxMonVerToVerStr(info, size, msg, msgSize);
@@ -1130,6 +1150,126 @@ static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const i
     char tmp[100];
     ubxMessageNameIds(tmp, sizeof(tmp), acknak.clsId, acknak.msgId);
     return snprintf(info, size, "%s %s", ack ? "acknowledgement" : "negative-acknowledgement", tmp);
+}
+
+int ubxRxmSfrbxInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (UBX_RXM_SFRBX_VERSION_GET(msg) != UBX_RXM_SFRBX_V2_VERSION) || (msgSize < UBX_RXM_SFRBX_V2_MIN_SIZE) )
+    {
+        return 0;
+    }
+
+    // Meta information
+    UBX_RXM_SFRBX_V2_GROUP0_t head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+
+    // Raw subframe words
+    uint32_t dwrd[30];
+    int nDwrd = (msgSize - UBX_FRAME_SIZE - sizeof(head)) / sizeof(*dwrd);
+    if (nDwrd <= 0)
+    {
+        return snprintf(info, size, "empty");
+    }
+    memcpy(&dwrd[0], &msg[UBX_HEAD_SIZE + sizeof(head)], MIN(NUMOF(dwrd), nDwrd) * sizeof(*dwrd));
+
+    // Sources:
+    // - ZED-F9P Integration Manual, 3.13.1 Broadcast navigation data
+    // - IS-GPS-200M
+    // - Galileo OS SIS ICD
+    // - Navipedia
+
+    // GPS L1 C/A LNAV message
+    if ( (head.gnssId == UBX_GNSSID_GPS) && (head.sigId == UBX_SIGID_GPS_L1CA) && (nDwrd == 10) )
+    {
+        //const uint16_t towCount = (info.dwrd[1] & 0x3fffe000) >> 13;
+        const uint8_t  subFrame = (dwrd[1] & 0x00000700) >>  8;
+        if ( (1 <= subFrame) && (subFrame <= 3 ) )
+        {
+            return snprintf(info, size, "GPS LNAV eph %u/3", subFrame);
+        }
+        else
+        {
+            const uint8_t dataId = (dwrd[2] & 0x30000000) >> 28;
+            if (dataId == 1)
+            {
+                const uint8_t svId = (dwrd[2] & 0x0fc00000) >> 22; // 20.3.3.5.1, 20.3.3.5.1.1 (Table 20-V)
+                if ( (1 <= svId) && (svId <= 32) ) // subFrame 5 pages 1-24, subFrame 4 pages 2-5 and 7-10
+                {
+                    return snprintf(info, size, "GPS LNAV alm %0u", svId);
+                }
+                else if (svId == 51) // subFrame 5, page 25
+                {
+                    return snprintf(info, size, "GPS LNAV toa, health"); // health 1-24, ALM reference time
+                }
+                else if (svId == 52) // subFrame 4, page 13
+                {
+                    return snprintf(info, size, "GPS LNAV NCMT");
+                }
+                else if (svId == 55) // subFrame 4, page 17
+                {
+                    return snprintf(info, size, "GPS LNAV special");
+                }
+                else if (svId == 56) // subFrame 4, page 18
+                {
+                    return snprintf(info, size, "GPS LNAV iono, UTC");
+                }
+                else if (svId == 63) // subFrame 4, page 25
+                {
+                    return snprintf(info, size, "GPS LNAV AS, health"); // anti-spoofing flags, health 25-32
+                }
+                else
+                {
+                    return snprintf(info, size, "GPS LNAV reserved");
+                }
+            }
+        }
+        return snprintf(info, size, "bad GPS sf?"); // Hmm.. should we check the parity first?
+    }
+
+    // GPS CNAV message (12 seconds, 300 bits)
+    else if ( (head.gnssId == UBX_GNSSID_GPS) && ( (head.sigId == UBX_SIGID_GPS_L2CL) || (head.sigId == UBX_SIGID_GPS_L2CM) ) && (nDwrd == 10) )
+    {
+        const uint8_t msgTypeId = (dwrd[0] & 0x0003f000) >> 12;
+        const char * const msgTypeToDesc[] =
+        {
+            NULL, NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL, NULL,
+            /* 10 */ "eph 1", /* 11 */ "eph 2", /* 12 */ "red alm", /* 13 */ "clock diff", /* 14 */ "eph diff",
+            /* 15 */ "text", NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL, NULL,
+            /* 30 */ "iono, clk, tgd", /* 31 */ "clock, red. alm", /* 32 */ "clock, EOP", /* 33 */ "clock, UTC", /* 34 */ "clock, diff",
+            /* 35 */ "clock, GGTO", /* 36 */ "clock, text", /* 37 */ "clock, mid alm", NULL, NULL,
+            /* 40 */ "integrity",
+        };
+        return snprintf(info, size, "GPS CNAV msg %u %s", msgTypeId,
+            (msgTypeId < NUMOF(msgTypeToDesc)) && msgTypeToDesc[msgTypeId] ? msgTypeToDesc[msgTypeId] : "");
+    }
+
+    // GLONASS strings
+    else if (head.gnssId == UBX_GNSSID_GLO)
+    {
+        const uint8_t  string     = (dwrd[0] & 0x78000000) >> 27;
+        const uint16_t superFrame = (dwrd[3] & 0xffff0000) >> 16;
+        const uint16_t frame      = (dwrd[3] & 0x0000000f);
+        return snprintf(info, size, "GLO sup %u fr %u str %u", superFrame, frame, string);
+    }
+
+    // Galileo I/NAV
+    else if ( (head.gnssId == UBX_GNSSID_GAL) && ( (head.sigId == UBX_SIGID_GAL_E1B) || (head.sigId == UBX_SIGID_GAL_E5BI) ) )
+    {
+        // FIXME: to check.. the u-blox manual is weird here
+        const char    evenOdd1  = (dwrd[0] & 0x80000000) == 0x80000000 ? 'o' : 'e'; // even (0) or odd (1)
+        const char    pageType1 = (dwrd[0] & 0x40000000) == 0x40000000 ? 'a' : 'n'; // nominal (0) or alert (1)
+        const uint8_t wordType1 = (dwrd[0] & 0x3f000000) >> 24;
+        const char    evenOdd2  = (dwrd[4] & 0x80000000) == 0x80000000 ? 'o' : 'e'; // even (0) or odd (1)
+        const char    pageType2 = (dwrd[4] & 0x40000000) == 0x40000000 ? 'a' : 'n'; // nominal (0) or alert (1)
+        const uint8_t wordType2 = (dwrd[4] & 0x3f000000) >> 24;
+        return snprintf(info, size, "GAL I/NAV %c %c %u, %c %c %u", pageType1, evenOdd1, wordType1, pageType2, evenOdd2, wordType2);
+    }
+
+    // unknown
+    return snprintf(info, size, "unknown (n=%d, 0x%08x, 0x%08x, ...)", nDwrd, dwrd[0], dwrd[1]);
 }
 
 

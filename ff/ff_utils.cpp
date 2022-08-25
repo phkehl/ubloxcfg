@@ -87,11 +87,11 @@ std::string Ff::Strftime(const char * const fmt, const int64_t ts, const bool ut
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int Ff::StrReplace(std::string &str, const std::string &search, const std::string &replace)
+int Ff::StrReplace(std::string &str, const std::string &search, const std::string &replace, const int max)
 {
     int count = 0;
     std::size_t pos = 0;
-    while ( (pos = str.find(search, pos)) != std::string::npos )
+    while ( ((max <= 0) || (count < max)) && ((pos = str.find(search, pos)) != std::string::npos) )
     {
         str.replace(pos, search.size(), replace);
         pos += replace.size();
@@ -162,7 +162,7 @@ std::string Ff::StrJoin(const std::vector<std::string> &strs, const std::string 
         res += sep;
         res += str;
     }
-    return res.empty() ? res : res.substr(1);
+    return res.empty() ? res : res.substr(sep.size());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

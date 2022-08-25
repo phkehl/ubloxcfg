@@ -35,12 +35,16 @@ GuiMsgUbxMonSpan::GuiMsgUbxMonSpan(std::shared_ptr<InputReceiver> receiver, std:
 
 /*static*/ const std::vector<GuiMsgUbxMonSpan::Label> GuiMsgUbxMonSpan::FREQ_LABELS =
 {
-    { 1575.420000, "##1", "GPS/SBAS L1CA, GAL E1, QZSS L1CA/S" },
+    { 1575.420000, "##1", "GPS/SBAS L1CA, GAL E1, QZSS L1CA/S" }, // 24 MHz
     { 1561.098000, "##2", "BDS B1I" },
-    { 1602.000000, "##3", "GLO L1OF" },
+  //{ 1602.000000, "##3", "GLO L1OF" }, // -7*0.5625=-3.9375 .. +6*0.5625=3.375 ==> 1598.0625 .. 1605.375
+    { 1598.062500, "##3lo", "GLO L1OF lo" },
+    { 1605.375000, "##3hi", "GLO L1OF hi" },
     { 1207.140000, "##4", "BDS B2I, GAL E5B" },
     { 1227.600000, "##5", "GPS/QZSS L2C" },
-    { 1246.000000, "##6", "GLO L2OF" },
+  //{ 1246.000000, "##6", "GLO L2OF" }, // -7*0.4375=-3.0625 .. +6*0.4375=2.625 ==> 1242.9375 .. 1248.625
+    { 1242.937500, "##6lo", "GLO L2OF lo" },
+    { 1248.625000, "##6hi", "GLO L2OF hi" },
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -207,6 +211,7 @@ void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
 
                 const ImVec2 offs = ImGui::CalcTextSize(label.title.c_str());
                 ImPlot::PushStyleColor(ImPlotCol_InlayText, ImPlot::GetColormapColor(0));
+                // FIXME: label placement
                 ImPlot::PlotText(label.title.c_str(), freq, limits.Y.Min, true, ImVec2(offs.y, (-0.5f * offs.x) - 5.0f));
                 ImPlot::PopStyleColor();
             }

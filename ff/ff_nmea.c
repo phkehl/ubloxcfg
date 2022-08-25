@@ -32,7 +32,7 @@
 typedef struct MSG_INFO_s
 {
     char talker[3];     // = NMEA_MSG_t.talker
-    char formatter[8];  // = NMEA_MSG_t.formatter
+    char formatter[20]; // = NMEA_MSG_t.formatter
     int  payloadIx0;
     int  payloadIx1;
 
@@ -45,9 +45,10 @@ static bool sNmeaMessageInfo(MSG_INFO_t *info, const uint8_t *msg, const int msg
         return false;
     }
 
-    // 012345678901234567890123456789
-    // $GNGGA,...,...,...*xx\r\n
-    // $PUBX,nn*xx,...,...,...\r\n
+    // 012345678901234567890123456789       talker  formatter
+    // $GNGGA,...,...,...*xx\r\n        --> GN      GGA
+    // $PUBX,nn,...,...,...*xx\r\n      --> P       UBX
+    // $FP,SOMETHING,...,...,...*xx\r\n --> FP      SOMETHING
 
     // Talker ID
     int offs;
@@ -85,13 +86,31 @@ static bool sNmeaMessageInfo(MSG_INFO_t *info, const uint8_t *msg, const int msg
 
     int iIx;
     int oIx;
-    for (iIx = offs, oIx = 0; iIx < commaIx; iIx++, oIx++)
+    const int maxO = sizeof(info->formatter) - 1;
+    for (iIx = offs, oIx = 0; (iIx < commaIx) && (oIx < maxO); iIx++, oIx++)
     {
         info->formatter[oIx] = msg[iIx];
     }
     info->formatter[oIx] = '\0';
 
     info->payloadIx1 = msgSize - 5 - 1;
+
+    // FP proprietary has (something like) the formatter as the first message field
+    if ( (oIx == 0) && (info->talker[0] == 'F') && (info->talker[1] == 'P') && (info->formatter[0] == '\0') )
+    {
+        for (iIx = info->payloadIx0; oIx < maxO; oIx++, iIx++)
+        {
+            if (msg[iIx] != ',')
+            {
+                info->formatter[oIx] = msg[iIx];
+            }
+            else
+            {
+                break;
+            }
+        }
+        info->formatter[oIx] = '\0';
+    }
 
     return true;
 }
@@ -108,6 +127,7 @@ bool nmeaMessageName(char *name, const int size, const uint8_t *msg, const int m
     MSG_INFO_t nmeaInfo;
     if (sNmeaMessageInfo(&nmeaInfo, msg, msgSize))
     {
+        // u-blox proprietary
         if ( (nmeaInfo.talker[0] == 'P') && (nmeaInfo.formatter[0] == 'U') && (nmeaInfo.formatter[1] == 'B') && (nmeaInfo.formatter[2] == 'X') )
         {
             const char *pubx = NULL;
@@ -124,6 +144,7 @@ bool nmeaMessageName(char *name, const int size, const uint8_t *msg, const int m
             }
             return snprintf(name, size, "NMEA-PUBX-%s", pubx) < size;
         }
+        // Standard, other
         else
         {
             return snprintf(name, size, "NMEA-%s-%s", nmeaInfo.talker, nmeaInfo.formatter) < size;
@@ -436,6 +457,21 @@ static bool sStrToDbl(double *val, const char *str, const bool checkLo, const do
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+#define F_GGA_TIME    ( 1 - 1)
+#define F_GGA_LAT     ( 2 - 1)
+#define F_GGA_NS      ( 3 - 1)
+#define F_GGA_LON     ( 4 - 1)
+#define F_GGA_EW      ( 5 - 1)
+#define F_GGA_QUALITY ( 6 - 1)
+#define F_GGA_NUMSV   ( 7 - 1)
+#define F_GGA_HDOP    ( 8 - 1)
+#define F_GGA_ALT     ( 9 - 1)
+#define F_GGA_ALTUNIT (10 - 1)
+#define F_GGA_SEP     (11 - 1)
+#define F_GGA_SEPUNIT (12 - 1)
+#define F_GGA_DIFFAGE (13 - 1)
+#define F_GGA_DIFFSTA (14 - 1)
+
 static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
 {
     NMEA_DEBUG("sNmeaDecodeGga [%s] [%s]", talker, payload);
@@ -450,24 +486,24 @@ static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
 
     bool res = true;
 
-    if (fields[0][0] != '\0')
+    if (fields[F_GGA_TIME][0] != '\0')
     {
-        res = sStrToTime(&gga->time, fields[0]);
+        res = sStrToTime(&gga->time, fields[F_GGA_TIME]);
     }
 
-    if ( (fields[1][0] != '\0') && (fields[3][0] != '\0') && (fields[5][0] != '\0') )
+    if ( (fields[F_GGA_LAT][0] != '\0') && (fields[F_GGA_LON][0] != '\0') && (fields[F_GGA_QUALITY][0] != '\0') )
     {
-        if (!sStrToLat( &gga->lat, fields[1]) ||
-            !sStrToLon( &gga->lon, fields[3]) ||
-            !sStrToFix( &gga->fix, fields[5], NMEA_TYPE_GGA))
+        if (!sStrToLat( &gga->lat, fields[F_GGA_LAT]) ||
+            !sStrToLon( &gga->lon, fields[F_GGA_LON]) ||
+            !sStrToFix( &gga->fix, fields[F_GGA_QUALITY], NMEA_TYPE_GGA))
         {
             res = false;
         }
-        if (fields[2][0] == 'S')
+        if (fields[F_GGA_NS][0] == 'S')
         {
             gga->lat *= -1.0;
         }
-        if (fields[4][0] == 'W')
+        if (fields[F_GGA_EW][0] == 'W')
         {
             gga->lon *= -1.0;
         }
@@ -477,34 +513,34 @@ static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
         gga->fix = NMEA_FIX_NOFIX;
     }
 
-    if ( (fields[6][0] != '\0') && !sStrToInt(&gga->numSv, fields[6], true, 0, false, 0) )
+    if ( (fields[F_GGA_NUMSV][0] != '\0') && !sStrToInt(&gga->numSv, fields[F_GGA_NUMSV], true, 0, false, 0) )
     {
         res = false;
     }
 
-    if ( (fields[7][0] != '\0') && !sStrToDbl(&gga->hDOP, fields[7], true, 0.0, false, 0.0) )
+    if ( (fields[F_GGA_HDOP][0] != '\0') && !sStrToDbl(&gga->hDOP, fields[F_GGA_HDOP], true, 0.0, false, 0.0) )
     {
         res = false;
     }
 
-    if ( (fields[8][0] != '\0') && !sStrToDbl(&gga->height, fields[8], false, 0.0, false, 0.0) )
+    if ( (fields[F_GGA_ALT][0] != '\0') && !sStrToDbl(&gga->height, fields[F_GGA_ALT], false, 0.0, false, 0.0) )
     {
         res = false;
     }
 
-    if (fields[10][0] != '\0')
+    if (fields[F_GGA_SEP][0] != '\0')
     {
         double sep = 0.0;
-        if (!sStrToDbl(&sep, fields[10], false, 0.0, false, 0.0))
+        if (!sStrToDbl(&sep, fields[F_GGA_SEP], false, 0.0, false, 0.0))
         {
             res = false;
         }
         gga->heightMsl = gga->height - sep;
     }
 
-    if (fields[12][0] != '\0')
+    if (fields[F_GGA_DIFFAGE][0] != '\0')
     {
-        if (!sStrToDbl(&gga->diffAge, fields[12], true, 0, false, 0))
+        if (!sStrToDbl(&gga->diffAge, fields[F_GGA_DIFFAGE], true, 0, false, 0))
         {
             res = false;
         }
@@ -531,6 +567,20 @@ static bool sNmeaDecodeGga(NMEA_GGA_t *gga, char *payload, const char *talker)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+#define F_RMC_TIME      ( 1 - 1)
+#define F_RMC_STATUS    ( 2 - 1)
+#define F_RMC_LAT       ( 3 - 1)
+#define F_RMC_NS        ( 4 - 1)
+#define F_RMC_LON       ( 5 - 1)
+#define F_RMC_EW        ( 6 - 1)
+#define F_RMC_SPEED     ( 7 - 1)
+#define F_RMC_COG       ( 8 - 1)
+#define F_RMC_DATE      ( 9 - 1)
+#define F_RMC_MV        (10 - 1)
+#define F_RMC_MVEW      (11 - 1)
+#define F_RMC_POSMODE   (12 - 1)
+#define F_RMC_NAVSTATUS (13 - 1)
+
 static bool sNmeaDecodeRmc(NMEA_RMC_t *rmc, char *payload, const char *talker)
 {
     NMEA_DEBUG("sNmeaDecodeRmc [%s] [%s]", talker, payload);
@@ -545,32 +595,32 @@ static bool sNmeaDecodeRmc(NMEA_RMC_t *rmc, char *payload, const char *talker)
 
     bool res = true;
 
-    if (fields[0][0] != '\0')
+    if (fields[F_RMC_TIME][0] != '\0')
     {
-        res = sStrToTime(&rmc->time, fields[0]);
+        res = sStrToTime(&rmc->time, fields[F_RMC_TIME]);
     }
-    if (fields[8][0] != '\0')
+    if (fields[F_RMC_DATE][0] != '\0')
     {
-        res = sStrToDate(&rmc->date, fields[8]);
+        res = sStrToDate(&rmc->date, fields[F_RMC_DATE]);
     }
 
-    if ( (fields[2][0] != '\0') && (fields[4][0] != '\0') && (fields[11][0] != '\0') )
+    if ( (fields[F_RMC_LAT][0] != '\0') && (fields[F_RMC_LON][0] != '\0') && (fields[F_RMC_POSMODE][0] != '\0') )
     {
-        if (!sStrToLat( &rmc->lat, fields[2]) ||
-            !sStrToLon( &rmc->lon, fields[4]) ||
-            !sStrToFix( &rmc->fix, fields[11], NMEA_TYPE_RMC))
+        if (!sStrToLat( &rmc->lat, fields[F_RMC_LAT]) ||
+            !sStrToLon( &rmc->lon, fields[F_RMC_LON]) ||
+            !sStrToFix( &rmc->fix, fields[F_RMC_POSMODE], NMEA_TYPE_RMC))
         {
             res = false;
         }
-        if (fields[3][0] != 'N')
+        if (fields[F_RMC_NS][0] != 'N')
         {
             rmc->lat *= -1.0;
         }
-        if (fields[5][0] != 'E')
+        if (fields[F_RMC_EW][0] != 'E')
         {
             rmc->lon *= -1.0;
         }
-        if ( (nFields > 13) && (fields[12][0] != 'V') )
+        if ( (nFields > F_RMC_NAVSTATUS) && (fields[F_RMC_NAVSTATUS][0] != 'V') )
         {
             rmc->fix = NMEA_FIX_NOFIX; // FIXME: or what does != 'V' mean?
         }
@@ -580,32 +630,32 @@ static bool sNmeaDecodeRmc(NMEA_RMC_t *rmc, char *payload, const char *talker)
         rmc->fix = NMEA_FIX_NOFIX;
     }
 
-    rmc->valid = (fields[1][0] == 'A');
+    rmc->valid = (fields[F_RMC_STATUS][0] == 'A');
 
-    if (fields[6][0] != '\0')
+    if (fields[F_RMC_SPEED][0] != '\0')
     {
-        if (!sStrToDbl(&rmc->spd, fields[6], false, 0.0, false, 0.0))
+        if (!sStrToDbl(&rmc->spd, fields[F_RMC_SPEED], false, 0.0, false, 0.0))
         {
             res = false;
         }
     }
 
-    if (fields[7][0] != '\0')
+    if (fields[F_RMC_COG][0] != '\0')
     {
-        if (!sStrToDbl(&rmc->cog, fields[7], true, 0.0, true, 360.0))
+        if (!sStrToDbl(&rmc->cog, fields[F_RMC_COG], true, 0.0, true, 360.0))
         {
             res = false;
         }
     }
 
-    if (fields[9][0] != '\0')
+    if (fields[F_RMC_MV][0] != '\0')
     {
-        if (!sStrToDbl(&rmc->mv, fields[9], true, -180.0, true, 180.0))
+        if (!sStrToDbl(&rmc->mv, fields[F_RMC_MV], true, -180.0, true, 180.0))
         {
             res = false;
         }
     }
-    if (fields[10][0] == 'W')
+    if (fields[F_RMC_MVEW][0] == 'W')
     {
         rmc->mv *= -1.0;
     }
@@ -635,6 +685,14 @@ static bool sNmeaDecodeTxt(NMEA_TXT_t *txt, char *payload, const char *talker)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+#define F_GLL_LAT      (1 - 1)
+#define F_GLL_NS       (2 - 1)
+#define F_GLL_LON      (3 - 1)
+#define F_GLL_EW       (4 - 1)
+#define F_GLL_TIME     (5 - 1)
+#define F_GLL_STATUS   (6 - 1)
+#define F_GLL_POSMODE  (7 - 1)
+
 static bool sNmeaDecodeGll(NMEA_GLL_t *gll, char *payload, const char *talker)
 {
     UNUSED(talker);
@@ -649,24 +707,24 @@ static bool sNmeaDecodeGll(NMEA_GLL_t *gll, char *payload, const char *talker)
 
     bool res = true;
 
-    if (fields[4][0] != '\0')
+    if (fields[F_GLL_TIME][0] != '\0')
     {
-        res = sStrToTime(&gll->time, fields[4]);
+        res = sStrToTime(&gll->time, fields[F_GLL_TIME]);
     }
 
-    if ( (fields[0][0] != '\0') && (fields[2][0] != '\0') && (fields[6][0] != '\0') )
+    if ( (fields[F_GLL_LAT][0] != '\0') && (fields[F_GLL_LON][0] != '\0') && (fields[F_GLL_POSMODE][0] != '\0') )
     {
-        if (!sStrToLat( &gll->lat, fields[0]) ||
-            !sStrToLon( &gll->lon, fields[2]) ||
-            !sStrToFix( &gll->fix, fields[6], NMEA_TYPE_RMC))
+        if (!sStrToLat( &gll->lat, fields[F_GLL_LAT]) ||
+            !sStrToLon( &gll->lon, fields[F_GLL_LON]) ||
+            !sStrToFix( &gll->fix, fields[F_GLL_POSMODE], NMEA_TYPE_RMC))
         {
             res = false;
         }
-        if (fields[1][0] != 'N')
+        if (fields[F_GLL_NS][0] != 'N')
         {
             gll->lat *= -1.0;
         }
-        if (fields[3][0] != 'E')
+        if (fields[F_GLL_EW][0] != 'E')
         {
             gll->lon *= -1.0;
         }
@@ -676,7 +734,7 @@ static bool sNmeaDecodeGll(NMEA_GLL_t *gll, char *payload, const char *talker)
         gll->fix = NMEA_FIX_NOFIX;
     }
 
-    gll->valid = (fields[5][0] == 'A');
+    gll->valid = (fields[F_GLL_STATUS][0] == 'A');
 
     return res;
 }

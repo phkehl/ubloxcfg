@@ -284,8 +284,8 @@
                 {
                     "name": "debug test_m64",
                     "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask" : "make test_m32-debug",
+                    "stopAtEntry": true,
+                    "preLaunchTask" : "make test_m64-debug",
                     "program": "${workspaceFolder}/output/test_m64-debug",
                     "args": [ ],
                     "cwd": "${workspaceFolder}"
@@ -314,7 +314,7 @@
                     "stopAtEntry": false,
                     "preLaunchTask" : "make cfgtool-debug",
                     "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-i", "tmp/somelog", "parse", "-x", "-e" ],
+                    "args": [ "-v", "-i", "tmp/fplog1", "parse", "-x", "-e" ],
                     "cwd": "${workspaceFolder}"
                 },
                 {
@@ -326,7 +326,7 @@
                     "args": [ ],
                     "cwd": "${workspaceFolder}",
                     "setupCommands": [
-                        { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true },
+                        // broken.. :-/  { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true },
                         { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true },
                         //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
                         // "-exec info skip" to show in debug console

@@ -1,0 +1,6 @@
+width=4 poly=0x9 init=0x0 refin=true refout=true xorout=0x0 check=0x0 residue=0x0 name="FF-SPARTN-4"
+width=8 poly=0x07 init=0x00 refin=false refout=false xorout=0x0 check=0x0 residue=0x0 name="FF-SPARTN-8"
+width=16 poly=0x1021 init=0x0000 refin=false refout=false xorout=0x0000 check=0x0000 residue=0x0000 name="FF-SPARTN-16"
+width=24 poly=0x864cfb init=0x000000 refin=false refout=false xorout=0x000000 check=0x000000 residue=0x000000 name="FF-SPARTN-24"
+width=32 poly=0x04c11db7 init=0xffffffff refin=false refout=false xorout=0xffffffff check=0x00000000 residue=0x000000 name="FF-SPARTN-32"
+width=32 poly=0x04c11db7 init=0x00000000 refin=true refout=false xorout=0x00000000 check=0x00000000 residue=0x000000 name="FF-NOVATEL-32"

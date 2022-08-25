@@ -175,8 +175,14 @@ bool rtcm3typeToMsm(int msgType, RTCM3_MSM_GNSS_t *gnss, RTCM3_MSM_TYPE_t *msm)
          ( (gnssVal == RTCM3_MSM_GNSS_GPS)  || (gnssVal == RTCM3_MSM_GNSS_GLO)  || (gnssVal == RTCM3_MSM_GNSS_GAL) ||
            (gnssVal == RTCM3_MSM_GNSS_SBAS) || (gnssVal == RTCM3_MSM_GNSS_QZSS) || (gnssVal == RTCM3_MSM_GNSS_BDS) ) )
     {
-        *msm  = (RTCM3_MSM_TYPE_t)msmVal;
-        *gnss = (RTCM3_MSM_GNSS_t)gnssVal;
+        if (msm != NULL)
+        {
+            *msm  = (RTCM3_MSM_TYPE_t)msmVal;
+        }
+        if (gnss != NULL)
+        {
+            *gnss = (RTCM3_MSM_GNSS_t)gnssVal;
+        }
         return true;
     }
     else

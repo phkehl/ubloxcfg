@@ -101,6 +101,7 @@ void GuiWinDataSignals::Count::Add(const EPOCH_SIGINFO_t *sig)
 
 void GuiWinDataSignals::_UpdateSignals()
 {
+    _table.ClearRows();
     _sigInfo.clear();
     _countAll.Reset();
     _countGps.Reset();
@@ -167,8 +168,6 @@ void GuiWinDataSignals::_UpdateSignals()
 
 
     // Populate table
-    _table.ClearRows();
-
     uint32_t prevSat = 0xffffffff;
     for (auto &sig: _sigInfo)
     {
@@ -280,7 +279,7 @@ void GuiWinDataSignals::_DrawToolbar()
             Gui::ItemTooltip("Showing all signals");
             break;
         case EPOCH_SIGUSE_ACQUIRED:
-        case EPOCH_SIGUSE_UNUSED:
+        case EPOCH_SIGUSE_UNUSABLE:
         case EPOCH_SIGUSE_CODELOCK:
         case EPOCH_SIGUSE_CARRLOCK:
             if (ImGui::Button(ICON_FK_CIRCLE_O "###MinSigUse", GuiSettings::iconSize))

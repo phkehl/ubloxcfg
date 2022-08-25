@@ -115,6 +115,7 @@ void GuiWinDataSatellites::Count::Add(const SatInfo &sat)
 
 void GuiWinDataSatellites::_UpdateSatellites()
 {
+    _table.ClearRows();
     _satInfo.clear();
     _countAll.Reset();
     _countGps.Reset();
@@ -181,7 +182,6 @@ void GuiWinDataSatellites::_UpdateSatellites()
     _countQzss.Update();
 
     // Populate table
-    _table.ClearRows();
     for (auto &sat: _satInfo)
     {
         _table.AddCellText(sat.satInfo.svStr);

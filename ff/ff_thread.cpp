@@ -51,7 +51,7 @@ Ff::Thread::~Thread()
 
 bool Ff::Thread::Start()
 {
-    bool res = true;
+    bool res = false;
     Stop();
     try
     {

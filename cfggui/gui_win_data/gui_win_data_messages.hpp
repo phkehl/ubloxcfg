@@ -86,7 +86,7 @@ class GuiWinDataMessages : public GuiWinData
             uint8_t                   clsId;
             uint8_t                   msgId;
         };
-        std::unordered_map<std::string, std::vector<MsgRate>> _msgRates; // FIXME: make static?
+        std::map<std::string, std::vector<MsgRate>> _msgRates; // FIXME: make static?
         struct MsgPoll
         {
             MsgPoll(const uint8_t _clsId, const uint8_t _msgId);

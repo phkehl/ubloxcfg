@@ -178,10 +178,6 @@ extern "C" {
 #define UBX_RXM_QZSSL6_MSGID         0x73
 #define UBX_RXM_SPARTNKEY_MSGID      0x36
 
-
-#define UBX_SEC_CLSID                0x27
-#define UBX_SEC_UNIQUEID_MSGID       0x03
-
 #define UBX_TIM_CLSID                0x0d
 #define UBX_TIM_SVIN_MSGID           0x04
 #define UBX_TIM_TM2_MSGID            0x03
@@ -330,7 +326,6 @@ extern "C" {
     _P_(UBX_RXM_CLSID, UBX_RXM_PMP_MSGID,         "UBX-RXM-PMP") \
     _P_(UBX_RXM_CLSID, UBX_RXM_QZSSL6_MSGID,      "UBX-RXM-QZSSL6") \
     _P_(UBX_RXM_CLSID, UBX_RXM_SPARTNKEY_MSGID,   "UBX-RXM-SPARTNKEY") \
-    _P_(UBX_SEC_CLSID, UBX_SEC_UNIQUEID_MSGID,    "UBX-SEC-UNIQUEID") \
     _P_(UBX_TIM_CLSID, UBX_TIM_SVIN_MSGID,        "UBX-TIM-SVIN") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TM2_MSGID,         "UBX-TIM-TM2") \
     _P_(UBX_TIM_CLSID, UBX_TIM_TP_MSGID,          "UBX-TIM-TP") \
@@ -1138,6 +1133,25 @@ typedef struct UBX_NAV_TIMELS_V0_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+//! UBX-NAV-CLOCK payload
+typedef struct UBX_NAV_CLOCK_V0_GROUP0_s
+{
+    uint32_t iTow;
+    int32_t  clkB;
+    int32_t  clkD;
+    uint32_t tAcc;
+    uint32_t fAcc;
+} UBX_NAV_CLOCK_V0_GROUP0_t;
+
+#define UBX_NAV_CLOCK_V0_CLKB_SCALE                 1e-9
+#define UBX_NAV_CLOCK_V0_CLKD_SCALE                 1e-9
+#define UBX_NAV_CLOCK_V0_TACC_SCALE                 1e-9
+#define UBX_NAV_CLOCK_V0_FACC_SCALE                 1e-12
+
+#define UBX_NAV_CLOCK_V0_SIZE    ((int)(sizeof(UBX_NAV_CLOCK_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 #define UBX_NAV_SAT_VERSION_GET(msg)    (((uint8_t *)(msg))[UBX_HEAD_SIZE + sizeof(uint32_t)])
 
 //! UBX-NAV-SAT (version 1, output) payload head
@@ -1821,6 +1835,16 @@ const char *ubxSvStr(const uint8_t gnssId, const uint8_t svId);
 const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId);
 
 bool ubxMonVerToVerStr(char *str, const int size, const uint8_t *msg, const int msgSize);
+
+//! Stringify UBX-RXM-SFRBX
+/*!
+    \param[in,out]  info     String
+    \param[in]      size     Maximum size of string (incl. nul termination)
+    \param[in]      msg      The UBX-RXM-SFRBX message
+    \param[in]      msgSize  Size of the UBX-RXM-SFRBX message
+    \returns the length of the string generated (excl. nul termination)
+*/
+int ubxRxmSfrbxInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

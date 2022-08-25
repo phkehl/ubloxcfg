@@ -76,6 +76,46 @@ extern "C" {
     _P_(NOVATEL_INSPVA_MSGID,           "INSPVA") \
     _P_(NOVATEL_BESTGNSSPOS_MSGID,      "BESTGNSSPOS")
 
+typedef struct NOVATEL_HEADER_LONG_s
+{
+    uint8_t  sync1;
+    uint8_t  sync2;
+    uint8_t  sync3;
+    uint8_t  headerLen;
+    uint16_t msgId;
+    uint8_t  msgType;
+    uint8_t  portAddr;
+    uint16_t msgLen;
+    uint16_t seq;
+    uint8_t  idleTime;
+    uint8_t  timeStatus;
+    uint16_t gpsWeek;
+    uint32_t gpsTowMs;
+    uint32_t rxStatus;
+    uint16_t reserved;
+    uint16_t swVersion;
+} NOVATEL_HEADER_LONG_t;
+
+typedef struct NOVATEL_HEADER_SHORT_s
+{
+    uint8_t  sync1;
+    uint8_t  sync2;
+    uint8_t  sync3;
+    uint8_t  msgLen;
+    uint16_t msgId;
+    uint16_t gpsWeek;
+    uint32_t gpsTowMs;
+} NOVATEL_HEADER_SHORT_t;
+
+typedef struct NOVATEL_RAWDMI_PAYLOAD_s
+{
+    int32_t dmi1;
+    int32_t dmi2;
+    int32_t dmi3;
+    int32_t dmi4;
+    int32_t mask;
+} NOVATEL_RAWDMI_PAYLOAD_t;
+
 bool novatelMessageName(char *name, const int size, const uint8_t *msg, const int msgSize);
 bool novatelMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize);
 

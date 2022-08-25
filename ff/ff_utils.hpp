@@ -37,7 +37,7 @@ namespace Ff
     std::string Strftime(const char * const fmt, const int64_t ts = 0, const bool utc = false);
 
     // String search & replace
-    int StrReplace(std::string &str, const std::string &search, const std::string &replace);
+    int StrReplace(std::string &str, const std::string &search, const std::string &replace, const int max = 0);
 
     // Trim string
     void StrTrimLeft(std::string &str);

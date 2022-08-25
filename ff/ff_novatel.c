@@ -63,13 +63,54 @@ bool novatelMessageName(char *name, const int size, const uint8_t *msg, const in
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+static int _strNovatelRawdmi(char *info, const int size, const uint8_t *msg, const int msgSize);
+
 bool novatelMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
-    UNUSED(info);
-    UNUSED(size);
-    UNUSED(msg);
-    UNUSED(msgSize);
-    return false;
+    if ( (info == NULL) || (size < 1) )
+    {
+        return false;
+    }
+    if ( (msg == NULL) || (msgSize < 6) )
+    {
+        info[0] = '\0';
+        return false;
+    }
+
+    const uint16_t msgId = NOVATEL_MSGID(msg);
+    int len = 0;
+    switch (msgId)
+    {
+        case NOVATEL_RAWDMI_MSGID:
+            len = _strNovatelRawdmi(info, size, msg, msgSize);
+            break;
+    }
+
+    return (len > 0) && (len < size);
+}
+
+#define _CHKSIZE(_type_) \
+    ( ((msg[2] == NOVATEL_SYNC_3_LONG)  && (msgSize == (sizeof(NOVATEL_HEADER_LONG_t)  + sizeof(_type_) + 4))) || \
+      ((msg[2] == NOVATEL_SYNC_3_SHORT) && (msgSize == (sizeof(NOVATEL_HEADER_SHORT_t) + sizeof(_type_) + 4))) )
+
+#define _PAYLOAD(_type_, _dst_) \
+    _type_ _dst_; \
+    memcpy(&_dst_, &msg[ msg[2] == NOVATEL_SYNC_3_LONG ? sizeof(NOVATEL_HEADER_LONG_t) : sizeof(NOVATEL_HEADER_SHORT_t) ], sizeof(_dst_))
+
+static int _strNovatelRawdmi(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    int len = 0;
+    if (_CHKSIZE(NOVATEL_RAWDMI_PAYLOAD_t))
+    {
+        _PAYLOAD(NOVATEL_RAWDMI_PAYLOAD_t, dmi);
+        len = snprintf(info, size, "[%c]=%d [%c]=%d [%c]=%d [%c]=%d",
+            CHKBITS(dmi.mask, BIT(0)) ? '1' : '.', dmi.dmi1,
+            CHKBITS(dmi.mask, BIT(1)) ? '2' : '.', dmi.dmi2,
+            CHKBITS(dmi.mask, BIT(2)) ? '3' : '.', dmi.dmi3,
+            CHKBITS(dmi.mask, BIT(3)) ? '4' : '.', dmi.dmi3);
+    }
+
+    return len;
 }
 
 /* ****************************************************************************************************************** */

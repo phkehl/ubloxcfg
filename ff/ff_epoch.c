@@ -587,7 +587,7 @@ static EPOCH_SIGUSE_t _ubxSigUse(const uint8_t qualityInd)
     {
         case UBX_NAV_SIG_V0_QUALITYIND_SEARCH:    return EPOCH_SIGUSE_SEARCH;
         case UBX_NAV_SIG_V0_QUALITYIND_ACQUIRED:  return EPOCH_SIGUSE_ACQUIRED;
-        case UBX_NAV_SIG_V0_QUALITYIND_UNUSED:    return EPOCH_SIGUSE_UNUSED;
+        case UBX_NAV_SIG_V0_QUALITYIND_UNUSED:    return EPOCH_SIGUSE_UNUSABLE;
         case UBX_NAV_SIG_V0_QUALITYIND_CODELOCK:  return EPOCH_SIGUSE_CODELOCK;
         case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK1:
         case UBX_NAV_SIG_V0_QUALITYIND_CARRLOCK2:
@@ -603,7 +603,7 @@ static const char * const kEpochSiqUseStrs[] =
     [EPOCH_SIGUSE_NONE]     = "NONE",
     [EPOCH_SIGUSE_SEARCH]   = "SEARCH",
     [EPOCH_SIGUSE_ACQUIRED] = "ACQUIRED",
-    [EPOCH_SIGUSE_UNUSED]   = "UNUSED",
+    [EPOCH_SIGUSE_UNUSABLE] = "UNUSABLE",
     [EPOCH_SIGUSE_CODELOCK] = "CODELOCK",
     [EPOCH_SIGUSE_CARRLOCK] = "CARRLOCK",
 };
@@ -1063,6 +1063,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                     case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
                 }
                 coll->fixOk = true;
+                coll->haveFix = true;
             }
             if ( (nmea->gga.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_BETTER_NMEA) )
             {
@@ -1079,14 +1080,13 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                 coll->diffAge = nmea->gga.diffAge;
                 coll->haveDiffAge = true;
             }
-
             if (!coll->haveNumSv)
             {
                 coll->numSv       = nmea->gga.numSv;
                 coll->haveNumSv   = true;
             }
-
             break;
+
         case NMEA_TYPE_RMC:
             EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveTime < HAVE_NMEA)
@@ -1120,6 +1120,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                     case NMEA_FIX_RTK_FIXED: coll->fix = EPOCH_FIX_RTK_FIXED; break;
                 }
                 coll->fixOk = nmea->rmc.valid;
+                coll->haveFix = true;
             }
             if ( (nmea->rmc.fix > NMEA_FIX_NOFIX) && (collect->haveLlh < HAVE_NMEA) )
             {
@@ -1131,6 +1132,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                 coll->haveMsl     = false;
             }
             break;
+
         case NMEA_TYPE_GLL:
             EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveTime < HAVE_NMEA)
@@ -1168,6 +1170,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                 coll->haveMsl     = false;
             }
             break;
+
         case NMEA_TYPE_GSV:
             EPOCH_DEBUG("collect %s %s", nmea->talker, nmea->formatter);
             if (collect->haveSat <= HAVE_NMEA) // multiple NMEA-Gx-GSV messages!
@@ -1216,7 +1219,6 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
         case NMEA_TYPE_NONE:
         case NMEA_TYPE_TXT:
             break;
-
     }
 }
 
