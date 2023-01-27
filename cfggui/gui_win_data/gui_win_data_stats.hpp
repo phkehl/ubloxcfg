@@ -20,6 +20,7 @@
 
 #include "gui_win_data.hpp"
 #include "gui_widget_table.hpp"
+#include "gui_widget_tabbar.hpp"
 
 /* ***** Statistics ************************************************************************************************* */
 
@@ -28,12 +29,13 @@ class GuiWinDataStats : public GuiWinData
     public:
         GuiWinDataStats(const std::string &name, std::shared_ptr<Database> database);
 
-    protected:
+    private:
 
         void _ProcessData(const InputData &data) final;
         void _DrawContent() final;
         void _ClearData() final;
 
+        GuiWidgetTabbar _tabbar;
         GuiWidgetTable _table;
 
         typedef std::function<const Database::Stats (const Database::EpochStats &)> StatsGetter;
@@ -48,6 +50,8 @@ class GuiWinDataStats : public GuiWinData
         };
 
         std::vector<Row> _rows;
+
+        void _DrawSiglevelPlot();
 };
 
 /* ****************************************************************************************************************** */

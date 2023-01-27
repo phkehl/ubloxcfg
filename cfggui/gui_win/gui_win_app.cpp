@@ -51,7 +51,11 @@ void GuiWinAppAbout::DrawWindow()
     }
 
     ImGui::PushFont(GuiSettings::fontBold);
-    Gui::TextTitle(         "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")");
+    Gui::TextTitle(         "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")"
+#ifdef FF_BUILD_DEBUG
+        " -- debug"
+#endif
+    );
     ImGui::PopFont();
 
     ImGui::PushFont(GuiSettings::fontSans);

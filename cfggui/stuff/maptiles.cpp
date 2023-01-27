@@ -510,6 +510,7 @@ bool MapTiles::_DownloadTile(const std::string &url, const std::string &path, ui
         // Check if data is valid image data
         int width = 0;
         int height = 0;
+        stbi_set_flip_vertically_on_load(false);
         uint8_t *imageData = stbi_load_from_memory(data.data(), (int)data.size(), &width, &height, NULL, 4);
         if (imageData == NULL)
         {

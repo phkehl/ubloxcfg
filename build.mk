@@ -247,7 +247,7 @@ $(OUTPUTDIR):
 
 .PHONY: clean
 clean:
-	$(V)$(RM) -rf $(BUILDDIR) $(OUTPUTDIR) core
+	$(V)$(RM) -rf $(BUILDDIR) $(OUTPUTDIR) core core.*
 
 .PHONY: debugmf
 debugmf:

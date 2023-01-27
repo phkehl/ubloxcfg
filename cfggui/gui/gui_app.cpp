@@ -712,12 +712,13 @@ void GuiApp::ConfirmClose(bool &display, bool &done)
         ImGui::Text("All connections will be shut down.\nAll data will be lost.\n");
         ImGui::Separator();
 
+        ImGui::SetKeyboardFocusHere();
         if (ImGui::Button(ICON_FK_CHECK " OK", ImVec2(120, 0)))
         {
             ImGui::CloseCurrentPopup();
             done = true;
         }
-        ImGui::SetItemDefaultFocus();
+        //ImGui::SetItemDefaultFocus();
         ImGui::SameLine();
         if (ImGui::Button(ICON_FK_TIMES " Cancel", ImVec2(120, 0)))
         {
@@ -817,17 +818,18 @@ void GuiApp::_DrawDebugWin()
 
                 if (ImPlot::BeginPlot("##Performance", plotSize1, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus))
                 {
-                    ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100, ImGuiCond_Once);
-                    ImPlot::SetupAxisLimits(ImAxis_X1, 0, _perfData[0].data.size(), ImGuiCond_Always);
+                    ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0005, 100.0, ImGuiCond_Once);
+                    ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, _perfData[0].data.size(), ImGuiCond_Always);
                     ImPlot::SetupLegend(ImPlotLocation_South, ImPlotLegendFlags_Horizontal);
                     ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels);
-                    ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_LockMin | ImPlotAxisFlags_LogScale);
+                    ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_LockMin);
+                    ImPlot::SetupAxisScale(ImAxis_Y1, ImPlotScale_Log10);
                     ImPlot::SetupFinish();
                     for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
                     {
                         PerfData *pd = &_perfData[plots[plotIx].perf];
                         // PlotLineG, PlotStairsG
-                        ImPlot::PlotLineG(plots[plotIx].label, [](void *arg, int ix)
+                        ImPlot::PlotLineG(plots[plotIx].label, [](int ix, void *arg)
                             {
                                 const PerfData *perf = (PerfData *)arg;
                                 return ImPlotPoint( ix, perf->data[ (perf->ix + ix) % perf->data.size() ] );
@@ -846,7 +848,7 @@ void GuiApp::_DrawDebugWin()
                         ImPlot::SetupFinish();
                         PerfData &pd = _perfData[plots[plotIx].perf];
                         ImPlot::SetNextFillStyle(ImPlot::GetColormapColor(plotIx));
-                        ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.data.size(), ImPlotBin_Sturges, false, false, range, true, 0.8);
+                        ImPlot::PlotHistogram(plots[plotIx].label, pd.data.data(), pd.data.size(), ImPlotBin_Sturges, 0.8, range);
                         ImPlot::EndPlot();
                     }
                     if (plotIx < (NUMOF(plots) - 1))
@@ -1090,6 +1092,17 @@ void GuiApp::_DrawMatrixConfig()
     ImGui::Checkbox(   "Rotate",       &_matrixOpts.doRotate);
     ImGui::Checkbox(   "Debug grid",   &_matrixOpts.debugGrid);
     ImGui::Checkbox(   "Debug frames", &_matrixOpts.debugFrames);
+    ImGui::PushItemWidth(GuiSettings::charSize.x * 40);
+    ImColor colour((int)_matrixOpts.colour[0], (int)_matrixOpts.colour[1], (int)_matrixOpts.colour[2]);
+    if (ImGui::ColorEdit4("Colour", &colour.Value.x,
+            ImGuiColorEditFlags_NoAlpha | ImGuiColorEditFlags_NoOptions | ImGuiColorEditFlags_NoInputs))
+    {
+        _matrixOpts.colour[0] = colour.Value.x * 255.0f;
+        _matrixOpts.colour[1] = colour.Value.y * 255.0f;
+        _matrixOpts.colour[2] = colour.Value.z * 255.0f;
+    }
+    ImGui::PopItemWidth();
+
     if (ImGui::Button("Defaults"))
     {
         _matrixOpts = GlMatrix::Options();

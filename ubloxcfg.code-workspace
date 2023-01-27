@@ -155,7 +155,7 @@
         "recommendations": [
             "ms-vscode.cpptools",
             "mhutchie.git-graph",
-            "eamodio.gitlens"
+            "maattdd.gitless"
         ],
         "unwantedRecommendations": [
             "austin.code-gnu-global", // conflicts with "ms-vscode.cpptools" (?)
@@ -326,7 +326,7 @@
                     "args": [ ],
                     "cwd": "${workspaceFolder}",
                     "setupCommands": [
-                        // broken.. :-/  { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true },
+                        { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true }, // needs setup code in ~/.gdbinit!
                         { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true },
                         //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
                         // "-exec info skip" to show in debug console

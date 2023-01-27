@@ -299,7 +299,14 @@ typedef struct EPOCH_SATINFO_s
     uint32_t          _order;
 } EPOCH_SATINFO_t;
 
+
+// CNo histogram
+// ix    0    1     2      3      4      5      6      7      8      9     10      11
+// cno  0-4  5-9  10-14  15-19  20-24  25-29  30-34  35-39  40-44  45-49  50-44  55-...
 #define EPOCH_SIGCNOHIST_NUM 12
+#define EPOCH_SIGCNOHIST_CNO2IX(cno)   ( (cno) > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (cno > 0 ? ((cno) / 5)  : 0) );
+#define EPOCH_SIGCNOHIST_IX2CNO_L(ix)  ((ix) * 5)
+#define EPOCH_SIGCNOHIST_IX2CNO_H(ix)  (EPOCH_SIGCNOHIST_IX2CNO_L((ix) + 1) - 1)
 
 //! Navigation epoch data
 typedef struct EPOCH_s

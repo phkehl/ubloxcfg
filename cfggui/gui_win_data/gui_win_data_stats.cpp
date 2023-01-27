@@ -24,7 +24,8 @@
 /* ****************************************************************************************************************** */
 
 GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Database> database) :
-    GuiWinData(name, database)
+    GuiWinData(name, database),
+    _tabbar { WinName(), ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton }
 {
     _winSize = { 80, 25 };
 
@@ -112,7 +113,6 @@ void GuiWinDataStats::_ProcessData(const InputData &data)
 void GuiWinDataStats::_ClearData()
 {
     _table.ClearRows();
-
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -128,7 +128,88 @@ GuiWinDataStats::Row::Row(const char *_label, StatsGetter _getter, ValFormatter 
 
 void GuiWinDataStats::_DrawContent()
 {
-    _table.DrawTable();
+    bool drawPosition = false;
+    bool drawSignal = false;
+    if (_tabbar.Begin())
+    {
+        if (_tabbar.Item("Position"))
+        {
+            drawPosition = true;
+        }
+        if (_tabbar.Item("Signal levels"))
+        {
+            drawSignal = true;
+        }
+        _tabbar.End();
+    }
+    if (drawPosition)
+    {
+        _table.DrawTable();
+    }
+    if (drawSignal)
+    {
+        _DrawSiglevelPlot();
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataStats::_DrawSiglevelPlot()
+{
+    if (ImPlot::BeginPlot("##SignalLevels", ImVec2(-1,-1), ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus /*| ImPlotFlags_NoLegend*/))
+    {
+        // Data
+        const auto stats = _database->GetStats();
+        const auto &cnoNav = stats.cnoNav;
+        const auto &cnoTrk = stats.cnoTrk;
+        constexpr float binWidth = 4.5f;
+
+        // Configure plot
+        ImPlot::SetupAxis(ImAxis_X1, "Signal level [dbHz]", ImPlotAxisFlags_NoHighlight);
+        ImPlot::SetupAxis(ImAxis_Y1, "Number of signals", ImPlotAxisFlags_NoHighlight);
+        ImPlot::SetupAxisLimits(ImAxis_X1, 0.0f, 55.0f, ImGuiCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0f, 25.0f, ImGuiCond_Always);
+        ImPlot::SetupFinish();
+
+        constexpr const char *labelTrk = "Tracked (max/mean/std)";
+        constexpr const char *labelNav = "Used    (max/mean/std)";
+
+        // Maxima
+        ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_UNUSED));
+        ImPlot::PlotStairs(labelTrk, cnoTrk.cnosLo.data(), cnoTrk.maxs.data(), cnoTrk.count);
+        ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_USED));
+        ImPlot::PlotStairs(labelNav, cnoNav.cnosLo.data(), cnoNav.maxs.data(), cnoNav.count);
+
+        // On plot per bin, so that we can cycle through the colourmap. Per bin plot #tracked on top of that #used.
+        for (int ix = 0; ix < cnoNav.count; ix++)
+        {
+            ImPlot::SetNextFillStyle(GUI_COLOUR4(SIGNAL_UNUSED));
+            ImPlot::PlotBars(labelTrk, &cnoTrk.cnosMi[ix], &cnoTrk.means[ix], 1, binWidth);
+
+            ImPlot::SetNextFillStyle(GUI_COLOUR4(SIGNAL_00_05 + ix));
+            ImPlot::PlotBars(labelNav, &cnoNav.cnosMi[ix], &cnoNav.means[ix], 1, binWidth);
+
+            if (cnoNav.means[ix] > 0.0f)
+            {
+                ImPlot::SetNextErrorBarStyle(GUI_COLOUR4(SIGNAL_USED), 15.0f, 3.0f);
+                ImPlot::PlotErrorBars(labelNav, &cnoNav.cnosMi[ix], &cnoNav.means[ix], &cnoNav.stds[ix], 1);
+            }
+
+            if (cnoTrk.means[ix] > 0.0f)
+            {
+                ImPlot::SetNextErrorBarStyle(GUI_COLOUR4(SIGNAL_UNUSED), 10.0f, 2.0f);
+                ImPlot::PlotErrorBars(labelTrk, &cnoTrk.cnosMi[ix], &cnoTrk.means[ix], &cnoTrk.stds[ix], 1);
+            }
+        }
+
+        // Last plot determines colour shown in the legend
+        ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_UNUSED));
+        ImPlot::PlotDummy(labelTrk);
+        ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_USED));
+        ImPlot::PlotDummy(labelNav);
+
+        ImPlot::EndPlot();
+    }
 }
 
 /* ****************************************************************************************************************** */

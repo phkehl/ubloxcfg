@@ -163,7 +163,7 @@ bool NtripClient::Connect()
     //
     // NTRIP v2
     //   > GET /mountPt HTTP/1.1\r\n
-    //   > Host: theCaster.com:2101\r\n
+    //   > Host: theCaster.com\r\n
     //   > Ntrip-Version: Ntrip/2.0\r\n
     //   > User-Agent: NTRIP theSoftware/theRevision\r\n
     //   > Authorization: dXNlcjpwYXNzd29yZA==\r\n
@@ -220,7 +220,8 @@ bool NtripClient::Connect()
             {
                 *crlf = '\0';
                 NTRIP_DEBUG("response: %s", (const char *)resp);
-                if (strcmp("ICY 200 OK", (const char *)resp) == 0)
+                if ((strcmp("ICY 200 OK", (const char *)resp) == 0) ||
+                    (strcmp("HTTP/1.1 200 OK", (const char *)resp) == 0))
                 {
                     connected = true;
                 }

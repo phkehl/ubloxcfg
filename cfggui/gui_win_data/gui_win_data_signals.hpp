@@ -64,9 +64,11 @@ class GuiWinDataSignals : public GuiWinData
         GuiWidgetTable       _table;
         GuiWidgetTabbar      _tabbar;
         std::map<uint32_t, bool> _selSigs;
+        std::vector<GuiWidgetTable::SortInfo> _sortInfo;
 
         void _UpdateSignals();
         void _DrawSignalLevelCb(void *arg);
+        void _SortSignals(const std::vector<GuiWidgetTable::SortInfo> info);
 };
 
 /* ****************************************************************************************************************** */

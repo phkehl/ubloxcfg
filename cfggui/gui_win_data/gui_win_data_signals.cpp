@@ -42,13 +42,14 @@ GuiWinDataSignals::GuiWinDataSignals(const std::string &name, std::shared_ptr<Da
     _table.AddColumn("SV");
     _table.AddColumn("Signal");
     _table.AddColumn("Bd.");
-    _table.AddColumn("Level");
+    _table.AddColumn("Level", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE);
     _table.AddColumn("Use");
     _table.AddColumn("Iono");
     _table.AddColumn("Health");
     _table.AddColumn("Used");
     _table.AddColumn("PR res.");
     _table.AddColumn("Corrections");
+    _table.SetTableSortFunc(std::bind(&GuiWinDataSignals::_SortSignals, this, std::placeholders::_1));
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -138,23 +139,44 @@ void GuiWinDataSignals::_UpdateSignals()
         }
     }
 
-    // Sort searching signals to the end
-    if (_minSigUse <= EPOCH_SIGUSE_SEARCH)
+    // Sort
+    // We only support unsorted (resp. as sorted in the epoch struct) and sorted by signal level
+    if (_sortInfo.size() > 0) // i.e. sort by signal level
     {
-        std::sort(_sigInfo.begin(), _sigInfo.end(), [](const EPOCH_SIGINFO_t &a, const EPOCH_SIGINFO_t &b)
+        const bool asc = (_sortInfo[0].order == GuiWidgetTable::SortOrder::ASC);
+        std::sort(_sigInfo.begin(), _sigInfo.end(), [&asc](const EPOCH_SIGINFO_t &a, const EPOCH_SIGINFO_t &b)
         {
-            // First, sort by signal quality groups (none/searching <--> tracked/used)
-            if ( (a.use > EPOCH_SIGUSE_SEARCH) && (b.use <= EPOCH_SIGUSE_SEARCH) )
+            if (std::abs(a.cno - b.cno) < 0.001)
             {
-                return true; // a before b
+                return a._order < b._order;
             }
-            if ( (a.use <= EPOCH_SIGUSE_SEARCH) && (b.use > EPOCH_SIGUSE_SEARCH) )
+            else
             {
-                return false; // b before a
+                return asc ? a.cno > b.cno : a.cno < b.cno;
             }
-            // Second, sort by order from EPOCH_t (GNSS, SV, signal)
-            return a._order < b._order;
         });
+    }
+
+    // Sort searching signals to the end
+    else
+    {
+        if (_minSigUse <= EPOCH_SIGUSE_SEARCH)
+        {
+            std::sort(_sigInfo.begin(), _sigInfo.end(), [](const EPOCH_SIGINFO_t &a, const EPOCH_SIGINFO_t &b)
+            {
+                // First, sort by signal quality groups (none/searching <--> tracked/used)
+                if ( (a.use > EPOCH_SIGUSE_SEARCH) && (b.use <= EPOCH_SIGUSE_SEARCH) )
+                {
+                    return true; // a before b
+                }
+                if ( (a.use <= EPOCH_SIGUSE_SEARCH) && (b.use > EPOCH_SIGUSE_SEARCH) )
+                {
+                    return false; // b before a
+                }
+                // Second, sort by order from EPOCH_t (GNSS, SV, signal)
+                return a._order < b._order;
+            });
+        }
     }
 
     // Tab labels
@@ -172,7 +194,7 @@ void GuiWinDataSignals::_UpdateSignals()
     for (auto &sig: _sigInfo)
     {
         const uint32_t thisSat = (sig.gnss << 8) | sig.sv;
-        const uint32_t uid  = (sig.signal << 16) | thisSat;
+        const uint32_t uid = (sig.signal << 16) | thisSat;
 
         if (thisSat != prevSat)
         {
@@ -183,7 +205,6 @@ void GuiWinDataSignals::_UpdateSignals()
             _table.AddCellText(std::string("##") + std::to_string(uid));
         }
         prevSat = thisSat;
-
 
         _table.AddCellText(sig.signalStr);
         _table.AddCellText(sig.bandStr);
@@ -229,6 +250,14 @@ void GuiWinDataSignals::_UpdateSignals()
         _table.SetRowFilter(sig.gnss);
     }
 
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataSignals::_SortSignals(const std::vector<GuiWidgetTable::SortInfo> info)
+{
+    _sortInfo = info;
+    _UpdateSignals();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

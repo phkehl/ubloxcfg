@@ -39,10 +39,10 @@ class ImageTexture
         ImageTexture(const int width, const int height, const std::vector<uint8_t> &rgbaData, const bool genMipmap = false);
         ImageTexture(const int width, const int height, const uint8_t *rgbaData, const bool genMipmap = false);
 
-        int GetWidth();
-        int GetHeight();
-        void *GetImageTexture();
-        uint32_t GetTexture();
+        int GetWidth() const;
+        int GetHeight() const;
+        void *GetImageTexture() const;
+        uint32_t GetTexture() const;
 
         // Destroy OpenGL image texture, actively or on destruct
         void Destroy();

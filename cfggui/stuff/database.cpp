@@ -348,11 +348,30 @@ void Database::_Sync()
         stats.enErrEll.omega = std::atan2(2 * qxy, qxx - qyy) / 2;
     }
 
-    if (stats.llh[_LAT_].count > 0)
+    // CNo histogram
+    for (int ix = 0; ix < EPOCH_SIGCNOHIST_NUM; ix++)
     {
-        _stats = stats;
+        Stats statsCnoNav;
+        Stats statsCnoTrk;
+        statsCnoNav.Begin();
+        statsCnoTrk.Begin();
+        for (const auto &e: _epochs)
+        {
+            statsCnoNav.Add(e.raw.sigCnoHistNav[ix]);
+            statsCnoTrk.Add(e.raw.sigCnoHistTrk[ix]);
+        }
+        statsCnoNav.End();
+        statsCnoTrk.End();
+
+        const float lo = EPOCH_SIGCNOHIST_IX2CNO_L(ix);
+        const float hi = EPOCH_SIGCNOHIST_IX2CNO_H(ix);
+        const float cno = lo + (0.5 * (hi - lo + 1.0f));
+        const std::string label = Ff::Sprintf("%.0f-%.0f", lo, hi);
+        stats.cnoNav.Add(label, lo, cno, hi, statsCnoNav);
+        stats.cnoTrk.Add(label, lo, cno, hi, statsCnoTrk);
     }
 
+    std::swap(_stats, stats);
     _serial++;
 }
 
@@ -457,6 +476,38 @@ Database::ErrEll::ErrEll() :
 
 Database::EpochStats::EpochStats()
 {
+}
+
+/* ****************************************************************************************************************** */
+
+Database::CnoStats::CnoStats() :
+    count { 0 }
+{
+}
+
+void Database::CnoStats::Clear()
+{
+    labels.clear();
+    cnosLo.clear();
+    cnosMi.clear();
+    cnosHi.clear();
+    means.clear();
+    mins.clear();
+    maxs.clear();
+    stds.clear();
+}
+
+void Database::CnoStats::Add(const std::string &label, const float cnoLo, const float cnoMi, const float cnoHi, const Stats &stats)
+{
+    labels.push_back(label);
+    cnosLo.push_back(cnoLo);
+    cnosMi.push_back(cnoMi);
+    cnosHi.push_back(cnoHi);
+    means.push_back(stats.mean);
+    mins.push_back(stats.min);
+    maxs.push_back(stats.max);
+    stds.push_back(stats.std);
+    count++;
 }
 
 /* ****************************************************************************************************************** */

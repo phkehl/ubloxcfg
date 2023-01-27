@@ -50,8 +50,9 @@ void GuiWidgetTabbar::End()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTabbar::Item(const std::string &label, std::function<void(void)> cb)
+bool GuiWidgetTabbar::Item(const std::string &label)
 {
+    bool res = false;
     ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
     auto hashPos = label.rfind('#');
     if ( !_setSelected.empty() &&
@@ -69,8 +70,19 @@ void GuiWidgetTabbar::Item(const std::string &label, std::function<void(void)> c
         {
             _selected = hashPos == std::string::npos ? label : label.substr(hashPos + 1);
         }
-        cb();
+        res = true;
         ImGui::EndTabItem();
+    }
+    return res;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTabbar::Item(const std::string &label, std::function<void(void)> cb)
+{
+    if (Item(label))
+    {
+        cb();
     }
 }
 

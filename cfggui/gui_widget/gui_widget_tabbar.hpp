@@ -32,6 +32,7 @@ class GuiWidgetTabbar
 
         bool Begin();
         void Item(const std::string &label, std::function<void(void)> cb);
+        bool Item(const std::string &label);
         void End();
 
     private:

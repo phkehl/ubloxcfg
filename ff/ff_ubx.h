@@ -1094,7 +1094,75 @@ typedef struct UBX_NAV_TIMEGPS_V0_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//! UBX-NAV-TIMEGPS payload
+//! UBX-NAV-TIMEGAL payload
+typedef struct UBX_NAV_TIMEGAL_V0_GROUP0_s
+{
+    uint32_t iTow;
+    uint32_t galTow;
+    int32_t  fGalTow;
+    int16_t  galWno;
+    int8_t   leapS;
+    uint8_t  valid;
+    uint32_t tAcc;
+} UBX_NAV_TIMEGAL_V0_GROUP0_t;
+
+#define UBX_NAV_TIMEGAL_V0_ITOW_SCALE                 1e-3
+#define UBX_NAV_TIMEGAL_V0_FGALTOW_SCALE              1e-9
+#define UBX_NAV_TIMEGAL_V0_TACC_SCALE                 1e-9
+#define UBX_NAV_TIMEGAL_V0_VALID_GALTOWVALID          0x01
+#define UBX_NAV_TIMEGAL_V0_VALID_GALWNOVALID          0x02
+#define UBX_NAV_TIMEGAL_V0_VALID_LEAPSVALID           0x04
+
+#define UBX_NAV_TIMEGAL_V0_SIZE    ((int)(sizeof(UBX_NAV_TIMEGAL_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-NAV-TIMEBDS payload
+typedef struct UBX_NAV_TIMEBDS_V0_GROUP0_s
+{
+    uint32_t iTow;
+    uint32_t SOW;
+    int32_t  fSOW;
+    int16_t  week;
+    int8_t   leapS;
+    uint8_t  valid;
+    uint32_t tAcc;
+} UBX_NAV_TIMEBDS_V0_GROUP0_t;
+
+#define UBX_NAV_TIMEBDS_V0_ITOW_SCALE                 1e-3
+#define UBX_NAV_TIMEBDS_V0_FSOW_SCALE                 1e-9
+#define UBX_NAV_TIMEBDS_V0_TACC_SCALE                 1e-9
+#define UBX_NAV_TIMEBDS_V0_VALID_SOWVALID             0x01
+#define UBX_NAV_TIMEBDS_V0_VALID_WEEKVALID            0x02
+#define UBX_NAV_TIMEBDS_V0_VALID_LEAPSVALID           0x04
+
+#define UBX_NAV_TIMEBDS_V0_SIZE    ((int)(sizeof(UBX_NAV_TIMEBDS_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-NAV-TIMEGLO payload
+typedef struct UBX_NAV_TIMEGLO_V0_GROUP0_s
+{
+    uint32_t iTow;
+    uint32_t TOD;
+    int32_t  fTOD;
+    uint16_t Nt;
+    uint8_t  N4;
+    uint8_t  valid;
+    uint32_t tAcc;
+} UBX_NAV_TIMEGLO_V0_GROUP0_t;
+
+#define UBX_NAV_TIMEGLO_V0_ITOW_SCALE                 1e-3
+#define UBX_NAV_TIMEGLO_V0_FTOD_SCALE                 1e-9
+#define UBX_NAV_TIMEGLO_V0_TACC_SCALE                 1e-9
+#define UBX_NAV_TIMEGLO_V0_VALID_TODVALID             0x01
+#define UBX_NAV_TIMEGLO_V0_VALID_DATEVALID            0x02
+
+#define UBX_NAV_TIMEGLO_V0_SIZE    ((int)(sizeof(UBX_NAV_TIMEGLO_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+//! UBX-NAV-TIMELS payload
 typedef struct UBX_NAV_TIMELS_V0_GROUP0_s
 {
     uint32_t iTOW;
@@ -1673,8 +1741,8 @@ typedef struct UBX_ESF_STATUS_V2_GROUP1_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-//! UBX-TIM_TP payload
-typedef struct UBX_TIME_TP_V0_GROUP0_s
+//! UBX-TIM-TP payload
+typedef struct UBX_TIM_TP_V0_GROUP0_s
 {
     uint32_t towMs;
     uint32_t towSubMS;
@@ -1682,9 +1750,9 @@ typedef struct UBX_TIME_TP_V0_GROUP0_s
     uint16_t week;
     uint8_t  flags;
     uint8_t  refInfo;
-} UBX_TIME_TP_V0_GROUP0_t;
+} UBX_TIM_TP_V0_GROUP0_t;
 
-#define UBX_TIM_TP_V0_SIZE    ((int)(sizeof(UBX_TIME_TP_V0_GROUP0_t) + UBX_FRAME_SIZE))
+#define UBX_TIM_TP_V0_SIZE    ((int)(sizeof(UBX_TIM_TP_V0_GROUP0_t) + UBX_FRAME_SIZE))
 
 #define UBX_TIM_TP_V0_TOWMS_SCALE                                    1e-3
 #define UBX_TIM_TP_V0_TOWSUBMS_SCALE                                 0x1.0624dd2f1a9fcp-42  // perl -e 'printf "%a", 2**-32 * 1e-3'
@@ -1717,8 +1785,45 @@ typedef struct UBX_TIME_TP_V0_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+//! UBX-TIM-TM2 payload
+typedef struct UBX_TIM_TM2_V0_GROUP0_s
+{
+    uint8_t  ch;
+    uint8_t  flags;
+    uint16_t count;
+    uint16_t wnR;
+    uint16_t wnF;
+    uint32_t towMsR;
+    uint32_t towSubMsR;
+    uint32_t towMsF;
+    uint32_t towSubMsF;
+    uint32_t accEst;
+} UBX_TIM_TM2_V0_GROUP0_t;
+
+#define UBX_TIM_TM2_V0_SIZE    ((int)(sizeof(UBX_TIM_TM2_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+#define UBX_TIM_TM2_V0_FLAGS_MODE_GET(f)             ( (uint8_t)(f) & 0x01 )
+#define UBX_TIM_TM2_V0_FLAGS_MODE_SINGLE             0
+#define UBX_TIM_TM2_V0_FLAGS_MODE_RUNNING            1
+#define UBX_TIM_TM2_V0_FLAGS_RUN_GET(f)              ( ((uint8_t)(f) >> 1) & 0x01 )
+#define UBX_TIM_TM2_V0_FLAGS_RUN_ARMED               0
+#define UBX_TIM_TM2_V0_FLAGS_RUN_STOPPED             1
+#define UBX_TIM_TM2_V0_FLAGS_NEWFALLINGEDGE          0x04
+#define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_GET(f)         ( ((uint8_t)(f) >> 3) & 0x03 )
+#define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_RX             0
+#define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_GNSS           1
+#define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_UTC            2
+#define UBX_TIM_TM2_V0_FLAGS_UTCACAVAIL              0x20
+#define UBX_TIM_TM2_V0_FLAGS_TIMEVALID               0x40
+#define UBX_TIM_TM2_V0_FLAGS_NEWRISINGEDGE           0x80
+#define UBX_TIM_TM2_V0_TOW_SCALE                     1e-3
+#define UBX_TIM_TM2_V0_SUBMS_SCALE                   1e-9
+#define UBX_TIM_TM2_V0_ACCEST_SCALE                  1e-9
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 //! UBX-TIM_SVIN payload
-typedef struct UBX_TIME_SVIN_V0_GROUP0_s
+typedef struct UBX_TIM_SVIN_V0_GROUP0_s
 {
     uint32_t dur;
     int32_t  meanX;
@@ -1729,9 +1834,10 @@ typedef struct UBX_TIME_SVIN_V0_GROUP0_s
     uint8_t  valid;
     uint8_t  active;
     uint16_t reserved;
-} UBX_TIME_SVIN_V0_GROUP0_t;
+} UBX_TIM_SVIN_V0_GROUP0_t;
 
-#define UBX_TIM_SVIN_V0_SIZE    ((int)(sizeof(UBX_TIME_SVIN_V0_GROUP0_t) + UBX_FRAME_SIZE))
+#define UBX_TIM_SVIN_V0_SIZE    ((int)(sizeof(UBX_TIM_SVIN_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
 
 /* ****************************************************************************************************************** */
 

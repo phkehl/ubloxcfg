@@ -1348,7 +1348,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
                 continue;
             }
 
-            const int histIx = sig->cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sig->cno > 0 ? (sig->cno / 5) : 0 );
+            const int histIx = EPOCH_SIGCNOHIST_CNO2IX(sig->cno);
             epoch->sigCnoHistTrk[histIx]++;
 
             if (sig->anyUsed)

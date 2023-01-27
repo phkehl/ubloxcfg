@@ -67,7 +67,6 @@ See the [main README](../README.md) for more.
 ## TODOs, ideas
 
 * Implement Logfile::Read(), Seek(), Tell(), Size(), and gzipped read/write/seek/tell/size
-* Make database size dynamic / configurable
 * Navigation status page (same stuff as in input window + velocity gage, artificial horizon, etc.)?
 * Implement A-GNSS
 * Add epoch rate [Hz] to nav status (also for logfile!)
@@ -85,7 +84,6 @@ See the [main README](../README.md) for more.
   GuiWinInputReceiver::~GuiWinInputReceiver(). Maybe this is now fixed with the GuiSettings rework.
   seems to help (and in ~GuiWinInputLogfile)
 * GuiWinDataConfig needs some love, and the new tables..
-* Stringify UBX-NAV-TIME*
 * Gzipped read: maybe replace by gunzipping file into cache dir and then use that?
   Hmmm... lots of implications with the "immediate" in imgui.. :-/
   Can we implement seekpos()? Maybe re-open file at a certain position? And gzseek() is commented-out in zlib.h anyway... (?!)
@@ -94,6 +92,9 @@ See the [main README](../README.md) for more.
 * Write parser for swisstopo wmts capabilities xml to generate mapparams
 * Use https://github.com/raysan5/raylib/blob/master/src/raymath.h instead of glm (1 file vs 1000000 files)
 * example_emscripten_wgpu, can we do that?
+* plot trajectory with error estimates
+* OpenGL::SaveState()/RervertState() or something like that
+* Something's wrong when stepping logs by epoch: UBX-NAV-EOE is not shown?!
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out <https://github.com/bkaradzic/bgfx>

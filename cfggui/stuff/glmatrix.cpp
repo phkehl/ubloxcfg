@@ -318,7 +318,9 @@ GlMatrixRenderer::GlMatrixRenderer(const GlMatrix::Options &options) :
         for (int ix = 0; ix < (4 * width * height); ix += 4)
         {
             font[ix + 3] = font[ix + 1]; // green -> alpha
-            font[ix + 1] = 0xff;         // green = 0xff
+            font[ix + 0] = _options.colour[0]; // red
+            font[ix + 1] = _options.colour[1]; // green
+            font[ix + 2] = _options.colour[2]; // blue
         }
 
         // Minifying/magnifying parameters
@@ -546,7 +548,6 @@ void GlMatrixRenderer::Update(const std::vector<Glyph> &glyphs)
 
 void GlMatrixRenderer::Render(const int width, const int height, const glm::vec2 &viewRot)
 {
-
     if ( (width != _width) || (height != _height) )
     {
         _width = width;

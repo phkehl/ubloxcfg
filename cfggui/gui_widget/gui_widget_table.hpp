@@ -33,8 +33,8 @@ class GuiWidgetTable
         GuiWidgetTable();
 
         // Setup: Add columns (first thing, and only once)
-        enum ColumnFlags { NONE = 0, ALIGN_RIGHT = BIT(0), ALIGN_CENTER = BIT(1) };
-        void AddColumn(const char *title, const float width = 0.0f, const enum ColumnFlags = ColumnFlags::NONE);
+        enum ColumnFlags { NONE = 0, ALIGN_RIGHT = BIT(0), ALIGN_CENTER = BIT(1), SORTABLE = BIT(2) };
+        void AddColumn(const char *title, const float width = 0.0f, const enum ColumnFlags = ColumnFlags::NONE, const uint32_t uid = 0);
 
         // Set table parameters (optional, can be done on setup and also changed later)
         void SetTableScrollFreeze(const int cols, const int rows);  // Set first n cols and/or rows frozen (never scroll)
@@ -70,6 +70,17 @@ class GuiWidgetTable
         // Clear selected rows
         void ClearSelected();
 
+        enum class SortOrder { ASC, DESC };
+        struct SortInfo
+        {
+            SortInfo(const uint32_t _uid, SortOrder _order) : uid{_uid}, order{_order} {}
+            uint32_t  uid;
+            SortOrder order;
+        };
+
+        using SortFunc = std::function<void(const std::vector<SortInfo>&)>;
+        void SetTableSortFunc(SortFunc func);
+
     protected:
 
         char _tableName[40];
@@ -83,19 +94,20 @@ class GuiWidgetTable
 
         struct Column
         {
-            Column(const std::string &_title, const float _width = 0.0f, const ColumnFlags _flags = ColumnFlags::NONE);
+            Column(const std::string &_title, const float _width = 0.0f, const ColumnFlags _flags = ColumnFlags::NONE, const uint32_t _uid = 0);
             std::string      title;
             enum ColumnFlags flags;
-            FfVec2f           titleSize;
+            FfVec2f          titleSize;
             float            width;
             float            maxWidth;
+            uint32_t         uid;
         };
 
         struct Cell
         {
             Cell();
             std::string   content;
-            FfVec2f        contentSize;
+            FfVec2f       contentSize;
             float         paddingLeft;
             CellDrawCb_t  drawCb;
             void         *drawCbArg;
@@ -117,6 +129,8 @@ class GuiWidgetTable
             ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
             ImGuiTableFlags_ScrollY;
 
+        ImGuiTableFlags _tableFlags;
+
         Cell &_NextCell();
         bool _CheckData();
 
@@ -124,6 +138,8 @@ class GuiWidgetTable
         std::vector<Row>     _rows;
         std::unordered_map<std::string, bool> _selectedRows;
         const std::string   *_hoveredRow;
+
+        SortFunc _sortFunc;
 };
 
 /* ****************************************************************************************************************** */

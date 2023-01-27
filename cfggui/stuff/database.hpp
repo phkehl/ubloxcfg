@@ -21,6 +21,7 @@
 #include <mutex>
 #include <deque>
 #include <string>
+#include <vector>
 #include <functional>
 #include <unordered_map>
 
@@ -79,6 +80,22 @@ class Database
             double omega;
         };
 
+        struct CnoStats
+        {
+            CnoStats();
+            int                      count;
+            std::vector<std::string> labels;
+            std::vector<float>       cnosLo;
+            std::vector<float>       cnosMi;
+            std::vector<float>       cnosHi;
+            std::vector<float>       means;
+            std::vector<float>       mins;
+            std::vector<float>       maxs;
+            std::vector<float>       stds;
+            void Clear();
+            void Add(const std::string &label, const float cnoLo, const float cnoMi, const float cnoHi, const Stats &stats);
+        };
+
         // Statistics of all data --> GetStats()
         struct EpochStats
         {
@@ -87,6 +104,8 @@ class Database
             Stats  enuRef[_NUM_POS_];  //!< ENU relative to reference position
             Stats  enuMean[_NUM_POS_]; //!< ENU relative to mean position
             ErrEll enErrEll;
+            CnoStats cnoNav;
+            CnoStats cnoTrk;
         };
         EpochStats           GetStats();
 

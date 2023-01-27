@@ -88,7 +88,7 @@ GuiWinDataPlot::PlotData::PlotData(PlotVar *_plotVarX, PlotVar *_plotVarY, PlotT
     : plotVarX{_plotVarX}, plotVarY{_plotVarY}, type{_type}, db{_db}
 {
     yAxis = ImAxis_Y1;
-    getter = [](void *arg, int ix) -> ImPlotPoint
+    getter = [](int ix, void *arg) -> ImPlotPoint
     {
         PlotData *pd = (PlotData *)arg;
         const Database::Epoch &epoch = (*pd->db)[ix];
@@ -191,20 +191,6 @@ void GuiWinDataPlot::_DrawContent()
 
 void GuiWinDataPlot::_DrawToolbar()
 {
-    ImGui::SameLine();
-
-    // Help
-    if (ImGui::Button(ICON_FK_QUESTION "###Help", GuiSettings::iconSize))
-    {
-        ImGui::OpenPopup("Help");
-    }
-    Gui::ItemTooltip("Help");
-    if (ImGui::BeginPopup("Help"))
-    {
-        ImPlot::ShowUserGuide();
-        ImGui::EndPopup();
-    }
-
     ImGui::SameLine();
 
     // Colormap

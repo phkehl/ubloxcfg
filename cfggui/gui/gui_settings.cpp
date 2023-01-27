@@ -719,6 +719,7 @@
 #ifdef IMGUI_ENABLE_FREETYPE
     ImGui::Separator();
 
+    ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Font renderer");
     ImGui::SameLine(_widgetOffs);
 
@@ -765,6 +766,7 @@
 
     ImGui::Separator();
 
+    ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Rasterizer multiply");
     ImGui::SameLine(_widgetOffs);
     ImGui::PushItemWidth(12 * charSize.x);
@@ -873,10 +875,14 @@
             }
             ImGui::SameLine(_widgetOffs);
             {
-                if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? "#" : " ", iconSize))
+                ImGui::BeginDisabled(colours[ix] == COLOUR_DEFAULTS[ix]);
+                if (ImGui::Button(colours[ix] != COLOUR_DEFAULTS[ix] ? ICON_FK_TIMES : " ", iconSize))
                 {
                     colours[ix] = COLOUR_DEFAULTS[ix];
+                    colours4[ix] = ImGui::ColorConvertU32ToFloat4(COLOUR_DEFAULTS[ix]);
                 }
+                Gui::ItemTooltip("Reset to default");
+                ImGui::EndDisabled();
             }
             ImGui::SameLine();
             {
@@ -914,17 +920,33 @@
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Database size");
     ImGui::SameLine(_widgetOffs);
+    ImGui::BeginDisabled(dbNumEpochs == DB_NUM_EPOCHS_DEF);
+    if (ImGui::Button(dbNumEpochs != DB_NUM_EPOCHS_DEF ? ICON_FK_TIMES : " ", iconSize))
+    {
+        dbNumEpochs = DB_NUM_EPOCHS_DEF;
+    }
+    Gui::ItemTooltip("Reset to default");
+    ImGui::EndDisabled();
+    ImGui::SameLine();
     ImGui::PushItemWidth(25 * charSize.x);
     if (ImGui::SliderInt("##dbNumEpochs", &dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX))
     {
         dbNumEpochs = CLIP(dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX);
     }
     ImGui::SameLine();
-    ImGui::Text("(~%.0fMB)", (double)(sizeof(Database::Epoch) * dbNumEpochs) * (1.0/1024.0/1024.0));
+    ImGui::Text("(~%.0fMB per rx or log)", (double)(sizeof(Database::Epoch) * dbNumEpochs) * (1.0/1024.0/1024.0));
     ImGui::PopItemWidth();
 
     ImGui::TextUnformatted("Min framerate");
     ImGui::SameLine(_widgetOffs);
+    ImGui::BeginDisabled(minFrameRate == MIN_FRAME_RATE_DEF);
+    if (ImGui::Button(minFrameRate != MIN_FRAME_RATE_DEF ? ICON_FK_TIMES : " ", iconSize))
+    {
+        minFrameRate = MIN_FRAME_RATE_DEF;
+    }
+    Gui::ItemTooltip("Reset to default");
+    ImGui::EndDisabled();
+    ImGui::SameLine();
     ImGui::PushItemWidth(25 * charSize.x);
     if (ImGui::SliderInt("##minFrameRate", &minFrameRate, MIN_FRAME_RATE_MIN, MIN_FRAME_RATE_MAX))
     {

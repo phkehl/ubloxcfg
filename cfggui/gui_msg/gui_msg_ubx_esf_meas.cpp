@@ -281,7 +281,7 @@ bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
             }
             auto &info = entry.second;
 
-            ImPlot::PlotLineG(info.name.c_str(), [](void *arg, int ix)
+            ImPlot::PlotLineG(info.name.c_str(), [](int ix, void *arg)
                 {
                     const std::deque<double> *pd = (const std::deque<double> *)arg;
                     return ImPlotPoint( ix, pd->at(ix) );

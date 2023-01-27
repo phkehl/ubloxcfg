@@ -614,6 +614,10 @@ static int _strUbxNavRelposned(char *info, const int size, const uint8_t *msg, c
 static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxNavSat(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavTimegps(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavTimegal(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavTimebds(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxNavTimeglo(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxInf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxRxmSfrbx(char *info, const int size, const uint8_t *msg, const int msgSize);
@@ -622,6 +626,7 @@ static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const 
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack);
+static int _strUbxTimTm2(char *info, const int size, const uint8_t *msg, const int msgSize);
 
 bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {
@@ -670,6 +675,18 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                 case UBX_NAV_SIG_MSGID:
                     len = _strUbxNavSig(info, size, msg, msgSize);
                     break;
+                case UBX_NAV_TIMEGPS_MSGID:
+                    len = _strUbxNavTimegps(info, size, msg, msgSize);
+                    break;
+                case UBX_NAV_TIMEGAL_MSGID:
+                    len = _strUbxNavTimegal(info, size, msg, msgSize);
+                    break;
+                case UBX_NAV_TIMEBDS_MSGID:
+                    len = _strUbxNavTimebds(info, size, msg, msgSize);
+                    break;
+                case UBX_NAV_TIMEGLO_MSGID:
+                    len = _strUbxNavTimeglo(info, size, msg, msgSize);
+                    break;
                 case UBX_NAV_ORB_MSGID:
                 case UBX_NAV_CLOCK_MSGID:
                 case UBX_NAV_DOP_MSGID:
@@ -680,10 +697,6 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                 case UBX_NAV_GEOFENCE_MSGID:
                 case UBX_NAV_TIMEUTC_MSGID:
                 case UBX_NAV_TIMELS_MSGID:
-                case UBX_NAV_TIMEGPS_MSGID:
-                case UBX_NAV_TIMEGLO_MSGID:
-                case UBX_NAV_TIMEBDS_MSGID:
-                case UBX_NAV_TIMEGAL_MSGID:
                 case UBX_NAV_COV_MSGID:
                     len = _strUbxNav(info, size, msg, msgSize, 0);
                     break;
@@ -740,6 +753,14 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                     break;
                 case UBX_ACK_NAK_MSGID:
                     len = _strUbxAckAck(info, size, msg, msgSize, false);
+                    break;
+            }
+            break;
+        case UBX_TIM_CLSID:
+            switch (msgId)
+            {
+                case UBX_TIM_TM2_MSGID:
+                    len = _strUbxTimTm2(info, size, msg, msgSize);
                     break;
             }
             break;
@@ -885,6 +906,70 @@ static int _strUbxNavStatus(char *info, const int size, const uint8_t *msg, cons
     memcpy(&sta, &msg[UBX_HEAD_SIZE], sizeof(sta));
     return snprintf(info, size, "%010.3f ttff=%.3f sss=%.3f",
         (double)sta.iTow * 1e-3, (double)sta.ttff * 1e-3, (double)sta.msss * 1e-3);
+}
+
+static int _strUbxNavTimegps(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_NAV_TIMEGPS_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_NAV_TIMEGPS_V0_GROUP0_t gps;
+    memcpy(&gps, &msg[UBX_HEAD_SIZE], sizeof(gps));
+    return snprintf(info, size, "%010.3f %04u %c %019.9f %c %e",
+        (double)gps.iTow * UBX_NAV_TIMEGPS_V0_ITOW_SCALE,
+        gps.week, F(gps.valid, UBX_NAV_TIMEGPS_V0_VALID_WEEKVALID) ? 'Y' : 'N',
+        ((double)gps.iTow * UBX_NAV_TIMEGPS_V0_ITOW_SCALE) + ((double)gps.fTOW * UBX_NAV_TIMEGPS_V0_FTOW_SCALE),
+         F(gps.valid, UBX_NAV_TIMEGPS_V0_VALID_TOWVALID) ? 'Y' : 'N',
+         (double)gps.tAcc * UBX_NAV_TIMEGPS_V0_TACC_SCALE);
+}
+
+static int _strUbxNavTimegal(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_NAV_TIMEGAL_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_NAV_TIMEGAL_V0_GROUP0_t gal;
+    memcpy(&gal, &msg[UBX_HEAD_SIZE], sizeof(gal));
+    return snprintf(info, size, "%010.3f %04u %c %019.9f %c %e",
+        (double)gal.iTow * UBX_NAV_TIMEGAL_V0_ITOW_SCALE,
+        gal.galWno, F(gal.valid, UBX_NAV_TIMEGAL_V0_VALID_GALWNOVALID) ? 'Y' : 'N',
+        (double)gal.galTow + ((double)gal.fGalTow * UBX_NAV_TIMEGAL_V0_FGALTOW_SCALE),
+        F(gal.valid, UBX_NAV_TIMEGAL_V0_VALID_GALTOWVALID) ? 'Y' : 'N',
+        (double)gal.tAcc * UBX_NAV_TIMEGAL_V0_TACC_SCALE);
+}
+
+static int _strUbxNavTimebds(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_NAV_TIMEBDS_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_NAV_TIMEBDS_V0_GROUP0_t bds;
+    memcpy(&bds, &msg[UBX_HEAD_SIZE], sizeof(bds));
+    return snprintf(info, size, "%010.3f %04u %c %019.9f %c %e",
+        (double)bds.iTow * UBX_NAV_TIMEBDS_V0_ITOW_SCALE,
+        bds.week, F(bds.valid, UBX_NAV_TIMEBDS_V0_VALID_WEEKVALID) ? 'Y' : 'N',
+        (double)bds.SOW + ((double)bds.fSOW * UBX_NAV_TIMEBDS_V0_FSOW_SCALE),
+        F(bds.valid, UBX_NAV_TIMEBDS_V0_VALID_SOWVALID) ? 'Y' : 'N',
+        (double)bds.tAcc * UBX_NAV_TIMEGAL_V0_TACC_SCALE);
+}
+
+static int _strUbxNavTimeglo(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_NAV_TIMEGLO_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_NAV_TIMEGLO_V0_GROUP0_t glo;
+    memcpy(&glo, &msg[UBX_HEAD_SIZE], sizeof(glo));
+    return snprintf(info, size, "%010.3f %04u %03u %c %015.9f %c %e",
+        (double)glo.iTow * UBX_NAV_TIMEGLO_V0_ITOW_SCALE,
+        glo.Nt, glo.N4, F(glo.valid, UBX_NAV_TIMEGLO_V0_VALID_DATEVALID) ? 'Y' : 'N',
+        (double)glo.TOD + ((double)glo.fTOD * UBX_NAV_TIMEGLO_V0_FTOD_SCALE),
+        F(glo.valid, UBX_NAV_TIMEGLO_V0_VALID_TODVALID) ? 'Y' : 'N',
+        (double)glo.tAcc * UBX_NAV_TIMEGAL_V0_TACC_SCALE);
 }
 
 static int _strUbxNavSig(char *info, const int size, const uint8_t *msg, const int msgSize)
@@ -1150,6 +1235,33 @@ static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const i
     char tmp[100];
     ubxMessageNameIds(tmp, sizeof(tmp), acknak.clsId, acknak.msgId);
     return snprintf(info, size, "%s %s", ack ? "acknowledgement" : "negative-acknowledgement", tmp);
+}
+
+static int _strUbxTimTm2(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if (msgSize != UBX_TIM_TM2_V0_SIZE)
+    {
+        return 0;
+    }
+    UBX_TIM_TM2_V0_GROUP0_t tm;
+    memcpy(&tm, &msg[UBX_HEAD_SIZE], sizeof(tm));
+
+    const uint8_t timeBase = UBX_TIM_TM2_V0_FLAGS_TIMEBASE_GET(tm.flags);
+    const char *timeBaseStr[] = { "RX", "GNSS", "UTC" };
+    const double towR = ((double)tm.towMsR * UBX_TIM_TM2_V0_TOW_SCALE) + ((double)tm.towSubMsR * UBX_TIM_TM2_V0_SUBMS_SCALE);
+    const double towF = ((double)tm.towMsF * UBX_TIM_TM2_V0_TOW_SCALE) + ((double)tm.towSubMsF * UBX_TIM_TM2_V0_SUBMS_SCALE);
+
+    return snprintf(info, size, "%04u:%013.6f %04u:%013.6f INT%u %c %c %s %s %s %s %s %u %.6g",
+        tm.wnR, towR, tm.wnF, towF,
+        tm.ch,
+        F(tm.flags, UBX_TIM_TM2_V0_FLAGS_NEWRISINGEDGE) ? 'R' : '-',
+        F(tm.flags, UBX_TIM_TM2_V0_FLAGS_NEWFALLINGEDGE) ? 'F' : '-',
+        UBX_TIM_TM2_V0_FLAGS_MODE_GET(tm.flags) == UBX_TIM_TM2_V0_FLAGS_MODE_SINGLE ? "single" : "running",
+        UBX_TIM_TM2_V0_FLAGS_RUN_GET(tm.flags) == UBX_TIM_TM2_V0_FLAGS_RUN_ARMED ? "armed" : "stopped",
+        timeBase < NUMOF(timeBaseStr) ? timeBaseStr[timeBase] : "?",
+        F(tm.flags, UBX_TIM_TM2_V0_FLAGS_UTCACAVAIL) ? "UTC" : "n/a",
+        F(tm.flags, UBX_TIM_TM2_V0_FLAGS_TIMEVALID) ? "valid" : "invalid",
+        tm.count, (double)tm.accEst * UBX_TIM_TM2_V0_ACCEST_SCALE);
 }
 
 int ubxRxmSfrbxInfo(char *info, const int size, const uint8_t *msg, const int msgSize)

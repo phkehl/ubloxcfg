@@ -194,7 +194,7 @@ int main(int argc, char **argv)
     int windowPosY   = -1;
     const int   kWindowMinWidth  =  640;
     const int   kWindowMinHeight =  384;
-#ifdef FP_BUILD_DEBUG
+#ifdef FF_BUILD_DEBUG
     const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ") -- debug build";
 #else
     const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";

@@ -59,7 +59,6 @@ class GuiWinDataPlot : public GuiWinData
         {
             LINE, SCATTER, STEP, BAR, // SHADED, ERRORBARS_V, ERRORBARS_H, STEMS, DIGITAL
         };
-        typedef ImPlotPoint (*PlotVarGetter_t)(void *, int);
         struct PlotData
         {
             PlotData(PlotVar *_plotVarX, PlotVar *_plotVarY, PlotType _type, Database *_db);
@@ -68,7 +67,7 @@ class GuiWinDataPlot : public GuiWinData
             PlotType           type;
             Database          *db;
             ImAxis             yAxis;
-            PlotVarGetter_t    getter;
+            ImPlotGetter       getter;
         };
         std::vector<PlotData> _plotData;
         PlotVar             *_plotVarX;

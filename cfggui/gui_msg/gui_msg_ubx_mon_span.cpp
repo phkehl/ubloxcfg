@@ -43,8 +43,8 @@ GuiMsgUbxMonSpan::GuiMsgUbxMonSpan(std::shared_ptr<InputReceiver> receiver, std:
     { 1207.140000, "##4", "BDS B2I, GAL E5B" },
     { 1227.600000, "##5", "GPS/QZSS L2C" },
   //{ 1246.000000, "##6", "GLO L2OF" }, // -7*0.4375=-3.0625 .. +6*0.4375=2.625 ==> 1242.9375 .. 1248.625
-    { 1242.937500, "##6lo", "GLO L2OF lo" },
-    { 1248.625000, "##6hi", "GLO L2OF hi" },
+    { 1242.937500, "##6lo", "GLO L2OF (-7)" },
+    { 1248.625000, "##6hi", "GLO L2OF (+6)" },
 };
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -206,19 +206,20 @@ void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
             {
                 double freq = label.freq - spect.center;
                 ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(0));
-                ImPlot::PlotVLines(label.id.c_str(), &freq, 1);
+                ImPlot::PlotInfLines(label.id.c_str(), &freq, 1);
                 ImPlot::PopStyleColor();
 
                 const ImVec2 offs = ImGui::CalcTextSize(label.title.c_str());
                 ImPlot::PushStyleColor(ImPlotCol_InlayText, ImPlot::GetColormapColor(0));
                 // FIXME: label placement
-                ImPlot::PlotText(label.title.c_str(), freq, limits.Y.Min, true, ImVec2(offs.y, (-0.5f * offs.x) - 5.0f));
+                ImPlot::PlotText(label.title.c_str(), freq, limits.Y.Min, ImVec2(offs.y, (-0.5f * offs.x) - 5.0f), ImPlotTextFlags_Vertical);
+
                 ImPlot::PopStyleColor();
             }
         }
 
         // Aplitude with min/max
-        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(1));
+        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(1, ImPlotColormap_Deep));
         ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.3f);
         ImPlot::PlotShaded("##Amplitude", spect.freq.data(), spect.max.data(), spect.min.data(), spect.freq.size());
         ImPlot::PlotLine("##Amplitude", spect.freq.data(), spect.ampl.data(), spect.freq.size());
@@ -226,7 +227,7 @@ void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
         ImPlot::PopStyleColor();
         // Mean, initially hidden
         ImPlot::HideNextItem();
-        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(2));
+        ImPlot::PushStyleColor(ImPlotCol_Line, ImPlot::GetColormapColor(2, ImPlotColormap_Deep));
         ImPlot::PlotLine("Mean", spect.freq.data(), spect.mean.data(), spect.freq.size());
         ImPlot::PopStyleColor();
 

@@ -37,11 +37,12 @@ GuiWidgetTable::GuiWidgetTable() :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWidgetTable::Column::Column(const std::string &_title, const float _width, const ColumnFlags _flags) :
+GuiWidgetTable::Column::Column(const std::string &_title, const float _width, const ColumnFlags _flags, const uint32_t _uid) :
     title    { _title },
     flags    { _flags },
     width    { _width },
-    maxWidth { 0.0f }
+    maxWidth { 0.0f },
+    uid      { _uid }
 {
 }
 
@@ -65,9 +66,9 @@ GuiWidgetTable::Row::Row() :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTable::AddColumn(const char *title, const float width, const enum ColumnFlags flags)
+void GuiWidgetTable::AddColumn(const char *title, const float width, const enum ColumnFlags flags, const uint32_t uid)
 {
-    _columns.push_back(Column(title, width, flags));
+    _columns.push_back(Column(title, width, flags, uid));
     _dirty = true;
 }
 
@@ -86,6 +87,13 @@ void GuiWidgetTable::SetTableRowsSelectable(const bool enable)
 {
     _rowsSelectable = enable;
     _dirty = true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTable::SetTableSortFunc(GuiWidgetTable::SortFunc func)
+{
+    _sortFunc = func;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -250,9 +258,15 @@ bool GuiWidgetTable::_CheckData()
         return false;
     }
 
+    _tableFlags = TABLE_FLAGS;
+
     for (auto &col: _columns)
     {
         col.titleSize = ImGui::CalcTextSize(col.title.c_str());
+        if (CHKBITS_ANY(col.flags, ColumnFlags::SORTABLE))
+        {
+            _tableFlags |=  ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SortTristate;
+        }
     }
 
     std::unordered_map<std::string, bool> firstSeen;
@@ -339,7 +353,7 @@ void GuiWidgetTable::DrawTable(ImVec2 size)
         return;
     }
 
-    if (ImGui::BeginTable(_tableName, _columns.size() + 1, TABLE_FLAGS, size))
+    if (ImGui::BeginTable(_tableName, _columns.size() + 1, _tableFlags, size))
     {
         // Enable first n columns and/or rows frozen (scroll only the remaining parts of the table)
         if ( (_freezeRows > 0) || (_freezeCols > 0) )
@@ -350,10 +364,31 @@ void GuiWidgetTable::DrawTable(ImVec2 size)
         // Table header
         for (const auto &col: _columns)
         {
-            ImGui::TableSetupColumn(col.title.c_str(), ImGuiTableColumnFlags_None, col.width > 0.0f ? col.width : col.maxWidth);
+            ImGuiTableColumnFlags flags = ImGuiTableColumnFlags_None;
+            if (!CHKBITS_ANY(col.flags, ColumnFlags::SORTABLE))
+            {
+                flags |= ImGuiTableColumnFlags_NoSort;
+            }
+            ImGui::TableSetupColumn(col.title.c_str(), flags, col.width > 0.0f ? col.width : col.maxWidth, (ImGuiID)col.uid);
         }
         ImGui::TableSetupColumn("");
         ImGui::TableHeadersRow();
+
+        // Data needs sorting?
+        ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs();
+        if (sortSpecs && sortSpecs->SpecsDirty)
+        {
+            if (_sortFunc)
+            {
+                std::vector<SortInfo> info;
+                for (int ix = 0; ix < sortSpecs->SpecsCount; ix++)
+                {
+                    info.emplace_back((uint32_t)sortSpecs->Specs[ix].ColumnUserID, sortSpecs->Specs[ix].SortDirection == ImGuiSortDirection_Descending ? SortOrder::DESC : SortOrder::ASC);
+                }
+                _sortFunc(info);
+            }
+            sortSpecs->SpecsDirty = false;
+        }
 
         // Draw table body
         _hoveredRow = nullptr;

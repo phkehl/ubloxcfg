@@ -164,26 +164,26 @@ ImageTexture::ImageTexture(const int width, const int height, const uint8_t *rgb
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int ImageTexture::GetWidth()
+int ImageTexture::GetWidth() const
 {
     return _width;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-int ImageTexture::GetHeight()
+int ImageTexture::GetHeight() const
 {
     return _height;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void *ImageTexture::GetImageTexture()
+void *ImageTexture::GetImageTexture() const
 {
     return (void *)(uintptr_t)_texture;
 }
 
-uint32_t ImageTexture::GetTexture()
+uint32_t ImageTexture::GetTexture() const
 {
     return _texture;
 }

@@ -42,7 +42,7 @@ class GlMatrix
             Options() :
                 speed{1.0f}, density{20.0f}, doClock{false}, timeFmt{" %H:%M "},
                 doFog{true}, doWaves{true}, doRotate{true}, mode{MATRIX},
-                debugGrid{false}, debugFrames{false} {}
+                debugGrid{false}, debugFrames{false}, colour{0x00, 0xff, 0x00} {}
             float       speed;        //!< Animation speed factor (how fast the glyphs move)
             float       density;      //!< Strip density [%]
             bool        doClock;      //!< Show time in some strips
@@ -54,6 +54,7 @@ class GlMatrix
             enum Mode_e mode;         //!< Glyph selection
             bool        debugGrid;    //!< Render debug grid
             bool        debugFrames;  //!< Render debug frames around glyphs
+            uint8_t     colour[3];    //!< Colour
         };
 
         bool Init(const Options &options = Options());
