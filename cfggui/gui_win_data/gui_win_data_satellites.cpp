@@ -41,12 +41,12 @@ GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name, std::shared_
 
     ClearData();
 
-    _table.AddColumn("SV");
-    _table.AddColumn("Azim", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
-    _table.AddColumn("Elev", 0.0f, GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
-    _table.AddColumn("Orbit");
-    _table.AddColumn("Signal L1");
-    _table.AddColumn("Signal L2");
+    _table.AddColumn("SV", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE);
+    _table.AddColumn("Azim", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE | GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Elev", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE | GuiWidgetTable::ColumnFlags::ALIGN_RIGHT);
+    _table.AddColumn("Orbit", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE);
+    _table.AddColumn("Signal L1", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE);
+    _table.AddColumn("Signal L2", 0.0f, GuiWidgetTable::ColumnFlags::SORTABLE);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -184,39 +184,44 @@ void GuiWinDataSatellites::_UpdateSatellites()
     // Populate table
     for (auto &sat: _satInfo)
     {
-        _table.AddCellText(sat.satInfo.svStr);
+        const uint32_t thisSat = (sat.satInfo.gnss << 16) | (sat.satInfo.sv << 8);
+        _table.AddCellText(sat.satInfo.svStr, thisSat);
 
         if (sat.satInfo.orbUsed > EPOCH_SATORB_NONE)
         {
             _table.AddCellTextF("%d", sat.satInfo.azim);
+            _table.SetCellSort(sat.satInfo.azim);
             _table.AddCellTextF("%d", sat.satInfo.elev);
+            _table.SetCellSort(sat.satInfo.elev + 100);
         }
         else
         {
-            _table.AddCellText("-");
-            _table.AddCellText("-");
+            _table.AddCellText("-", 1);
+            _table.AddCellText("-", 1);
         }
         _table.AddCellTextF("%-5s %c%c%c%c", sat.satInfo.orbUsedStr,
             CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_ALM))   ? 'A' : '-',
             CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_EPH))   ? 'E' : '-',
             CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_PRED))  ? 'P' : '-',
             CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_OTHER)) ? 'O' : '-');
-
+        _table.SetCellSort(sat.satInfo.orbUsed);
         if ( sat.sigL1.valid && (sat.sigL1.use > EPOCH_SIGUSE_SEARCH) )
         {
             _table.AddCellCb(std::bind(&GuiWinDataSatellites::_DrawSignalLevelCb, this, std::placeholders::_1), &sat.sigL1);
+            _table.SetCellSort(sat.sigL1.cno * 100);
         }
         else
         {
-            _table.AddCellText("-");
+            _table.AddCellText("-", 1);
         }
         if ( sat.sigL2.valid && (sat.sigL2.use > EPOCH_SIGUSE_SEARCH) )
         {
             _table.AddCellCb(std::bind(&GuiWinDataSatellites::_DrawSignalLevelCb, this, std::placeholders::_1), &sat.sigL2);
+            _table.SetCellSort(sat.sigL2.cno * 100);
         }
         else
         {
-            _table.AddCellText("-");
+            _table.AddCellText("-", 1);
         }
 
         _table.SetRowFilter(sat.satInfo.gnss);

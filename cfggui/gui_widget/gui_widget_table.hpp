@@ -33,33 +33,36 @@ class GuiWidgetTable
         GuiWidgetTable();
 
         // Setup: Add columns (first thing, and only once)
-        enum ColumnFlags { NONE = 0, ALIGN_RIGHT = BIT(0), ALIGN_CENTER = BIT(1), SORTABLE = BIT(2) };
-        void AddColumn(const char *title, const float width = 0.0f, const enum ColumnFlags = ColumnFlags::NONE, const uint32_t uid = 0);
+        enum ColumnFlags { NONE = 0, ALIGN_RIGHT = BIT(0), ALIGN_CENTER = BIT(1), SORTABLE = BIT(2), HIDE_SAME = BIT(3) };
+        void AddColumn(const char *title, const float width = 0.0f, const /*enum ColumnFlags*/int = ColumnFlags::NONE);
 
         // Set table parameters (optional, can be done on setup and also changed later)
         void SetTableScrollFreeze(const int cols, const int rows);  // Set first n cols and/or rows frozen (never scroll)
-        void SetTableRowsSelectable(const bool enable = true);      // Enable/disable row selection by user (click, CTRL-click)
         void SetTableRowFilter(const uint64_t filter = 0);          // Set filter
 
         // Add data. Call these for each cell until the table is full
         // The first cell can have an ##id to support row selection in case of duplicate or empty values for some of those cells
-        void AddCellText(const std::string &text);
-        void AddCellText(const char *text);
+        void AddCellText(const std::string &text, const uint32_t sort = 0);
+        void AddCellText(const char *text, const uint32_t sort = 0);
         void AddCellTextF(const char *fmt, ...);
         using CellDrawCb_t = std::function<void(void *)>;
-        void AddCellCb(CellDrawCb_t cb, void *arg);
-        void AddCellEmpty();
+        void AddCellCb(CellDrawCb_t cb, void *arg); // FIXME: not for the first column!
+        void AddCellEmpty(const uint32_t sort = 0);
 
         // Cell stuff (must be called right after AddCell...())
         void SetCellColour(const ImU32 colour);
+        void SetCellSort(const uint32_t sort); // Set sorting key for cell (default: content string)
 
         // Row stuff (must be called after first AddCell..() of the row and before first AddCell..() of the next row)
         void SetRowFilter(const uint64_t filter); // Set a filter for the current column
         void SetRowColour(const ImU32 colour);
+        void SetRowSort(const uint32_t sort); // Set key for sorting rows if no column sort is active (default: in order added)
+        void SetRowUid(const uint32_t uid); // Set a non-zero unique ID to enable row(s) selection and checking for selected row(s)
 
         // Table info, valid after adding data
         int GetNumRows();
-        bool IsSelected(const std::string &content, const bool useHovered = true);
+        bool IsSelected(const uint32_t uid); // Must use SetRowUid() for this to work
+        bool IsHovered(const uint32_t uid); // Must use SetRowUid() for this to work
 
         // Clear data. Must add new data afterwards.
         void ClearRows();
@@ -69,17 +72,6 @@ class GuiWidgetTable
 
         // Clear selected rows
         void ClearSelected();
-
-        enum class SortOrder { ASC, DESC };
-        struct SortInfo
-        {
-            SortInfo(const uint32_t _uid, SortOrder _order) : uid{_uid}, order{_order} {}
-            uint32_t  uid;
-            SortOrder order;
-        };
-
-        using SortFunc = std::function<void(const std::vector<SortInfo>&)>;
-        void SetTableSortFunc(SortFunc func);
 
     protected:
 
@@ -94,13 +86,12 @@ class GuiWidgetTable
 
         struct Column
         {
-            Column(const std::string &_title, const float _width = 0.0f, const ColumnFlags _flags = ColumnFlags::NONE, const uint32_t _uid = 0);
+            Column(const std::string &_title, const float _width = 0.0f, const ColumnFlags _flags = ColumnFlags::NONE);
             std::string      title;
             enum ColumnFlags flags;
             FfVec2f          titleSize;
             float            width;
             float            maxWidth;
-            uint32_t         uid;
         };
 
         struct Cell
@@ -112,34 +103,40 @@ class GuiWidgetTable
             CellDrawCb_t  drawCb;
             void         *drawCbArg;
             ImU32         colour;
+            uint32_t      sort;
+            bool          hide;
         };
 
         struct Row
         {
             Row();
             std::vector<Cell> cells;
-            std::string       first;
             uint64_t          filter;
             ImU32             colour;
+            uint32_t          sort;
+            uint32_t          uid;
+            private:
+                static uint32_t defSort;
         };
 
         static constexpr ImU32 NO_COLOUR = IM_COL32(0x00, 0x00, 0x00, 0x00); // = GUI_COLOUR_NONE
 
-        static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg |ImGuiTableFlags_Borders | //ImGuiTableFlags_NoBordersInBody |
+        static constexpr ImGuiTableFlags TABLE_FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_Borders | //ImGuiTableFlags_NoBordersInBody |
             ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
             ImGuiTableFlags_ScrollY;
 
         ImGuiTableFlags _tableFlags;
 
         Cell &_NextCell();
-        bool _CheckData();
+        void _CheckData();
+        void _SortData();
 
         std::vector<Column>  _columns;
         std::vector<Row>     _rows;
-        std::unordered_map<std::string, bool> _selectedRows;
-        const std::string   *_hoveredRow;
+        std::unordered_map<uint32_t, bool> _selectedRows; // row.uid
+        uint32_t _hoveredRow; // row.uid
 
-        SortFunc _sortFunc;
+        std::vector<ImGuiTableColumnSortSpecs> _sortSpecs;
 };
 
 /* ****************************************************************************************************************** */

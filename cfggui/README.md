@@ -35,7 +35,17 @@ If it fails at compiler warnings, try disabling them (remove `-Werror` from Make
 
 YMMV.
 
+Starting:
+
+```sh
+./output/cfggui-release
+```
+
 Debugging gui: `LIBGL_SHOW_FPS=1 LIBGL_DEBUG=verbose ./output/cfggui-release` (<https://docs.mesa3d.org/envvars.html>)
+
+If you get a *GLFW error 65543: GLX: Failed to create context: GLXBadFBConfig* error, try starting it using
+`MESA_GL_VERSION_OVERRIDE=4.3 ./output/cfggui-release`
+
 
 ## Licenses
 

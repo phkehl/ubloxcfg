@@ -26,10 +26,10 @@
 GuiWidgetTable::GuiWidgetTable() :
     _freezeCols     { 1 },
     _freezeRows     { 1 },
-    _rowsSelectable { true },
+    _rowsSelectable { false },
     _rowFilter      { 0 },
     _dirty          { true },
-    _hoveredRow     { nullptr }
+    _hoveredRow     { 0 }
 {
     std::snprintf(_tableName, sizeof(_tableName), "GuiWidgetTable##%p", this);
     ClearRows();
@@ -37,12 +37,11 @@ GuiWidgetTable::GuiWidgetTable() :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWidgetTable::Column::Column(const std::string &_title, const float _width, const ColumnFlags _flags, const uint32_t _uid) :
+GuiWidgetTable::Column::Column(const std::string &_title, const float _width, const ColumnFlags _flags) :
     title    { _title },
     flags    { _flags },
     width    { _width },
-    maxWidth { 0.0f },
-    uid      { _uid }
+    maxWidth { 0.0f }
 {
 }
 
@@ -52,7 +51,9 @@ GuiWidgetTable::Cell::Cell() :
     paddingLeft { 0.0f },
     drawCb      { nullptr },
     drawCbArg   { nullptr },
-    colour      { NO_COLOUR }
+    colour      { NO_COLOUR },
+    sort        { 0 }, // sort by content
+    hide        { false }
 {
 }
 
@@ -60,15 +61,19 @@ GuiWidgetTable::Cell::Cell() :
 
 GuiWidgetTable::Row::Row() :
     filter   { 0 },
-    colour   { NO_COLOUR }
+    colour   { NO_COLOUR },
+    sort     { defSort++ }, // sort by order added
+    uid      { 0 }
 {
 }
 
+/*static*/ uint32_t GuiWidgetTable::Row::defSort = 0;
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTable::AddColumn(const char *title, const float width, const enum ColumnFlags flags, const uint32_t uid)
+void GuiWidgetTable::AddColumn(const char *title, const float width, /*const enum ColumnFlags*/int flags)
 {
-    _columns.push_back(Column(title, width, flags, uid));
+    _columns.emplace_back(title, width, static_cast<ColumnFlags>(flags));
     _dirty = true;
 }
 
@@ -79,21 +84,6 @@ void GuiWidgetTable::SetTableScrollFreeze(const int cols, const int rows)
     _freezeCols = MAX(cols, 0);
     _freezeRows = MAX(rows, 0);
     _dirty = true;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWidgetTable::SetTableRowsSelectable(const bool enable)
-{
-    _rowsSelectable = enable;
-    _dirty = true;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWidgetTable::SetTableSortFunc(GuiWidgetTable::SortFunc func)
-{
-    _sortFunc = func;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -142,18 +132,20 @@ GuiWidgetTable::Cell &GuiWidgetTable::_NextCell()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTable::AddCellText(const std::string &text)
+void GuiWidgetTable::AddCellText(const std::string &text, const uint32_t sort)
 {
     Cell &cell = _NextCell();
     cell.content = text;
+    cell.sort = sort;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTable::AddCellText(const char *text)
+void GuiWidgetTable::AddCellText(const char *text, const uint32_t sort)
 {
     Cell &cell = _NextCell();
     cell.content = std::string(text);
+    cell.sort = sort;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -178,9 +170,10 @@ void GuiWidgetTable::AddCellCb(GuiWidgetTable::CellDrawCb_t cb, void *arg)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWidgetTable::AddCellEmpty()
+void GuiWidgetTable::AddCellEmpty(const uint32_t sort)
 {
-    _NextCell();
+    Cell &cell = _NextCell();
+    cell.sort = sort;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -193,6 +186,20 @@ void GuiWidgetTable::SetCellColour(const ImU32 colour)
         if (!row.cells.empty())
         {
             row.cells[ row.cells.size() - 1 ].colour = colour;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTable::SetCellSort(const uint32_t sort)
+{
+    if (!_rows.empty())
+    {
+        auto &row = _rows[ _rows.size() - 1 ];
+        if (!row.cells.empty())
+        {
+            row.cells[ row.cells.size() - 1 ].sort = sort;
         }
     }
 }
@@ -219,6 +226,26 @@ void GuiWidgetTable::SetRowColour(const ImU32 colour)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+void GuiWidgetTable::SetRowSort(const uint32_t sort)
+{
+    if (!_rows.empty())
+    {
+        _rows[ _rows.size() - 1 ].sort = sort;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTable::SetRowUid(const uint32_t uid)
+{
+    if (!_rows.empty())
+    {
+        _rows[ _rows.size() - 1 ].uid = uid;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void GuiWidgetTable::SetTableRowFilter(const uint64_t filter)
 {
     _rowFilter = filter;
@@ -233,60 +260,58 @@ int GuiWidgetTable::GetNumRows()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWidgetTable::IsSelected(const std::string &content, const bool useHovered)
+bool GuiWidgetTable::IsSelected(const uint32_t uid)
 {
-    if (_selectedRows.empty())
-    {
-        return useHovered && _hoveredRow && (content == *_hoveredRow);
-    }
-    else
-    {
-        return _selectedRows.find(content) != _selectedRows.end();
-    }
+    return (uid != 0) && (_selectedRows.find(uid) != _selectedRows.end());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool GuiWidgetTable::_CheckData()
+bool GuiWidgetTable::IsHovered(const uint32_t uid)
 {
+    return (uid != 0) && (_hoveredRow == uid);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTable::_CheckData()
+{
+    // Check sorting
+    bool doSort = _dirty;
+    ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs();
+    if (sortSpecs && sortSpecs->SpecsDirty)
+    {
+        _sortSpecs.clear();
+        for (int ix = 0; ix < sortSpecs->SpecsCount; ix++)
+        {
+            _sortSpecs.push_back(sortSpecs->Specs[ix]);
+        }
+        sortSpecs->SpecsDirty = false;
+        doSort = true;
+    }
+    if (doSort)
+    {
+        _SortData();
+    }
+
     if (!_dirty)
     {
-        return true;
-    }
-    if (_columns.empty())
-    {
-        return false;
+        return;
     }
 
     _tableFlags = TABLE_FLAGS;
-
     for (auto &col: _columns)
     {
         col.titleSize = ImGui::CalcTextSize(col.title.c_str());
         if (CHKBITS_ANY(col.flags, ColumnFlags::SORTABLE))
         {
             _tableFlags |=  ImGuiTableFlags_Sortable | ImGuiTableFlags_SortMulti | ImGuiTableFlags_SortTristate;
+            col.titleSize.x += 1.5f * GuiSettings::charSize.x; // add space for the sort indicator
         }
     }
 
-    std::unordered_map<std::string, bool> firstSeen;
     for (auto &row: _rows)
     {
-        const auto &firstCellContent = row.cells[0].content;
-
-        // Disable row selection if first column cells content are not unique
-        if (firstCellContent.empty() || (firstSeen.find(firstCellContent) != firstSeen.end()))
-        {
-            _rowsSelectable = false;
-        }
-        firstSeen[firstCellContent] = true;
-
-        // Add unique ID, for ImGui::Selectable() (unless given by the user)
-        row.first = row.cells[0].content;
-        if (row.first.find("##") == std::string::npos)
-        {
-            row.first += "##" + std::to_string(reinterpret_cast<std::uintptr_t>(std::addressof(row)));
-        }
         // Calculate text size
         for (auto &cell: row.cells)
         {
@@ -305,7 +330,7 @@ bool GuiWidgetTable::_CheckData()
         {
             if ((int)row.cells.size() > colIx)
             {
-                // Row (cell) uses custome draw callback, cannot know max size
+                // Row (cell) uses custome draw callback, we cannot know max size
                 if (row.cells[colIx].drawCb)
                 {
                     noMaxWidth = true;
@@ -336,18 +361,68 @@ bool GuiWidgetTable::_CheckData()
             }
         }
 
+
+        if (CHKBITS_ANY(col.flags, ColumnFlags::HIDE_SAME))
+        {
+            int rowIx = 0;
+            std::string prevContent;
+            for (auto &row: _rows)
+            {
+                row.cells[colIx].hide = (rowIx > 0 ? (row.cells[colIx].content == prevContent) : false);
+                prevContent = row.cells[colIx].content;
+                rowIx++;
+            }
+        }
+
         colIx++;
     }
 
     _dirty = false;
-    return true;
+    return;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetTable::_SortData()
+{
+    // No specs -> default sort by row sort key
+    if (_sortSpecs.empty())
+    {
+        std::sort(_rows.begin(), _rows.end(), [](const Row &a, const Row &b)
+        {
+            return a.sort < b.sort;
+        });
+        return;
+    }
+
+    // Sort by specs
+    std::sort(_rows.begin(), _rows.end(), [this](const Row &rowA, const Row &rowB)
+    {
+        for (const auto &spec: _sortSpecs)
+        {
+            const auto &cellA = rowA.cells[spec.ColumnIndex];
+            const auto &cellB = rowB.cells[spec.ColumnIndex];
+
+            // Sort by numeric key given by user
+            if ((cellA.sort != 0) && (cellB.sort != 0) && (cellA.sort != cellB.sort))
+            {
+                return spec.SortDirection == ImGuiSortDirection_Ascending ? cellA.sort < cellB.sort : cellB.sort < cellA.sort;
+            }
+            // Sort by content (string)
+            else if (cellA.content != cellB.content)
+            {
+                return spec.SortDirection == ImGuiSortDirection_Ascending ? cellA.content < cellB.content : cellB.content < cellA.content;
+            }
+        }
+        return false;
+    });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWidgetTable::DrawTable(ImVec2 size)
 {
-    if (!_CheckData())
+    if (_columns.empty())
     {
         ImGui::TextUnformatted("no table?!");
         return;
@@ -369,29 +444,16 @@ void GuiWidgetTable::DrawTable(ImVec2 size)
             {
                 flags |= ImGuiTableColumnFlags_NoSort;
             }
-            ImGui::TableSetupColumn(col.title.c_str(), flags, col.width > 0.0f ? col.width : col.maxWidth, (ImGuiID)col.uid);
+            ImGui::TableSetupColumn(col.title.c_str(), flags, col.width > 0.0f ? col.width : col.maxWidth);
         }
         ImGui::TableSetupColumn("");
         ImGui::TableHeadersRow();
 
-        // Data needs sorting?
-        ImGuiTableSortSpecs *sortSpecs = ImGui::TableGetSortSpecs();
-        if (sortSpecs && sortSpecs->SpecsDirty)
-        {
-            if (_sortFunc)
-            {
-                std::vector<SortInfo> info;
-                for (int ix = 0; ix < sortSpecs->SpecsCount; ix++)
-                {
-                    info.emplace_back((uint32_t)sortSpecs->Specs[ix].ColumnUserID, sortSpecs->Specs[ix].SortDirection == ImGuiSortDirection_Descending ? SortOrder::DESC : SortOrder::ASC);
-                }
-                _sortFunc(info);
-            }
-            sortSpecs->SpecsDirty = false;
-        }
+        // Check data (calculate column widths, sort data, etc.)
+        _CheckData();
 
         // Draw table body
-        _hoveredRow = nullptr;
+        _hoveredRow = 0;
         for (const auto &row: _rows)
         {
             // Skip?
@@ -431,34 +493,36 @@ void GuiWidgetTable::DrawTable(ImVec2 size)
                 if (ix == 0)
                 {
                     // Rows can be selected
-                    if (_rowsSelectable)
+                    if (row.uid != 0)
                     {
-                        auto selEntry = _selectedRows.find(cell.content);
-                        bool selected =  selEntry != _selectedRows.end() ? selEntry->second : false;
-                        if (ImGui::Selectable(row.first.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
+                        auto selEntry = _selectedRows.find(row.uid);
+                        bool selected = (selEntry != _selectedRows.end() ? selEntry->second : false);
+                        ImGui::PushID(row.uid);
+                        if (ImGui::Selectable(cell.hide ? "" : cell.content.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
                         {
                             auto &io = ImGui::GetIO();
                             if (io.KeyCtrl)
                             {
-                                _selectedRows[cell.content] = selEntry != _selectedRows.end() ? !selected : true;
+                                _selectedRows[row.uid] = (selEntry != _selectedRows.end() ? !selected : true);
                             }
                             else
                             {
                                 _selectedRows.clear();
                                 if (!selected)
                                 {
-                                    _selectedRows[cell.content] = true;
+                                    _selectedRows[row.uid] = true;
                                 }
                             }
                         }
+                        ImGui::PopID();
                         if (ImGui::IsItemHovered())
                         {
-                            _hoveredRow = &row.cells[0].content;
+                            _hoveredRow = row.uid;
                         }
                     }
                     else
                     {
-                        ImGui::Selectable(row.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
+                        ImGui::Selectable(cell.content.c_str(), false, ImGuiSelectableFlags_SpanAllColumns);
                     }
                 }
                 // Other columns
@@ -470,7 +534,7 @@ void GuiWidgetTable::DrawTable(ImVec2 size)
                     }
                     else
                     {
-                        ImGui::TextUnformatted(cell.content.c_str());
+                        ImGui::TextUnformatted(cell.hide ? "" : cell.content.c_str());
                     }
                 }
 

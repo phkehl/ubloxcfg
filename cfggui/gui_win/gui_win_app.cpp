@@ -301,7 +301,7 @@ void GuiWinAppImplotDemo::DrawWindow()
 
 /* ****************************************************************************************************************** */
 
-#ifndef IMGUI_DISABLE_METRICS_WINDOW
+#ifndef IMGUI_DISABLE_DEBUG_TOOLS
 
 GuiWinAppImguiMetrics::GuiWinAppImguiMetrics() :
     GuiWinApp("DearImGuiMetrics")

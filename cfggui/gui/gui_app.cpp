@@ -93,7 +93,7 @@ GuiApp::GuiApp(const GuiAppEarlyLog &earlyLog, const std::vector<std::string> &v
     _appWindows[APP_WIN_IMGUI_DEMO]       = std::make_unique<GuiWinAppImguiDemo>();
     _appWindows[APP_WIN_IMPLOT_DEMO]      = std::make_unique<GuiWinAppImplotDemo>();
 #endif
-#ifndef IMGUI_DISABLE_METRICS_WINDOW
+#ifndef IMGUI_DISABLE_DEBUG_TOOLS
     _appWindows[APP_WIN_IMGUI_METRICS]    = std::make_unique<GuiWinAppImguiMetrics>();
 #endif
     _appWindows[APP_WIN_IMPLOT_METRICS]   = std::make_unique<GuiWinAppImplotMetrics>();

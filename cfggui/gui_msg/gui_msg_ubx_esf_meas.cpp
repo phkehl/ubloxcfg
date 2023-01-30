@@ -121,19 +121,20 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
         auto *measDef = (dataType < (int)MEAS_DEFS.size()) && MEAS_DEFS[dataType].name ? &MEAS_DEFS[dataType] : nullptr;
 
-        // (Unique) name for this entry
-        const std::string name = Ff::Sprintf("%s (%d)##%d", measDef ? measDef->name : "Unknown", dataType, dataType);
+        // (Unique) ID name for this entry
+        const uint32_t uid = dataType;
+        const std::string name = Ff::Sprintf("%s (%d)##%u", measDef ? measDef->name : "Unknown", dataType, uid);
 
         // Find entry, create new one if necessary
         MeasInfo *info = nullptr;
-        auto entry = _measInfos.find(name);
+        auto entry = _measInfos.find(uid);
         if (entry != _measInfos.end())
         {
             info = &entry->second;
         }
         else
         {
-            auto foo = _measInfos.insert({ name, MeasInfo() });
+            auto foo = _measInfos.insert({ uid, MeasInfo() });
             info = &foo.first->second;
         }
 
@@ -193,8 +194,9 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
 
     for (auto &entry: _measInfos)
     {
+        const uint32_t uid = entry.first;
         auto &info = entry.second;
-        _table.AddCellText(info.name);
+        _table.AddCellText(info.name, uid);
         _table.AddCellText(info.value);
         _table.AddCellText(info.rawHex);
         _table.AddCellText(info.ttagSens);
@@ -221,6 +223,7 @@ void GuiMsgUbxEsfMeas::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             _table.AddCellEmpty();
         }
+        _table.SetRowUid(uid);
     }
 }
 

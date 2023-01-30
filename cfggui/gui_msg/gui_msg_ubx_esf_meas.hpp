@@ -71,7 +71,7 @@ class GuiMsgUbxEsfMeas : public GuiMsg
             std::deque<double> plotData;
         };
 
-        std::map<std::string, MeasInfo> _measInfos;
+        std::map<uint32_t, MeasInfo> _measInfos;
         bool _resetPlotRange;
         bool _autoPlotRange;
         GuiWidgetTable _table;
