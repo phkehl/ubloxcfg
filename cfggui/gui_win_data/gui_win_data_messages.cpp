@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -548,9 +548,7 @@ void GuiWinDataMessages::_DrawList()
 {
     const bool showDeltaTime = _receiver && !_receiver->IsIdle();
 
-    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-    ImGui::TextUnformatted("      Count: Age: Rate: Name:");
-    ImGui::PopStyleColor();
+    Gui::TextDim("      Count: Age: Rate: Name:");
 
     _displayedEntry = _selectedEntry;
     uint64_t prevGroupId = 0;
@@ -658,10 +656,8 @@ void GuiWinDataMessages::_DrawMessage()
     // Message info
     if (ImGui::BeginChild("##MsgInfo", msgInfoSize))
     {
-        ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-        //                      12345678901234567890 12345678 12345678 12345 12345 12345 12345 12345
-        ImGui::TextUnformatted("Name:                  Type:    Source:  Seq:  Cnt:  Age:  Rate: Size:");
-        ImGui::PopStyleColor();
+        //            12345678901234567890 12345678 12345678 12345 12345 12345 12345 12345
+        Gui::TextDim("Name:                  Type:    Source:  Seq:  Cnt:  Age:  Rate: Size:");
         if (_receiver && !_receiver->IsIdle())
         {
             ImGui::Text("%-20s %c %-8s %-8s %5u %5u %5.1f %5.1f %5d",
@@ -686,9 +682,7 @@ void GuiWinDataMessages::_DrawMessage()
         {
             if (!msg->info.empty())
             {
-                ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-                ImGui::TextUnformatted("Info:");
-                ImGui::PopStyleColor();
+                Gui::TextDim("Info:");
                 ImGui::SameLine();
                 ImGui::TextWrapped("%s", msg->info.c_str());
             }

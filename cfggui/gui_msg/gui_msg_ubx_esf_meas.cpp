@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -267,7 +267,7 @@ bool GuiMsgUbxEsfMeas::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
         ImPlot::SetNextAxesToFit();
     }
     if (ImPlot::BeginPlot("##meas", ImVec2(sizeAvail.x, sizeAvail.y - tableSize.y - GuiSettings::style->ItemSpacing.y),
-        ImPlotFlags_Crosshairs))
+            ImPlotFlags_Crosshairs | ImPlotFlags_NoFrame))
     {
         ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels);
         if (_resetPlotRange || _autoPlotRange)

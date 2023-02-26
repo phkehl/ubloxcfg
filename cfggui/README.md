@@ -65,11 +65,13 @@ The GUI uses the following third-party code:
 * _DejaVu_ fonts (<https://dejavu-fonts.github.io/>), see [3rdparty/fonts/](./3rdparty/fonts/)
 * _ProggyClean_ font (<https://proggyfonts.net>), see [3rdparty/fonts/](./3rdparty/fonts/)
 * _ForkAwesome_ font (<https://forkaweso.me/Fork-Awesome/>), see [3rdparty/fonts/](./3rdparty/fonts/)
+* _json* (<https://github.com/nlohmann/json>), see [3rdparty/stuff/](./3rdparty/stuff/)
 * _GLFW_ (<https://www.glfw.org/>), dynamically linked
 * _libcurl_ (<https://curl.se/>), dynamically linked
 * _Freetype_ (<https://freetype.org/>), dynamically linked
 * _zlib_ (<https://zlib.net/>), dynamically linked
 * _glm_ (<https://github.com/g-truc/glm>)
+
 * And a bunch of other libraries that GLFW, Freetype, ImGui, libcurl etc. need...
 
 See the [main README](../README.md) for more.
@@ -105,6 +107,7 @@ See the [main README](../README.md) for more.
 * plot trajectory with error estimates
 * OpenGL::SaveState()/RervertState() or something like that
 * Something's wrong when stepping logs by epoch: UBX-NAV-EOE is not shown?!
+* Use JSON to store config and states
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out <https://github.com/bkaradzic/bgfx>

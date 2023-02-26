@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -59,7 +59,7 @@ void GuiWinAppAbout::DrawWindow()
     ImGui::PopFont();
 
     ImGui::PushFont(GuiSettings::fontSans);
-    ImGui::TextUnformatted( "Copyright (c) 2020-2022 Philippe Kehl (flipflip at oinkzwurgl dot org)");
+    ImGui::TextUnformatted( "Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org)");
     Gui::TextLink(          "https://oinkzwurgl.org/projaeggd/ubloxcfg/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("This consists of the following parts:");
@@ -70,9 +70,7 @@ void GuiWinAppAbout::DrawWindow()
     _DrawEntry("'cfggui' application", "GPLv3 license");
 
     ImGui::Separator();  // -----------------------------------------------------------------------------
-
     ImGui::TextUnformatted( "Third-party code (see source code and the links for details):");
-
     _DrawEntry("Dear Imgui",                  "MIT license",          "https://github.com/ocornut/imgui");
     _DrawEntry("ImPlot",                      "MIT license",          "https://github.com/epezent/implot");
     _DrawEntry("PlatformFolders",             "MIT license",          "https://github.com/sago007/PlatformFolders");
@@ -82,6 +80,7 @@ void GuiWinAppAbout::DrawWindow()
     _DrawEntry("zfstream",                    "unnamed license",      "https://github.com/madler/zlib/tree/master/contrib/iostream3");
     _DrawEntry("Base64",                      "MIT license",          "https://gist.github.com/tomykaira/f0fd86b6c73063283afe550bc5d77594");
     _DrawEntry("glm",                         "Happy Bunny license",  "https://github.com/g-truc/glm");
+    _DrawEntry("json",                        "Various licenses",     "https://github.com/nlohmann/json", "https://json.nlohmann.me/");
     ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Third-party libraries (first level dependencies, use ldd to see all):");
     _DrawEntry("GLFW",                        "zlib/libpng license",  "https://www.glfw.org", "https://github.com/glfw/glfw");
@@ -186,25 +185,32 @@ void GuiWinAppHelp::DrawWindow()
     {
         if (ImGui::BeginTabItem("cfggui"))
         {
+            ImGui::BeginChild("cfgguiHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
             ImGui::PushFont(GuiSettings::fontSans);
             ImGui::TextUnformatted("Yeah, right, ...");
-            ImGui::EndTabItem();
             ImGui::PopFont();
+            ImGui::EndChild();
+            ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("ImGui"))
         {
+            ImGui::BeginChild("ImGuiHelp", ImVec2(0, 0), false,  ImGuiWindowFlags_HorizontalScrollbar);
             ImGui::PushFont(GuiSettings::fontSans);
             ImGui::ShowUserGuide();
+            ImGui::BulletText("CTRL-F4 closes focused window");
             ImGui::BulletText("Hold SHIFT while moving window to dock into other windows.\n"
-                "(VERY experimental. WILL crash sometimes!");
+                "(VERY experimental. WILL crash sometimes!)");
             ImGui::PopFont();
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("ImPlot"))
         {
+            ImGui::BeginChild("ImPlotHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
             ImGui::PushFont(GuiSettings::fontSans);
             ImPlot::ShowUserGuide();
             ImGui::PopFont();
+            ImGui::EndChild();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

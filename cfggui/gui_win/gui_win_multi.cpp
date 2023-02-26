@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2022 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -122,22 +122,20 @@ void GuiWinMulti::Loop(const uint32_t &frame, const double &now)
         }
 
         // Collect all points, index by timestamp with some tolerance
-        constexpr int _LAT_ = Database::_LAT_;
-        constexpr int _LON_ = Database::_LON_;
         for (auto &database: databases)
         {
-            database->ProcEpochs([&](const Database::Epoch &epoch)
+            database->ProcRows([&](const Database::Row &row)
             {
-                if (epoch.valid && epoch.raw.havePos)
+                if (row.pos_avail)
                 {
-                    const uint64_t key = epoch.raw.havePosixTime ? (uint64_t)((epoch.raw.posixTime * 1e2) + 0.5) * 10 : 0;
+                    const uint64_t key = std::isnan(row.time_posix) ? 0 : (uint64_t)((row.time_posix * 1e2) + 0.5) * 10;
                     auto entry = _points.find(key);
                     if (entry == _points.end())
                     {
                         auto iter = _points.emplace(key, std::vector<Point>());
                         entry = iter.first;
                     }
-                    entry->second.emplace_back(epoch.raw.llh[_LAT_], epoch.raw.llh[_LON_], GuiSettings::GetFixColour(&epoch.raw));
+                    entry->second.emplace_back(row.pos_llh_lat, row.pos_llh_lon, row.fix_colour);
                 }
                 return true;
             }, false);

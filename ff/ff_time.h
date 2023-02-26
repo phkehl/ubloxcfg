@@ -1,6 +1,6 @@
 // flipflip's time functions
 //
-// Copyright (c) 2022 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -30,6 +30,7 @@ double wnoTow2ts(const int wno, const double tow);
 
 double ts2posix(const double ts, const int leapSec, const bool leapSecValid);
 
+double posixNow();
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

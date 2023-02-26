@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -287,7 +287,7 @@ bool Gui::ToggleButton(const char *labelOn, const char *labelOff, bool *toggle, 
     const bool enabled = *toggle;
     if (labelOff == NULL)
     {
-        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_GREY)); }
+        if (!enabled) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         if (ImGui::Button(labelOn, size))
         {
             *toggle = !*toggle;
@@ -359,6 +359,32 @@ void Gui::TextTitleF(const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
     ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
+    ImGui::TextV(fmt, args);
+    ImGui::PopStyleColor();
+    va_end(args);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void Gui::TextDim(const char *text)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+    ImGui::TextUnformatted(text);
+    ImGui::PopStyleColor();
+}
+
+void Gui::TextDim(const std::string &text)
+{
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+}
+
+void Gui::TextDimF(const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
     ImGui::TextV(fmt, args);
     ImGui::PopStyleColor();
     va_end(args);

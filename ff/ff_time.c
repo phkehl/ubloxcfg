@@ -1,6 +1,6 @@
 // flipflip's time functions
 //
-// Copyright (c) 2022 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -16,6 +16,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ff_debug.h"
 
@@ -77,12 +78,22 @@ double ts2posix(const double ts, const int leapSec, const bool leapSecValid)
 {
     if (leapSecValid)
     {
-        return ts + (double)GPS_POSIX_OFFS + (double)leapSec;
+        return ts + (double)(GPS_POSIX_OFFS - leapSec);
     }
     else
     {
-        return ts + (double)GPS_POSIX_OFFS + sLeapSecAtTs(ts);
+        return ts + (double)(GPS_POSIX_OFFS - sLeapSecAtTs(ts));
     }
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+double posixNow()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double)ts.tv_sec + ((double)ts.tv_nsec * 1e-9);
 }
 
 /* ****************************************************************************************************************** */

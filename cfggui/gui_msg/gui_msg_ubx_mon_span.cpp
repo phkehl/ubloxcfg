@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -187,7 +187,7 @@ bool GuiMsgUbxMonSpan::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const F
 
 void GuiMsgUbxMonSpan::_DrawSpect(const SpectData &spect, const ImVec2 size)
 {
-    if (ImPlot::BeginPlot(spect.title.c_str(), size, ImPlotFlags_Crosshairs))
+    if (ImPlot::BeginPlot(spect.title.c_str(), size, ImPlotFlags_Crosshairs | ImPlotFlags_NoFrame))
     {
         ImPlot::SetupAxis(ImAxis_X1, spect.xlabel.c_str());
         ImPlot::SetupAxis(ImAxis_Y1, "Amplitude");

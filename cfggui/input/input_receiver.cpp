@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -492,7 +492,7 @@ void InputReceiver::_Thread(Ff::Thread *thread)
             msg->seq = ++_msgSeq;
             if (epochCollect(&coll, msg, &epoch))
             {
-                _inputDatabase->AddEpoch(&epoch);
+                _inputDatabase->AddEpoch(epoch);
                 _SendEvent(std::make_unique<ReceiverEventEpoch>(&epoch));
             }
             _SEND_EVENT(ReceiverEventMsg, msg);

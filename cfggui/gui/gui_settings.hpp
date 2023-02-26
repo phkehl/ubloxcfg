@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -30,10 +30,13 @@
 #include "mapparams.hpp"
 #include "imgui.h"
 #include "implot.h"
+#include "json.hpp"
 
 #include "gui_settings_colours.hpp"
 
 /* ****************************************************************************************************************** */
+
+using json = nlohmann::json;
 
 #define _SETTINGS_COLOUR_ENUM(_str, _enum, _col) _enum,
 
@@ -75,6 +78,8 @@ class GuiSettings
         static std::string GetValue(const std::string &key);
         static std::vector<std::string> GetValueMult(const std::string &key, const int maxNum);
         static std::vector<std::string> GetValueList(const std::string &key, const std::string &sep, const int maxNum);
+        static json GetJson(const std::string &key);
+        static void SetJson(const std::string &key, const json &data);
 
         // List of recent things
         static constexpr int MAX_RECENT = 20;
@@ -101,8 +106,8 @@ class GuiSettings
         enum Colour_e : int { _DUMMY = -1, GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_ENUM) _NUM_COLOURS };
         static ImU32 colours[_NUM_COLOURS]; // See GUI_SETTINGS_COLOURS (and GUI_COLOUR_NONE), use GUI_COLOUR() macro to access
         static ImVec4 colours4[_NUM_COLOURS];
-        static ImU32 GetFixColour(const EPOCH_t *epoch); // GNSS fix colour
-        static const ImVec4 &GetFixColour4(const EPOCH_t *epoch); // GNSS fix colour
+        static ImU32 GetFixColour(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
+        static const ImVec4 &GetFixColour4(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
 
         // Paths
         static std::string cachePath;
@@ -111,10 +116,10 @@ class GuiSettings
         static std::vector<MapParams> maps;
 
         // Database
-        static int dbNumEpochs; // Number of epochs in database
-        static constexpr int DB_NUM_EPOCHS_MIN =  1000;
-        static constexpr int DB_NUM_EPOCHS_DEF = 10000;
-        static constexpr int DB_NUM_EPOCHS_MAX = 20000;
+        static int dbNumRows; // Number of rows (epochs) in database
+        static constexpr int DB_NUM_ROWS_MIN =   1000;
+        static constexpr int DB_NUM_ROWS_DEF =  20000;
+        static constexpr int DB_NUM_ROWS_MAX = 100000;
 
         // Other stuff
         static int minFrameRate;

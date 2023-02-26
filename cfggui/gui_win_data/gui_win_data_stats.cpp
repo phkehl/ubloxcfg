@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -35,74 +35,27 @@ GuiWinDataStats::GuiWinDataStats(const std::string &name, std::shared_ptr<Databa
     _table.AddColumn("Mean",  0.0f, GuiWidgetTable::ALIGN_RIGHT);
     _table.AddColumn("Std",   0.0f, GuiWidgetTable::ALIGN_RIGHT);
     _table.AddColumn("Max",   0.0f, GuiWidgetTable::ALIGN_RIGHT);
-
-    _rows.emplace_back("Latitude [deg]",
-        [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
-        [](const double value) { return Ff::Sprintf("%.12f", rad2deg(value)); });
-    _rows.emplace_back("Longitude [deg]",
-        [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
-        [](const double value) { return Ff::Sprintf("%.12f", rad2deg(value)); });
-    _rows.emplace_back("Height [m]",
-        [](const Database::EpochStats &es) { return es.llh[Database::_HEIGHT_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", value); });
-    _rows.emplace_back("Latitude [deg, min, sec]",
-        [](const Database::EpochStats &es) { return es.llh[Database::_LAT_]; },
-        [](const double value)
-        {
-            int d, m;
-            double s;
-            deg2dms(rad2deg(value), &d, &m, &s);
-            return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
-        });
-    _rows.emplace_back("Longitude [deg, min, sec]",
-        [](const Database::EpochStats &es) { return es.llh[Database::_LON_]; },
-        [](const double value)
-        {
-            int d, m;
-            double s;
-            deg2dms(rad2deg(value), &d, &m, &s);
-            return Ff::Sprintf("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
-        });
-    _rows.emplace_back("East (ref) [m]",
-        [](const Database::EpochStats &es) { return es.enuRef[Database::_E_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
-    _rows.emplace_back("North (ref) [m]",
-        [](const Database::EpochStats &es) { return es.enuRef[Database::_N_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
-    _rows.emplace_back("Up (ref) [m]",
-        [](const Database::EpochStats &es) { return es.enuRef[Database::_U_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
-    _rows.emplace_back("East (mean) [m]",
-        [](const Database::EpochStats &es) { return es.enuMean[Database::_E_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
-    _rows.emplace_back("North (mean) [m]",
-        [](const Database::EpochStats &es) { return es.enuMean[Database::_N_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
-    _rows.emplace_back("Up (mean) [m]",
-        [](const Database::EpochStats &es) { return es.enuMean[Database::_U_]; },
-        [](const double value) { return Ff::Sprintf("%.3f", rad2deg(value)); });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinDataStats::_ProcessData(const InputData &data)
 {
-    // New epoch means database stats have updated, render row contents
+    // New epoch means database stats have updated
     if (data.type == InputData::DATA_EPOCH)
     {
+        _dbinfo = _database->GetInfo();
         _table.ClearRows();
-        const Database::EpochStats stats = _database->GetStats();
-        for (auto &row: _rows)
-        {
-            if (row.getter && row.formatter)
-            {
-                auto &st = row.getter(stats);
-                _table.AddCellText(row.label);
-                _table.AddCellTextF("%d", st.count);
-                _table.AddCellText(row.formatter(st.min));
-                _table.AddCellText(row.formatter(st.mean));
-                _table.AddCellText(row.formatter(st.std));
-                _table.AddCellText(row.formatter(st.max));
+
+        for (const auto &e: _dbinfo.stats_list) {
+            if (e.label && e.stats) {
+                _table.AddCellText(e.label);
+                _table.SetRowUid((uint32_t)(uint64_t)(void *)e.label);
+                _table.AddCellTextF("%d", e.stats->count);
+                _table.AddCellTextF(e.fmt ? e.fmt : "%g", e.stats->min);
+                _table.AddCellTextF(e.fmt ? e.fmt : "%g", e.stats->mean);
+                _table.AddCellTextF(e.fmt ? e.fmt : "%g", e.stats->std);
+                _table.AddCellTextF(e.fmt ? e.fmt : "%g", e.stats->max);
             }
         }
     }
@@ -117,24 +70,15 @@ void GuiWinDataStats::_ClearData()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataStats::Row::Row(const char *_label, StatsGetter _getter, ValFormatter _formatter) :
-    label     { _label },
-    getter    { _getter },
-    formatter { _formatter }
-{
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
 void GuiWinDataStats::_DrawContent()
 {
-    bool drawPosition = false;
+    bool drawVars = false;
     bool drawSignal = false;
     if (_tabbar.Begin())
     {
-        if (_tabbar.Item("Position"))
+        if (_tabbar.Item("Variables"))
         {
-            drawPosition = true;
+            drawVars = true;
         }
         if (_tabbar.Item("Signal levels"))
         {
@@ -142,7 +86,7 @@ void GuiWinDataStats::_DrawContent()
         }
         _tabbar.End();
     }
-    if (drawPosition)
+    if (drawVars)
     {
         _table.DrawTable();
     }
@@ -156,13 +100,12 @@ void GuiWinDataStats::_DrawContent()
 
 void GuiWinDataStats::_DrawSiglevelPlot()
 {
-    if (ImPlot::BeginPlot("##SignalLevels", ImVec2(-1,-1), ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus /*| ImPlotFlags_NoLegend*/))
+    if (ImPlot::BeginPlot("##SignalLevels", ImVec2(-1,-1), ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoFrame /*| ImPlotFlags_NoLegend*/))
     {
         // Data
-        const auto stats = _database->GetStats();
-        const auto &cnoNav = stats.cnoNav;
-        const auto &cnoTrk = stats.cnoTrk;
-        constexpr float binWidth = 4.5f;
+        const auto &cno_trk = _dbinfo.cno_trk;
+        const auto &cno_nav = _dbinfo.cno_nav;
+        constexpr float bin_width = 4.5f;
 
         // Configure plot
         ImPlot::SetupAxis(ImAxis_X1, "Signal level [dbHz]", ImPlotAxisFlags_NoHighlight);
@@ -171,42 +114,47 @@ void GuiWinDataStats::_DrawSiglevelPlot()
         ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0f, 25.0f, ImGuiCond_Always);
         ImPlot::SetupFinish();
 
-        constexpr const char *labelTrk = "Tracked (max/mean/std)";
-        constexpr const char *labelNav = "Used    (max/mean/std)";
+        constexpr const char *label_trk = "Tracked (max/mean/std)";
+        constexpr const char *label_nav = "Used    (max/mean/std)";
 
         // Maxima
         ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_UNUSED));
-        ImPlot::PlotStairs(labelTrk, cnoTrk.cnosLo.data(), cnoTrk.maxs.data(), cnoTrk.count);
+        ImPlot::PlotStairs(label_trk, Database::Info::CNO_BINS_LO, cno_trk.maxs, Database::Info::CNO_BINS_NUM);
         ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_USED));
-        ImPlot::PlotStairs(labelNav, cnoNav.cnosLo.data(), cnoNav.maxs.data(), cnoNav.count);
+        ImPlot::PlotStairs(label_nav, Database::Info::CNO_BINS_LO, cno_nav.maxs, Database::Info::CNO_BINS_NUM);
 
         // On plot per bin, so that we can cycle through the colourmap. Per bin plot #tracked on top of that #used.
-        for (int ix = 0; ix < cnoNav.count; ix++)
+        for (int ix = 0; ix < Database::Info::CNO_BINS_NUM; ix++)
         {
+            // Plot x for centre of bin
+            const float x = Database::Info::CNO_BINS_MI[ix];
+
+            // Grey bar for tracked signals
             ImPlot::SetNextFillStyle(GUI_COLOUR4(SIGNAL_UNUSED));
-            ImPlot::PlotBars(labelTrk, &cnoTrk.cnosMi[ix], &cnoTrk.means[ix], 1, binWidth);
+            ImPlot::PlotBars(label_trk, &x, &cno_trk.means[ix], 1, bin_width);
 
+            // Coloured bar for used signals
             ImPlot::SetNextFillStyle(GUI_COLOUR4(SIGNAL_00_05 + ix));
-            ImPlot::PlotBars(labelNav, &cnoNav.cnosMi[ix], &cnoNav.means[ix], 1, binWidth);
+            ImPlot::PlotBars(label_nav, &x, &cno_nav.means[ix], 1, bin_width);
 
-            if (cnoNav.means[ix] > 0.0f)
+            if (cno_nav.means[ix] > 0.0f)
             {
                 ImPlot::SetNextErrorBarStyle(GUI_COLOUR4(SIGNAL_USED), 15.0f, 3.0f);
-                ImPlot::PlotErrorBars(labelNav, &cnoNav.cnosMi[ix], &cnoNav.means[ix], &cnoNav.stds[ix], 1);
+                ImPlot::PlotErrorBars(label_nav, &x, &cno_nav.means[ix], &cno_nav.stds[ix], 1);
             }
 
-            if (cnoTrk.means[ix] > 0.0f)
+            if (cno_trk.means[ix] > 0.0f)
             {
                 ImPlot::SetNextErrorBarStyle(GUI_COLOUR4(SIGNAL_UNUSED), 10.0f, 2.0f);
-                ImPlot::PlotErrorBars(labelTrk, &cnoTrk.cnosMi[ix], &cnoTrk.means[ix], &cnoTrk.stds[ix], 1);
+                ImPlot::PlotErrorBars(label_trk, &x, &cno_trk.means[ix], &cno_trk.stds[ix], 1);
             }
         }
 
         // Last plot determines colour shown in the legend
         ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_UNUSED));
-        ImPlot::PlotDummy(labelTrk);
+        ImPlot::PlotDummy(label_trk);
         ImPlot::SetNextLineStyle(GUI_COLOUR4(SIGNAL_USED));
-        ImPlot::PlotDummy(labelNav);
+        ImPlot::PlotDummy(label_nav);
 
         ImPlot::EndPlot();
     }

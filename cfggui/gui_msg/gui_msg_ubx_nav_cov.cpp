@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -62,7 +62,7 @@ bool GuiMsgUbxNavCov::Render(const std::shared_ptr<Ff::ParserMsg> &msg, const Ff
 
     const ImPlotAxisFlags axesFlags  = ImPlotAxisFlags_Lock | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks;
     const ImPlotFlags     plotFlags  = ImPlotFlags_NoLegend | ImPlotFlags_NoMouseText | ImPlotFlags_NoMenus |
-                                       ImPlotFlags_NoBoxSelect;
+                                       ImPlotFlags_NoBoxSelect | ImPlotFlags_NoFrame;
     const char * const    xyLabels[] = { "N", "E", "D" };
     const float           scaleMin   = 0; //-1e-3 * 1e-3; // mm
     const float           scaleMax   = 0; //1e3 * 1e3;    // km

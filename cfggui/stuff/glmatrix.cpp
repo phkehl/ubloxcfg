@@ -1,6 +1,6 @@
 // flipflip's glmatrix experiment
 //
-// Copyright (c) 2022 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/glmatrix
 //
 // Based on xscreensaver glmatrix.c, Copyright (c) 1992-2018 Jamie Zawinski <jwz@jwz.org>

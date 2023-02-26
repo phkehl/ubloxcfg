@@ -1,6 +1,6 @@
 // flipflip's navigation epoch abstraction
 //
-// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
@@ -1031,6 +1031,17 @@ static void _collectUbx(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const PARSER_MS
                 }
             }
             break;
+        case UBX_NAV_CLOCK_MSGID:
+            if (msg->size == UBX_NAV_CLOCK_V0_SIZE)
+            {
+                EPOCH_DEBUG("collect %s", msg->name);
+                UBX_NAV_CLOCK_V0_GROUP0_t clock;
+                memcpy(&clock, &msg->data[UBX_HEAD_SIZE], sizeof(clock));
+                coll->haveClock = true;
+                coll->clockBias = (double)clock.clkB * UBX_NAV_CLOCK_V0_CLKB_SCALE;
+                coll->clockDrift = (double)clock.clkD * UBX_NAV_CLOCK_V0_CLKD_SCALE;
+            }
+            break;
     }
 }
 
@@ -1226,6 +1237,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
 {
     epoch->valid = true;
     epoch->ts = TIME();
+    const double now = posixNow();
 
     // Convert stuff, prefer better quality, FIXME: this assumes WGS84...
 
@@ -1339,6 +1351,7 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
     {
         epoch->haveNumSig = true;
         epoch->haveNumSat = true;
+        epoch->haveSigCnoHist = true;
         const char *prevSvStr = "";
         for (int ix = 0; ix < epoch->numSignals; ix++)
         {
@@ -1427,11 +1440,19 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
     {
         epoch->posixTime = ts2posix(wnoTow2ts(epoch->gpsWeek, epoch->gpsTow), epoch->leapSeconds, epoch->haveLeapSeconds);
         epoch->havePosixTime = true;
+
     }
     // else if (epoch->haveDate && epoch->haveTime) // FIXME TODO
     // {
     //     ...
     // }
+
+    // Latency
+    if (epoch->havePosixTime)
+    {
+        epoch->latency = now - epoch->posixTime;
+        epoch->haveLatency = ((epoch->latency > 0.0f) && (epoch->latency <= 2.0f)); // Only when reading a live receiver
+    }
 
     // Epoch info stringification
     snprintf(epoch->str, sizeof(epoch->str),

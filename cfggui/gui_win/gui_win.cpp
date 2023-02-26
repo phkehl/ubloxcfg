@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -43,7 +43,8 @@ GuiWin::GuiWin(const std::string &name) :
     _winUid           { reinterpret_cast<std::uintptr_t>(this) },
     _winUidStr        { Ff::Sprintf("%016lx", _winUid) },
     _winClass         { std::make_unique<ImGuiWindowClass>() },
-    _winIsDocked      { false }
+    _winIsDocked      { false },
+    _winIsFocused     { true }
 {
     _winName = name;
     _newWinInitPos = NEW_WIN_POS[_newWinPosIx++];
@@ -161,6 +162,13 @@ bool GuiWin::WinIsDocked()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+bool GuiWin::WinIsFocused()
+{
+    return _winIsFocused;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void GuiWin::Loop(const uint32_t &frame, const double &now)
 {
     (void)frame;
@@ -247,6 +255,7 @@ void GuiWin::_DrawWindowEnd()
 {
     ImGuiWindow *win = ImGui::GetCurrentWindow();
     _winIsDocked = win->DockIsActive;
+    _winIsFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
     ImGui::End();
 }
 

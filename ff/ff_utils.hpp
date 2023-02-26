@@ -1,6 +1,6 @@
 // flipflip's c++ stuff: utilities
 //
-// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -49,6 +49,17 @@ namespace Ff
 
     // Join string
     std::string StrJoin(const std::vector<std::string> &strs, const std::string &sep);
+
+    bool StrStartsWith(const std::string &str, const std::string &prefix);
+    bool StrEndsWith(const std::string &str, const std::string &suffix);
+    bool StrContains(const std::string &str, const std::string &sub);
+
+    bool StrToValue(const std::string &str, int32_t &value);
+    bool StrToValue(const std::string &str, uint32_t &value);
+    bool StrToValue(const std::string &str, int64_t &value);
+    bool StrToValue(const std::string &str, uint64_t &value);
+    bool StrToValue(const std::string &str, float &value);
+    bool StrToValue(const std::string &str, double &value);
 
     // Remove duplicates
     void MakeUnique(std::vector<std::string> &vec);

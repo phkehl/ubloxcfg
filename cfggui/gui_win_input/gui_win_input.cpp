@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -47,7 +47,7 @@
 
 GuiWinInput::GuiWinInput(const std::string &name) :
     GuiWin(name),
-    _database        { std::make_shared<Database>(GuiSettings::dbNumEpochs, name) },
+    _database        { std::make_shared<Database>(name) },
     _logWidget       { 1000 },
     _dataWinCaps     { DataWinDef::Cap_e::ALL },
     _autoHideDatawin { true }
@@ -236,7 +236,7 @@ void GuiWinInput::DrawWindow()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinInput::DrawDataWindows()
+void GuiWinInput::DrawDataWindows(const bool closeFocusedWin)
 {
     if (_autoHideDatawin && !_winDrawn)
     {
@@ -251,6 +251,10 @@ void GuiWinInput::DrawDataWindows()
         if (dataWin->WinIsOpen())
         {
             dataWin->DrawWindow();
+            if (closeFocusedWin && dataWin->WinIsFocused())
+            {
+                dataWin->WinClose();
+            }
             iter++;
         }
         else
@@ -446,9 +450,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
         }
         else
         {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-            ImGui::TextUnformatted("n/a");
-            ImGui::PopStyleColor();
+            Gui::TextDim("n/a");
         }
     }
 
@@ -456,13 +458,11 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     if (epoch && epoch->haveFix)
     {
         ImGui::SameLine(dataOffs);
-        ImGui::PushStyleColor(ImGuiCol_Text, GuiSettings::GetFixColour(epoch));
+        ImGui::PushStyleColor(ImGuiCol_Text, GuiSettings::GetFixColour(epoch->fix, epoch->fixOk));
         ImGui::TextUnformatted(epoch->fixStr);
         ImGui::PopStyleColor();
         // ImGui::SameLine();
-        // ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-        // ImGui::Text("%.1f", epoch-> - _fixTime); // TODO
-        // ImGui::PopStyleColor();
+        // Gui::TextDim("%.1f", epoch-> - _fixTime); // TODO
     }
 
     ImGui::Selectable("Latitude");
@@ -470,7 +470,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     {
         int d, m;
         double s;
-        deg2dms(rad2deg(epoch->llh[Database::_LAT_]), &d, &m, &s);
+        deg2dms(rad2deg(epoch->llh[0]), &d, &m, &s);
         ImGui::SameLine(dataOffs);
         if (!epoch->fixOk) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         ImGui::Text(" %2d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'S' : 'N');
@@ -481,7 +481,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     {
         int d, m;
         double s;
-        deg2dms(rad2deg(epoch->llh[Database::_LON_]), &d, &m, &s);
+        deg2dms(rad2deg(epoch->llh[1]), &d, &m, &s);
         ImGui::SameLine(dataOffs);
         if (!epoch->fixOk) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
         ImGui::Text("%3d° %2d' %9.6f\" %c", ABS(d), m, s, d < 0 ? 'W' : 'E');
@@ -492,7 +492,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     {
         ImGui::SameLine(dataOffs);
         if (!epoch->fixOk) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
-        ImGui::Text("%.2f m", epoch->llh[Database::_HEIGHT_]);
+        ImGui::Text("%.2f m", epoch->llh[2]);
         if (epoch->haveMsl)
         {
             ImGui::SameLine();

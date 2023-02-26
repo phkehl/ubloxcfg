@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -61,6 +61,17 @@ GuiWinDataScatter::~GuiWinDataScatter()
     for (int ix = 0; ix < NUM_SIGMA; ix++)
     {
         GuiSettings::SetValue(_winName + ".sigmaEnabled" + std::to_string(ix), _sigmaEnabled[ix]);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataScatter::_ProcessData(const InputData &data)
+{
+    // New epoch means database stats have updated
+    if (data.type == InputData::DATA_EPOCH)
+    {
+        _dbinfo = _database->GetInfo();
     }
 }
 
@@ -177,14 +188,9 @@ void GuiWinDataScatter::_DrawContent()
     const FfVec2f cursorOrigin = ImGui::GetCursorPos();
     const FfVec2f cursorMax = ImGui::GetWindowContentRegionMax();
 
-    constexpr int _E_ = Database::_E_;
-    constexpr int _N_ = Database::_N_;
-    //constexpr int _U_ = Database::_U_;
-
     constexpr float minRadiusM = 0.02;
     constexpr float maxRadiusM = 10000.0;
 
-    auto stats = _database->GetStats();
     double refPosLlh[3];
     double refPosXyz[3];
     const auto refPos = _database->GetRefPos(refPosLlh, refPosXyz);
@@ -232,20 +238,18 @@ void GuiWinDataScatter::_DrawContent()
     std::memset(_histogramE, 0, sizeof(_histogramE));
     _histNumPoints = 0;
     bool havePoints = false;
-    _database->ProcEpochs([&](const Database::Epoch &epoch)
+
+    _database->ProcRows([&](const Database::Row &row)
     {
-        if (epoch.raw.havePos)
+        if (row.pos_avail)
         {
-            const float east  = epoch.enuRef[_E_];
-            const float north = epoch.enuRef[_N_];
+            const float east  = row.pos_enu_ref_east;
+            const float north = row.pos_enu_ref_north;
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
-            draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), GuiSettings::GetFixColour(&epoch.raw));
+            draw->AddRectFilled(cent + ImVec2(dx - 2, dy - 2), cent + ImVec2(dx + 2, dy + 2), row.fix_colour);
             havePoints = true;
             _histNumPoints++;
-
-            // const ImVec4 fc = GuiSettings::GetFixColour4(&epoch.raw);
-            // DEBUG("%03d %6.3f %6.3f %6.3f   %.3f %.3f %.3f %.3f", ix, epoch.enuRef[_E_], epoch.enuRef[_N_], epoch.enuRef[Database::_U_], fc.x, fc.y, fc.z, fc.w);
 
             if (_showHistogram)
             {
@@ -314,16 +318,16 @@ void GuiWinDataScatter::_DrawContent()
     // Draw min/max/mean
     if (_showStats && havePoints)
     {
-        const float minEastX = cent.x + std::floor((stats.enuRef[_E_].min * m2px) + 0.5);
-        const float maxEastX = cent.x + std::floor((stats.enuRef[_E_].max * m2px) + 0.5);
+        const float minEastX = cent.x + std::floor((_dbinfo.stats.pos_enu_ref_east.min * m2px) + 0.5);
+        const float maxEastX = cent.x + std::floor((_dbinfo.stats.pos_enu_ref_east.max * m2px) + 0.5);
         draw->AddLine(ImVec2(minEastX, top), ImVec2(minEastX, bot), GUI_COLOUR(PLOT_STATS_MINMAX));
         draw->AddLine(ImVec2(maxEastX, top), ImVec2(maxEastX, bot), GUI_COLOUR(PLOT_STATS_MINMAX));
-        const float minNorthY = cent.y - std::floor((stats.enuRef[_N_].min * m2px) + 0.5);
-        const float maxNorthY = cent.y - std::floor((stats.enuRef[_N_].max * m2px) + 0.5);
+        const float minNorthY = cent.y - std::floor((_dbinfo.stats.pos_enu_ref_north.min * m2px) + 0.5);
+        const float maxNorthY = cent.y - std::floor((_dbinfo.stats.pos_enu_ref_north.max * m2px) + 0.5);
         draw->AddLine(ImVec2(left, minNorthY), ImVec2(right, minNorthY), GUI_COLOUR(PLOT_STATS_MINMAX));
         draw->AddLine(ImVec2(left, maxNorthY), ImVec2(right, maxNorthY), GUI_COLOUR(PLOT_STATS_MINMAX));
-        const float meanEastX = cent.x + std::floor((stats.enuRef[_E_].mean * m2px) + 0.5);
-        const float meanNorthY = cent.y - std::floor((stats.enuRef[_N_].mean * m2px) + 0.5);
+        const float meanEastX = cent.x + std::floor((_dbinfo.stats.pos_enu_ref_east.mean * m2px) + 0.5);
+        const float meanNorthY = cent.y - std::floor((_dbinfo.stats.pos_enu_ref_north.mean * m2px) + 0.5);
         if (refPos != Database::REFPOS_MEAN)
         {
             draw->AddLine(ImVec2(meanEastX, top), ImVec2(meanEastX, bot), GUI_COLOUR(PLOT_STATS_MEAN));
@@ -333,19 +337,19 @@ void GuiWinDataScatter::_DrawContent()
         ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_STATS_MINMAX));
         char label[20];
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].min);
+        std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_east.min);
         ImGui::SetCursorScreenPos(ImVec2(minEastX - (GuiSettings::charSize.x * strlen(label)) - 2, top));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].max);
+        std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_east.max);
         ImGui::SetCursorScreenPos(ImVec2(maxEastX + 2, top));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].min);
+        std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_north.min);
         ImGui::SetCursorScreenPos(ImVec2(left, minNorthY));
         ImGui::TextUnformatted(label);
 
-        std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].max);
+        std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_north.max);
         ImGui::SetCursorScreenPos(ImVec2(left, maxNorthY - lineHeight));
         ImGui::TextUnformatted(label);
 
@@ -356,11 +360,11 @@ void GuiWinDataScatter::_DrawContent()
         {
             ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(PLOT_STATS_MEAN));
 
-            std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_E_].mean);
+            std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_east.mean);
             ImGui::SetCursorScreenPos(ImVec2(meanEastX + 2, top + lineHeight));
             ImGui::TextUnformatted(label);
 
-            std::snprintf(label, sizeof(label), "%+.3f", stats.enuRef[_N_].mean);
+            std::snprintf(label, sizeof(label), "%+.3f", _dbinfo.stats.pos_enu_ref_north.mean);
             ImGui::SetCursorScreenPos(ImVec2(left + 2 + (GuiSettings::charSize.x * 6), meanNorthY - lineHeight));
             ImGui::TextUnformatted(label);
 
@@ -370,7 +374,7 @@ void GuiWinDataScatter::_DrawContent()
 
     // Draw error ellipses
     _showingErrorEll = false;
-    if ( (stats.enErrEll.a > 0) && (stats.enErrEll.b > 0) )
+    if (!std::isnan(_dbinfo.err_ell.a))
     {
         for (int sIx = 0; sIx < NUM_SIGMA; sIx++)
         {
@@ -381,13 +385,13 @@ void GuiWinDataScatter::_DrawContent()
             _showingErrorEll = true;
 
             ImVec2 points[100];
-            const double cosOmega = std::cos(stats.enErrEll.omega);
-            const double sinOmega = std::sin(stats.enErrEll.omega);
-            const double x0 = stats.enuRef[_E_].mean * m2px;
-            const double y0 = stats.enuRef[_N_].mean * m2px;
+            const double cosOmega = std::cos(_dbinfo.err_ell.omega);
+            const double sinOmega = std::sin(_dbinfo.err_ell.omega);
+            const double x0 = _dbinfo.stats.pos_enu_ref_east.mean * m2px;
+            const double y0 = _dbinfo.stats.pos_enu_ref_north.mean * m2px;
             const double scale = SIGMA_SCALES[sIx];
-            const double a = scale * stats.enErrEll.a;
-            const double b = scale * stats.enErrEll.b;
+            const double a = scale * _dbinfo.err_ell.a;
+            const double b = scale * _dbinfo.err_ell.b;
             for (int ix = 0; ix < NUMOF(points); ix++)
             {
                 const double t = (double)ix * (2 * M_PI / (double)NUMOF(points));
@@ -405,28 +409,26 @@ void GuiWinDataScatter::_DrawContent()
     // Highlight last point, draw accuracy estimate circle
     //double lastEnu[3] = { 0.0, 0.0, 0.0 };
     //double lastLlh[3] = { 0.0, 0.0, 0.0 };
-    _database->ProcEpochs([&](const Database::Epoch &epoch)
+    _database->ProcRows([&](const Database::Row &row)
     {
-        if (epoch.raw.havePos)
+        if (!std::isnan(row.pos_enu_ref_east))
         {
-            const float east  = epoch.enuRef[_E_];
-            const float north = epoch.enuRef[_N_];
+            const float east  = row.pos_enu_ref_east;
+            const float north = row.pos_enu_ref_north;
             const float dx = std::floor( (east * m2px) + 0.5 );
             const float dy = -std::floor( (north * m2px) + 0.5 );
-            const ImU32 c = epoch.raw.fixOk ? GUI_COLOUR(PLOT_FIX_HL_OK) : GUI_COLOUR(PLOT_FIX_HL_MASKED);
-            uint32_t age = TIME() - epoch.raw.ts;
+            const ImU32 c = row.fix_ok ? GUI_COLOUR(PLOT_FIX_HL_OK) : GUI_COLOUR(PLOT_FIX_HL_MASKED);
+            uint32_t age = TIME() - row.time_ts;
             const float w = age < 100 ? 3.0 : 1.0;
             const float l = 20.0; //age < 100 ? 40.0 : 20.0; //20 + ((100 - MIN(age, 100)) / 2);
             if (_showAccEst)
             {
-                draw->AddCircleFilled(cent + ImVec2(dx, dy), (0.5 * epoch.raw.horizAcc * m2px) + 0.5, GUI_COLOUR(PLOT_MAP_ACC_EST));
+                draw->AddCircleFilled(cent + ImVec2(dx, dy), (0.5 * row.pos_acc_horiz * m2px) + 0.5, GUI_COLOUR(PLOT_MAP_ACC_EST));
             }
             draw->AddLine(cent + ImVec2(dx - l, dy), cent + ImVec2(dx - 3, dy), c, w);
             draw->AddLine(cent + ImVec2(dx + 3, dy), cent + ImVec2(dx + l, dy), c, w);
             draw->AddLine(cent + ImVec2(dx, dy - l), cent + ImVec2(dx, dy - 3), c, w);
             draw->AddLine(cent + ImVec2(dx, dy + 3), cent + ImVec2(dx, dy + l), c, w);
-            //std::memcpy(lastEnu, epoch.enuRef, sizeof(lastEnu));
-            //std::memcpy(lastLlh, epoch.llh, sizeof(lastLlh));
             return false;
         }
         return true;
@@ -500,7 +502,7 @@ void GuiWinDataScatter::_DrawContent()
 
     if (_triggerSnapRadius)
     {
-        _plotRadius = MIN(MAX(stats.enuRef[_E_].max, stats.enuRef[_N_].max), maxRadiusM);
+        _plotRadius = MIN(MAX(_dbinfo.stats.pos_enu_ref_east.max, _dbinfo.stats.pos_enu_ref_north.max), maxRadiusM);
     }
 
     // Range control using mouse wheel (but not while dragging)

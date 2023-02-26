@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -21,652 +21,658 @@
 
 #include "gui_inc.hpp"
 #include "implot.h"
-#include "implot_internal.h"
 
 #include "gui_win_data_plot.hpp"
 
 /* ****************************************************************************************************************** */
 
-#define _PLOT_ID "##Plot"
+/*static*/ const ImPlotRect GuiWinDataPlot::PLOT_LIMITS_DEF = { 0.0f, 100.0f, 0.0f, 10.0f };
 
 GuiWinDataPlot::GuiWinDataPlot(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _plotVarX   { nullptr },
-    _dndHovered { false },
-    _colormap   { ImPlotColormap_Deep }
+    _colormap      { ImPlotColormap_Deep },
+    _axisUsed      { false, false, false, false, false, false },
+    _fitMode       { FitMode::NONE },
+    _plotLimitsY1  { PLOT_LIMITS_DEF },
+    _plotLimitsY2  { PLOT_LIMITS_DEF },
+    _plotLimitsY3  { PLOT_LIMITS_DEF },
+    _followXmax    { 0.0 },
+    _setLimitsX    { true },
+    _setLimitsY    { true },
+    _plotTitleId   { "##" + _winName },
+    _showLegend    { true }
 {
     _winSize = { 80, 25 };
 
-    _latestEpochEna = false;
-
     std::snprintf(_dndType, sizeof(_dndType), "PlotVar_%016" PRIx64, _winUid & 0xffffffffffffffff);
-    _InitPlotVars();
-    _LoadPlots();
+
+    _LoadParams();
 }
 
 GuiWinDataPlot::~GuiWinDataPlot()
 {
-    _SavePlots();
+    _SaveParams();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_ProcessData(const InputData &data)
+// void GuiWinDataPlot::_ClearData()
+// {
+// }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// void GuiWinDataPlot::_ProcessData(const InputData &data)
+// {
+//     if (data.type == InputData::DATA_EPOCH)
+//     {
+//
+//     }
+// }
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinDataPlot::_Loop(const uint32_t &frame, const double &now)
 {
-    if (data.type == InputData::DATA_EPOCH)
+    UNUSED(frame);
+    UNUSED(now);
+
+    if (!_database->Changed(this) || !_xVar)
     {
-        // Learn epoch period (1/rate)
-        const uint32_t ts = data.epoch->epoch.ts;
-        if (_epochPrevTs != 0)
-        {
-            const double dt = (double)(ts - _epochPrevTs) * 1e-3;
-            if ( (dt > 0.01) && (dt < 5.0) )
-            {
-                _epochPeriod = dt;
-            }
-        }
-        _epochPrevTs = ts;
+        return;
     }
-}
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataPlot::_ClearData()
-{
-    _epochPeriod = 1.0;
-    _epochPrevTs = 0;
-    // for (auto &d: _plotData)
-    // {
-    //     _RemoveFromPlot(d.plotVarY);
-    // }
-    // _plotVarX = nullptr;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-GuiWinDataPlot::PlotData::PlotData(PlotVar *_plotVarX, PlotVar *_plotVarY, PlotType _type, Database *_db)
-    : plotVarX{_plotVarX}, plotVarY{_plotVarY}, type{_type}, db{_db}
-{
-    yAxis = ImAxis_Y1;
-    getter = [](int ix, void *arg) -> ImPlotPoint
+    // Find most recent x value
+    double xMax = NAN;
+    const Database::FieldIx fieldIx = _xVar->field.field;
+    _database->ProcRows([&](const Database::Row &row)
     {
-        PlotData *pd = (PlotData *)arg;
-        const Database::Epoch &epoch = (*pd->db)[ix];
-        return ImPlotPoint( pd->plotVarX->getter(epoch), pd->plotVarY->getter(epoch) );
-    };
-}
+        const double xValue = row[fieldIx];
+        if (!std::isnan(xValue))
+        {
+            xMax = xValue;
+            return false;
+        }
+        return true;
+    }, true);
 
-// ---------------------------------------------------------------------------------------------------------------------
+    if (!std::isnan(xMax))
+    {
+        // Update x axis range
+        if ((_fitMode == FitMode::FOLLOW_X) && _xVar)
+        {
+            if (!std::isnan(_followXmax))
+            {
+                const double delta = xMax - _followXmax;
+                if (delta != 0.0) {
+                    _plotLimitsY1.X.Max += delta;
+                    _plotLimitsY1.X.Min += delta;
+                    _setLimitsX = true;
+                }
+            }
+            _setLimitsX = true;
+        }
 
-GuiWinDataPlot::PlotVar::PlotVar(const std::string &_label, const std::string &_tooltip, EpochValueGetter_t _getter)
-    : label{_label}, tooltip{_tooltip}, used{false}, getter{_getter}
-{
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-GuiWinDataPlot::DndPayload::DndPayload(PlotVar *_plotVar, PlotData *_plotData)
-    : plotVar{_plotVar}, plotData{_plotData}
-{
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-GuiWinDataPlot::DndPayload::DndPayload(const ImGuiPayload *imPayload)
-    : plotVar{ ((DndPayload *)imPayload->Data)->plotVar},
-      plotData{((DndPayload *)imPayload->Data)->plotData}
-{
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-#define _EPOCH(_expr_) [](const Database::Epoch &epoch) { return (double)(_expr_); }
-
-void GuiWinDataPlot::_InitPlotVars()
-{
-    //_plotVars.push_back( PlotVar( "NAN", "NAN", [](const Database::Epoch &epoch) { (void)epoch; return NAN; }) );
-    _plotVars.push_back( PlotVar( "ts",      "Timestamp [s]",                         _EPOCH(epoch.ts)) );
-    _plotVars.push_back( PlotVar( "TOW",     "GPS time of week [s]",                  _EPOCH(epoch.raw.haveGpsTow ? epoch.raw.gpsTow : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "East",    "East (relative to mean position) [m]",  _EPOCH(epoch.raw.havePos ? epoch.enuMean[Database::_E_] : NAN) ) );
-    _plotVars.push_back( PlotVar( "North",   "North (relative to mean position) [m]", _EPOCH(epoch.raw.havePos ? epoch.enuMean[Database::_N_] : NAN) ) );
-    _plotVars.push_back( PlotVar( "Up",      "Up (relative to mean position) [m]",    _EPOCH(epoch.raw.havePos ? epoch.enuMean[Database::_U_] : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "Lat",     "Latitude [deg]",                        _EPOCH(epoch.raw.havePos ? rad2deg(epoch.raw.llh[0]) : NAN) ) );
-    _plotVars.push_back( PlotVar( "Lon",     "Longitude [deg]",                       _EPOCH(epoch.raw.havePos ? rad2deg(epoch.raw.llh[1]) : NAN) ) );
-    _plotVars.push_back( PlotVar( "Height",  "Height [m]",                            _EPOCH(epoch.raw.havePos ? epoch.raw.llh[2] : NAN) ) );
-    _plotVars.push_back( PlotVar( "MSL",     "Height MSL [m]",                        _EPOCH(epoch.raw.haveMsl ? epoch.raw.heightMsl : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "X",       "ECEF X [m]",                            _EPOCH(epoch.raw.havePos ? epoch.raw.xyz[0] : NAN) ) );
-    _plotVars.push_back( PlotVar( "Y",       "ECEF Y [m]",                            _EPOCH(epoch.raw.havePos ? epoch.raw.xyz[1] : NAN) ) );
-    _plotVars.push_back( PlotVar( "Z",       "ECEF Z [m]",                            _EPOCH(epoch.raw.havePos ? epoch.raw.xyz[2] : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "PDOP",    "Position DOP [-]",                      _EPOCH(epoch.raw.havePdop ? epoch.raw.pDOP : NAN) ) );
-    _plotVars.push_back( PlotVar( "hAcc",    "Horizontal (2d) accuracy estimate [m]", _EPOCH(epoch.raw.havePos ? epoch.raw.horizAcc : NAN) ) );
-    _plotVars.push_back( PlotVar( "vAcc",    "Vertical accuracy estimate [m]",        _EPOCH(epoch.raw.havePos ? epoch.raw.vertAcc : NAN) ) );
-    _plotVars.push_back( PlotVar( "pAcc",    "Position (3d) accuracy estimate [m]",   _EPOCH(epoch.raw.havePos ? epoch.raw.posAcc : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "Fix",     "Fix type (+0.25 if fixok) [-]",         _EPOCH(epoch.raw.haveFix ? epoch.raw.fix + (epoch.raw.fixOk ? 0.25 : 0.0) : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "#sat",      "Number of satellits used in navigation [-]",       _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsed     : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GPS",  "Number of GPS signals used in navigation [-]",     _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedGps  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GLO",  "Number of GLONASS signals used in navigation [-]", _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedGlo  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GAL",  "Number of Galileo signals used in navigation [-]", _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedGal  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_BDS",  "Number of BeiDou signals used in navigation [-]",  _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedBds  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_SBAS", "Number of SBAS signals used in navigation [-]",    _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedSbas : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_QZSS", "Number of QZSS signals used in navigation [-]",    _EPOCH(epoch.raw.haveNumSv ? epoch.raw.numSatUsedQzss : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "#sig",      "Number of signals used in navigation [-]",         _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsed     : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GPS",  "Number of GPS signals used in navigation [-]",     _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedGps  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GLO",  "Number of GLONASS signals used in navigation [-]", _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedGlo  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_GAL",  "Number of Galileo signals used in navigation [-]", _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedGal  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_BDS",  "Number of BeiDou signals used in navigation [-]",  _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedBds  : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_SBAS", "Number of SBAS signals used in navigation [-]",    _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedSbas : NAN) ) );
-    _plotVars.push_back( PlotVar( "#sig_QZSS", "Number of QZSS signals used in navigation [-]",    _EPOCH(epoch.raw.haveNumSig ? epoch.raw.numSigUsedQzss : NAN) ) );
-
-    _plotVars.push_back( PlotVar( "relNorth", "Relative East (RTK) [m]",  _EPOCH(epoch.raw.haveRelPos ? epoch.raw.relNed[0] : NAN) ) );
-    _plotVars.push_back( PlotVar( "relEast",  "Relative North (RTK) [m]", _EPOCH(epoch.raw.haveRelPos ? epoch.raw.relNed[1] : NAN) ) );
-    _plotVars.push_back( PlotVar( "relDown",  "Relative down (RTK) [m]",  _EPOCH(epoch.raw.haveRelPos ? epoch.raw.relNed[2] : NAN) ) );
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-constexpr float VAR_WIDTH = 15.0f;
-
-void GuiWinDataPlot::_DrawContent()
-{
-    // List of variables
-    ImGui::BeginChild("##Vars", ImVec2(GuiSettings::charSize.x * VAR_WIDTH, 0.0f));
-    _DrawVars();
-    ImGui::EndChild();
-
-    ImGui::SameLine(0.0f, 2.0f);
-    //Gui::VerticalSeparator();
-
-    // Plot
-    _DrawPlot();
+        _followXmax = xMax;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 void GuiWinDataPlot::_DrawToolbar()
 {
+    Gui::VerticalSeparator();
+
+    // Add variables to plot
+    if (ImGui::Button(ICON_FK_PLUS "##AddVar", GuiSettings::iconSize))
+    {
+        ImGui::OpenPopup("AddVarMenu");
+    }
+    Gui::ItemTooltip("Add variables to plot.\nDouble-click items in this list or drag them to the plot or axes.");
+    if (ImGui::IsPopupOpen("AddVarMenu"))
+    {
+        ImGui::SetNextWindowSize(ImVec2(-1, GuiSettings::lineHeight * 25));
+        if (ImGui::BeginPopup("AddVarMenu"))
+        {
+            Gui::BeginMenuPersist();
+            for (auto &field: Database::FIELDS)
+            {
+                // Skip entries without a title, they are not intended to be plotted
+                if (!field.label) {
+                    continue;
+                }
+
+                // Plot variable entry with tooltip
+                const bool used = _usedFields[field.name];
+                if (used) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+                if (ImGui::Selectable(field.label, false, ImGuiSelectableFlags_AllowDoubleClick)) {
+                    // On double click, act like it was dragged onto the plot
+                    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                    {
+                        _HandleDrop({ field, DragDrop::LIST, DragDrop::PLOT });
+                    }
+                }
+                if (used) { ImGui::PopStyleColor(); }
+                Gui::ItemTooltip(field.label);
+
+                // Entry is a drag and drop source
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
+                {
+                    DragDrop dragdrop(field, DragDrop::LIST);
+                    ImGui::SetDragDropPayload(_dndType, &dragdrop, sizeof(dragdrop));
+                    ImGui::TextUnformatted(field.label);
+                    ImGui::EndDragDropSource();
+                }
+            }
+            Gui::EndMenuPersist();
+            ImGui::EndPopup();
+        }
+    }
+
     ImGui::SameLine();
 
+    // Reset plot
+    ImGui::BeginDisabled(!_xVar && _yVars.empty());
+    if (ImGui::Button(ICON_FK_TRASH_O "##ResetPlot", GuiSettings::iconSize))
+    {
+        ImGui::OpenPopup("ResetPlot");
+    }
+    ImGui::EndDisabled();
+    Gui::ItemTooltip("Reset plot (remove all vars, ...)");
+    if (ImGui::IsPopupOpen("ResetPlot"))
+    {
+        if (ImGui::BeginPopup("ResetPlot"))
+        {
+            if (ImGui::Button("Reset plot"))
+            {
+                _xVar = nullptr;
+                _yVars.clear();
+                _plotLimitsY1 = PLOT_LIMITS_DEF;
+                _plotLimitsY2 = PLOT_LIMITS_DEF;
+                _plotLimitsY3 = PLOT_LIMITS_DEF;
+                _setLimitsX = true;
+                _setLimitsY = true;
+                _UpdateVars();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
+    Gui::VerticalSeparator();
+
     // Colormap
-    ImGui::Button(ICON_FK_PAINT_BRUSH "###Colormap", GuiSettings::iconSize);
-    Gui::ItemTooltip("Colours (click left/right to cycle maps)");
-    if (ImGui::IsItemHovered())
+    if (ImGui::Button(ICON_FK_PAINT_BRUSH "###Colormap", GuiSettings::iconSize))
     {
-        if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        ImGui::OpenPopup("ChooseColourmap");
+    }
+    Gui::ItemTooltip("Colours");
+    if (ImGui::IsPopupOpen("ChooseColourmap"))
+    {
+        if (ImGui::BeginPopup("ChooseColourmap"))
         {
-            _colormap++;
-            _colormap %= ImPlot::GetColormapCount();
-            ImPlot::BustColorCache(_PLOT_ID);
-        }
-        else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-        {
-            _colormap--;
-            if (_colormap < 0)
+            Gui::BeginMenuPersist();
+            for (ImPlotColormap map = 0; map < ImPlot::GetColormapCount(); map++)
             {
-                _colormap = ImPlot::GetColormapCount() - 1;
+                if (ImPlot::ColormapButton(ImPlot::GetColormapName(map),ImVec2(225,0),map))
+                {
+                    _colormap = map;
+                     ImPlot::BustColorCache(/*_plotTitleId.c_str()*/); // FIXME busting only our plot doesn't work
+                }
             }
-            ImPlot::BustColorCache(_PLOT_ID);
+
+            Gui::EndMenuPersist();
+            ImGui::EndPopup();
         }
     }
+
+    Gui::VerticalSeparator();
+
+    // Fit mode
+    const bool fitFollowX = (_fitMode == FitMode::FOLLOW_X);
+    const bool fitAutofit = (_fitMode == FitMode::AUTOFIT);
+    // - Follow X
+    if (!fitFollowX) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+    if (ImGui::Button(ICON_FK_ARROW_RIGHT "##FollowX", GuiSettings::iconSize))
+    {
+        _fitMode = (fitFollowX ? FitMode::NONE : FitMode::FOLLOW_X);
+    }
+    if (!fitFollowX) { ImGui::PopStyleColor(); }
+    Gui::ItemTooltip("Follow x (automatically move x axis)");
+    ImGui::SameLine();
+    // - Autofit
+    if (!fitAutofit) { ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM)); }
+    if (ImGui::Button(ICON_FK_ARROWS_ALT "##Autofit", GuiSettings::iconSize))
+    {
+        _fitMode = (fitAutofit ? FitMode::NONE : FitMode::AUTOFIT);
+    }
+    if (!fitAutofit) { ImGui::PopStyleColor(); }
+    Gui::ItemTooltip("Automatically fit axes ranges to data");
+
+    ImGui::SameLine();
+
+    // Toggle legend
+    Gui::ToggleButton(ICON_FK_LIST "##ToggleLegend", nullptr, &_showLegend, "Toggle legend", nullptr, GuiSettings::iconSize);
+
+
+    // ImGui::SameLine();
+    // ImGui::Text("x1: %.1f %.1f, y1: %.1f %.1f, y2: %.1f %.1f, y3: %.1f %.1f, xMax %.1f, color %d", _plotLimitsY1.X.Min, _plotLimitsY1.X.Max,
+    //     _plotLimitsY1.Y.Min, _plotLimitsY1.Y.Max, _plotLimitsY2.Y.Min, _plotLimitsY2.Y.Max, _plotLimitsY3.Y.Min, _plotLimitsY3.Y.Max, _followXmax, _colormap);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_DrawVars()
+void GuiWinDataPlot::_DrawContent()
 {
-    // Variables currently used in plot
-    Gui::TextTitle("Used:");
-    ImGui::Separator();
-    PlotVar *removeVar = nullptr;
-    PlotData *src = nullptr;
-    PlotData *dst = nullptr;
-    for (auto &data: _plotData)
-    {
-        auto *varY = data.plotVarY;
-        if (ImGui::Selectable(varY->label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
-        {
-            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-            {
-                removeVar = varY;
-            }
-        }
-        Gui::ItemTooltip(varY->tooltip.c_str());
+    std::unique_ptr<DragDrop> dragdrop;
 
-        // This list is a drag and drop source for plot variables
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-        {
-            DndPayload payload(varY, std::addressof(data));
-            ImGui::SetDragDropPayload(_dndType, &payload, sizeof(payload));
-            ImGui::TextUnformatted(varY->label.c_str());
-            ImGui::EndDragDropSource();
-        }
-        // And the list is also a drop and drop target
-        if (ImGui::BeginDragDropTarget())
-        {
-            const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
-            if (imPayload)
-            {
-                DndPayload payload(imPayload);
-                // Source is this list
-                if (payload.plotData)
-                {
-                    src = payload.plotData;
-                    dst = std::addressof(data);
-                }
-                // Source is other (list of available)
-                else
-                {
-                    _AddToPlot(payload.plotVar);
-                }
-            }
-        }
+    // Wrapper so that we can detect drop target on the entire content
+    ImGui::BeginChild("PlotWrapper");
 
-        ImGui::SameLine(GuiSettings::charSize.x * (VAR_WIDTH - 4.0)); // reserve some space for vertical scrollbar
-        ImGui::Text("y%d", data.yAxis + 1 - ImAxis_Y1);
-    }
-
-    // Reorder list of plots, placing src in front of dst
-    if (src && dst)
-    {
-        DEBUG("reorder");
-        std::vector<PlotData> _newOrder;
-        for (auto &data: _plotData)
-        {
-            auto *pData = std::addressof(data);
-            if (pData == dst)
-            {
-                _newOrder.push_back(*src);
-            }
-            if (pData != src)
-            {
-                _newOrder.push_back(data);
-            }
-        }
-        _plotData = _newOrder;
-    }
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // Variables not currently used in plot
-    ImGui::BeginGroup();
-    Gui::TextTitle("Available:");
-    ImGui::Separator();
-    for (auto &var: _plotVars)
-    {
-        if (var.used)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-            ImGui::TextUnformatted(var.label.c_str());
-            ImGui::PopStyleColor();
-            continue;
-        }
-        if (ImGui::Selectable(var.label.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
-        {
-            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-            {
-                // Set as x variable if that is not set yet
-                if (!_plotVarX)
-                {
-                    _SetVarX(&var);
-                }
-                // Otherwise add as plot
-                else
-                {
-                    _AddToPlot(&var);
-                }
-            }
-        }
-        Gui::ItemTooltip(var.tooltip.c_str());
-
-        // This list is a drag and drop source for plot variables
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
-        {
-            DndPayload payload(std::addressof(var), nullptr);
-            ImGui::SetDragDropPayload(_dndType, &payload, sizeof(payload));
-            ImGui::TextUnformatted(var.label.c_str());
-            ImGui::EndDragDropSource();
-        }
-    }
-    ImGui::EndGroup();
-    if (ImGui::BeginDragDropTarget())
-    {
-        const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
-        if (imPayload)
-        {
-            DndPayload payload(imPayload);
-            if (payload.plotVar)
-            {
-                _RemoveFromPlot(payload.plotVar);
-            }
-        }
-    }
-
-    // Remove only now after drawing both lists in order to avoid visual glitches
-    if (removeVar)
-    {
-        _RemoveFromPlot(removeVar);
-    }
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataPlot::_DrawPlot()
-{
-    PlotVar *droppedVar = nullptr;
-    enum : int { DD_PLOT = -2, DD_X = -1, DD_Y1 = ImAxis_Y1, DD_Y2 = ImAxis_Y2, DD_Y3 = ImAxis_Y3 };
-    ImAxis droppedAxis = DD_PLOT;
-
-    const char *xLabel = _plotVarX ? _plotVarX->tooltip.c_str() : NULL;
+    // Plot
     ImPlot::PushColormap(_colormap);
-
-    if (ImPlot::BeginPlot(_PLOT_ID, ImVec2(-1,-1), ImPlotFlags_Crosshairs))
+    switch (_fitMode)
     {
-        ImPlot::SetupAxis(ImAxis_X1, xLabel);
-        if (!_yLabels[ImAxis_Y1].empty() || _dndHovered)
+        case FitMode::NONE:
+            break;
+        case FitMode::AUTOFIT:
+            ImPlot::SetNextAxesToFit();
+            break;
+        case FitMode::FOLLOW_X:
+            break;
+    }
+    ImPlotFlags plotFlags = ImPlotFlags_Crosshairs | ImPlotFlags_NoFrame /*| ImPlotFlags_NoMenus*/;
+    if (!_showLegend) { plotFlags |= ImPlotFlags_NoLegend; }
+    if (ImPlot::BeginPlot(_plotTitleId.c_str(), ImVec2(-1,-1), plotFlags))
+    {
+        // X axis
+        ImPlot::SetupAxis(ImAxis_X1, _axisLabels[ImAxis_X1].c_str());
+        ImPlot::SetupAxisLimits(ImAxis_X1, _plotLimitsY1.X.Min, _plotLimitsY1.X.Max, _setLimitsX ? ImPlotCond_Always: ImPlotCond_None);
+        // Y axes
+        const bool showY1 = _axisUsed[ImAxis_Y1] || (_dndHovered && _axisUsed[ImAxis_X1]) || _setLimitsY;
+        const bool showY2 = _axisUsed[ImAxis_Y2] || (_dndHovered && _axisUsed[ImAxis_X1]) || _setLimitsY;
+        const bool showY3 = _axisUsed[ImAxis_Y3] || (_dndHovered && _axisUsed[ImAxis_X1]) || _setLimitsY;
+        ImPlot::SetupAxis(ImAxis_Y1, _axisLabels[ImAxis_Y1].c_str());
+        ImPlot::SetupAxisLimits(ImAxis_Y1, _plotLimitsY1.Y.Min, _plotLimitsY1.Y.Max, _setLimitsY ? ImPlotCond_Always: ImPlotCond_None);
+        if (showY2)
         {
-            ImPlot::SetupAxis(ImAxis_Y1, _yLabels[ImAxis_Y1].c_str());
+            ImPlot::SetupAxis(ImAxis_Y2, _axisLabels[ImAxis_Y2].c_str(), ImPlotAxisFlags_AuxDefault);
+            ImPlot::SetupAxisLimits(ImAxis_Y2, _plotLimitsY2.Y.Min, _plotLimitsY2.Y.Max, _setLimitsY ? ImPlotCond_Always: ImPlotCond_None);
         }
-        if (!_yLabels[ImAxis_Y2].empty() || _dndHovered)
+        if (showY3)
         {
-            ImPlot::SetupAxis(ImAxis_Y2, _yLabels[ImAxis_Y2].c_str());
+            ImPlot::SetupAxis(ImAxis_Y3, _axisLabels[ImAxis_Y3].c_str(), ImPlotAxisFlags_AuxDefault);
+            ImPlot::SetupAxisLimits(ImAxis_Y3, _plotLimitsY3.Y.Min, _plotLimitsY3.Y.Max, _setLimitsY ? ImPlotCond_Always: ImPlotCond_None);
         }
-        if (!_yLabels[ImAxis_Y3].empty() || _dndHovered)
-        {
-            ImPlot::SetupAxis(ImAxis_Y3, _yLabels[ImAxis_Y3].c_str());
-        }
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, 60, ImGuiCond_Once);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -10, +10, ImGuiCond_Once);
         ImPlot::SetupFinish();
+        _setLimitsX = false;
+        _setLimitsY = false;
 
-        // Add data
-        _database->BeginGetEpoch();
-        const int numEpochs = _database->Size();
+        // Plot data
+        if (_xVar && !_yVars.empty())
+        {
+            _database->BeginGetRows();
 
-        for (auto &data: _plotData)
-        {
-            const char *label = data.plotVarY->label.c_str();
-            ImPlot::SetAxis(data.yAxis);
-            switch (data.type)
+            struct Helper { Database::FieldIx xIx; Database::FieldIx yIx; Database *db; } helper =
+                { _xVar->field.field, Database::FieldIx::ix_none, _database.get() };
+            for (const auto &yVar: _yVars)
             {
-                case PlotType::LINE:
-                    ImPlot::PlotLineG(label, data.getter, std::addressof(data), numEpochs);
-                    break;
-                case PlotType::SCATTER:
-                    ImPlot::PlotScatterG(label, data.getter, std::addressof(data), numEpochs);
-                    break;
-                case PlotType::STEP:
-                    ImPlot::PlotStairsG(label, data.getter, std::addressof(data), numEpochs);
-                    break;
-                case PlotType::BAR:
-                    ImPlot::PlotBarsG(label, data.getter, std::addressof(data), numEpochs, 0.5 * _epochPeriod);
-                    break;
-            }
-            // Allow legend labels to be dragged and dropped
-            if (ImPlot::BeginDragDropSourceItem(label))
-            {
-                DndPayload payload(data.plotVarY, nullptr);
-                ImGui::SetDragDropPayload(_dndType, &payload, sizeof(payload));
-                ImGui::TextUnformatted(label);
-                ImGui::EndDragDropSource();
-            }
-        }
-        _database->EndGetEpoch();
+                // Plot
+                helper.yIx = yVar.field.field;
+                ImPlot::SetAxes(_xVar->axis, yVar.axis);
+                ImPlot::PlotLineG(yVar.field.label, [](int ix, void *arg) {
+                    Helper *h = (Helper *)arg;
+                    const Database &db = *h->db;
+                    return ImPlotPoint(db[ix][h->xIx], db[ix][h->yIx]);
+                }, &helper, _database->Size());
 
-        // Detect hovering with a drag and drop thingy to display all y axis, which may not all be used
-        // FIXME: Isn't there a ImPlot::IsPlotHoveredWithADragAndDropThingy()?
-        if (ImGui::BeginDragDropTarget())
-        {
-            _dndHovered = true;
-            ImGui::EndDragDropTarget();
-        }
-        else
-        {
-            _dndHovered = false;
-        }
-
-        // Detect drops on the plot
-        if (ImPlot::BeginDragDropTargetPlot())
-        {
-            const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
-            if (imPayload)
-            {
-                droppedVar = DndPayload(imPayload).plotVar;
-                droppedAxis = DD_PLOT;
-            }
-            ImPlot::EndDragDropTarget();
-        }
-        // Detect drops on the x axis
-        if (ImPlot::BeginDragDropTargetAxis(ImAxis_X1))
-        {
-            const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
-            if (imPayload)
-            {
-                droppedVar = DndPayload(imPayload).plotVar;
-                droppedAxis = DD_X;
-            }
-            ImPlot::EndDragDropTarget();
-        }
-        // Detect drops on the y axes
-        for (ImAxis yAxis = ImAxis_Y1; yAxis <= ImAxis_Y3; yAxis++)
-        {
-            if (ImPlot::BeginDragDropTargetAxis(yAxis))
-            {
-                const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
-                if (imPayload)
+                if (ImPlot::BeginLegendPopup(yVar.field.label, ImGuiMouseButton_Right))
                 {
-                    droppedVar = DndPayload(imPayload).plotVar;
-                    droppedAxis = yAxis;
+                    if (ImGui::Button("Remove from plot"))
+                    {
+                        dragdrop = std::make_unique<DragDrop>(yVar.field, DragDrop::LEGEND, DragDrop::TRASH);
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImPlot::EndLegendPopup();
                 }
-                ImPlot::EndDragDropTarget();
-                break;
+
+                // Allow legend labels to be dragged and dropped
+                if (ImPlot::BeginDragDropSourceItem(yVar.field.label))
+                {
+                    DragDrop dd(yVar.field, DragDrop::LEGEND);
+                    ImGui::SetDragDropPayload(_dndType, &dd, sizeof(dd));
+                    ImPlot::ItemIcon(ImPlot::GetLastItemColor());
+                    ImGui::SameLine();
+                    ImGui::TextUnformatted(yVar.field.label);
+                    ImGui::EndDragDropSource();
+                }
             }
+
+            _database->EndGetRows();
         }
+
+        _plotLimitsY1 = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y1);
+        _plotLimitsY2 = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y2);
+        _plotLimitsY3 = ImPlot::GetPlotLimits(ImAxis_X1, ImAxis_Y3);
+
+        // Drop on plot (only if free axis available)
+        if (!dragdrop && (!_axisUsed[ImAxis_X1] || !_axisUsed[ImAxis_Y1] || !_axisUsed[ImAxis_Y2] || !_axisUsed[ImAxis_Y3]) &&
+             ImPlot::BeginDragDropTargetPlot())
+        {
+            const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
+            if (imPayload)
+            {
+                dragdrop = std::make_unique<DragDrop>(imPayload, DragDrop::PLOT);
+            }
+            ImPlot::EndDragDropTarget();
+        }
+        // Drop on X1 axis
+        if (!dragdrop) { dragdrop = _CheckDrop(ImAxis_X1); }
+        // Drop on Y axes
+        if (!dragdrop && showY1) { dragdrop = _CheckDrop(ImAxis_Y1); }
+        if (!dragdrop && showY2) { dragdrop = _CheckDrop(ImAxis_Y2); }
+        if (!dragdrop && showY3) { dragdrop = _CheckDrop(ImAxis_Y3); }
+
+        // Axis tooltips
+        if (showY1 && !_axisTooltips[ImAxis_Y1].empty() && ImPlot::IsAxisHovered(ImAxis_Y1))
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(_axisTooltips[ImAxis_Y1].c_str());
+            ImGui::EndTooltip();
+        }
+        if (showY2 && !_axisTooltips[ImAxis_Y2].empty() && ImPlot::IsAxisHovered(ImAxis_Y2))
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(_axisTooltips[ImAxis_Y2].c_str());
+            ImGui::EndTooltip();
+        }
+        if (showY1 && !_axisTooltips[ImAxis_Y3].empty() && ImPlot::IsAxisHovered(ImAxis_Y3))
+        {
+            ImGui::BeginTooltip();
+            ImGui::TextUnformatted(_axisTooltips[ImAxis_Y2].c_str());
+            ImGui::EndTooltip();
+        }
+
 
         ImPlot::EndPlot();
     }
     ImPlot::PopColormap();
 
-    // Handle drops
-    if (droppedVar)
+    // Trash
+    if (_dndHovered)
     {
-        DEBUG("Dropped %s on %d", droppedVar->label.c_str(), droppedAxis);
-
-        // Dropped on x-axis, either explicitly or no x-axis variable yet and dropped on plot
-        if ( (droppedAxis == DD_X) || (!_plotVarX && (droppedAxis < DD_Y1)) )
+        const auto pad = FfVec2f(GuiSettings::style->WindowPadding) * 2.0f;
+        const auto size = FfVec2f(GuiSettings::iconSize) * 2.0f;
+        ImGui::SetCursorPos(FfVec2f(ImGui::GetWindowSize()) - size - pad);
+        ImGui::Button(ICON_FK_TRASH_O "##Trash", size);
+        if (ImGui::BeginDragDropTarget())
         {
-            _SetVarX(droppedVar);
-        }
-
-        // X-axis is known
-        else if (_plotVarX)
-        {
-            // Dropped on plot -> use y-axis 1
-            if (droppedAxis == DD_PLOT)
+            const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
+            if (imPayload)
             {
-                droppedAxis = DD_Y1;
+                dragdrop = std::make_unique<DragDrop>(imPayload, DragDrop::TRASH);
             }
-
-            // Dropped on a particular y-axis
-            if ( (droppedAxis >= DD_Y1) && (droppedAxis <= DD_Y3) )
-            {
-                _AddToPlot(droppedVar, droppedAxis);
-            }
+            ImGui::EndDragDropTarget();
         }
     }
-}
 
-// ---------------------------------------------------------------------------------------------------------------------
+    // End wrapper
+    ImGui::EndChild();
 
-void GuiWinDataPlot::_SetVarX(PlotVar *plotVar)
-{
-    DEBUG("Set x %s (was %s)", plotVar->label.c_str(), _plotVarX ? _plotVarX->label.c_str() : "-");
-
-    // Save for future plots
-    _plotVarX = plotVar;
-
-    // Update existing plots
-    for (auto &data: _plotData)
+    // Detect hovering with a drag and drop thingy to display all axes to reveal them as dnd targets
+    if (ImGui::BeginDragDropTarget())
     {
-        DEBUG("Update <%s><%s> -> <%s><%s>", data.plotVarX->label.c_str(), data.plotVarY->label.c_str(), plotVar->label.c_str(), data.plotVarY->label.c_str());
-        data.plotVarX = plotVar;
+        _dndHovered = true;
+        ImGui::EndDragDropTarget();
+    }
+    else
+    {
+        _dndHovered = false;
     }
 
-    // Remove possible plot of this
-    _RemoveFromPlot(plotVar);
+    // Handle drops (*after* plotting!)
+    if (dragdrop)
+    {
+        _HandleDrop(*dragdrop);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_AddToPlot(PlotVar *plotVar, const ImAxis yAxis)
+GuiWinDataPlot::DragDrop::DragDrop(const Database::FieldDef &_field, Target _src) :
+    src    { _src },
+    dst    { UNKNOWN },
+    field  { _field }
 {
-    // Update existing plot data
-    bool addNew = true;
-    for (auto &data: _plotData)
+}
+
+GuiWinDataPlot::DragDrop::DragDrop(const Database::FieldDef &_field, const Target _src, const Target _dst) :
+    src    { _src },
+    dst    { _dst },
+    field  { _field }
+{
+}
+
+GuiWinDataPlot::DragDrop::DragDrop(const ImGuiPayload *imPayload, const Target _dst) :
+    src    { ((DragDrop *)imPayload->Data)->src },
+    dst    { _dst },
+    field  { ((DragDrop *)imPayload->Data)->field }
+{
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+std::unique_ptr<GuiWinDataPlot::DragDrop> GuiWinDataPlot::_CheckDrop(const ImAxis axis)
+{
+    std::unique_ptr<DragDrop> res;
+    if (ImPlot::BeginDragDropTargetAxis(axis))
     {
-        if (data.plotVarY->label == plotVar->label)
+        const ImGuiPayload *imPayload = ImGui::AcceptDragDropPayload(_dndType);
+        if (imPayload)
         {
-            DEBUG("Update <%s><%s> Y%d->%d", data.plotVarX->label.c_str(), data.plotVarY->label.c_str(),
-                data.yAxis - ImAxis_Y1 + 1, yAxis - ImAxis_Y1 + 1);
-            data.yAxis = yAxis;
-            addNew = false;
-            break;
+            res = std::make_unique<DragDrop>(imPayload, (DragDrop::Target)axis);
         }
+        ImPlot::EndDragDropTarget();
     }
-    // Create new data pair
-    if (addNew)
-    {
-        DEBUG("Add <%s><%s> Y%d", _plotVarX->label.c_str(), plotVar->label.c_str(), yAxis);
-        auto data = PlotData(_plotVarX, plotVar, PlotType::LINE, _database.get());
-        data.yAxis = yAxis;
-        plotVar->used = true;
-        _plotData.push_back(std::move(data));
-    }
-
-    _UpdatePlotFlags();
+    return res;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataPlot::_UpdatePlotFlags()
-{
-    // Update plot flags and y axis labels
-    _yLabels[ImAxis_Y1].clear();
-    _yLabels[ImAxis_Y2].clear();
-    _yLabels[ImAxis_Y3].clear();
-    for (auto &data: _plotData)
-    {
-        switch (data.yAxis)
-        {
-            case ImAxis_Y1:
-                if (!_yLabels[ImAxis_Y1].empty())
-                {
-                    _yLabels[ImAxis_Y1] += " / ";
-                }
-                _yLabels[ImAxis_Y1] += data.plotVarY->label;
-                break;
-            case ImAxis_Y2:
-                if (!_yLabels[ImAxis_Y2].empty())
-                {
-                    _yLabels[ImAxis_Y2] += " / ";
-                }
-                _yLabels[ImAxis_Y2] += data.plotVarY->label;
-                break;
-            case ImAxis_Y3:
-                if (!_yLabels[ImAxis_Y3].empty())
-                {
-                    _yLabels[ImAxis_Y3] += " / ";
-                }
-                _yLabels[ImAxis_Y3] += data.plotVarY->label;
-                break;
-        }
-    }
-}
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-void GuiWinDataPlot::_RemoveFromPlot(PlotVar *plotVar)
+void GuiWinDataPlot::_HandleDrop(const DragDrop &dragdrop)
 {
-    for (auto iter = _plotData.begin(); iter != _plotData.end(); )
+    //DEBUG("dragdrop %d -> %d", dragdrop.src, dragdrop.dst);
+
+    DragDrop::Target dst = dragdrop.dst;
+
+    // Drops on plot go to an axis if possible
+    if (dst == DragDrop::PLOT)
     {
-        if (iter->plotVarY->label == plotVar->label)
-        {
-            DEBUG("Remove plot <%s><%s>", iter->plotVarX->label.c_str(), iter->plotVarY->label.c_str());
-            plotVar->used = false;
-            iter = _plotData.erase(iter);
-        }
+        // No x-axis yet -> set as x axis
+        if      (!_axisUsed[ImAxis_X1]) { dst = DragDrop::X; }
+        // Have x-axis -> use next free y axis
+        else if (!_axisUsed[ImAxis_Y1]) { dst = DragDrop::Y1; }
+        else if (!_axisUsed[ImAxis_Y2]) { dst = DragDrop::Y2; }
+        else if (!_axisUsed[ImAxis_Y3]) { dst = DragDrop::Y3; }
+        // Invalid drop
         else
         {
-            iter++;
+            return;
         }
     }
-    _UpdatePlotFlags();
+
+    // Remove (only y vars), also for drag from legend
+    if ( (dst == DragDrop::TRASH) || (dragdrop.src == DragDrop::LEGEND) )
+    {
+        for (auto iter = _yVars.begin(); iter != _yVars.end(); )
+        {
+            auto &yVar = *iter;
+            if (yVar.field.name == dragdrop.field.name)
+            {
+                iter = _yVars.erase(iter);
+            }
+            else
+            {
+                iter++;
+            }
+        }
+    }
+
+    // Drop on X axis
+    if (dst == DragDrop::X)
+    {
+        _xVar = std::make_unique<PlotVar>(dst, dragdrop.field);
+    }
+    // Drop on Y axis
+    else if ((dst >= DragDrop::Y1) && (dst <= DragDrop::Y3))
+    {
+        _yVars.emplace_back(dst, dragdrop.field);
+    }
+    // else: Invalid
+
+    _UpdateVars();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void  GuiWinDataPlot::_SavePlots()
+void GuiWinDataPlot::_UpdateVars()
 {
-    std::vector<std::string> plots;
-    for (auto &data: _plotData)
+    _usedFields.clear();
+    if (_xVar)
     {
-        std::string plot = data.plotVarX->label;
-        plot += "/";
-        plot += data.plotVarY->label;
-        plot += "/";
-        plot += std::to_string(data.yAxis - ImAxis_Y1 + 1);
-        plots.push_back(plot);
+        _axisLabels[ImAxis_X1] = _xVar->field.label;
+        _usedFields[_xVar->field.name] = true;
+        _axisUsed[ImAxis_X1] = true;
     }
-    GuiSettings::SetValue(_winName + ".plots", Ff::StrJoin(plots, ","));
+    else
+    {
+        _axisLabels[ImAxis_X1].clear();
+        _axisUsed[ImAxis_X1] = false;
+    }
+
+    for (ImAxis axis = ImAxis_Y1; axis <= ImAxis_Y3; axis++)
+    {
+        _axisUsed[axis] = false;
+        _axisLabels[axis].clear();
+        _axisTooltips[axis].clear();
+
+        // Find relevant variables
+        std::vector<const Database::FieldDef *> fieldDefs;
+        for (const auto &var: _yVars)
+        {
+            if (var.axis == axis)
+            {
+                fieldDefs.push_back(std::addressof(var.field));
+                _axisUsed[axis] = true;
+                _usedFields[var.field.name] = true;
+            }
+        }
+
+        // Set label, use short variable names resp. full variable label depending on the number of vars
+        if (fieldDefs.size() > 1)
+        {
+            std::string label;
+            std::string tooltip;
+            for (auto fd: fieldDefs)
+            {
+                label += " / ";
+                label += fd->name;
+                tooltip += "\n";
+                tooltip += fd->label;
+            }
+            _axisLabels[axis] = label.substr(3);
+            _axisTooltips[axis] = tooltip.substr(1);
+        }
+        else if (fieldDefs.size() > 0)
+        {
+            _axisLabels[axis] = fieldDefs[0]->label;
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void  GuiWinDataPlot::_LoadPlots()
+void  GuiWinDataPlot::_SaveParams()
 {
-    std::string plots;
-    GuiSettings::GetValue(_winName + ".plots", plots, "");
-    for (const auto &plot: Ff::StrSplit(plots, ","))
+    json params = { { "vars", json::array() } };
+    if (_xVar)
     {
-        const auto parts = Ff::StrSplit(plot, "/"); // x var / y var / y axis
-        if (parts.size() != 3)
+        params["vars"].push_back({ { "field", _xVar->field.name }, { "axis", _xVar->axis } });
+        for (const auto &yVar: _yVars)
         {
-            continue;
+            params["vars"].push_back({ { "field", yVar.field.name }, { "axis", yVar.axis } });
         }
-        PlotVar *xVar = _PlotVarByLabel(parts[0]);
-        PlotVar *yVar = _PlotVarByLabel(parts[1]);
-        std::size_t num;
-        int yAxis = std::stol(parts[2], &num, 0);
-        if (!xVar || !yVar || (num <= 0) || (yAxis < ImAxis_Y1) || (yAxis > ImAxis_Y3))
-        {
-            continue;
-        }
-
-        if (!_plotVarX)
-        {
-            _plotVarX = xVar;
-        }
-        _AddToPlot(yVar, yAxis);
     }
+    params["limits"] = { _plotLimitsY1.X.Min, _plotLimitsY1.X.Max, _plotLimitsY1.Y.Min, _plotLimitsY1.Y.Max,
+        _plotLimitsY2.Y.Min, _plotLimitsY2.Y.Max, _plotLimitsY3.Y.Min, _plotLimitsY3.Y.Max };
+    params["colormap"] = _colormap;
+    params["legend"] = _showLegend;
+
+    GuiSettings::SetJson(_winName, params);
 }
 
-GuiWinDataPlot::PlotVar *GuiWinDataPlot::_PlotVarByLabel(const std::string label)
+// ---------------------------------------------------------------------------------------------------------------------
+
+void  GuiWinDataPlot::_LoadParams()
 {
-    for (auto &plotVar: _plotVars)
+    const auto params = GuiSettings::GetJson(_winName);
+    if (!params.is_object())
     {
-        if (plotVar.label == label)
-        {
-            return std::addressof(plotVar);
-        }
+        DEBUG("params not ok");
+        return;
     }
-    return nullptr;
+
+    for (const auto &var: params["vars"])
+    {
+        const std::string field = var["field"];
+        const int axis = var["axis"];
+
+        // Check field
+        bool haveField = false;
+        Database::FieldDef fieldDef;
+        for (const auto &candDef: Database::FIELDS)
+        {
+            if (candDef.name == field)
+            {
+                fieldDef = candDef;
+                haveField = true;
+                break;
+            }
+        }
+        if (!haveField)
+        {
+            continue;
+        }
+
+        // First need x variable
+        if (!_xVar)
+        {
+            if (axis != ImAxis_X1)
+            {
+                continue;
+            }
+            _xVar = std::make_unique<PlotVar>(axis, fieldDef);
+            continue;
+        }
+
+        // Then can add y variables
+        _yVars.emplace_back(axis, fieldDef);
+    }
+
+    const auto &limits = params["limits"];
+    _plotLimitsY1.X.Min = limits[0];
+    _plotLimitsY1.X.Max = limits[1];
+    _plotLimitsY1.Y.Min = limits[2];
+    _plotLimitsY1.Y.Max = limits[3];
+    _plotLimitsY2.Y.Min = limits[4];
+    _plotLimitsY2.Y.Max = limits[5];
+    _plotLimitsY3.Y.Min = limits[6];
+    _plotLimitsY3.Y.Max = limits[7];
+
+    _colormap = params["colormap"];
+    _showLegend = params["legend"];
+
+    _UpdateVars();
 }
 
 /* ****************************************************************************************************************** */

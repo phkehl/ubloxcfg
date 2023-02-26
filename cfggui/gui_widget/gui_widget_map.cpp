@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -32,7 +32,9 @@ GuiWidgetMap::GuiWidgetMap() :
     _tintColour4 { 1.0f, 1.0f, 1.0f, 1.0f },
     _debugLayout { false },
     _debugTiles  { false },
-    _isDragging  { ImGuiMouseButton_COUNT }
+    _isDragging  { ImGuiMouseButton_COUNT },
+    _followEna   { false },
+    _followMode  { false }
 {
     bool haveMap = false;
     for (auto &map: GuiSettings::maps)
@@ -521,6 +523,19 @@ void GuiWidgetMap::EndDraw()
         }
     }
 
+    // Follow map mode
+    if (_followEna)
+    {
+        const ImVec2 attr0 { _canvasMax.x - GuiSettings::style->ItemSpacing.x - GuiSettings::iconSize.x,
+                             _canvasMax.y - GuiSettings::style->ItemSpacing.y - GuiSettings::iconSize.y };
+        ImGui::SetCursorScreenPos(attr0);
+        Gui::ToggleButton(ICON_FK_DOT_CIRCLE_O "##Follow", nullptr, &_followMode, "Follow position", nullptr, GuiSettings::iconSize);
+        if (ImGui::IsItemHovered())
+        {
+            controlsHovered = true;
+        }
+    }
+
     ImDrawList *draw = ImGui::GetWindowDrawList();
     auto &io = ImGui::GetIO();
 
@@ -748,6 +763,20 @@ void GuiWidgetMap::EndDraw()
 
 
     draw->PopClipRect();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWidgetMap::EnableFollowButton()
+{
+    _followEna = true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool GuiWidgetMap::FollowEnabled()
+{
+    return _followMode;
 }
 
 /* ****************************************************************************************************************** */

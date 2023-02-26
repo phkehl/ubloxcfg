@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -30,9 +30,12 @@ class GuiWinDataScatter : public GuiWinData
 
     private:
 
+        void _ProcessData(const InputData &data) final;
         void _ClearData() final;
         void _DrawContent() final;
         void _DrawToolbar() final;
+
+        Database::Info _dbinfo;
 
         // Plot
         enum { NUM_SIGMA = 6 };

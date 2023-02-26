@@ -325,17 +325,20 @@
                     "program": "${workspaceFolder}/output/cfggui-debug",
                     "args": [ ],
                     "cwd": "${workspaceFolder}",
+                    //"miDebuggerArgs": "-ex source .gdbinit", // nope... :-/
                     "setupCommands": [
                         { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true }, // needs setup code in ~/.gdbinit!
                         { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true },
-                        //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
-                        // "-exec info skip" to show in debug console
-                        { "text": "skip -rfunction Im(Vec2|Vec4|Strv|Vector|Span)::.+", "description": "skip trivial ImGui functions", "ignoreFailures": true },
-                        { "text": "skip -rfunction Ff::Vec2::.+", "description": "skip trivial Ff functions", "ignoreFailures": true },
-                        // https://sourceware.org/gdb/onlinedocs/gdb/Skipping-Over-Functions-and-Files.html
-                        // FIXME: doesn't work :-(
-                        { "text": "skip -rfunction ^std::__cxx11::(allocator|basic_string)<.*>::", "description": "skip string ctor/dtor", "ignoreFailures": true },
-                        { "text": "skip -rfunction ^std::__cxx11::([a-zA-z0-9_]+)<.*>::", "description": "skip std ctor/dtor", "ignoreFailures": true },
+                        { "text": "source ${workspaceFolder}/.gdbinit", "description": "load local .gdbinit", "ignoreFailures": false }
+                        // ubloxcfg/.gdbinit for more...
+                        // //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
+                        // // "-exec info skip" to show in debug console
+                        // { "text": "skip -rfunction Im(Vec2|Vec4|Strv|Vector|Span)::.+", "description": "skip trivial ImGui functions", "ignoreFailures": true },
+                        // { "text": "skip -rfunction Ff::Vec2::.+", "description": "skip trivial Ff functions", "ignoreFailures": true },
+                        // // https://sourceware.org/gdb/onlinedocs/gdb/Skipping-Over-Functions-and-Files.html
+                        // // FIXME: doesn't work :-(
+                        // { "text": "skip -rfunction ^std::__cxx11::(allocator|basic_string)<.*>::", "description": "skip string ctor/dtor", "ignoreFailures": true },
+                        // { "text": "skip -rfunction ^std::__cxx11::([a-zA-z0-9_]+)<.*>::", "description": "skip std ctor/dtor", "ignoreFailures": true },
                     ]
                 }
             }

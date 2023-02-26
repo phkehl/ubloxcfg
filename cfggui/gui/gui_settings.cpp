@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -92,6 +92,9 @@
     implotStyle->UseISO8601              = true;
     implotStyle->Use24HourClock          = true;
     implotStyle->FitPadding              = ImVec2(0.1, 0.1);
+    //implotStyle->PlotPadding             = ImVec2(0, 0);
+    implotStyle->Colors[ImPlotCol_AxisBgHovered] = ImVec4(0.060f, 0.530f, 0.980f, 0.200f);
+    implotStyle->Colors[ImPlotCol_AxisBgActive]  = ImVec4(0.060f, 0.530f, 0.980f, 0.400f);
 
     // Store style shortcuts
     style     = imguiStyle;
@@ -139,7 +142,7 @@
 
 /*static*/ Ff::ConfFile GuiSettings::_confFile;
 
-/*static*/ int GuiSettings::dbNumEpochs = DB_NUM_EPOCHS_DEF;
+/*static*/ int GuiSettings::dbNumRows = DB_NUM_ROWS_DEF;
 
 /*static*/ int GuiSettings::minFrameRate = MIN_FRAME_RATE_DEF;
 
@@ -181,8 +184,8 @@
         LoadRecentItems(RECENT_RECEIVERS);
         LoadRecentItems(RECENT_NTRIP_CASTERS);
 
-        GetValue("Settings.dbNumEpochs", dbNumEpochs, DB_NUM_EPOCHS_DEF);
-        dbNumEpochs = CLIP(dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX);
+        GetValue("Settings.dbNumRows", dbNumRows, DB_NUM_ROWS_DEF);
+        dbNumRows = CLIP(dbNumRows, DB_NUM_ROWS_MIN, DB_NUM_ROWS_MAX);
 
         GetValue("Settings.minFrameRate", minFrameRate, MIN_FRAME_RATE_DEF);
         minFrameRate = CLIP(minFrameRate, MIN_FRAME_RATE_MIN, MIN_FRAME_RATE_MAX);
@@ -302,7 +305,7 @@
     SetValue("Settings.fontSize",             fontSize);
     SetValue("Settings.ftBuilderFlags",       _ftBuilderFlags);
     SetValue("Settings.ftRasterizerMultiply", _ftRasterizerMultiply);
-    SetValue("Settings.dbNumEpochs",          dbNumEpochs);
+    SetValue("Settings.dbNumRows",          dbNumRows);
     SetValue("Settings.minFrameRate",         minFrameRate);
 
     SaveRecentItems(RECENT_LOGFILES);
@@ -489,6 +492,33 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+/*static*/ json GuiSettings::GetJson(const std::string &key)
+{
+    const std::string json_str = GetValue(key);
+    if (json_str.empty())
+    {
+        return json();
+    }
+
+    try
+    {
+        return json::parse(json_str);
+    }
+    catch (json::exception &e)
+    {
+        WARNING("Corrupt config %s: %s", key.c_str(), e.what());
+        return json();
+    }
+}
+
+/*static*/ void GuiSettings::SetJson(const std::string &key, const json &data)
+{
+    SetValue(key, data.dump());
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 /*static*/ bool GuiSettings::UpdateFonts()
 {
     if (!_fontDirty)
@@ -583,62 +613,48 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-/*static*/ ImU32 GuiSettings::GetFixColour(const EPOCH_t *epoch)
+/*static*/ ImU32 GuiSettings::GetFixColour(const EPOCH_FIX_t fix, const bool fixok)
 {
-    if (!epoch || !epoch->haveFix)
-    {
-        return colours[FIX_INVALID];
-    }
-    else if (!epoch->fixOk)
+    if (!fixok)
     {
         return colours[FIX_MASKED];
     }
-    else
+    switch (fix)
     {
-        switch (epoch->fix)
-        {
-            case EPOCH_FIX_UNKNOWN:
-            case EPOCH_FIX_NOFIX:         return colours[FIX_INVALID];
-            case EPOCH_FIX_DRONLY:        return colours[FIX_DRONLY];
-            case EPOCH_FIX_S2D:           return colours[FIX_S2D];
-            case EPOCH_FIX_S3D:           return colours[FIX_S3D];
-            case EPOCH_FIX_S3D_DR:        return colours[FIX_S3D_DR];
-            case EPOCH_FIX_TIME:          return colours[FIX_TIME];
-            case EPOCH_FIX_RTK_FLOAT:     return colours[FIX_RTK_FLOAT];
-            case EPOCH_FIX_RTK_FIXED:     return colours[FIX_RTK_FIXED];
-            case EPOCH_FIX_RTK_FLOAT_DR:  return colours[FIX_RTK_FLOAT_DR];
-            case EPOCH_FIX_RTK_FIXED_DR:  return colours[FIX_RTK_FIXED_DR];
-        }
+        case EPOCH_FIX_UNKNOWN:
+        case EPOCH_FIX_NOFIX:         return colours[FIX_INVALID];
+        case EPOCH_FIX_DRONLY:        return colours[FIX_DRONLY];
+        case EPOCH_FIX_S2D:           return colours[FIX_S2D];
+        case EPOCH_FIX_S3D:           return colours[FIX_S3D];
+        case EPOCH_FIX_S3D_DR:        return colours[FIX_S3D_DR];
+        case EPOCH_FIX_TIME:          return colours[FIX_TIME];
+        case EPOCH_FIX_RTK_FLOAT:     return colours[FIX_RTK_FLOAT];
+        case EPOCH_FIX_RTK_FIXED:     return colours[FIX_RTK_FIXED];
+        case EPOCH_FIX_RTK_FLOAT_DR:  return colours[FIX_RTK_FLOAT_DR];
+        case EPOCH_FIX_RTK_FIXED_DR:  return colours[FIX_RTK_FIXED_DR];
     }
     return colours[FIX_INVALID];
 }
 
-/*static*/ const ImVec4 &GuiSettings::GetFixColour4(const EPOCH_t *epoch)
+/*static*/ const ImVec4 &GuiSettings::GetFixColour4(const EPOCH_FIX_t fix, const bool fixok)
 {
-    if (!epoch || !epoch->haveFix)
-    {
-        return colours4[FIX_INVALID];
-    }
-    else if (!epoch->fixOk)
+    if (!fixok)
     {
         return colours4[FIX_MASKED];
     }
-    else
+    switch (fix)
     {
-        switch (epoch->fix)
-        {
-            case EPOCH_FIX_UNKNOWN:
-            case EPOCH_FIX_NOFIX:         return colours4[FIX_INVALID];
-            case EPOCH_FIX_DRONLY:        return colours4[FIX_DRONLY];
-            case EPOCH_FIX_S2D:           return colours4[FIX_S2D];
-            case EPOCH_FIX_S3D:           return colours4[FIX_S3D];
-            case EPOCH_FIX_S3D_DR:        return colours4[FIX_S3D_DR];
-            case EPOCH_FIX_TIME:          return colours4[FIX_TIME];
-            case EPOCH_FIX_RTK_FLOAT:     return colours4[FIX_RTK_FLOAT];
-            case EPOCH_FIX_RTK_FIXED:     return colours4[FIX_RTK_FIXED];
-            case EPOCH_FIX_RTK_FLOAT_DR:  return colours4[FIX_RTK_FLOAT_DR];
-            case EPOCH_FIX_RTK_FIXED_DR:  return colours4[FIX_RTK_FIXED_DR];
-        }
+        case EPOCH_FIX_UNKNOWN:
+        case EPOCH_FIX_NOFIX:         return colours4[FIX_INVALID];
+        case EPOCH_FIX_DRONLY:        return colours4[FIX_DRONLY];
+        case EPOCH_FIX_S2D:           return colours4[FIX_S2D];
+        case EPOCH_FIX_S3D:           return colours4[FIX_S3D];
+        case EPOCH_FIX_S3D_DR:        return colours4[FIX_S3D_DR];
+        case EPOCH_FIX_TIME:          return colours4[FIX_TIME];
+        case EPOCH_FIX_RTK_FLOAT:     return colours4[FIX_RTK_FLOAT];
+        case EPOCH_FIX_RTK_FIXED:     return colours4[FIX_RTK_FIXED];
+        case EPOCH_FIX_RTK_FLOAT_DR:  return colours4[FIX_RTK_FLOAT_DR];
+        case EPOCH_FIX_RTK_FIXED_DR:  return colours4[FIX_RTK_FIXED_DR];
     }
     return colours4[FIX_INVALID];
 }
@@ -920,21 +936,21 @@
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Database size");
     ImGui::SameLine(_widgetOffs);
-    ImGui::BeginDisabled(dbNumEpochs == DB_NUM_EPOCHS_DEF);
-    if (ImGui::Button(dbNumEpochs != DB_NUM_EPOCHS_DEF ? ICON_FK_TIMES : " ", iconSize))
+    ImGui::BeginDisabled(dbNumRows == DB_NUM_ROWS_DEF);
+    if (ImGui::Button(dbNumRows != DB_NUM_ROWS_DEF ? ICON_FK_TIMES : " ", iconSize))
     {
-        dbNumEpochs = DB_NUM_EPOCHS_DEF;
+        dbNumRows = DB_NUM_ROWS_DEF;
     }
     Gui::ItemTooltip("Reset to default");
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::PushItemWidth(25 * charSize.x);
-    if (ImGui::SliderInt("##dbNumEpochs", &dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX))
+    if (ImGui::SliderInt("##dbNumRows", &dbNumRows, DB_NUM_ROWS_MIN, DB_NUM_ROWS_MAX))
     {
-        dbNumEpochs = CLIP(dbNumEpochs, DB_NUM_EPOCHS_MIN, DB_NUM_EPOCHS_MAX);
+        dbNumRows = CLIP(dbNumRows, DB_NUM_ROWS_MIN, DB_NUM_ROWS_MAX);
     }
     ImGui::SameLine();
-    ImGui::Text("(~%.0fMB per rx or log)", (double)(sizeof(Database::Epoch) * dbNumEpochs) * (1.0/1024.0/1024.0));
+    ImGui::Text("(~%.0fMB per rx or log)", (double)(sizeof(Database::Row) * dbNumRows) * (1.0/1024.0/1024.0));
     ImGui::PopItemWidth();
 
     ImGui::TextUnformatted("Min framerate");

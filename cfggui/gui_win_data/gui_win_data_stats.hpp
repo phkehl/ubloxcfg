@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -37,19 +37,7 @@ class GuiWinDataStats : public GuiWinData
 
         GuiWidgetTabbar _tabbar;
         GuiWidgetTable _table;
-
-        typedef std::function<const Database::Stats (const Database::EpochStats &)> StatsGetter;
-        typedef std::function<std::string (const double)> ValFormatter;
-
-        struct Row
-        {
-            Row(const char *_label, StatsGetter _getter, ValFormatter _formatter);
-            std::string  label;
-            StatsGetter  getter;
-            ValFormatter formatter;
-        };
-
-        std::vector<Row> _rows;
+        Database::Info _dbinfo;
 
         void _DrawSiglevelPlot();
 };

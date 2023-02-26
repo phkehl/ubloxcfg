@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -473,17 +473,13 @@ void GuiWinInputReceiver::_DrawControls()
                 if (!p.desc.empty())
                 {
                     ImGui::SameLine();
-                    ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-                    ImGui::TextUnformatted(p.desc.c_str());
-                    ImGui::PopStyleColor();
+                    Gui::TextDim(p.desc.c_str());
                 }
             }
             ImGui::PopID();
             if (ports.empty())
             {
-                ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_DIM));
-                ImGui::TextUnformatted("No ports detected");
-                ImGui::PopStyleColor();
+                Gui::TextDim("No ports detected");
             }
 
             ImGui::EndPopup();

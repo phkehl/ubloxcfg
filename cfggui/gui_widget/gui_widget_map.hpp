@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -49,6 +49,10 @@ class GuiWidgetMap
         // 3. Draw controls, handle dragging, zooming, etc.
         void EndDraw();
 
+        // Other FIXME: solve this better
+        void EnableFollowButton();
+        bool FollowEnabled();
+
     private:
 
         // Currently used map parameters and map tiles
@@ -72,6 +76,8 @@ class GuiWidgetMap
         bool    _debugTiles;       // Debug tiles
         FfVec2d _dragStartXy;      // Start of dragging map (tile coordinates)
         int     _isDragging;       // Dragging in progress
+        bool    _followEna;        // Follow mode button enabled
+        bool    _followMode;       // Follow mode
         void _SetPosAndZoom(const FfVec2d &lonLat, const float zoom, const int zLevel = -1, const float snap = ZOOM_STEP_SHIFT);
         void _DrawMapTile(ImDrawList *draw, const int ix, const int dx, const int dy);
 

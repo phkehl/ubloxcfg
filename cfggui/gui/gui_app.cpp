@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -271,14 +271,27 @@ void GuiApp::Loop(const uint32_t &frame, const double &now)
 
 void GuiApp::DrawFrame()
 {
+    // CTRL-F4 to close currently focused window
+    bool closeWindow = false;
+    if (ImGui::IsKeyPressed(ImGuiKey_F4, false))
+    {
+        ImGuiIO &io = ImGui::GetIO();
+        closeWindow = io.KeyCtrl;
+    }
+    UNUSED(closeWindow);
+
     _MainMenu();
 
     // Draw app windows
-    for (auto &win: _appWindows)
+    for (auto &appWin: _appWindows)
     {
-        if (win->WinIsOpen())
+        if (appWin->WinIsOpen())
         {
-            win->DrawWindow();
+            appWin->DrawWindow();
+            if (closeWindow && appWin->WinIsFocused())
+            {
+                appWin->WinClose();
+            }
         }
     }
 
@@ -289,6 +302,10 @@ void GuiApp::DrawFrame()
         if (ntripWin->WinIsOpen())
         {
             ntripWin->DrawWindow();
+            if (closeWindow && ntripWin->WinIsFocused())
+            {
+                ntripWin->WinClose();
+            }
             iter++;
         }
         else
@@ -304,7 +321,11 @@ void GuiApp::DrawFrame()
         if (receiverWin->WinIsOpen())
         {
             receiverWin->DrawWindow();
-            receiverWin->DrawDataWindows();
+            receiverWin->DrawDataWindows(closeWindow);
+            if (closeWindow && receiverWin->WinIsFocused())
+            {
+                receiverWin->WinClose();
+            }
             iter++;
         }
         else
@@ -320,7 +341,11 @@ void GuiApp::DrawFrame()
         if (logfileWin->WinIsOpen())
         {
             logfileWin->DrawWindow();
-            logfileWin->DrawDataWindows();
+            logfileWin->DrawDataWindows(closeWindow);
+            if (closeWindow && logfileWin->WinIsFocused())
+            {
+                logfileWin->WinClose();
+            }
             iter++;
         }
         else
@@ -336,6 +361,10 @@ void GuiApp::DrawFrame()
         if (multiWin->WinIsOpen())
         {
             multiWin->DrawWindow();
+            if (closeWindow && multiWin->WinIsFocused())
+            {
+                multiWin->WinClose();
+            }
             iter++;
         }
         else
@@ -672,7 +701,8 @@ void GuiApp::_MainMenu()
         char text[200];
         ImGuiIO &io = ImGui::GetIO();
         snprintf(text, sizeof(text),
-            ICON_FK_TACHOMETER " %2.0f | " ICON_FK_CLOCK_O " %.1f | " ICON_FK_FILM " %d | " ICON_FK_THERMOMETER_HALF " %.0fMB %2.0f%% ", // <-- FIXME: CalcTextSize() misses one char?!
+            ICON_FK_TACHOMETER " %2.0f | " ICON_FK_CLOCK_O " %.1f | " ICON_FK_FILM " %d | "
+            ICON_FK_THERMOMETER_HALF " %.0f | " ICON_FK_BUG " %.0f ", // <-- FIXME: CalcTextSize() misses one char?!
             io.Framerate, // io.Framerate > FLT_EPSILON ? 1000.0f / io.Framerate : 0.0f,
             //io.DeltaTime > FLT_EPSILON ? 1.0 / io.DeltaTime : 0.0, io.DeltaTime * 1e3,
             ImGui::GetTime(), ImGui::GetFrameCount(),
@@ -687,10 +717,11 @@ void GuiApp::_MainMenu()
         {
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(
-                ICON_FK_TACHOMETER       " = FPS, "
-                ICON_FK_CLOCK_O          " = time, "
-                ICON_FK_FILM             " = frames, "
-                ICON_FK_THERMOMETER_HALF " = RSS [MB] / CPU [%]");
+                ICON_FK_TACHOMETER       " = FPS [Hz], "
+                ICON_FK_CLOCK_O          " = time [s], "
+                ICON_FK_FILM             " = frames [-], "
+                ICON_FK_THERMOMETER_HALF " = RSS [MiB], "
+                ICON_FK_BUG              " = CPU [%s]");
             ImGui::EndTooltip();
         }
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
@@ -707,20 +738,27 @@ void GuiApp::ConfirmClose(bool &display, bool &done)
 {
     const char * const popupName = "Really Close?###ConfirmClose";
     ImGui::OpenPopup(popupName);
+
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
     if (ImGui::BeginPopupModal(popupName, NULL, ImGuiWindowFlags_AlwaysAutoResize))
     {
         ImGui::Text("All connections will be shut down.\nAll data will be lost.\n");
         ImGui::Separator();
-
-        ImGui::SetKeyboardFocusHere();
-        if (ImGui::Button(ICON_FK_CHECK " OK", ImVec2(120, 0)))
+        const auto size = GuiSettings::iconSize * ImVec2(6.0f, 1.0f);
+        if (ImGui::IsWindowAppearing()) // Workaround...
+        {
+            ImGui::SetKeyboardFocusHere();
+        }
+        if (ImGui::Button(ICON_FK_CHECK " OK", size))
         {
             ImGui::CloseCurrentPopup();
             done = true;
         }
-        //ImGui::SetItemDefaultFocus();
+        ImGui::SetItemDefaultFocus(); // FIXME: doesn't work (anymore)
+        //ImGui::SetKeyboardFocusHere();
         ImGui::SameLine();
-        if (ImGui::Button(ICON_FK_TIMES " Cancel", ImVec2(120, 0)))
+        if (ImGui::Button(ICON_FK_TIMES " Cancel", size))
         {
             ImGui::CloseCurrentPopup();
             display = false;
@@ -776,6 +814,7 @@ void GuiApp::_DrawDebugWin()
                     { "ImGui styles",   APP_WIN_IMGUI_STYLES,     false },
                     { "ImPlot demo",    APP_WIN_IMPLOT_DEMO,      true  },
                     { "ImPlot metrics", APP_WIN_IMPLOT_METRICS,   false },
+                    { "ImPlot styles",  APP_WIN_IMPLOT_STYLES,    false },
                     { "Experiments",    APP_WIN_EXPERIMENT,       true  },
                 };
                 for (int ix = 0; ix < NUMOF(buttons); ix++)
@@ -816,7 +855,7 @@ void GuiApp::_DrawDebugWin()
                     { "##CPU",          "CPU load",      Perf_e::CPU },
                 };
 
-                if (ImPlot::BeginPlot("##Performance", plotSize1, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus))
+                if (ImPlot::BeginPlot("##Performance", plotSize1, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoFrame))
                 {
                     ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0005, 100.0, ImGuiCond_Once);
                     ImPlot::SetupAxisLimits(ImAxis_X1, 0.0, _perfData[0].data.size(), ImGuiCond_Always);
@@ -841,7 +880,7 @@ void GuiApp::_DrawDebugWin()
                 const ImPlotRange range; // (0.0, 2.0);
                 for (int plotIx = 0; plotIx < NUMOF(plots); plotIx++)
                 {
-                    if (ImPlot::BeginPlot(plots[plotIx].title, plotSize2, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend))
+                    if (ImPlot::BeginPlot(plots[plotIx].title, plotSize2, ImPlotFlags_Crosshairs | ImPlotFlags_NoMenus | ImPlotFlags_NoLegend | ImPlotFlags_NoFrame))
                     {
                         ImPlot::SetupAxis(ImAxis_X1, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks);
                         ImPlot::SetupAxis(ImAxis_Y1, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickMarks);

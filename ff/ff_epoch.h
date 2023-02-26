@@ -2,7 +2,7 @@
     \file
     \brief Navigation epoch abstraction
 
-    - Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+    - Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
       https://oinkzwurgl.org/hacking/ubloxcfg
     - Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
 
@@ -375,6 +375,13 @@ typedef struct EPOCH_s
 
     bool                havePosixTime;
     double              posixTime;
+
+    bool                haveClock;
+    double              clockBias;
+    double              clockDrift;
+
+    bool                haveLatency;
+    float               latency;
 
     EPOCH_SIGINFO_t     signals[100];
     int                 numSignals;

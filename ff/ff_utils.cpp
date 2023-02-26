@@ -1,6 +1,6 @@
 // flipflip's c++ stuff: utilities
 //
-// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // Parts copyright by others. See source code.
@@ -21,6 +21,7 @@
 #include <cinttypes>
 #include <cstring>
 #include <unordered_map>
+#include <cmath>
 
 #include "ff_utils.hpp"
 
@@ -197,8 +198,8 @@ std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
             {
                    pos1++;
             }
-            str[pos1    ] = i2hex[ (c >> 4) & 0xf ];
-            str[pos1 + 1] = i2hex[  c       & 0xf ];
+            str[pos1    ] = i2hex[ (c >> 4)  &0xf ];
+            str[pos1 + 1] = i2hex[  c        &0xf ];
 
             str[pos2] = isprint((int)c) ? c : '.';
         }
@@ -208,6 +209,196 @@ std::vector<std::string> Ff::HexDump(const uint8_t *data, const int size)
         ix += 16;
     }
     return hexdump;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool Ff::StrStartsWith(const std::string &str, const std::string &prefix)
+{
+    const auto str_len = str.size();
+    const auto prefix_len = prefix.size();
+    if ((str_len >= prefix_len) && (prefix_len > 0))
+    {
+        return str.substr(0, prefix_len) == prefix;
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool Ff::StrEndsWith(const std::string &str, const std::string &suffix)
+{
+    const auto str_len = str.size();
+    const auto suffix_len = suffix.size();
+    if ((str_len >= suffix_len) && (suffix_len > 0))
+    {
+        return str.substr(str_len - suffix_len, suffix_len) == suffix;
+    }
+    return false;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool Ff::StrContains(const std::string &str, const std::string &sub)
+{
+    if (!str.empty() && !sub.empty())
+    {
+        return str.find(sub) != std::string::npos;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static bool sStrToValueSigned(const std::string &str, int64_t &value)
+{
+    // No empty string, no leading whitespace
+    if (str.empty() || (std::isspace(str[0]) != 0))
+    {
+        return false;
+    }
+
+    // Parse
+    int num = 0;
+    int count = std::sscanf(str.data(), "%" SCNi64 "%n", &value, &num);
+
+    // Number of values found must be 1 and the entire string must have been used (no trailing stuff)
+    return ((count == 1) && ((std::size_t)num == str.size()));
+}
+
+static bool sStrToValueUnsigned(const std::string &str, uint64_t &value)
+{
+    // No empty string, no leading whitespace
+    if (str.empty() || (std::isspace(str[0]) != 0))
+    {
+        return false;
+    }
+
+    // Parse
+    int num = 0;
+    int count = 0;
+    // Hex
+    if ((str.size() > 2) && (str[0] == '0') && ((str[1] == 'x') || (str[1] == 'X')))
+    {
+        count = std::sscanf(str.data(), "%" SCNx64 "%n", &value, &num);
+    }
+    // Octal
+    else if (str[0] == '0')
+    {
+        count = std::sscanf(str.data(), "%" SCNo64 "%n", &value, &num);
+    }
+    // Decimal
+    else
+    {
+        count = std::sscanf(str.data(), "%" SCNu64 "%n", &value, &num);
+    }
+
+    // Number of values found must be 1 and the entire string must have been used (no trailing stuff)
+    return ((count == 1) && ((std::size_t)num == str.size()));
+}
+
+bool Ff::StrToValue(const std::string &str, int32_t &value)
+{
+    int64_t value_tmp = 0;
+    if (sStrToValueSigned(str, value_tmp) && (value_tmp >= INT32_MIN) && (value_tmp <= INT32_MAX))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Ff::StrToValue(const std::string &str, uint32_t &value)
+{
+    uint64_t value_tmp = 0;
+    if (sStrToValueUnsigned(str, value_tmp) && (value_tmp <= UINT32_MAX))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Ff::StrToValue(const std::string &str, int64_t &value)
+{
+    int64_t value_tmp = 0;
+    // Note that there is no good way to check the actual allowed range (>= and <=), so we reduce the allowed range by 1
+    if (sStrToValueSigned(str, value_tmp) && (value_tmp > INT64_MIN) && (value_tmp < INT64_MAX))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Ff::StrToValue(const std::string &str, uint64_t &value)
+{
+    uint64_t value_tmp = 0;
+    // Note that there is no good way to check the actual allowed range (<=), so we reduce the allowed range by 1
+    if (sStrToValueUnsigned(str, value_tmp) && (value_tmp < UINT32_MAX))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Ff::StrToValue(const std::string &str, float &value)
+{
+    if (str.empty() || (std::isspace(str[0]) != 0))
+    {
+        return false;
+    }
+
+    float value_tmp = 0.0f;
+    int num = 0;
+    int count = std::sscanf(str.data(), "%f%n", &value_tmp, &num);
+
+    if ((count == 1) && ((std::size_t)num == str.size()) && std::isnormal(value_tmp))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool Ff::StrToValue(const std::string &str, double &value)
+{
+    if (str.empty() || (std::isspace(str[0]) != 0))
+    {
+        return false;
+    }
+
+    double value_tmp = 0.0f;
+    int num = 0;
+    int count = std::sscanf(str.data(), "%lf%n", &value_tmp, &num);
+
+    if ((count == 1) && ((std::size_t)num == str.size()) && std::isnormal(value_tmp))
+    {
+        value = value_tmp;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

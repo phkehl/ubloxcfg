@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -209,24 +209,20 @@ void GuiWinData3d::_UpdatePoints()
         _trajVertices.push_back(OpenGL::Vertex({ t[0], t[2], -t[1] }, { 0.0f, 0.0f, 0.0f }, { t[3], t[4], t[5], t[6] }));
     }
 #else
-    constexpr int _E_ = Database::_E_;
-    constexpr int _N_ = Database::_N_;
-    constexpr int _U_ = Database::_U_;
-    _database->ProcEpochs([&](const Database::Epoch &epoch)
+    _database->ProcRows([&](const Database::Row &row)
     {
-        if (epoch.raw.havePos)
+        if (!std::isnan(row.pos_enu_ref_east))
         {
-            const float east  = epoch.enuRef[_E_];
-            const float north = epoch.enuRef[_N_];
-            const float up    = epoch.enuRef[_U_];
-            const ImVec4 col = GuiSettings::GetFixColour4(&epoch.raw);
+            const float east  = row.pos_enu_ref_east;
+            const float north = row.pos_enu_ref_north;
+            const float up    = row.pos_enu_ref_up;
+            const ImVec4 &col = GuiSettings::GetFixColour4(row.fix_type, row.fix_ok);
             // E/N/U: X/Y/Z = E/U/-N
             _markerInstances.emplace_back(glm::vec3(east, up, -north), glm::vec4(col.x, col.y, col.z, col.w));
             _trajVertices.push_back(OpenGL::Vertex({ east, up, -north }, { 0.0f, 0.0f, 0.0f }, { col.x, col.y, col.z, col.w }));
         }
         return true;
     });
-
 #endif
     glBindBuffer(GL_ARRAY_BUFFER, _markerInstancesBuffer);
     glBufferData(GL_ARRAY_BUFFER, _markerInstances.size() * sizeof(_markerInstances[0]), _markerInstances.data(), GL_STATIC_DRAW);

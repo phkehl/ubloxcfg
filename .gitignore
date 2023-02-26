@@ -22,7 +22,13 @@ core.[0-9]*
 imgui.ini
 
 /*.ubx
+/*.ubz
+/*.ubx.gz
+
 /tools/make_fake_ubxmonhw
 /tools/make_fake_ubxesfstatus
 /tools/make_fake_ubxesfmeas
 
+/.history
+
+*.pyc

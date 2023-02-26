@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -48,6 +48,7 @@ class GuiWin
         void                 WinMoveTo(const ImVec2 &pos);
         void                 WinResize(const ImVec2 &size = ImVec2(0,0));
         bool                 WinIsDocked();
+        bool                 WinIsFocused();
 
         virtual void         Loop(const uint32_t &frame, const double &now);
 
@@ -69,6 +70,7 @@ class GuiWin
         std::string          _winUidStr;
         std::unique_ptr<ImGuiWindowClass> _winClass;
         bool                 _winIsDocked;
+        bool                 _winIsFocused;
 
         bool                 _DrawWindowBegin();
         void                 _DrawWindowEnd();

@@ -1,6 +1,6 @@
 // flipflip's UBX protocol stuff
 //
-// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)

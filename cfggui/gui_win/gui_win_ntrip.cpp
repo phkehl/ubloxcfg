@@ -1,7 +1,7 @@
 /* ************************************************************************************************/ // clang-format off
 // flipflip's cfggui
 //
-// Copyright (c) 2021 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -299,11 +299,7 @@ void GuiWinNtrip::DrawWindow()
         const char *rxStatus = "not connected";
         if (receiver->IsReady())
         {
-            const auto epoch = receiver->GetDatabase()->LatestEpoch();
-            if (epoch)
-            {
-                rxStatus = epoch->raw.fixStr;
-            }
+            rxStatus = receiver->GetDatabase()->LatestRow().fix_str;
         }
         ImGui::Text("%-10.10s %-15.15s %s", rxName.c_str(), rxStatus, receiver->GetRxVer().c_str());
 
@@ -438,14 +434,13 @@ void GuiWinNtrip::_UpdateGga()
         _ggaNumSv.clear();
         if (_srcReceiver && _srcReceiver->IsReady())
         {
-            const auto epoch = _srcReceiver->GetDatabase()->LatestEpoch();
-            if ( epoch && epoch->valid && epoch->raw.haveFix && epoch->raw.havePos &&
-                (epoch->raw.fix >= EPOCH_FIX_S3D) && epoch->raw.fixOk )
+            const auto row = _srcReceiver->GetDatabase()->LatestRow();
+            if (row.pos_avail && row.fix_ok && (row.fix_type >= EPOCH_FIX_S3D))
             {
-                _ntripPos.lat   = rad2deg(epoch->raw.llh[Database::_LAT_]);
-                _ntripPos.lon   = rad2deg(epoch->raw.llh[Database::_LON_]);
-                _ntripPos.alt   = epoch->raw.llh[Database::_HEIGHT_];
-                _ntripPos.numSv = CLIP(epoch->raw.numSatUsed, 4, 99);
+                _ntripPos.lat   = row.pos_llh_lat;
+                _ntripPos.lon   = row.pos_llh_lon;
+                _ntripPos.alt   = row.pos_llh_height;
+                _ntripPos.numSv = CLIP(row.sol_numsat_tot, 4, 12);
                 _ntripPos.fix   = true;
                 _ntripPos.valid = true;
             }
@@ -469,7 +464,7 @@ void GuiWinNtrip::_UpdateGga()
     _ggaLat   = Ff::Sprintf("%.7f", _ntripPos.lat);
     _ggaLon   = Ff::Sprintf("%.7f", _ntripPos.lon);
     _ggaAlt   = Ff::Sprintf("%.1f", _ntripPos.alt);
-    _ggaNumSv = Ff::Sprintf("%d", _ntripPos.numSv);
+    _ggaNumSv = Ff::Sprintf("%02d", _ntripPos.numSv);
     _ggaFix   = _ntripPos.fix;
 
     _ggaInt = Ff::Sprintf("%.1f", ggaInt);
