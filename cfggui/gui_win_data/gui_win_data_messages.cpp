@@ -99,7 +99,7 @@ void GuiWinDataMessages::_InitMsgRatesAndPolls()
     {
         const UBLOXCFG_MSGRATE_t *rate = msgrates[ix];
         std::string msgName = rate->msgName;
-        DEBUG("add msg %s", msgName.c_str());
+        //DEBUG("add msg %s", msgName.c_str());
 
         // Create a list of rates and other info per message class
         const std::string className = msgName.substr(0, msgName.rfind('-'));
@@ -108,7 +108,7 @@ void GuiWinDataMessages::_InitMsgRatesAndPolls()
             auto foo = _msgRates.insert({ className, std::vector<MsgRate>() });
             rates = &foo.first->second; // msg rates in this msg class
             _classNames.push_back(className);
-            DEBUG("add class %s", className.c_str());
+            //DEBUG("add class %s", className.c_str());
             prevName = className;
         }
 

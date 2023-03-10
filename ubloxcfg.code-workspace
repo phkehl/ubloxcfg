@@ -12,7 +12,10 @@
 
         // Leave big brother in the dark, mainly settings from @tag:usesOnlineServices
         "telemetry.enableTelemetry": false,
+        "gitlens.telemetry.enabled": false,
+        "redhat.telemetry.enabled": false,
         "telemetry.enableCrashReporter": false,
+        "telemetry.telemetrylevel": "off",
         "workbench.enableExperiments": false,
         "workbench.settings.enableNaturalLanguageSearch": false,
         "npm.fetchOnlinePackageInfo": false,
@@ -57,13 +60,13 @@
         //"C_Cpp.default.compileCommands":       "",
         //"C_Cpp.default.forcedIncludes":      [ ],
         "C_Cpp.default.intelliSenseMode":        "gcc-x64",
-         "C_Cpp.default.compilerPath":            "/usr/bin/gcc",
+        "C_Cpp.default.compilerPath":            "/usr/bin/gcc",
         "C_Cpp.default.cStandard":               "gnu99",
         "C_Cpp.default.cppStandard":             "gnu++17",
         "C_Cpp.default.browse.path":           [ "${workspaceFolder}/**" ],
         //"C_Cpp.default.configurationProvider": "b2.catkin_tools",
         "C_Cpp.default.browse.databaseFilename": "${workspaceFolder}/.vscode-cache/browse.db",
-        "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": true,
+        "C_Cpp.default.browse.limitSymbolsToIncludedHeaders": false,
         //"C_Cpp.clang_format_style": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 120 }",
         "editor.formatOnSave": false,
 
@@ -272,75 +275,73 @@
         // https://code.visualstudio.com/docs/cpp/launch-json-reference
         "configurations": [
             {
-                {
-                    "name": "debug test_m32",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask" : "make test_m32-debug",
-                    "program": "${workspaceFolder}/output/test_m32-debug",
-                    "args": [ ],
-                    "cwd": "${workspaceFolder}"
-                },
-                {
-                    "name": "debug test_m64",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": true,
-                    "preLaunchTask" : "make test_m64-debug",
-                    "program": "${workspaceFolder}/output/test_m64-debug",
-                    "args": [ ],
-                    "cwd": "${workspaceFolder}"
-                },
-                {
-                    "name": "debug cfgtool cfg2ubx",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask" : "make cfgtool-debug",
-                    "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-i", "test_cfg2ubx.txt", "cfg2ubx", "-l", "ram" ],
-                    "cwd": "${workspaceFolder}"
-                },
-                {
-                    "name": "debug cfgtool dump",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask" : "make cfgtool-debug",
-                    "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-p", "tcp://fry:20001", "dump" ],
-                    "cwd": "${workspaceFolder}"
-                },
-                {
-                    "name": "debug cfgtool parse",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask" : "make cfgtool-debug",
-                    "program": "${workspaceFolder}/output/cfgtool-debug",
-                    "args": [ "-v", "-i", "tmp/fplog1", "parse", "-x", "-e" ],
-                    "cwd": "${workspaceFolder}"
-                },
-                {
-                    "name": "debug cfggui",
-                    "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
-                    "stopAtEntry": false,
-                    "preLaunchTask": "make cfggui-debug",
-                    "program": "${workspaceFolder}/output/cfggui-debug",
-                    "args": [ ],
-                    "cwd": "${workspaceFolder}",
-                    //"miDebuggerArgs": "-ex source .gdbinit", // nope... :-/
-                    "setupCommands": [
-                        { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true }, // needs setup code in ~/.gdbinit!
-                        { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true },
-                        { "text": "source ${workspaceFolder}/.gdbinit", "description": "load local .gdbinit", "ignoreFailures": false }
-                        // ubloxcfg/.gdbinit for more...
-                        // //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
-                        // // "-exec info skip" to show in debug console
-                        // { "text": "skip -rfunction Im(Vec2|Vec4|Strv|Vector|Span)::.+", "description": "skip trivial ImGui functions", "ignoreFailures": true },
-                        // { "text": "skip -rfunction Ff::Vec2::.+", "description": "skip trivial Ff functions", "ignoreFailures": true },
-                        // // https://sourceware.org/gdb/onlinedocs/gdb/Skipping-Over-Functions-and-Files.html
-                        // // FIXME: doesn't work :-(
-                        // { "text": "skip -rfunction ^std::__cxx11::(allocator|basic_string)<.*>::", "description": "skip string ctor/dtor", "ignoreFailures": true },
-                        // { "text": "skip -rfunction ^std::__cxx11::([a-zA-z0-9_]+)<.*>::", "description": "skip std ctor/dtor", "ignoreFailures": true },
-                    ]
-                }
+                "name": "debug test_m32",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": false,
+                "preLaunchTask" : "make test_m32-debug",
+                "program": "${workspaceFolder}/output/test_m32-debug",
+                "args": [ ],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "name": "debug test_m64",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": true,
+                "preLaunchTask" : "make test_m64-debug",
+                "program": "${workspaceFolder}/output/test_m64-debug",
+                "args": [ ],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "name": "debug cfgtool cfg2ubx",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": false,
+                "preLaunchTask" : "make cfgtool-debug",
+                "program": "${workspaceFolder}/output/cfgtool-debug",
+                "args": [ "-v", "-i", "test_cfg2ubx.txt", "cfg2ubx", "-l", "ram" ],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "name": "debug cfgtool dump",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": false,
+                "preLaunchTask" : "make cfgtool-debug",
+                "program": "${workspaceFolder}/output/cfgtool-debug",
+                "args": [ "-v", "-p", "tcp://fry:20001", "dump" ],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "name": "debug cfgtool parse",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": false,
+                "preLaunchTask" : "make cfgtool-debug",
+                "program": "${workspaceFolder}/output/cfgtool-debug",
+                "args": [ "-v", "-i", "tmp/fplog1", "parse", "-x", "-e" ],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "name": "debug cfggui",
+                "type": "cppdbg", "request": "launch", "MIMode": "gdb", "miDebuggerPath" : "gdb",
+                "stopAtEntry": false,
+                "preLaunchTask": "make cfggui-debug",
+                "program": "${workspaceFolder}/output/cfggui-debug",
+                "args": [ ],
+                "cwd": "${workspaceFolder}",
+                //"miDebuggerArgs": "-ex source .gdbinit", // nope... :-/
+                "setupCommands": [
+                    { "text": "-enable-pretty-printing", "description": "enable pretty printing", "ignoreFailures": true }, // needs setup code in ~/.gdbinit!
+                    { "text": "handle SIGPIPE nostop noprint pass", "description": "ignore SIGPIPE", "ignoreFailures": true },
+                    { "text": "source ${workspaceFolder}/.gdbinit", "description": "load local .gdbinit", "ignoreFailures": false }
+                    // ubloxcfg/.gdbinit for more...
+                    // //{ "text": "add-natvis ${workspaceFolder}/3rdparty/imgui/imgui.natvis", "description": "imgui natvis", "ignoreFailures": true }
+                    // // "-exec info skip" to show in debug console
+                    // { "text": "skip -rfunction Im(Vec2|Vec4|Strv|Vector|Span)::.+", "description": "skip trivial ImGui functions", "ignoreFailures": true },
+                    // { "text": "skip -rfunction Ff::Vec2::.+", "description": "skip trivial Ff functions", "ignoreFailures": true },
+                    // // https://sourceware.org/gdb/onlinedocs/gdb/Skipping-Over-Functions-and-Files.html
+                    // // FIXME: doesn't work :-(
+                    // { "text": "skip -rfunction ^std::__cxx11::(allocator|basic_string)<.*>::", "description": "skip string ctor/dtor", "ignoreFailures": true },
+                    // { "text": "skip -rfunction ^std::__cxx11::([a-zA-z0-9_]+)<.*>::", "description": "skip std ctor/dtor", "ignoreFailures": true },
+                ]
             }
             // see more useful things in .vscode/launch.json-example
         ],

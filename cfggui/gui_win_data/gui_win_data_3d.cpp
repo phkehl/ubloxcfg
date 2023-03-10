@@ -216,7 +216,7 @@ void GuiWinData3d::_UpdatePoints()
             const float east  = row.pos_enu_ref_east;
             const float north = row.pos_enu_ref_north;
             const float up    = row.pos_enu_ref_up;
-            const ImVec4 &col = GuiSettings::GetFixColour4(row.fix_type, row.fix_ok);
+            const ImVec4 &col = GuiSettings::FixColour4(row.fix_type, row.fix_ok);
             // E/N/U: X/Y/Z = E/U/-N
             _markerInstances.emplace_back(glm::vec3(east, up, -north), glm::vec4(col.x, col.y, col.z, col.w));
             _trajVertices.push_back(OpenGL::Vertex({ east, up, -north }, { 0.0f, 0.0f, 0.0f }, { col.x, col.y, col.z, col.w }));

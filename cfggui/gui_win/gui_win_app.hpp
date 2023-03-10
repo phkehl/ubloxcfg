@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdarg>
 
 #include "gui_widget_tabbar.hpp"
 #include "gui_win.hpp"
@@ -41,6 +42,8 @@ class GuiWinAppAbout : public GuiWinApp
         void DrawWindow() final;
     private:
         std::vector<std::string> _versions;
+        std::string _cacheDirLink;
+        std::string _configFileLink;
         void _DrawEntry(const char *name, const char *license, const char *link = nullptr, const char *link2 = nullptr);
 };
 
@@ -62,6 +65,8 @@ class GuiWinAppHelp : public GuiWinApp
     public:
         GuiWinAppHelp();
         void DrawWindow() final;
+    private:
+        GuiWidgetTabbar _tabbar;
 };
 
 /* ***** Legend ***************************************************************************************************** */
@@ -71,8 +76,9 @@ class GuiWinAppLegend : public GuiWinApp
     public:
         GuiWinAppLegend();
         void DrawWindow() final;
-    protected:
-        void _DrawFixColourLegend(const int value, const ImU32 colour, const char *label);
+    private:
+        GuiWidgetTabbar _tabbar;
+        void _DrawColourLegend(const ImU32 colour, const char *fmt, ...) PRINTF_ATTR(3);
 };
 
 /* ***** ImGui/ImPlot demos and debugging *************************************************************************** */

@@ -106,8 +106,8 @@ void GuiMsgUbxMonHw3::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             _table.AddCellEmpty();
         }
+        _table.SetRowUid(pinIx + 1);
     }
-
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

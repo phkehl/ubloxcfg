@@ -1263,6 +1263,16 @@ static int _strUbxTimTm2(char *info, const int size, const uint8_t *msg, const i
         F(tm.flags, UBX_TIM_TM2_V0_FLAGS_TIMEVALID) ? "valid" : "invalid",
         tm.count, (double)tm.accEst * UBX_TIM_TM2_V0_ACCEST_SCALE);
 }
+// message   11, dt   63, size   36, UBX      UBX-TIM-TM2          2253:061563.388047 2253:061563.588086 INT0 - F running armed GNSS n/a valid 46887 1.3e-08
+// message   43, dt  558, size   36, UBX      UBX-TIM-TM2          2253:061564.387529 2253:061563.588086 INT0 R - running armed GNSS n/a valid 46888 1.3e-08
+// message   67, dt   64, size   36, UBX      UBX-TIM-TM2          2253:061564.387529 2253:061564.588060 INT0 - F running armed GNSS n/a valid 46888 1.3e-08
+// message   91, dt  556, size   36, UBX      UBX-TIM-TM2          2253:061565.387023 2253:061564.588060 INT0 R - running armed GNSS n/a valid 46889 1.3e-08
+// message  115, dt   67, size   36, UBX      UBX-TIM-TM2          2253:061565.387023 2253:061565.587034 INT0 - F running armed GNSS n/a valid 46889 1.3e-08
+// message  154, dt  558, size   36, UBX      UBX-TIM-TM2          2253:061566.386456 2253:061565.587034 INT0 R - running armed GNSS n/a valid 46890 1.3e-08
+// message  173, dt   66, size   36, UBX      UBX-TIM-TM2          2253:061566.386456 2253:061566.587008 INT0 - F running armed GNSS n/a valid 46890 1.3e-08
+// message  202, dt  569, size   36, UBX      UBX-TIM-TM2          2253:061567.385907 2253:061566.587008 INT0 R - running armed GNSS n/a valid 46891 1.3e-08
+// message  226, dt   59, size   36, UBX      UBX-TIM-TM2          2253:061567.385907 2253:061567.585982 INT0 - F running armed GNSS n/a valid 46891 1.3e-08
+// message  263, dt  566, size   36, UBX      UBX-TIM-TM2          2253:061568.385365 2253:061567.585982 INT0 R - running armed GNSS n/a valid 46892 1.3e-08
 
 int ubxRxmSfrbxInfo(char *info, const int size, const uint8_t *msg, const int msgSize)
 {

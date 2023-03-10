@@ -18,6 +18,9 @@
 #ifndef __GUI_WIN_DATA_SIGNALS_HPP__
 #define __GUI_WIN_DATA_SIGNALS_HPP__
 
+#include <utility>
+#include <vector>
+
 #include "ff_epoch.h"
 
 #include "gui_widget_table.hpp"
@@ -32,41 +35,81 @@ class GuiWinDataSignals : public GuiWinData
     public:
         GuiWinDataSignals(const std::string &name, std::shared_ptr<Database> database);
 
-        static void DrawSignalLevelWithBar(const EPOCH_SIGINFO_t *sig, const ImVec2 charSize);
+        static void DrawSignalLevelCb(void *arg);
 
-    protected:
+    private:
 
         void _ProcessData(const InputData &data) final;
         void _DrawToolbar() final;
         void _DrawContent() final;
         void _ClearData() final;
 
-        std::vector<EPOCH_SIGINFO_t> _sigInfo;
+        enum GnssIx : int { ALL = 0, GPS, GAL, BDS, GLO, OTHER, _NUM };
+        static constexpr GnssIx GNSS_IXS[_NUM] = { ALL, GPS, GAL, BDS, GLO, OTHER, };
+
         struct Count
         {
-            Count(const char *_name);
+            Count();
             void Reset();
-            void Add(const EPOCH_SIGINFO_t *sig);
+            void Add(const EPOCH_SIGINFO_t &sig);
             void Update();
-            int  num;
-            int  used;
-            char name[10];
-            char label[30];
+            int  num_[GnssIx::_NUM];
+            int  used_[GnssIx::_NUM];
+            const std::string name_[GnssIx::_NUM];
+            std::string label_[GnssIx::_NUM];
         };
-        Count _countAll;
-        Count _countGps;
-        Count _countGlo;
-        Count _countBds;
-        Count _countGal;
-        Count _countSbas;
-        Count _countQzss;
-        EPOCH_SIGUSE_t       _minSigUse;
-        GuiWidgetTable       _table;
-        GuiWidgetTabbar      _tabbar;
-        std::map<uint32_t, bool> _selSigs;
+
+        struct CnoBin {
+            CnoBin(const float r0, const float r1, const float a0, const float a1);
+            void Reset();
+            void Add(const GnssIx gnssIx, const float cno);
+            const std::string &Tooltip(const GnssIx gnssIx);
+
+            // CNo statistics
+            uint32_t count_[GnssIx::_NUM];
+            float    min_[GnssIx::_NUM];
+            float    max_[GnssIx::_NUM];
+            float    mean_[GnssIx::_NUM];
+
+            // Bin region in polar coordinates
+            float r0_; //!< Min radius [unit] (0..1)
+            float r1_; //!< Max radius [unit] (0..1)
+            float a0_; //!< Min angle [rad] (0..2pi)
+            float a1_; //!< Max angle [rad] (0..2pi)
+
+            FfVec2f xy_; //!< Position of bin centre [unit, unit] (0..1, 0..1)
+            std::string uid_;
+            private:
+                std::string _tooltip[GnssIx::_NUM];
+        };
+
+        struct CnoSky {
+            CnoSky(const int n_az = 24 /* 360 / 24 = 15 deg*/, const int n_el = 9 /* 90 / 9 = 10 deg*/);
+            void Reset();
+            void AddCno(const EPOCH_SIGINFO_t &sig, const EPOCH_SATINFO_t &sat);
+            std::size_t AzimElevToBin(const int azim, const int elev) const;
+            int                   n_az_;  //!< Number of divisions in azimuth
+            int                   n_el_;  //!< Number of divisions in elevation
+            float                 s_az_;  //!< Size ("width") of bin in azimuth [deg]
+            float                 s_el_;  //!< Size ("width") of bin in elevation [deg]
+            std::vector<CnoBin>   bins_;  //!< Bins
+            std::vector<float>    rs_;    //!< Precalculated radii for grid
+            std::vector<FfVec2f>  axys_;  //!< Precalculated cos() and sin() of angles for grid
+        };
+
+        Count           _count;
+        CnoSky          _cnoSky;
+        bool            _onlyTracked;
+        GuiWidgetTable  _table;
+        GuiWidgetTabbar _tabbar1;
+        GuiWidgetTabbar _tabbar2;
 
         void _UpdateSignals();
-        void _DrawSignalLevelCb(void *arg);
+        void _DrawSky(const GnssIx gnssIx);
+        void _DrawList(const GnssIx gnssIx);
+
+        static constexpr int SKY_NUM_BINS_AZ = 24; // 15 deg
+        static constexpr int SKY_NUM_BINS_EL =  9; // 10 deg
 };
 
 /* ****************************************************************************************************************** */

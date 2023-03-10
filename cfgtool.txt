@@ -1,6 +1,6 @@
 cfgtool 0.0 -- u-blox 9 configuration interface tool
 
-    Copyright (c) 2023 Philippe Kehl (flipflip at oinkzwurgl dot org)
+    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org)
     https://oinkzwurgl.org/hacking/ubloxcfg/
 
 Usage:

@@ -282,7 +282,7 @@ void GuiWidgetTable::_CheckData()
     if (sortSpecs && sortSpecs->SpecsDirty)
     {
         _sortSpecs.clear();
-        const int maxSpecColIx = (int)_rows.size() - 1;
+        const int maxSpecColIx = (int)_columns.size() - 1;
         for (int ix = 0; ix < sortSpecs->SpecsCount; ix++)
         {
             // FIXME: spurious bad sortspecs from imgui

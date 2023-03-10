@@ -123,7 +123,7 @@ void GuiMsgUbxRxmRawx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         if (!info.cpValid) { _table.SetCellColour(GUI_COLOUR(TEXT_DIM)); }
         _table.AddCellText(info.doppler);
         _table.AddCellText(info.lockTime);
-
+        _table.SetRowUid(info.uid);
         // TODO: info.halfCyc, info.subHalfCyc
     }
 }

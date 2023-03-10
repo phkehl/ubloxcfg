@@ -19,6 +19,7 @@
 #define __GUI_UTILS_HPP__
 
 #include <cstdint>
+#include <cstdarg>
 
 #include "imgui.h"
 
@@ -29,10 +30,11 @@ namespace Gui
     ImU32 ColourHSV(const float h, const float s, const float v, const float a = 1.0f);
     // void SetWindowScale(const float scale = 1.0f);
     void VerticalSeparator(const float offset_from_start_x = 0.0f);
-    bool ItemTooltip(const char *text, const double delay = 0.3);
-    bool ItemTooltipBegin(const double delay = 0.3);
+    bool ItemTooltip(const char *text);
+    bool ItemTooltip(const std::string &text);
+    bool ItemTooltipBegin();
     void ItemTooltipEnd();
-    void DebugTooltipThingy(const char *fmt, ...) IM_FMTARGS(1);
+    void DebugTooltipThingy(const char *fmt, ...) PRINTF_ATTR(1);
 
     enum Tri_e { TRI_IGNORE = -1, TRI_DISABLED = 0, TRI_ENABLED = 1 };
     bool CheckBoxTristate(const char *label, Tri_e *state, const bool cycleAllThree = false);
@@ -48,11 +50,11 @@ namespace Gui
 
     void TextTitle(const char *text);
     void TextTitle(const std::string &text);
-    void TextTitleF(const char *fmt, ...) IM_FMTARGS(1);
+    void TextTitleF(const char *fmt, ...) PRINTF_ATTR(1);
 
     void TextDim(const char *text);
     void TextDim(const std::string &text);
-    void TextDimF(const char *fmt, ...) IM_FMTARGS(1);
+    void TextDimF(const char *fmt, ...) PRINTF_ATTR(1);
 };
 
 /* ****************************************************************************************************************** */

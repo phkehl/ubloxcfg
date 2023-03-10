@@ -183,7 +183,7 @@ typedef enum EPOCH_SIGUSE_e
     EPOCH_SIGUSE_NONE,           //!< Signal not used
     EPOCH_SIGUSE_SEARCH,         //!< Signal is being searched
     EPOCH_SIGUSE_ACQUIRED,       //!< Signal was acquired
-    EPOCH_SIGUSE_UNUSABLE,         //!< Signal tracked but unused
+    EPOCH_SIGUSE_UNUSABLE,       //!< Signal tracked but unused
     EPOCH_SIGUSE_CODELOCK,       //!< Signal tracked and code locked
     EPOCH_SIGUSE_CARRLOCK,       //!< Signal tracked and carrier locked
     // Keep in sync with kEpochSiqUseStrs!
@@ -265,6 +265,7 @@ typedef struct EPOCH_SIGINFO_s
     const char       *corrStr;
     const char       *ionoStr;
     const char       *healthStr;
+    int               satIx;
 
     // Private
     uint32_t          _order;
@@ -288,9 +289,9 @@ typedef struct EPOCH_SATINFO_s
     EPOCH_GNSS_t      gnss;
     uint8_t           sv;
     EPOCH_SATORB_t    orbUsed;
-    int               orbAvail;
-    int8_t            elev;     //!< Elevation [deg] (-90..+90), only valid if orbit > EPOCH_SATORB_NONE
-    int16_t           azim;     //!< Azimuth [deg] (0..359), only valid if orbit > EPOCH_SATORB_NONE
+    int               orbAvail; //!< Bits of EPOCH_SATORB_e
+    int8_t            elev;     //!< Elevation [deg] (-90..+90), only valid if orbUsed > EPOCH_SATORB_NONE
+    int16_t           azim;     //!< Azimuth [deg] (0..359), only valid if orbUsed > EPOCH_SATORB_NONE
     const char       *gnssStr;
     const char       *svStr;
     const char       *orbUsedStr;
@@ -436,6 +437,8 @@ typedef struct EPOCH_s
 #define EPOCH_FIRST_BDS       1
 #define EPOCH_FIRST_QZSS      1
 #define EPOCH_FIRST_GLO       1
+#define EPOCH_NUM_SV (EPOCH_NUM_GPS + EPOCH_NUM_SBAS + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_QZSS + EPOCH_NUM_GLO)
+#define EPOCH_NO_SV (EPOCH_NUM_SV + 1)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -486,6 +489,15 @@ const char *epochSignalStr(const EPOCH_SIGNAL_t signal);
     \returns the gnss identifier for the given signal identifier
 */
 EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal);
+
+
+//! GNSS + SV to index
+/*!
+    \param[in]  gnss  GNSS identifier
+    \param[in]  sv    SV number
+    \returns a index into an array of size #EPOCH_NUM_SV, or EPOCH_NO_SV if invalid params given
+*/
+int epochSvToIx(const EPOCH_GNSS_t gnss, const int sv);
 
 /* ****************************************************************************************************************** */
 #ifdef __cplusplus

@@ -138,6 +138,7 @@
     _P1_(cno_trk_45,         float,   NAN,   "%.1f",   "Number of signals tracked (45-49 dBHz) [-]" ) \
     _P1_(cno_trk_50,         float,   NAN,   "%.1f",   "Number of signals tracked (50-54 dBHz) [-]" ) \
     _P1_(cno_trk_55,         float,   NAN,   "%.1f",   "Number of signals tracked (55- dBHz) [-]"   ) \
+    /* end*/
 
 
 #define _DB_ROW_FIELDS(  _field_, _type_, _init_, _fmt_, _label_) _type_ _field_;

@@ -458,7 +458,7 @@ void GuiWinInput::_DrawNavStatusLeft(const EPOCH_t *epoch)
     if (epoch && epoch->haveFix)
     {
         ImGui::SameLine(dataOffs);
-        ImGui::PushStyleColor(ImGuiCol_Text, GuiSettings::GetFixColour(epoch->fix, epoch->fixOk));
+        ImGui::PushStyleColor(ImGuiCol_Text, GuiSettings::FixColour(epoch->fix, epoch->fixOk));
         ImGui::TextUnformatted(epoch->fixStr);
         ImGui::PopStyleColor();
         // ImGui::SameLine();

@@ -125,6 +125,7 @@ void GuiMsgUbxRxmSfrbx::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         }
         _table.AddCellText(info.navMsg);
         _table.AddCellText(info.dwrdsHex);
+        _table.SetRowUid(info.uid);
     }
 }
 

@@ -86,9 +86,9 @@ void Gui::VerticalSeparator(const float offset_from_start_x)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool Gui::ItemTooltipBegin(const double delay)
+bool Gui::ItemTooltipBegin()
 {
-    if (ImGui::IsItemHovered() && (GImGui->HoveredIdTimer > delay))
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
     {
         ImGui::BeginTooltip();
         return true;
@@ -104,15 +104,20 @@ void Gui::ItemTooltipEnd()
     ImGui::EndTooltip();
 }
 
-bool Gui::ItemTooltip(const char *text, const double delay)
+bool Gui::ItemTooltip(const char *text)
 {
-    if (ItemTooltipBegin(delay))
+    if (ItemTooltipBegin())
     {
         ImGui::TextUnformatted(text);
         ItemTooltipEnd();
         return true;
     }
     return false;
+}
+
+bool Gui::ItemTooltip(const std::string &text)
+{
+    return ItemTooltip(text.c_str());
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

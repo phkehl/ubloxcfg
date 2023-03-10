@@ -392,7 +392,6 @@ void GuiWinDataPlot::_DrawContent()
             ImGui::EndTooltip();
         }
 
-
         ImPlot::EndPlot();
     }
     ImPlot::PopColormap();

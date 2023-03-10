@@ -36,49 +36,43 @@ class GuiWinDataSatellites : public GuiWinData
         void _DrawContent() final;
         void _ClearData() final;
 
-        struct SatInfo
+        enum GnssIx : int { ALL = 0, GPS, GAL, BDS, GLO, OTHER, _NUM };
+        static constexpr GnssIx GNSS_IXS[_NUM] = { ALL, GPS, GAL, BDS, GLO, OTHER };
+
+        struct Sat
         {
-            SatInfo(const EPOCH_SATINFO_t *_satInfo);
-            EPOCH_SATINFO_t satInfo;
-            bool            visible;
-            float           dX;
-            float           dY;
-            float           fR;
-            EPOCH_SIGINFO_t sigL1;
-            EPOCH_SIGINFO_t sigL2;
+            Sat(const EPOCH_SATINFO_t &satInfo, const EPOCH_t &epoch);
+            EPOCH_SATINFO_t satInfo_;
+            bool            visible_;
+            GnssIx          gnssIx_;
+            FfVec2f         xy_;
+            EPOCH_SIGINFO_t sigL1_;
+            EPOCH_SIGINFO_t sigL2_;
         };
-        std::vector<SatInfo> _satInfo;
+
         struct Count
         {
-            Count(const char *_name);
+            Count();
             void Reset();
-            void Add(const SatInfo &sat);
+            void Add(const Sat &sat);
             void Update();
-            int  num;
-            int  used;
-            int  visible;
-            char name[10];
-            char labelSky[30];
-            char labelList[30];
+            int               num_[GnssIx::_NUM];
+            int               used_[GnssIx::_NUM];
+            int               visible_[GnssIx::_NUM];
+            const std::string name_[GnssIx::_NUM];
+            std::string       labelSky_[GnssIx::_NUM];
+            std::string       labelList_[GnssIx::_NUM];
         };
-        Count _countAll;
-        Count _countGps;
-        Count _countGlo;
-        Count _countBds;
-        Count _countGal;
-        Count _countSbas;
-        Count _countQzss;
-        GuiWidgetTable _table;
-        std::map<uint32_t, bool> _selSats;
 
-        GuiWidgetTabbar _tabbar1;
-        GuiWidgetTabbar _tabbar2;
+        std::vector<Sat> _sats;
+        Count            _count;
+        GuiWidgetTable   _table;
+        GuiWidgetTabbar  _tabbar1;
+        GuiWidgetTabbar  _tabbar2;
 
         void _UpdateSatellites();
-        void _DrawSky(const EPOCH_GNSS_t filter);
-        void _DrawList(const EPOCH_GNSS_t filter);
-
-        void _DrawSignalLevelCb(void *arg);
+        void _DrawSky(const GnssIx gnssIx);
+        void _DrawList(const GnssIx gnssIx);
 };
 
 /* ****************************************************************************************************************** */

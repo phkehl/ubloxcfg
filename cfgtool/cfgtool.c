@@ -154,7 +154,7 @@ const char * const kTitleStr =
 
 const char * const kCopyrightStr =
     // -----------------------------------------------------------------------------
-    "    Copyright (c) " CONFIG_YEAR " Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
+    "    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
     "    https://oinkzwurgl.org/hacking/ubloxcfg/\n"
     "\n";
 

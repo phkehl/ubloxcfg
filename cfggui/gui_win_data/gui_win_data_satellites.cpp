@@ -27,13 +27,6 @@
 
 GuiWinDataSatellites::GuiWinDataSatellites(const std::string &name, std::shared_ptr<Database> database) :
     GuiWinData(name, database),
-    _countAll  { "All" },
-    _countGps  { "GPS" },
-    _countGlo  { "GLO" },
-    _countBds  { "BDS" },
-    _countGal  { "GAL" },
-    _countSbas { "SBAS" },
-    _countQzss { "QZSS" },
     _tabbar1   { WinName() + "Tabbar1" },
     _tabbar2   { WinName() + "Tabbar2", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_TabListPopupButton }
 {
@@ -68,46 +61,91 @@ void GuiWinDataSatellites::_ClearData()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataSatellites::SatInfo::SatInfo(const EPOCH_SATINFO_t *_satInfo)
-    : satInfo{*_satInfo}, sigL1{}, sigL2{}
+GuiWinDataSatellites::Sat::Sat(const EPOCH_SATINFO_t &satInfo, const EPOCH_t &epoch) :
+    satInfo_ { satInfo },
+    visible_ { (satInfo.orbUsed > EPOCH_SATORB_NONE) && (satInfo.elev >= 0) },
+    gnssIx_  { GnssIx::OTHER }
 {
-    visible = (satInfo.orbUsed > EPOCH_SATORB_NONE) && (satInfo.elev >= 0);
+    std::memset(&sigL1_, 0, sizeof(sigL1_));
+    std::memset(&sigL2_, 0, sizeof(sigL2_));
+
+    const float r = 1.0f - ((float)satInfo_.elev * (1.0f / 90.f));
+    const float a = (270.0f + (float)satInfo_.azim) * (M_PI / 180.0);
+    xy_ = FfVec2f(std::cos(a), std::sin(a)) * r;
+
+    // Add signal levels
+    for (int ix = 0; (ix < epoch.numSignals) && !(sigL1_.valid && sigL2_.valid); ix++)
+    {
+        const EPOCH_SIGINFO_t &sig = epoch.signals[ix];
+        if ( (satInfo_.sv == sig.sv) && (satInfo_.gnss == sig.gnss) )
+        {
+            switch (sig.band)
+            {
+                case EPOCH_BAND_L1: sigL1_ = sig; break;
+                case EPOCH_BAND_L2: sigL2_ = sig; break;
+                case EPOCH_BAND_L5:
+                case EPOCH_BAND_UNKNOWN:
+                    break;
+            }
+        }
+    }
+
+    switch (satInfo_.gnss)
+    {
+        case EPOCH_GNSS_GPS: gnssIx_ = GnssIx::GPS; break;
+        case EPOCH_GNSS_GLO: gnssIx_ = GnssIx::GLO; break;
+        case EPOCH_GNSS_BDS: gnssIx_ = GnssIx::BDS; break;
+        case EPOCH_GNSS_GAL: gnssIx_ = GnssIx::GAL; break;
+        case EPOCH_GNSS_SBAS:
+        case EPOCH_GNSS_QZSS:
+        case EPOCH_GNSS_UNKNOWN:
+            break;
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataSatellites::Count::Count(const char *_name)
-    : num{0}, used{0}, visible{0}, labelSky{}, labelList{}
+GuiWinDataSatellites::Count::Count() :
+    name_ { "All", "GPS", "GLO", "BDS", "GAL", "Other" }
 {
-    std::strncpy(name, _name, sizeof(name) - 1);
+    Reset();
 };
 
 void GuiWinDataSatellites::Count::Reset()
 {
-    num = 0;
-    used = 0;
-    visible = 0;
-    std::snprintf(labelSky,  sizeof(labelSky),  "%s###%s", name, name);
-    std::snprintf(labelList, sizeof(labelList), "%s###%s", name, name);
+    for (GnssIx ix: GNSS_IXS)
+    {
+        num_[ix] = 0;
+        used_[ix] = 0;
+        visible_[ix] = 0;
+        labelSky_[ix] = Ff::Sprintf("%s###%s", name_[ix].c_str(), name_[ix].c_str());
+        labelList_[ix] = Ff::Sprintf("%s###%s", name_[ix].c_str(), name_[ix].c_str());
+    }
 }
 
 void GuiWinDataSatellites::Count::Update()
 {
-    std::snprintf(labelSky,  sizeof(labelSky),  "%s (%d/%d)###%s", name, used, visible, name);
-    std::snprintf(labelList, sizeof(labelList), "%s (%d/%d)###%s", name, used, num,     name);
+    for (GnssIx ix: GNSS_IXS)
+    {
+        labelSky_[ix]  = Ff::Sprintf("%s (%d/%d)###%s", name_[ix].c_str(), used_[ix], visible_[ix], name_[ix].c_str());
+        labelList_[ix] = Ff::Sprintf("%s (%d/%d)###%s", name_[ix].c_str(), used_[ix], num_[ix],     name_[ix].c_str());
+    }
 }
 
-void GuiWinDataSatellites::Count::Add(const SatInfo &sat)
+void GuiWinDataSatellites::Count::Add(const Sat &sat)
 {
-    num++;
-    if ( (sat.sigL1.valid && (sat.sigL1.crUsed || sat.sigL1.prUsed || sat.sigL1.doUsed)) ||
-         (sat.sigL2.valid && (sat.sigL2.crUsed || sat.sigL2.prUsed || sat.sigL2.doUsed)) )
+    num_[GnssIx::ALL]++;
+    num_[sat.gnssIx_]++;
+    if ( (sat.sigL1_.valid && (sat.sigL1_.crUsed || sat.sigL1_.prUsed || sat.sigL1_.doUsed)) ||
+         (sat.sigL2_.valid && (sat.sigL2_.crUsed || sat.sigL2_.prUsed || sat.sigL2_.doUsed)) )
     {
-        used++;
+        used_[GnssIx::ALL]++;
+        used_[sat.gnssIx_]++;
     }
-    if (sat.visible)
+    if (sat.visible_)
     {
-        visible++;
+        visible_[GnssIx::ALL]++;
+        visible_[sat.gnssIx_]++;
     }
 }
 
@@ -116,120 +154,72 @@ void GuiWinDataSatellites::Count::Add(const SatInfo &sat)
 void GuiWinDataSatellites::_UpdateSatellites()
 {
     _table.ClearRows();
-    _satInfo.clear();
-    _countAll.Reset();
-    _countGps.Reset();
-    _countGlo.Reset();
-    _countBds.Reset();
-    _countGal.Reset();
-    _countSbas.Reset();
-    _countQzss.Reset();
+    _sats.clear();
+    _count.Reset();
     if (!_latestEpoch)
     {
         return;
     }
     for (int ix = 0; ix < _latestEpoch->epoch.numSatellites; ix++)
     {
-        SatInfo info(&_latestEpoch->epoch.satellites[ix]);
-        const double a = (360.0 + 90 - (float)info.satInfo.azim) * (M_PI / 180.0);
-        info.dX = std::cos(a);
-        info.dY = -std::sin(a);
-        info.fR = 1.0f - ((float)info.satInfo.elev * (1.0f/90.f));
-        _satInfo.push_back(info);
-    }
-    // Add signal levels
-    for (int ix = 0; ix < _latestEpoch->epoch.numSignals; ix++)
-    {
-        const EPOCH_SIGINFO_t *sig = &_latestEpoch->epoch.signals[ix];
-        for (auto &sat: _satInfo)
-        {
-            if ( (sat.satInfo.sv == sig->sv) && (sat.satInfo.gnss == sig->gnss) )
-            {
-                switch (sig->band)
-                {
-                    case EPOCH_BAND_L1: sat.sigL1 = *sig; break;
-                    case EPOCH_BAND_L2: sat.sigL2 = *sig; break;
-                    default: break;
-                }
-                break;
-            }
-        }
+        _sats.emplace_back(_latestEpoch->epoch.satellites[ix], _latestEpoch->epoch);
     }
 
-    // Counts
-    for (auto &sat: _satInfo)
+    // Update counts, Populate table
+    for (auto &sat: _sats)
     {
-        _countAll.Add(sat);
-        switch (sat.satInfo.gnss)
+        _count.Add(sat);
+
+        const uint32_t thisSat = (sat.satInfo_.gnss << 16) | (sat.satInfo_.sv << 8);
+        _table.AddCellText(sat.satInfo_.svStr, thisSat);
+
+        if (sat.satInfo_.orbUsed > EPOCH_SATORB_NONE)
         {
-            case EPOCH_GNSS_GPS:  _countGps.Add(sat);  break;
-            case EPOCH_GNSS_GLO:  _countGlo.Add(sat);  break;
-            case EPOCH_GNSS_BDS:  _countBds.Add(sat);  break;
-            case EPOCH_GNSS_GAL:  _countGal.Add(sat);  break;
-            case EPOCH_GNSS_SBAS: _countSbas.Add(sat); break;
-            case EPOCH_GNSS_QZSS: _countQzss.Add(sat); break;
-            case EPOCH_GNSS_UNKNOWN: break;
-        }
-    }
-
-    // Tab labels
-    _countAll.Update();
-    _countGps.Update();
-    _countGlo.Update();
-    _countBds.Update();
-    _countGal.Update();
-    _countSbas.Update();
-    _countQzss.Update();
-
-    // Populate table
-    for (auto &sat: _satInfo)
-    {
-        const uint32_t thisSat = (sat.satInfo.gnss << 16) | (sat.satInfo.sv << 8);
-        _table.AddCellText(sat.satInfo.svStr, thisSat);
-
-        if (sat.satInfo.orbUsed > EPOCH_SATORB_NONE)
-        {
-            _table.AddCellTextF("%d", sat.satInfo.azim);
-            _table.SetCellSort(sat.satInfo.azim);
-            _table.AddCellTextF("%d", sat.satInfo.elev);
-            _table.SetCellSort(sat.satInfo.elev + 100);
+            _table.AddCellTextF("%d", sat.satInfo_.azim);
+            _table.SetCellSort(sat.satInfo_.azim);
+            _table.AddCellTextF("%d", sat.satInfo_.elev);
+            _table.SetCellSort(sat.satInfo_.elev + 100);
         }
         else
         {
             _table.AddCellText("-", 1);
             _table.AddCellText("-", 1);
         }
-        _table.AddCellTextF("%-5s %c%c%c%c", sat.satInfo.orbUsedStr,
-            CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_ALM))   ? 'A' : '-',
-            CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_EPH))   ? 'E' : '-',
-            CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_PRED))  ? 'P' : '-',
-            CHKBITS(sat.satInfo.orbAvail, BIT(EPOCH_SATORB_OTHER)) ? 'O' : '-');
-        _table.SetCellSort(sat.satInfo.orbUsed);
-        if ( sat.sigL1.valid && (sat.sigL1.use > EPOCH_SIGUSE_SEARCH) )
+        _table.AddCellTextF("%-5s %c%c%c%c", sat.satInfo_.orbUsedStr,
+            CHKBITS(sat.satInfo_.orbAvail, BIT(EPOCH_SATORB_ALM))   ? 'A' : '-',
+            CHKBITS(sat.satInfo_.orbAvail, BIT(EPOCH_SATORB_EPH))   ? 'E' : '-',
+            CHKBITS(sat.satInfo_.orbAvail, BIT(EPOCH_SATORB_PRED))  ? 'P' : '-',
+            CHKBITS(sat.satInfo_.orbAvail, BIT(EPOCH_SATORB_OTHER)) ? 'O' : '-');
+        _table.SetCellSort(sat.satInfo_.orbUsed);
+        if ( sat.sigL1_.valid && (sat.sigL1_.use > EPOCH_SIGUSE_SEARCH) )
         {
-            _table.AddCellCb(std::bind(&GuiWinDataSatellites::_DrawSignalLevelCb, this, std::placeholders::_1), &sat.sigL1);
-            _table.SetCellSort(sat.sigL1.cno * 100);
+            _table.AddCellCb(&GuiWinDataSignals::DrawSignalLevelCb, &sat.sigL1_);
+            _table.SetCellSort(sat.sigL1_.cno * 100);
         }
         else
         {
             _table.AddCellText("-", 1);
         }
-        if ( sat.sigL2.valid && (sat.sigL2.use > EPOCH_SIGUSE_SEARCH) )
+        if ( sat.sigL2_.valid && (sat.sigL2_.use > EPOCH_SIGUSE_SEARCH) )
         {
-            _table.AddCellCb(std::bind(&GuiWinDataSatellites::_DrawSignalLevelCb, this, std::placeholders::_1), &sat.sigL2);
-            _table.SetCellSort(sat.sigL2.cno * 100);
+            _table.AddCellCb(&GuiWinDataSignals::DrawSignalLevelCb, &sat.sigL2_);
+            _table.SetCellSort(sat.sigL2_.cno * 100);
         }
         else
         {
             _table.AddCellText("-", 1);
         }
 
-        _table.SetRowFilter(sat.satInfo.gnss);
-        if ( (sat.sigL1.valid && sat.sigL1.anyUsed) || (sat.sigL1.valid && sat.sigL1.anyUsed) )
+        _table.SetRowFilter(sat.satInfo_.gnss);
+        if ( (sat.sigL1_.valid && sat.sigL1_.anyUsed) || (sat.sigL1_.valid && sat.sigL1_.anyUsed) )
         {
             _table.SetRowColour(GUI_COLOUR(SIGNAL_USED_TEXT));
         }
+        _table.SetRowUid(thisSat);
     }
+
+    // Update tab labels
+    _count.Update();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -238,12 +228,12 @@ void GuiWinDataSatellites::_DrawContent()
 {
     bool doSky = false;
     bool doList = false;
-    EPOCH_GNSS_t filter = EPOCH_GNSS_UNKNOWN;
+    GnssIx gnssIx = GnssIx::ALL;
 
     if (_tabbar1.Begin())
     {
-        _tabbar1.Item("Sky", [&doSky]() { doSky = true; });
-        _tabbar1.Item("List", [&doList]() { doList = true; });
+        if (_tabbar1.Item("Sky"))  { doSky = true; };
+        if (_tabbar1.Item("List")) { doList = true; };
         _tabbar1.End();
     }
 
@@ -251,29 +241,29 @@ void GuiWinDataSatellites::_DrawContent()
 
     if (_tabbar2.Begin())
     {
-        _tabbar2.Item(doSky ? _countAll.labelSky  : _countAll.labelList,  [&filter]() { filter = EPOCH_GNSS_UNKNOWN; });
-        _tabbar2.Item(doSky ? _countGps.labelSky  : _countGps.labelList,  [&filter]() { filter = EPOCH_GNSS_GPS;     });
-        _tabbar2.Item(doSky ? _countGlo.labelSky  : _countGlo.labelList,  [&filter]() { filter = EPOCH_GNSS_GLO;     });
-        _tabbar2.Item(doSky ? _countGal.labelSky  : _countGal.labelList,  [&filter]() { filter = EPOCH_GNSS_GAL;     });
-        _tabbar2.Item(doSky ? _countBds.labelSky  : _countBds.labelList,  [&filter]() { filter = EPOCH_GNSS_BDS;     });
-        _tabbar2.Item(doSky ? _countSbas.labelSky : _countSbas.labelList, [&filter]() { filter = EPOCH_GNSS_SBAS;    });
-        _tabbar2.Item(doSky ? _countQzss.labelSky : _countQzss.labelList, [&filter]() { filter = EPOCH_GNSS_QZSS;    });
+        for (GnssIx ix: GNSS_IXS)
+        {
+            if (_tabbar2.Item(doSky ? _count.labelSky_[ix] : _count.labelList_[ix]))
+            {
+                gnssIx = ix;
+            }
+        }
         _tabbar2.End();
     }
 
     if (doSky)
     {
-        _DrawSky(filter);
+        _DrawSky(gnssIx);
     }
     if (doList)
     {
-        _DrawList(filter);
+        _DrawList(gnssIx);
     }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
+void GuiWinDataSatellites::_DrawSky(const GnssIx gnssIx)
 {
     ImGui::BeginChild("##Plot", ImVec2(0.0f, 0.0f), false,
         ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -318,49 +308,47 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
         const FfVec2f buttonSize(2 * svR, 2 * svR);
         const FfVec2f buttonOffs(-svR, -svR);
         const float barScale = svR / 25.0f;
-        for (const auto &sat: _satInfo)
+        for (const auto &sat: _sats)
         {
-            if ( !sat.visible || ( (filter != EPOCH_GNSS_UNKNOWN) && (sat.satInfo.gnss != filter) ) )
+            if ( !sat.visible_ || ( (gnssIx != GnssIx::ALL) && (sat.gnssIx_ != gnssIx) ) )
             {
                 continue;
             }
 
             // Circle
-            const float r = sat.fR * radiusPx;
-            const FfVec2f svPos = canvasCent + FfVec2f(r * sat.dX, r * sat.dY);
+            const FfVec2f svPos = canvasCent + (sat.xy_ * radiusPx);
             draw->AddCircleFilled(svPos, svR, GUI_COLOUR(SKY_VIEW_SAT));
 
             // Tooltip
             ImGui::SetCursorScreenPos(svPos + buttonOffs);
-            ImGui::InvisibleButton(sat.satInfo.svStr, buttonSize);
-            if (Gui::ItemTooltipBegin())
+            ImGui::InvisibleButton(sat.satInfo_.svStr, buttonSize);
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort))
             {
+                ImGui::BeginTooltip();
                 ImGui::Text("%s: azim %d, elev %d, orb %s, L1 %.0f %s, L2 %.0f %s",
-                    sat.satInfo.svStr, sat.satInfo.azim, sat.satInfo.elev, sat.satInfo.orbUsedStr,
-                    sat.sigL1.valid ? sat.sigL1.cno : 0.0, sat.sigL1.valid ? sat.sigL1.signalStr : "",
-                    sat.sigL2.valid ? sat.sigL2.cno : 0.0, sat.sigL2.valid ? sat.sigL2.signalStr : "");
-                Gui::ItemTooltipEnd();
+                    sat.satInfo_.svStr, sat.satInfo_.azim, sat.satInfo_.elev, sat.satInfo_.orbUsedStr,
+                    sat.sigL1_.valid ? sat.sigL1_.cno : 0.0, sat.sigL1_.valid ? sat.sigL1_.signalStr : "",
+                    sat.sigL2_.valid ? sat.sigL2_.cno : 0.0, sat.sigL2_.valid ? sat.sigL2_.signalStr : "");
+                ImGui::EndTooltip();
             }
 
             // Signal level bars
-            if (sat.sigL1.valid && (sat.sigL1.use > EPOCH_SIGUSE_NONE))
+            if (sat.sigL1_.valid && (sat.sigL1_.use > EPOCH_SIGUSE_NONE))
             {
                 const FfVec2f barPos = svPos + barOffs1;
-                const int colIx = sat.sigL1.cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL1.cno > 0 ? (sat.sigL1.cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL1.cno * barScale, 3),
-                    sat.sigL1.prUsed || sat.sigL1.crUsed || sat.sigL1.doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL1_.cno * barScale, 3),
+                    sat.sigL1_.prUsed || sat.sigL1_.crUsed || sat.sigL1_.doUsed ? GuiSettings::CnoColour(sat.sigL1_.cno) : GUI_COLOUR(SIGNAL_UNUSED));
             }
-            if (sat.sigL2.valid && (sat.sigL2.use > EPOCH_SIGUSE_NONE))
+            if (sat.sigL2_.valid && (sat.sigL2_.use > EPOCH_SIGUSE_NONE))
             {
                 const FfVec2f barPos = svPos + barOffs2;
-                const int colIx = sat.sigL2.cno > 55 ? (EPOCH_SIGCNOHIST_NUM - 1) : (sat.sigL2.cno > 0 ? (sat.sigL2.cno / 5) : 0 );
-                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL2.cno * barScale, 3),
-                    sat.sigL2.prUsed || sat.sigL2.crUsed || sat.sigL2.doUsed ? GUI_COLOUR(SIGNAL_00_05 + colIx) : GUI_COLOUR(SIGNAL_UNUSED));
+                draw->AddRectFilled(barPos, barPos + FfVec2f(sat.sigL2_.cno * barScale, 3),
+                    sat.sigL2_.prUsed || sat.sigL2_.crUsed || sat.sigL2_.doUsed ? GuiSettings::CnoColour(sat.sigL2_.cno) : GUI_COLOUR(SIGNAL_UNUSED));
             }
 
             // Label
             ImGui::SetCursorScreenPos(svPos + textOffs);
-            ImGui::TextUnformatted(sat.satInfo.svStr);
+            ImGui::TextUnformatted(sat.satInfo_.svStr);
         }
     }
 
@@ -371,15 +359,11 @@ void GuiWinDataSatellites::_DrawSky(const EPOCH_GNSS_t filter)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void GuiWinDataSatellites::_DrawList(const EPOCH_GNSS_t filter)
+void GuiWinDataSatellites::_DrawList(const GnssIx gnssIx)
 {
-    _table.SetTableRowFilter(filter != EPOCH_GNSS_UNKNOWN ? filter : 0);
+    _table.SetTableRowFilter(gnssIx != GnssIx::ALL ? gnssIx : 0);
     _table.DrawTable();
 }
 
-void GuiWinDataSatellites::_DrawSignalLevelCb(void *arg) // same as GuiWinDataSignals::_DrawSignalLevel() !
-{
-    GuiWinDataSignals::DrawSignalLevelWithBar((const EPOCH_SIGINFO_t *)arg, GuiSettings::charSize);
-}
 
 /* ****************************************************************************************************************** */

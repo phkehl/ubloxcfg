@@ -1,6 +1,6 @@
 // u-blox 9 positioning receivers configuration library test program
 //
-// Copyright (c) 2020 Philippe Kehl (flipflip at oinkzwurgl dot org),
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
 // https://oinkzwurgl.org/hacking/ubloxcfg
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the

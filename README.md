@@ -1,6 +1,6 @@
 # u-blox 9 positioning receivers configuration library and tool
 
-Copyright (c) 2020-2021 Philippe Kehl (flipflip at oinkzwurgl dot org)
+Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org)
 
 [https://oinkzwurgl.org/hacking/ubloxcfg](https://oinkzwurgl.org/hacking/ubloxcfg)
 

@@ -38,7 +38,9 @@ GuiWinApp::GuiWinApp(const std::string &name) :
 
 GuiWinAppAbout::GuiWinAppAbout(const std::vector<std::string> &versions) :
     GuiWinApp("About"),
-    _versions { versions }
+    _versions       { versions },
+    _cacheDirLink   { std::string("file://") + GuiSettings::cacheDir },
+    _configFileLink { std::string("file://") + GuiSettings::configFile }
 {
     _winFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 }
@@ -94,12 +96,19 @@ void GuiWinAppAbout::DrawWindow()
     {
         ImGui::Text("- %s", sources[ix]);
     }
-    ImGui::Separator();
+    ImGui::Separator();  // -----------------------------------------------------------------------------
     ImGui::TextUnformatted("Versions:");
     for (const auto &version: _versions)
     {
-        ImGui::Text("- %s", version.c_str());
+        ImGui::TextWrapped("- %s", version.c_str());
     }
+    ImGui::Separator();  // -----------------------------------------------------------------------------
+    ImGui::TextUnformatted("Data:");
+    ImGui::TextUnformatted("- Config file:"); ImGui::SameLine();
+    Gui::TextLink(_configFileLink.c_str(), GuiSettings::configFile.c_str());
+    ImGui::TextUnformatted("- Cache directory:"); ImGui::SameLine();
+    Gui::TextLink(_cacheDirLink.c_str(), GuiSettings::cacheDir.c_str());
+
     ImGui::PopFont();
 
     _DrawWindowEnd();
@@ -169,7 +178,8 @@ void GuiWinAppSettings::DrawWindow()
 /* ****************************************************************************************************************** */
 
 GuiWinAppHelp::GuiWinAppHelp() :
-    GuiWinApp("Help")
+    GuiWinApp("Help"),
+    _tabbar { WinName() }
 {
     _winSize = { 70, 35 };
 }
@@ -181,39 +191,46 @@ void GuiWinAppHelp::DrawWindow()
         return;
     }
 
-    if (ImGui::BeginTabBar("Help", ImGuiTabBarFlags_FittingPolicyScroll))
+    bool doHelpCfgGui = false;
+    bool doHelpImGui  = false;
+    bool doHelpImPlot = false;
+    if (_tabbar.Begin())
     {
-        if (ImGui::BeginTabItem("cfggui"))
-        {
-            ImGui::BeginChild("cfgguiHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-            ImGui::PushFont(GuiSettings::fontSans);
-            ImGui::TextUnformatted("Yeah, right, ...");
-            ImGui::PopFont();
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("ImGui"))
-        {
-            ImGui::BeginChild("ImGuiHelp", ImVec2(0, 0), false,  ImGuiWindowFlags_HorizontalScrollbar);
-            ImGui::PushFont(GuiSettings::fontSans);
-            ImGui::ShowUserGuide();
-            ImGui::BulletText("CTRL-F4 closes focused window");
-            ImGui::BulletText("Hold SHIFT while moving window to dock into other windows.\n"
-                "(VERY experimental. WILL crash sometimes!)");
-            ImGui::PopFont();
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem("ImPlot"))
-        {
-            ImGui::BeginChild("ImPlotHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
-            ImGui::PushFont(GuiSettings::fontSans);
-            ImPlot::ShowUserGuide();
-            ImGui::PopFont();
-            ImGui::EndChild();
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+        if (_tabbar.Item("Help"))   { doHelpCfgGui = true; }
+        if (_tabbar.Item("ImGui"))  { doHelpImGui  = true; }
+        if (_tabbar.Item("ImPlot")) { doHelpImPlot = true; }
+        _tabbar.End();
+    }
+
+    if (doHelpCfgGui)
+    {
+        ImGui::BeginChild("cfgguiHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushFont(GuiSettings::fontSans);
+        ImGui::TextUnformatted("In addition to the ImGui controls:");
+        ImGui::BulletText("CTRL-F4 closes focused window");
+        ImGui::BulletText("Hold SHIFT while moving window to dock into other windows.\n"
+            "(VERY experimental. WILL crash sometimes!)");
+        ImGui::TextUnformatted("In (some) tables:");
+        ImGui::BulletText("Click to mark a line, CTRL-click to mark multiple lines");
+        ImGui::BulletText("SHIFT-click colum headers for multi-sort");
+        ImGui::PopFont();
+        ImGui::EndChild();
+    }
+    if (doHelpImGui)
+    {
+        ImGui::BeginChild("ImGuiHelp", ImVec2(0, 0), false,  ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushFont(GuiSettings::fontSans);
+        ImGui::ShowUserGuide();
+        ImGui::PopFont();
+        ImGui::EndChild();
+    }
+    if (doHelpImPlot)
+    {
+        ImGui::BeginChild("ImPlotHelp", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+        ImGui::PushFont(GuiSettings::fontSans);
+        ImPlot::ShowUserGuide();
+        ImGui::PopFont();
+        ImGui::EndChild();
     }
 
     _DrawWindowEnd();
@@ -222,7 +239,8 @@ void GuiWinAppHelp::DrawWindow()
 /* ****************************************************************************************************************** */
 
 GuiWinAppLegend::GuiWinAppLegend() :
-    GuiWinApp("Legend")
+    GuiWinApp("Legend"),
+    _tabbar { WinName() }
 {
     _winFlags |= ImGuiWindowFlags_AlwaysAutoResize;
 }
@@ -234,30 +252,49 @@ void GuiWinAppLegend::DrawWindow()
         return;
     }
 
-    if (ImGui::BeginTabBar("tabs"))
+    bool doFixColours   = false;
+    bool doSignalLevels = false;
+    if (_tabbar.Begin())
     {
-        if (ImGui::BeginTabItem("Fix colours"))
-        {
-            _DrawFixColourLegend(EPOCH_FIX_NOFIX,        GUI_COLOUR(FIX_INVALID),      "Invalid");
-            _DrawFixColourLegend(-1,                     GUI_COLOUR(FIX_MASKED),       "Masked");
-            _DrawFixColourLegend(EPOCH_FIX_DRONLY,       GUI_COLOUR(FIX_DRONLY),       "Dead-reckoning only");
-            _DrawFixColourLegend(EPOCH_FIX_TIME,         GUI_COLOUR(FIX_S2D),          "Single 2D");
-            _DrawFixColourLegend(EPOCH_FIX_S2D,          GUI_COLOUR(FIX_S3D),          "Single 3D");
-            _DrawFixColourLegend(EPOCH_FIX_S3D,          GUI_COLOUR(FIX_S3D_DR),       "Single 3D + dead-reckoning");
-            _DrawFixColourLegend(EPOCH_FIX_S3D_DR,       GUI_COLOUR(FIX_TIME),         "Single time only");
-            _DrawFixColourLegend(EPOCH_FIX_RTK_FLOAT,    GUI_COLOUR(FIX_RTK_FLOAT),    "RTK float");
-            _DrawFixColourLegend(EPOCH_FIX_RTK_FIXED,    GUI_COLOUR(FIX_RTK_FIXED),    "RTK fixed");
-            _DrawFixColourLegend(EPOCH_FIX_RTK_FLOAT_DR, GUI_COLOUR(FIX_RTK_FLOAT_DR), "RTK float + dead-reckoning");
-            _DrawFixColourLegend(EPOCH_FIX_RTK_FIXED_DR, GUI_COLOUR(FIX_RTK_FIXED_DR), "RTK fixed + dead-reckoning");
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
+        if (_tabbar.Item("Fix colours"))   { doFixColours = true; }
+        if (_tabbar.Item("Signal levels")) { doSignalLevels  = true; }
+        _tabbar.End();
+    }
+
+    if (doFixColours)
+    {
+        _DrawColourLegend(GUI_COLOUR(FIX_INVALID),      "Invalid (%d)",                    EPOCH_FIX_NOFIX);
+        _DrawColourLegend(GUI_COLOUR(FIX_MASKED),       "Masked");
+        _DrawColourLegend(GUI_COLOUR(FIX_DRONLY),       "Dead-reckoning only (%d)",        EPOCH_FIX_DRONLY);
+        _DrawColourLegend(GUI_COLOUR(FIX_S2D),          "Single 2D (%d)",                  EPOCH_FIX_TIME);
+        _DrawColourLegend(GUI_COLOUR(FIX_S3D),          "Single 3D (%d)",                  EPOCH_FIX_S2D);
+        _DrawColourLegend(GUI_COLOUR(FIX_S3D_DR),       "Single 3D + dead-reckoning (%d)", EPOCH_FIX_S3D);
+        _DrawColourLegend(GUI_COLOUR(FIX_TIME),         "Single time only (%d)",           EPOCH_FIX_S3D_DR);
+        _DrawColourLegend(GUI_COLOUR(FIX_RTK_FLOAT),    "RTK float (%d)",                  EPOCH_FIX_RTK_FLOAT);
+        _DrawColourLegend(GUI_COLOUR(FIX_RTK_FIXED),    "RTK fixed (%d)",                  EPOCH_FIX_RTK_FIXED);
+        _DrawColourLegend(GUI_COLOUR(FIX_RTK_FLOAT_DR), "RTK float + dead-reckoning (%d)", EPOCH_FIX_RTK_FLOAT_DR);
+        _DrawColourLegend(GUI_COLOUR(FIX_RTK_FIXED_DR), "RTK fixed + dead-reckoning (%d)", EPOCH_FIX_RTK_FIXED_DR);
+    }
+    if (doSignalLevels)
+    {
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_00_05), "Signal 0 - 5 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_05_10), "Signal 5 - 10 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_10_15), "Signal 10 - 15 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_15_20), "Signal 15 - 20 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_20_25), "Signal 20 - 25 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_25_30), "Signal 25 - 30 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_30_35), "Signal 30 - 35 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_35_40), "Signal 35 - 40 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_40_45), "Signal 40 - 45 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_45_50), "Signal 45 - 50 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_50_55), "Signal 50 - 55 dBHz");
+        _DrawColourLegend(GUI_COLOUR(SIGNAL_55_OO), "Signal 55 - oo dBHz");
     }
 
     _DrawWindowEnd();
 }
 
-void GuiWinAppLegend::_DrawFixColourLegend(const int value, const ImU32 colour, const char *label)
+void GuiWinAppLegend::_DrawColourLegend(const ImU32 colour, const char *fmt, ...)
 {
     ImDrawList *draw = ImGui::GetWindowDrawList();
     FfVec2f offs = ImGui::GetCursorScreenPos();
@@ -267,14 +304,11 @@ void GuiWinAppLegend::_DrawFixColourLegend(const int value, const ImU32 colour, 
     offs.x += size.x;
     draw->AddRectFilled(offs, offs + size, colour);
     ImGui::SetCursorPosX(textOffs);
-    if (value < 0)
-    {
-        ImGui::TextUnformatted(label);
-    }
-    else
-    {
-        ImGui::Text("%s (%d)", label, value);
-    }
+
+    va_list args;
+    va_start(args, fmt);
+    ImGui::TextV(fmt, args);
+    va_end(args);
 }
 
 /* ****************************************************************************************************************** */

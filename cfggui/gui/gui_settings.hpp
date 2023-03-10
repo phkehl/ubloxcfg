@@ -47,8 +47,8 @@ class GuiSettings
         // ---- Main control (cfggui.cpp) -----
 
         static void Init();
-        static void LoadConf(const std::string &file);
-        static void SaveConf(const std::string &file);
+        static void LoadConf();
+        static void SaveConf();
         static bool UpdateFonts();
         static bool UpdateSizes();
         static void DrawSettingsEditorFont();
@@ -106,11 +106,13 @@ class GuiSettings
         enum Colour_e : int { _DUMMY = -1, GUI_SETTINGS_COLOURS(_SETTINGS_COLOUR_ENUM) _NUM_COLOURS };
         static ImU32 colours[_NUM_COLOURS]; // See GUI_SETTINGS_COLOURS (and GUI_COLOUR_NONE), use GUI_COLOUR() macro to access
         static ImVec4 colours4[_NUM_COLOURS];
-        static ImU32 GetFixColour(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
-        static const ImVec4 &GetFixColour4(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
+        static ImU32 FixColour(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
+        static const ImVec4 &FixColour4(const EPOCH_FIX_t fix, const bool fixok = true); // GNSS fix colour
+        static ImU32 CnoColour(const float cno);
 
         // Paths
-        static std::string cachePath;
+        static std::string configFile;
+        static std::string cacheDir;
 
         // Maps
         static std::vector<MapParams> maps;
@@ -137,6 +139,9 @@ class GuiSettings
         static const char * const COLOUR_LABELS[_NUM_COLOURS];
         static const char * const COLOUR_NAMES[_NUM_COLOURS];
         static ImU32              COLOUR_DEFAULTS[_NUM_COLOURS];
+
+        static constexpr int CNO_COLOUR_MAX = 55;
+        static ImU32              CNO_COLOURS[CNO_COLOUR_MAX + 1];
 
         static constexpr float    FONT_SIZE_DEF = 13.0;
         static constexpr float    FONT_SIZE_MIN = 10.0;

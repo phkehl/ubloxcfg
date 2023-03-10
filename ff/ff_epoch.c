@@ -449,6 +449,53 @@ EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal)
     return EPOCH_GNSS_UNKNOWN;
 }
 
+int epochSvToIx(const EPOCH_GNSS_t gnss, const int sv)
+{
+    int ix = EPOCH_NO_SV;
+    switch (gnss)
+    {
+        case EPOCH_GNSS_UNKNOWN:
+            break;
+        case EPOCH_GNSS_GPS:
+            if ( (sv >= EPOCH_FIRST_GPS) && (sv <= EPOCH_NUM_GPS) )
+            {
+                ix = sv - EPOCH_FIRST_GPS;
+            }
+            break;
+        case EPOCH_GNSS_GLO:
+            if ( (sv >= EPOCH_FIRST_GLO) && (sv <= EPOCH_NUM_GLO) )
+            {
+                ix = EPOCH_NUM_GPS + sv - EPOCH_FIRST_GLO;
+            }
+            break;
+        case EPOCH_GNSS_GAL:
+            if ( (sv >= EPOCH_FIRST_GAL) && (sv <= EPOCH_NUM_GAL) )
+            {
+                ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + sv - EPOCH_FIRST_GAL;
+            }
+            break;
+        case EPOCH_GNSS_BDS:
+            if ( (sv >= EPOCH_FIRST_BDS) && (sv <= EPOCH_NUM_BDS) )
+            {
+                ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + EPOCH_NUM_GAL + sv - EPOCH_FIRST_BDS;
+            }
+            break;
+        case EPOCH_GNSS_SBAS:
+            if ( (sv >= EPOCH_FIRST_SBAS) && (sv <= EPOCH_NUM_SBAS) )
+            {
+                ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + EPOCH_NUM_GAL + EPOCH_NUM_BDS + sv - EPOCH_FIRST_SBAS;
+            }
+            break;
+        case EPOCH_GNSS_QZSS:
+            if ( (sv >= EPOCH_FIRST_QZSS) && (sv <= EPOCH_NUM_QZSS) )
+            {
+                ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_SBAS + sv - EPOCH_FIRST_QZSS;
+            }
+            break;
+    }
+    return ix;
+}
+
 const char * const kEpochBandStrs[] =
 {
     [EPOCH_BAND_UNKNOWN] = "?",
@@ -1294,6 +1341,14 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
     }
     qsort(epoch->satellites, epoch->numSatellites, sizeof(*epoch->satellites), _epochSatInfoSort);
 
+    // Create lookup table for signal to satellite
+    uint8_t satIxs[EPOCH_NUM_SV] = { [0 ... (EPOCH_NUM_SV-1)] = EPOCH_NO_SV };
+    for (int ix = 0; ix < epoch->numSatellites; ix++)
+    {
+        EPOCH_SATINFO_t *sat = &epoch->satellites[ix];
+        satIxs[ epochSvToIx(sat->gnss, sat->sv) ] = ix;
+    }
+
     // Process, stringify and sort list of signals
     for (int ix = 0; ix < epoch->numSignals; ix++)
     {
@@ -1323,6 +1378,8 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
         sig->corrStr     = sig->corr   < NUMOF(kEpochSigCorrStrs)   ? kEpochSigCorrStrs[sig->corr]     : kEpochSigCorrStrs[EPOCH_SIGCORR_UNKNOWN];
         sig->ionoStr     = sig->iono   < NUMOF(kEpochSigIonoStrs)   ? kEpochSigIonoStrs[sig->iono]     : kEpochSigIonoStrs[EPOCH_SIGIONO_UNKNOWN];
         sig->healthStr   = sig->health < NUMOF(kEpochSigHealthStrs) ? kEpochSigHealthStrs[sig->health] : kEpochSigHealthStrs[EPOCH_SIGHEALTH_UNKNOWN];
+        sig->satIx       = satIxs[epochSvToIx(sig->gnss, sig->sv)];
+
         sig->_order = ((sig->gnss & 0xff) << 24) | ((sig->sv & 0xffff) << 8) | ((sig->signal & 0xff) << 0);
     }
     qsort(&epoch->signals, epoch->numSignals, sizeof(*epoch->signals), _epochSigInfoSort);

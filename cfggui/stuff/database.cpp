@@ -228,7 +228,7 @@ void Database::AddEpoch(const EPOCH_t &raw)
         row.fix_ok       = raw.fixOk;
         row.fix_type_val = (float)raw.fix;
         row.fix_ok_val   = (raw.fixOk ? 1.0f : 0.0f);
-        row.fix_colour   = GuiSettings::GetFixColour(row.fix_type, row.fix_ok);
+        row.fix_colour   = GuiSettings::FixColour(row.fix_type, row.fix_ok);
         row.fix_str      = raw.fixStr;
 
         // Find last row with fix, calculate mean interval and rate

@@ -150,6 +150,7 @@ void GuiMsgUbxMonComms::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             _table.AddCellTextF("%u", port.msgs[msgsIxSpartn]);
         }
+        _table.SetRowUid(port.portId);
     }
 }
 

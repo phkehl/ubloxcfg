@@ -293,10 +293,9 @@ int main(int argc, char **argv)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Load settings
+    // Initialise and load settings
     GuiSettings::Init();
-    const std::string settingsFile = Platform::ConfigFile("cfggui.conf");
-    GuiSettings::LoadConf(settingsFile);
+    GuiSettings::LoadConf();
 
 
     /* ***** Create application ************************************************************************************* */
@@ -442,6 +441,7 @@ int main(int argc, char **argv)
             app->PerfToc(GuiApp::Perf_e::TOTAL);
 
             glfwSwapBuffers(window);
+            //SLEEP(15);
             //glFlush();
         }
         else
@@ -464,10 +464,7 @@ int main(int argc, char **argv)
     DEBUG("Adios!");
 
     // Save settings
-    if (!settingsFile.empty())
-    {
-        GuiSettings::SaveConf(settingsFile);
-    }
+    GuiSettings::SaveConf();
 
 
     /* ***** Cleanup ************************************************************************************************ */

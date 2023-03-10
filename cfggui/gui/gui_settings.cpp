@@ -100,7 +100,17 @@
     style     = imguiStyle;
     plotStyle = implotStyle;
 
-    cachePath = Platform::CacheDir("tiles");
+    configFile = Platform::ConfigFile("cfggui.conf");
+    cacheDir = Platform::CacheDir();
+
+    // Calculate CNo colours
+    const int cnoColoursCount = (&GUI_COLOUR(SIGNAL_55_OO) - &GUI_COLOUR(SIGNAL_00_05)) + 1;
+    ImPlotColormap cnoColourMap = ImPlot::AddColormap("CnoColours", &GUI_COLOUR(SIGNAL_00_05), cnoColoursCount, false);
+    for (int cno = 0; cno <= CNO_COLOUR_MAX; cno++)
+    {
+        const float t = (float)cno / (float)CNO_COLOUR_MAX;
+        CNO_COLOURS[cno] = ImGui::ColorConvertFloat4ToU32(ImPlot::SampleColormap(t, cnoColourMap));
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -136,7 +146,8 @@
 /*static*/ const ImGuiStyle   *GuiSettings::style = nullptr;
 /*static*/ const ImPlotStyle  *GuiSettings::plotStyle = nullptr;
 
-/*static*/ std::string GuiSettings::cachePath = "";
+/*static*/ std::string GuiSettings::configFile = "";
+/*static*/ std::string GuiSettings::cacheDir = "";
 
 /*static*/ std::vector<MapParams> GuiSettings::maps = { };
 
@@ -153,17 +164,25 @@
 /*static*/ bool               GuiSettings::_clearSettingsOnExit  = false;
 /*static*/ float              GuiSettings::_widgetOffs = 0;
 
+/*static */ImU32              GuiSettings::CNO_COLOURS[CNO_COLOUR_MAX + 1] = { }; // Initialised in Init()
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-/*static*/ void GuiSettings::LoadConf(const std::string &file)
+/*static*/ void GuiSettings::LoadConf()
 {
-    DEBUG("GuiSettings::LoadConf(%s)", file.c_str());
+    if (configFile.empty())
+    {
+        WARNING("GuiSettings::LoadConf() no config file defined!"); // Init() not called?
+        return;
+    }
+
+    DEBUG("GuiSettings::LoadConf() %s", configFile.c_str());
 
     // Load ImGui stuff
-    ImGui::LoadIniSettingsFromDisk(file.c_str());
+    ImGui::LoadIniSettingsFromDisk(configFile.c_str());
 
     // Load our stuff
-    if (_confFile.Load(file, "cfggui"))
+    if (_confFile.Load(configFile, "cfggui"))
     {
         // Colours
         for (int ix = 0; ix < _NUM_COLOURS; ix++)
@@ -195,7 +214,7 @@
     {
         maps.clear();
         auto conf = Ff::ConfFile();
-        while (conf.Load(file, "map"))
+        while (conf.Load(configFile, "map"))
         {
             MapParams map;
             bool mapOk = true;
@@ -260,7 +279,7 @@
             }
             else
             {
-                WARNING("%s:%d: Bad map info!", file.c_str(), conf.GetSectionBeginLine());
+                WARNING("%s:%d: Bad map info!", configFile.c_str(), conf.GetSectionBeginLine());
             }
         }
 
@@ -284,18 +303,24 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-/*static*/ void GuiSettings::SaveConf(const std::string &file)
+/*static*/ void GuiSettings::SaveConf()
 {
-    DEBUG("GuiSettings::SaveConf(%s)", file.c_str());
+    if (configFile.empty())
+    {
+        WARNING("GuiSettings::LoadConf() no config file defined!"); // Init() not called?
+        return;
+    }
+
+    DEBUG("GuiSettings::SaveConf() %s", configFile.c_str());
 
     if (_clearSettingsOnExit)
     {
-        Platform::FileSpew(file, nullptr, 0);
+        Platform::FileSpew(configFile, nullptr, 0);
         return;
     }
 
     // Save ImGui stuff
-    ImGui::SaveIniSettingsToDisk(file.c_str());
+    ImGui::SaveIniSettingsToDisk(configFile.c_str());
 
     // Append our own stuff
     for (int ix = 0; ix < _NUM_COLOURS; ix++)
@@ -312,7 +337,7 @@
     SaveRecentItems(RECENT_RECEIVERS);
     SaveRecentItems(RECENT_NTRIP_CASTERS);
 
-    _confFile.Save(file, "cfggui", true);
+    _confFile.Save(configFile, "cfggui", true);
 
     // Save maps
     for (const auto &map: maps)
@@ -343,7 +368,7 @@
         conf.Set("minLon",          rad2deg(map.minLon));
         conf.Set("maxLon",          rad2deg(map.maxLon));
         conf.Set("threads",         CLIP(map.threads, 1, 10));
-        conf.Save(file, "map", true);
+        conf.Save(configFile, "map", true);
     }
 }
 
@@ -613,7 +638,7 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-/*static*/ ImU32 GuiSettings::GetFixColour(const EPOCH_FIX_t fix, const bool fixok)
+/*static*/ ImU32 GuiSettings::FixColour(const EPOCH_FIX_t fix, const bool fixok)
 {
     if (!fixok)
     {
@@ -636,7 +661,7 @@
     return colours[FIX_INVALID];
 }
 
-/*static*/ const ImVec4 &GuiSettings::GetFixColour4(const EPOCH_FIX_t fix, const bool fixok)
+/*static*/ const ImVec4 &GuiSettings::FixColour4(const EPOCH_FIX_t fix, const bool fixok)
 {
     if (!fixok)
     {
@@ -657,6 +682,13 @@
         case EPOCH_FIX_RTK_FIXED_DR:  return colours4[FIX_RTK_FIXED_DR];
     }
     return colours4[FIX_INVALID];
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ ImU32 GuiSettings::CnoColour(const float cno)
+{
+    return CNO_COLOURS[(int)std::clamp(cno, 0.0f, (float)CNO_COLOUR_MAX)];
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
