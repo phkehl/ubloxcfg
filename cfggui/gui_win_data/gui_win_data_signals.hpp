@@ -46,6 +46,7 @@ class GuiWinDataSignals : public GuiWinData
 
         enum GnssIx : int { ALL = 0, GPS, GAL, BDS, GLO, OTHER, _NUM };
         static constexpr GnssIx GNSS_IXS[_NUM] = { ALL, GPS, GAL, BDS, GLO, OTHER, };
+        static constexpr const char* GNSS_NAMES[_NUM] = { "All", "GPS", "GAL", "BDS", "GLO", "Other" };
 
         struct Count
         {
@@ -55,7 +56,6 @@ class GuiWinDataSignals : public GuiWinData
             void Update();
             int  num_[GnssIx::_NUM];
             int  used_[GnssIx::_NUM];
-            const std::string name_[GnssIx::_NUM];
             std::string label_[GnssIx::_NUM];
         };
 

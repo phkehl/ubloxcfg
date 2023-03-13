@@ -38,6 +38,7 @@ class GuiWinDataSatellites : public GuiWinData
 
         enum GnssIx : int { ALL = 0, GPS, GAL, BDS, GLO, OTHER, _NUM };
         static constexpr GnssIx GNSS_IXS[_NUM] = { ALL, GPS, GAL, BDS, GLO, OTHER };
+        static constexpr const char* GNSS_NAMES[_NUM] = { "All", "GPS", "GAL", "BDS", "GLO", "Other" };
 
         struct Sat
         {
@@ -59,7 +60,6 @@ class GuiWinDataSatellites : public GuiWinData
             int               num_[GnssIx::_NUM];
             int               used_[GnssIx::_NUM];
             int               visible_[GnssIx::_NUM];
-            const std::string name_[GnssIx::_NUM];
             std::string       labelSky_[GnssIx::_NUM];
             std::string       labelList_[GnssIx::_NUM];
         };

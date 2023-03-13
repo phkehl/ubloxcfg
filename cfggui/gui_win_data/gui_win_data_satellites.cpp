@@ -105,8 +105,7 @@ GuiWinDataSatellites::Sat::Sat(const EPOCH_SATINFO_t &satInfo, const EPOCH_t &ep
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataSatellites::Count::Count() :
-    name_ { "All", "GPS", "GLO", "BDS", "GAL", "Other" }
+GuiWinDataSatellites::Count::Count()
 {
     Reset();
 };
@@ -118,8 +117,8 @@ void GuiWinDataSatellites::Count::Reset()
         num_[ix] = 0;
         used_[ix] = 0;
         visible_[ix] = 0;
-        labelSky_[ix] = Ff::Sprintf("%s###%s", name_[ix].c_str(), name_[ix].c_str());
-        labelList_[ix] = Ff::Sprintf("%s###%s", name_[ix].c_str(), name_[ix].c_str());
+        labelSky_[ix] = Ff::Sprintf("%s###%s", GNSS_NAMES[ix], GNSS_NAMES[ix]);
+        labelList_[ix] = Ff::Sprintf("%s###%s", GNSS_NAMES[ix], GNSS_NAMES[ix]);
     }
 }
 
@@ -127,8 +126,8 @@ void GuiWinDataSatellites::Count::Update()
 {
     for (GnssIx ix: GNSS_IXS)
     {
-        labelSky_[ix]  = Ff::Sprintf("%s (%d/%d)###%s", name_[ix].c_str(), used_[ix], visible_[ix], name_[ix].c_str());
-        labelList_[ix] = Ff::Sprintf("%s (%d/%d)###%s", name_[ix].c_str(), used_[ix], num_[ix],     name_[ix].c_str());
+        labelSky_[ix]  = Ff::Sprintf("%s (%d/%d)###%s", GNSS_NAMES[ix], used_[ix], visible_[ix], GNSS_NAMES[ix]);
+        labelList_[ix] = Ff::Sprintf("%s (%d/%d)###%s", GNSS_NAMES[ix], used_[ix], num_[ix],     GNSS_NAMES[ix]);
     }
 }
 

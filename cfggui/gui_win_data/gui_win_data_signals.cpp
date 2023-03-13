@@ -66,8 +66,7 @@ void GuiWinDataSignals::_ClearData()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-GuiWinDataSignals::Count::Count() :
-    name_ { "All", "GPS", "GLO", "BDS", "GAL", "Other" }
+GuiWinDataSignals::Count::Count()
 {
     Reset();
 };
@@ -78,7 +77,7 @@ void GuiWinDataSignals::Count::Reset()
     {
         num_[ix] = 0;
         used_[ix] = 0;
-        label_[ix] = Ff::Sprintf("%s###%s", name_[ix].c_str(), name_[ix].c_str());
+        label_[ix] = Ff::Sprintf("%s###%s", GNSS_NAMES[ix], GNSS_NAMES[ix]);
     }
 }
 
@@ -86,7 +85,7 @@ void GuiWinDataSignals::Count::Update()
 {
     for (GnssIx ix: GNSS_IXS)
     {
-        label_[ix] = Ff::Sprintf("%s (%d/%d)###%s", name_[ix].c_str(), used_[ix], num_[ix], name_[ix].c_str());
+        label_[ix] = Ff::Sprintf("%s (%d/%d)###%s", GNSS_NAMES[ix], used_[ix], num_[ix], GNSS_NAMES[ix]);
     }
 }
 
