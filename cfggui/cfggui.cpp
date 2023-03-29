@@ -25,6 +25,8 @@
 #include <string>
 #include <unistd.h>
 #include <memory>
+#include <regex>
+#include <getopt.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -158,25 +160,99 @@ static const GLFWimage *appIcon();
 int main(int argc, char **argv)
 {
     GuiAppEarlyLog earlyLog;
-    DEBUG_CFG_t cfg =
+    DEBUG_CFG_t debugCfg =
     {
+#ifdef FF_BUILD_DEBUG
         .level  = DEBUG_LEVEL_DEBUG,
+#else
+        .level  = DEBUG_LEVEL_PRINT,
+#endif
         .colour = isatty(fileno(stderr)) == 1,
         .mark   = NULL,
         .func   = sInitLog,
         .arg    = &earlyLog,
     };
-    debugSetup(&cfg);
+    debugSetup(&debugCfg);
 
     /* ***** Command line arguments ********************************************************************************* */
 
-    // std::vector<std::string> appArgv;
-    // for (int ix = 0; ix < argc; ix++)
-    // {
-    //     appArgv.push_back(std::string(argv[ix]));
-    // }
-    UNUSED(argc);
-    UNUSED(argv);
+    // TODO: this is not good enough yet
+    std::string configName = "cfggui";
+    bool argOk = true;
+    while (true)
+    {
+        // Command line options
+        static const struct option longOpts[] =
+        {
+            // clang-format off
+            { "help",            no_argument,       NULL, 'h' },
+            { "verbose",         no_argument,       NULL, 'v' },
+            { "quiet",           no_argument,       NULL, 'q' },
+            { "config",          required_argument, NULL, 'c' },
+            { NULL, 0, NULL, 0 },
+        };  // clang-format on
+        const char* shortOpts = ":hvqc:";
+        const char *usageHelp =
+            "\n"
+            "Usage:\n"
+            "\n"
+            "    cfggui [-v] [-q] [-c <name>]\n"
+            "\n"
+            "Where:\n"
+            "\n"
+            "    -v / -q             Increase / decrease verbosity\n"
+            "    -c <name>           Config name to use (/^[a-z0-9]{3,20}$/, default: 'cfggui')\n"
+            "\n";
+            // Process all command line options
+        int optIx = 0;
+        const int opt = getopt_long(argc, argv, shortOpts, longOpts, &optIx);
+        if (opt < 0)
+        {
+            break;
+        }
+        switch (opt)
+        {
+            case 'h':
+                std::fputs(usageHelp, stdout);
+                exit(EXIT_SUCCESS);
+                break;
+            case 'v':
+#ifdef FF_BUILD_DEBUG
+                debugCfg.level = DEBUG_LEVEL_TRACE;
+#else
+                debugCfg.level = DEBUG_LEVEL_DEBUG;
+#endif
+                break;
+            case 'q':
+                debugCfg.level = DEBUG_LEVEL_PRINT;
+                break;
+            case 'c':
+                if (std::regex_match(optarg, std::regex("^[a-z0-9]{3,20}$")))
+                {
+                    configName = optarg;
+                }
+                else
+                {
+                    WARNING("Bad config name '%s'!", optarg);
+                    argOk = false;
+                }
+                break;
+            // Special getopt_long() cases
+            case '?':
+                WARNING("Invalid option '-%c'!", optopt);
+                argOk = false;
+                break;
+            case ':':
+                WARNING("Missing argument to option '-%c'!", optopt);
+                argOk = false;
+                break;
+        }
+    }
+    debugSetup(&debugCfg);
+    if (!argOk)
+    {
+        exit(EXIT_FAILURE);
+    }
 
     if (!Platform::Init())
     {
@@ -194,11 +270,11 @@ int main(int argc, char **argv)
     int windowPosY   = -1;
     const int   kWindowMinWidth  =  640;
     const int   kWindowMinHeight =  384;
+    std::string windowTitle = Ff::Sprintf("cfggui " CONFIG_VERSION "-" CONFIG_GITHASH " (%s)"
 #ifdef FF_BUILD_DEBUG
-    const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ") -- debug build";
-#else
-    const char *kWindowTitle  = "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
+        " -- debug build"
 #endif
+        , configName.c_str());
 
     // We want to do some OpenGL stuff ourselves. Maybe.
     if (!gl3wInit())
@@ -254,7 +330,7 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_SAMPLES, 4);
 
     // Create window with graphics context
-    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, kWindowTitle, NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(windowWidth, windowHeight, windowTitle.c_str(), NULL, NULL);
     if (window == NULL)
     {
         glfwTerminate();
@@ -294,7 +370,7 @@ int main(int argc, char **argv)
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Initialise and load settings
-    GuiSettings::Init();
+    GuiSettings::Init(configName);
     GuiSettings::LoadConf();
 
 

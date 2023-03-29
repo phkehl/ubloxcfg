@@ -43,9 +43,9 @@
 
 /* ****************************************************************************************************************** */
 
-/*static*/ void GuiSettings::Init()
+/*static*/ void GuiSettings::Init(const std::string &configName)
 {
-    DEBUG("GuiSettings()");
+    DEBUG("GuiSettings() %s", configFile.c_str());
 
     ImGuiIO &io = ImGui::GetIO();
 
@@ -100,7 +100,7 @@
     style     = imguiStyle;
     plotStyle = implotStyle;
 
-    configFile = Platform::ConfigFile("cfggui.conf");
+    configFile = Platform::ConfigFile((configName.empty() ? std::string("cfggui") : configName) + std::string(".conf"));
     cacheDir = Platform::CacheDir();
 
     // Calculate CNo colours

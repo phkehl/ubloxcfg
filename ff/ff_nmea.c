@@ -173,7 +173,8 @@ bool nmeaMessageInfo(char *info, const int size, const uint8_t *msg, const int m
             const char *prefix = "";
             // 01234567890123456789
             // $GPTXT,01,01,02,u-blox ag - www.u-blox.com*50\r\n
-            switch (msg[nmeaInfo.payloadIx0 + 1])
+            //        01234567
+            switch (msg[nmeaInfo.payloadIx0 + 7])
             {
                 case '0': prefix = "ERROR: ";   break;
                 case '1': prefix = "WARNING: "; break;

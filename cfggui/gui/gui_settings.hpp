@@ -46,7 +46,7 @@ class GuiSettings
 
         // ---- Main control (cfggui.cpp) -----
 
-        static void Init();
+        static void Init(const std::string &configName);
         static void LoadConf();
         static void SaveConf();
         static bool UpdateFonts();

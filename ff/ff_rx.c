@@ -42,6 +42,7 @@
 #define RX_WARNING(fmt, ...) WARNING("%s: " fmt, rx->name, ## __VA_ARGS__)
 #define RX_DEBUG(fmt, ...)   DEBUG(  "%s: " fmt, rx->name, ## __VA_ARGS__)
 #define RX_TRACE(fmt, ...)   TRACE(  "%s: " fmt, rx->name, ## __VA_ARGS__)
+#define RX_TRACE_HD(data, size, fmt, ...) TRACE_HEXDUMP(data, size, "%s: " fmt, rx->name, ## __VA_ARGS__)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -425,6 +426,7 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
     char sendName[PARSER_MAX_NAME_SIZE];
     ubxMessageName(sendName, sizeof(sendName), msg, size);
     RX_DEBUG("Sending %s, size %d, timeout %u", sendName, size, timeout);
+    RX_TRACE_HD(msg, size, "%s", sendName);
 
     const uint8_t clsId = UBX_CLSID(msg);
     const uint8_t msgId = UBX_MSGID(msg);

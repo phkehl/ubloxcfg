@@ -193,7 +193,7 @@ define makeCompileRuleC
 
   # Compile src/foo/bar.c --> build/prog-build/src__foo__bar.o
   $(strip $3)/$(subst /,__,$(patsubst %.c,%.o,$2)): $2 $(make_deps) | $3
-	@echo "$(HLY)*$(HLO) $(HLC)CC$(HLO) $(HLG)$$@$(HLO) $(HLM)($$<)$(HLO)"
+	@echo "$(HLY)*$(HLO) $(HLC)CC$(HLO) $(HLG)$$<$(HLO) $(HLM)($$@)$(HLO)"
 	$(V)$(CC) -c -o $$@ $(CFLAGS) $$(CFLAGS_$(strip $1)) $$< -MD -MF $$(@:%.o=%.d) -MT $$@
 
   # Add to list of object files for this target
@@ -211,7 +211,7 @@ define makeCompileRuleCxx
 
   # Compile src/foo/bar.cpp --> build/prog-build/src__foo__bar.o
   $(strip $3)/$(subst /,__,$(patsubst %.cpp,%.o,$2)): $2 $(make_deps) | $3
-	@echo "$(HLY)*$(HLO) $(HLC)CXX$(HLO) $(HLG)$$@$(HLO) $(HLM)($$<)$(HLO)"
+	@echo "$(HLY)*$(HLO) $(HLC)CXX$(HLO) $(HLG)$$<$(HLO) $(HLM)($$@)$(HLO)"
 	$(V)$(CXX) -c -o $$@ $(CXXFLAGS) $$(CXXFLAGS_$(strip $1)) $$< -MD -MF $$(@:%.o=%.d) -MT $$@
 
   # Add to list of object files for this target
