@@ -41,6 +41,8 @@ bool FileSpew(const std::string &file, const uint8_t *data, const int size, bool
 
 uint64_t FileSize(const std::string &file);
 
+std::string FileName(const std::string &path);
+
 struct Port
 {
     Port(const std::string &_port, const std::string &_desc) : port{_port}, desc{_desc} {}

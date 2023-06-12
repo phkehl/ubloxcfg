@@ -492,7 +492,7 @@ void InputReceiver::_Thread(Ff::Thread *thread)
             msg->seq = ++_msgSeq;
             if (epochCollect(&coll, msg, &epoch))
             {
-                _inputDatabase->AddEpoch(epoch);
+                _inputDatabase->AddEpoch(epoch, true);
                 _SendEvent(std::make_unique<ReceiverEventEpoch>(&epoch));
             }
             _SEND_EVENT(ReceiverEventMsg, msg);

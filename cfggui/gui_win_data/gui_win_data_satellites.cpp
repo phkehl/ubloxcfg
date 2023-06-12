@@ -209,7 +209,7 @@ void GuiWinDataSatellites::_UpdateSatellites()
             _table.AddCellText("-", 1);
         }
 
-        _table.SetRowFilter(sat.satInfo_.gnss);
+        _table.SetRowFilter(sat.gnssIx_);
         if ( (sat.sigL1_.valid && sat.sigL1_.anyUsed) || (sat.sigL1_.valid && sat.sigL1_.anyUsed) )
         {
             _table.SetRowColour(GUI_COLOUR(SIGNAL_USED_TEXT));

@@ -128,7 +128,24 @@
             "typeindex": "cpp",
             "typeinfo": "cpp",
             "utility": "cpp",
-            "variant": "cpp"
+            "variant": "cpp",
+            "any": "cpp",
+            "cinttypes": "cpp",
+            "codecvt": "cpp",
+            "compare": "cpp",
+            "concepts": "cpp",
+            "forward_list": "cpp",
+            "algorithm": "cpp",
+            "iterator": "cpp",
+            "memory_resource": "cpp",
+            "random": "cpp",
+            "regex": "cpp",
+            "numbers": "cpp",
+            "ranges": "cpp",
+            "semaphore": "cpp",
+            "stop_token": "cpp",
+            "cfenv": "cpp",
+            "valarray": "cpp"
         },
 
         // Automatically detected tasks (e.g. for .c files) won't work for us

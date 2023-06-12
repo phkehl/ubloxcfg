@@ -42,7 +42,7 @@ class GuiWin
         bool                *WinOpenFlag();
         const std::string   &WinName();
         const std::string   &WinTitle(); // Title with ID ("title###id")
-        void                 WinSetTitle(const std::string &title);
+        void                 WinSetTitle(const std::string &title = "");
         void                 WinFocus();
         const std::string   &WinUidStr(); // Run-time (!) UID
         void                 WinMoveTo(const ImVec2 &pos);

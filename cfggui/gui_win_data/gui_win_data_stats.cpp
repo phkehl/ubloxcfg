@@ -111,7 +111,7 @@ void GuiWinDataStats::_DrawSiglevelPlot()
         ImPlot::SetupAxis(ImAxis_X1, "Signal level [dbHz]", ImPlotAxisFlags_NoHighlight);
         ImPlot::SetupAxis(ImAxis_Y1, "Number of signals", ImPlotAxisFlags_NoHighlight);
         ImPlot::SetupAxisLimits(ImAxis_X1, 0.0f, 55.0f, ImGuiCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0f, 25.0f, ImGuiCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0.0f, 35.0f, ImGuiCond_Always);
         ImPlot::SetupFinish();
 
         constexpr const char *label_trk = "Tracked (max/mean/std)";

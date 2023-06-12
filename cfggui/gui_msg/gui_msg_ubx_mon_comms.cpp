@@ -134,14 +134,6 @@ void GuiMsgUbxMonComms::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         {
             _table.AddCellTextF("%u", port.msgs[msgsIxRtcm3]);
         }
-        if (msgsIxOther < 0)
-        {
-            _table.AddCellEmpty();
-        }
-        else
-        {
-            _table.AddCellTextF("%u", port.msgs[msgsIxOther]);
-        }
         if (msgsIxSpartn < 0)
         {
             _table.AddCellEmpty();
@@ -149,6 +141,14 @@ void GuiMsgUbxMonComms::Update(const std::shared_ptr<Ff::ParserMsg> &msg)
         else
         {
             _table.AddCellTextF("%u", port.msgs[msgsIxSpartn]);
+        }
+        if (msgsIxOther < 0)
+        {
+            _table.AddCellEmpty();
+        }
+        else
+        {
+            _table.AddCellTextF("%u", port.msgs[msgsIxOther]);
         }
         _table.SetRowUid(port.portId);
     }

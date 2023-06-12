@@ -29,47 +29,27 @@ GuiWinDataEpoch::GuiWinDataEpoch(const std::string &name, std::shared_ptr<Databa
     _winSize = { 80, 25 };
 
     _table.AddColumn("Field");
-    _table.AddColumn("Value(s)");
+    _table.AddColumn("Value");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define _EPOCH_ROW_FMT(label, fmt, ...) \
-    _table.AddCellText(label); \
-    _table.AddCellTextF(fmt, ##__VA_ARGS__);
-
-#define _EPOCH_ROW_IF_STR(label, pred, str) \
-    _table.AddCellText(label); \
-    _table.AddCellText( (pred) ? str : "n/a");
-
-#define _EPOCH_ROW_IF_FMT(label, pred, fmt, ...) \
-    _table.AddCellText(label); \
-    if (pred) \
-    { \
-        _table.AddCellTextF(fmt, ##__VA_ARGS__); \
-    } \
-    else \
-    { \
-        _table.AddCellText("n/a"); \
-    }
-
 
 void GuiWinDataEpoch::_ProcessData(const InputData &data)
 {
-    // New epoch means database stats have updated, render row contents
+    // New epoch means a new database row is available
     if (data.type == InputData::DATA_EPOCH)
     {
         _table.ClearRows();
 
-        const auto &e = data.epoch->epoch;
-
-        _EPOCH_ROW_FMT(    "Sequence", "%i", e.seq);
-        _EPOCH_ROW_IF_STR( "Fix type", e.haveFix, e.fixStr);
-        _EPOCH_ROW_IF_FMT( "Position XYZ [m]", e.havePos, "%.3f %.3f %.3f", e.xyz[0], e.xyz[1], e.xyz[2]);
-        _EPOCH_ROW_IF_FMT( "Position LLH [deg, m]", e.havePos, "%.9f %.9f %.3f", rad2deg(e.llh[0]), rad2deg(e.llh[1]), e.llh[2]);
-        _EPOCH_ROW_IF_FMT( "Position accuracy", e.havePos, "%.3f (%.3f h, %.3f v)", e.posAcc, e.horizAcc, e.vertAcc);
-        _EPOCH_ROW_IF_FMT( "Relative position NED [m]", e.haveRelPos, "%.3f %.3f %.3f (%.3f)", e.relNed[0], e.relNed[1], e.relNed[2], e.relLen);
-        _EPOCH_ROW_IF_FMT( "Rel. position accuracy [m]", e.haveRelPos, "%.3f %.3f %.3f", e.relAcc[0], e.relAcc[1], e.relAcc[2]);
+        const auto &row = _database->LatestRow();
+        for (const auto &def: _database->FIELDS) {
+            if (def.label) {
+                _table.AddCellText(def.label);
+                _table.AddCellTextF(def.fmt ? def.fmt : "%g", row[def.field]);
+                _table.SetRowUid((uint32_t)(uint64_t)(void *)def.label);
+            }
+        }
     }
 }
 

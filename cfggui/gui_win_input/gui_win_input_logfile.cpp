@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License along with this program.
 // If not, see <https://www.gnu.org/licenses/>.
 
+#include "platform.hpp"
 #include "gui_inc.hpp"
 
 #include "gui_win_input_logfile.hpp"
@@ -187,6 +188,7 @@ void GuiWinInputLogfile::_DrawControls()
                 if (!path.empty() && _logfile->Open(path))
                 {
                     GuiSettings::AddRecentItem(GuiSettings::RECENT_LOGFILES, path);
+                    _progressBarFmt = Platform::FileName(path) + " (%.3f%%)";
                 }
             }
         }
@@ -325,7 +327,7 @@ void GuiWinInputLogfile::_DrawControls()
         float progress = _seekProgress > -1.0f ? _seekProgress : _logfile->GetPlayPos() * 1e2f;
         ImGui::SetNextItemWidth(-1);
         ImGui::BeginDisabled(!canSeek);
-        if (ImGui::SliderFloat("##PlayProgress", &progress, 0.0, 100.0, "%.3f%%", ImGuiSliderFlags_AlwaysClamp))
+        if (ImGui::SliderFloat("##PlayProgress", &progress, 0.0, 100.0, _progressBarFmt.c_str(), ImGuiSliderFlags_AlwaysClamp))
         {
             _seekProgress = progress; // Store away because...
         }
@@ -340,7 +342,12 @@ void GuiWinInputLogfile::_DrawControls()
     }
     else
     {
-        ImGui::InvisibleButton("##PlayProgress", GuiSettings::iconSize);
+        float progress = 0;
+        ImGui::SetNextItemWidth(-1);
+        ImGui::BeginDisabled(true);
+        ImGui::SliderFloat("##PlayProgress", &progress, 0.0, 100.0, "");
+        ImGui::EndDisabled();
+        //ImGui::InvisibleButton("##PlayProgress", GuiSettings::iconSize);
     }
     ImGui::Separator();
 }

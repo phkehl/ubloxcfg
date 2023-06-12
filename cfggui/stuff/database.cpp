@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cfloat>
 #include <limits>
+#include <numeric>
 
 #include "ff_stuff.h"
 #include "ff_debug.h"
@@ -58,7 +59,7 @@ void Database::Clear()
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _rows.clear();
-    _rowsT0 = 0.0;
+    _rowsT0 = NAN;
     _info = Info();
     _serial++;
 }
@@ -203,33 +204,47 @@ void Database::EndGetRows()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Database::AddEpoch(const EPOCH_t &raw)
+void Database::AddEpoch(const EPOCH_t &epoch, const bool isRealTime)
 {
     std::lock_guard<std::mutex> lock(_mutex);
-
-    if (_rows.empty()) {
-        _rowsT0 = (double)raw.ts * 1e-3;
-    }
-
     Row row;
 
-    row.time_ts = raw.ts;
-    row.time_monotonic = ((double)raw.ts * 1e-3) - _rowsT0;
-    if (raw.haveGpsTow) {
-        row.time_gps_tow     = raw.gpsTow;
-        row.time_gps_tow_acc = raw.gpsTowAcc;
+
+    // Monotonic time only for real-time input
+    if (isRealTime) {
+        if (std::isnan(_rowsT0)) {
+            _rowsT0 = (double)epoch.ts * 1e-3;
+        }
+        row.time_monotonic = ((double)epoch.ts * 1e-3) - _rowsT0;
     }
-    if (raw.havePosixTime) {
-        row.time_posix = raw.posixTime;
+    // But we can fake it for logfiles
+    else if (epoch.havePosixTime) {
+        if (std::isnan(_rowsT0)) {
+            _rowsT0 = epoch.posixTime;
+            row.time_monotonic = 0.0;
+        } else {
+            row.time_monotonic = epoch.posixTime - _rowsT0;
+        }
     }
 
-    if (raw.haveFix) {
-        row.fix_type     = raw.fix;
-        row.fix_ok       = raw.fixOk;
-        row.fix_type_val = (float)raw.fix;
-        row.fix_ok_val   = (raw.fixOk ? 1.0f : 0.0f);
+    row.time_ts = epoch.ts;
+
+    if (epoch.haveGpsTow) {
+        row.time_gps_tow     = epoch.gpsTow;
+        row.time_gps_tow_acc = epoch.gpsTowAcc;
+    }
+
+    if (epoch.havePosixTime) {
+        row.time_posix = epoch.posixTime;
+    }
+
+    if (epoch.haveFix) {
+        row.fix_type     = epoch.fix;
+        row.fix_ok       = epoch.fixOk;
+        row.fix_type_val = (float)epoch.fix;
+        row.fix_ok_val   = (epoch.fixOk ? 1.0f : 0.0f);
         row.fix_colour   = GuiSettings::FixColour(row.fix_type, row.fix_ok);
-        row.fix_str      = raw.fixStr;
+        row.fix_str      = epoch.fixStr;
 
         // Find last row with fix, calculate mean interval and rate
         auto lastFixRow1  = _rows.rend();
@@ -256,119 +271,144 @@ void Database::AddEpoch(const EPOCH_t &raw)
         }
         if (lastFixRow1 != _rows.rend())
         {
-            row.fix_interval = (row.time_monotonic - lastFixRow1->time_monotonic);
+            row.fix_interval = (row.time_posix - lastFixRow1->time_posix);
             if (row.fix_interval > 0.0f)
             {
                 row.fix_rate = 1.0f / row.fix_interval;
             }
             if (lastFixRow10 != _rows.rend())
             {
-                row.fix_mean_interval = (row.time_monotonic - lastFixRow10->time_monotonic) / 10.0f;
+                row.fix_mean_interval = (row.time_posix - lastFixRow10->time_posix) / 10.0f;
             }
             if (row.fix_interval > 0.0f)
             {
                 row.fix_mean_rate = 1.0f / row.fix_mean_interval;
             }
         }
-        if (raw.haveLatency)
+        if (epoch.haveLatency)
         {
-            row.fix_latency = raw.latency;
-            if (!std::isnan(raw.latency) && (latencyNum > 5))
+            row.fix_latency = epoch.latency;
+            if (!std::isnan(epoch.latency) && (latencyNum > 5))
             {
-                row.fix_mean_latency = (latencySum + raw.latency) / (float)(latencyNum + 1);
+                row.fix_mean_latency = (latencySum + epoch.latency) / (float)(latencyNum + 1);
             }
         }
     }
 
-    if (raw.havePos) {
+    if (epoch.havePos) {
         row.pos_avail       = true;
-        row.pos_ecef_x      = raw.xyz[0];
-        row.pos_ecef_y      = raw.xyz[1];
-        row.pos_ecef_z      = raw.xyz[2];
-        row.pos_llh_lat_deg = rad2deg(raw.llh[0]);
-        row.pos_llh_lon_deg = rad2deg(raw.llh[1]);
-        row.pos_llh_lat     = raw.llh[0];
-        row.pos_llh_lon     = raw.llh[1];
-        row.pos_llh_height  = raw.llh[2];
-        row.pos_acc_3d      = raw.posAcc;
-        row.pos_acc_horiz   = raw.horizAcc;
-        row.pos_acc_vert    = raw.vertAcc;
+        row.pos_ecef_x      = epoch.xyz[0];
+        row.pos_ecef_y      = epoch.xyz[1];
+        row.pos_ecef_z      = epoch.xyz[2];
+        row.pos_llh_lat_deg = rad2deg(epoch.llh[0]);
+        row.pos_llh_lon_deg = rad2deg(epoch.llh[1]);
+        row.pos_llh_lat     = epoch.llh[0];
+        row.pos_llh_lon     = epoch.llh[1];
+        row.pos_llh_height  = epoch.llh[2];
+        row.pos_acc_3d      = epoch.posAcc;
+        row.pos_acc_horiz   = epoch.horizAcc;
+        row.pos_acc_vert    = epoch.vertAcc;
     }
 
-    if (raw.haveVel) {
+    if (epoch.haveVel) {
         row.vel_avail        = true;
-        row.vel_enu_east     = raw.velNed[1];
-        row.vel_enu_north    = raw.velNed[0];
-        row.vel_enu_down     = -raw.velNed[2];
-        row.vel_3d           = raw.vel3d;
-        row.vel_horiz        = raw.vel2d;
+        row.vel_enu_east     = epoch.velNed[1];
+        row.vel_enu_north    = epoch.velNed[0];
+        row.vel_enu_down     = -epoch.velNed[2];
+        row.vel_3d           = epoch.vel3d;
+        row.vel_horiz        = epoch.vel2d;
     }
 
-    if (raw.haveClock) {
-        row.clock_bias       = raw.clockBias;
-        row.clock_drift      = raw.clockDrift;
+    if (epoch.haveClock) {
+        row.clock_bias       = epoch.clockBias;
+        row.clock_drift      = epoch.clockDrift;
     }
 
-    if (raw.haveRelPos) {
+    if (epoch.haveRelPos) {
         row.relpos_avail     = true;
-        row.relpos_dist      = raw.relLen;
-        row.relpos_ned_north = raw.relNed[0];
-        row.relpos_ned_east  = raw.relNed[1];
-        row.relpos_ned_down  = raw.relNed[2];
+        row.relpos_dist      = epoch.relLen;
+        row.relpos_ned_north = epoch.relNed[0];
+        row.relpos_ned_east  = epoch.relNed[1];
+        row.relpos_ned_down  = epoch.relNed[2];
     }
 
-    if (raw.havePdop) {
-        row.dop_pdop         = raw.pDOP;
+    if (epoch.havePdop) {
+        row.dop_pdop         = epoch.pDOP;
     }
 
-    if (raw.haveNumSig) {
+    if (epoch.haveNumSig) {
         row.sol_numsig_avail = true;
-        row.sol_numsig_tot   = raw.numSigUsed;
-        row.sol_numsig_gps   = raw.numSigUsedGps;
-        row.sol_numsig_glo   = raw.numSigUsedGlo;
-        row.sol_numsig_gal   = raw.numSigUsedGal;
-        row.sol_numsig_bds   = raw.numSigUsedBds;
-        row.sol_numsig_sbas  = raw.numSigUsedSbas;
-        row.sol_numsig_qzss  = raw.numSigUsedQzss;
+        row.sol_numsig_tot   = epoch.numSigUsed;
+        row.sol_numsig_gps   = epoch.numSigUsedGps;
+        row.sol_numsig_glo   = epoch.numSigUsedGlo;
+        row.sol_numsig_gal   = epoch.numSigUsedGal;
+        row.sol_numsig_bds   = epoch.numSigUsedBds;
+        row.sol_numsig_sbas  = epoch.numSigUsedSbas;
+        row.sol_numsig_qzss  = epoch.numSigUsedQzss;
     }
 
-    if (raw.haveNumSat) {
+    if (epoch.haveNumSat) {
         row.sol_numsat_avail = true;
-        row.sol_numsat_tot   = raw.numSatUsed;
-        row.sol_numsat_gps   = raw.numSatUsedGps;
-        row.sol_numsat_glo   = raw.numSatUsedGlo;
-        row.sol_numsat_gal   = raw.numSatUsedGal;
-        row.sol_numsat_bds   = raw.numSatUsedBds;
-        row.sol_numsat_sbas  = raw.numSatUsedSbas;
-        row.sol_numsat_qzss  = raw.numSatUsedQzss;
+        row.sol_numsat_tot   = epoch.numSatUsed;
+        row.sol_numsat_gps   = epoch.numSatUsedGps;
+        row.sol_numsat_glo   = epoch.numSatUsedGlo;
+        row.sol_numsat_gal   = epoch.numSatUsedGal;
+        row.sol_numsat_bds   = epoch.numSatUsedBds;
+        row.sol_numsat_sbas  = epoch.numSatUsedSbas;
+        row.sol_numsat_qzss  = epoch.numSatUsedQzss;
     }
 
-    if (raw.haveSigCnoHist) {
+    if (epoch.haveSigCnoHist) {
         static_assert(EPOCH_SIGCNOHIST_NUM == 12); // we'll have to update our code if epoch.h changes...
-        row.cno_nav_00 = raw.sigCnoHistNav[0];
-        row.cno_nav_05 = raw.sigCnoHistNav[1];
-        row.cno_nav_10 = raw.sigCnoHistNav[2];
-        row.cno_nav_15 = raw.sigCnoHistNav[3];
-        row.cno_nav_20 = raw.sigCnoHistNav[4];
-        row.cno_nav_25 = raw.sigCnoHistNav[5];
-        row.cno_nav_30 = raw.sigCnoHistNav[6];
-        row.cno_nav_35 = raw.sigCnoHistNav[7];
-        row.cno_nav_40 = raw.sigCnoHistNav[8];
-        row.cno_nav_45 = raw.sigCnoHistNav[9];
-        row.cno_nav_50 = raw.sigCnoHistNav[10];
-        row.cno_nav_55 = raw.sigCnoHistNav[11];
-        row.cno_trk_00 = raw.sigCnoHistTrk[0];
-        row.cno_trk_05 = raw.sigCnoHistTrk[1];
-        row.cno_trk_10 = raw.sigCnoHistTrk[2];
-        row.cno_trk_15 = raw.sigCnoHistTrk[3];
-        row.cno_trk_20 = raw.sigCnoHistTrk[4];
-        row.cno_trk_25 = raw.sigCnoHistTrk[5];
-        row.cno_trk_30 = raw.sigCnoHistTrk[6];
-        row.cno_trk_35 = raw.sigCnoHistTrk[7];
-        row.cno_trk_40 = raw.sigCnoHistTrk[8];
-        row.cno_trk_45 = raw.sigCnoHistTrk[9];
-        row.cno_trk_50 = raw.sigCnoHistTrk[10];
-        row.cno_trk_55 = raw.sigCnoHistTrk[11];
+        row.cno_nav_00 = epoch.sigCnoHistNav[0];
+        row.cno_nav_05 = epoch.sigCnoHistNav[1];
+        row.cno_nav_10 = epoch.sigCnoHistNav[2];
+        row.cno_nav_15 = epoch.sigCnoHistNav[3];
+        row.cno_nav_20 = epoch.sigCnoHistNav[4];
+        row.cno_nav_25 = epoch.sigCnoHistNav[5];
+        row.cno_nav_30 = epoch.sigCnoHistNav[6];
+        row.cno_nav_35 = epoch.sigCnoHistNav[7];
+        row.cno_nav_40 = epoch.sigCnoHistNav[8];
+        row.cno_nav_45 = epoch.sigCnoHistNav[9];
+        row.cno_nav_50 = epoch.sigCnoHistNav[10];
+        row.cno_nav_55 = epoch.sigCnoHistNav[11];
+        row.cno_trk_00 = epoch.sigCnoHistTrk[0];
+        row.cno_trk_05 = epoch.sigCnoHistTrk[1];
+        row.cno_trk_10 = epoch.sigCnoHistTrk[2];
+        row.cno_trk_15 = epoch.sigCnoHistTrk[3];
+        row.cno_trk_20 = epoch.sigCnoHistTrk[4];
+        row.cno_trk_25 = epoch.sigCnoHistTrk[5];
+        row.cno_trk_30 = epoch.sigCnoHistTrk[6];
+        row.cno_trk_35 = epoch.sigCnoHistTrk[7];
+        row.cno_trk_40 = epoch.sigCnoHistTrk[8];
+        row.cno_trk_45 = epoch.sigCnoHistTrk[9];
+        row.cno_trk_50 = epoch.sigCnoHistTrk[10];
+        row.cno_trk_55 = epoch.sigCnoHistTrk[11];
+    }
+
+    if (epoch.haveNumSig) {
+        std::vector<float> cnoL1;
+        std::vector<float> cnoL2;
+        std::vector<float> cnoL5;
+        for (const auto &sig: epoch.signals) {
+            if (sig.cno > 0.0f) {
+                switch (sig.band) {
+                    case EPOCH_BAND_L1: cnoL1.push_back(sig.cno); break;
+                    case EPOCH_BAND_L2: cnoL2.push_back(sig.cno); break;
+                    case EPOCH_BAND_L5: cnoL5.push_back(sig.cno); break;
+                    case EPOCH_BAND_UNKNOWN: break;
+                }
+            }
+        }
+        std::sort(cnoL1.rbegin(), cnoL1.rend());
+        std::sort(cnoL2.rbegin(), cnoL2.rend());
+        std::sort(cnoL5.rbegin(), cnoL5.rend());
+        if (cnoL1.size() >=  5) { row.cno_avg_top5_l1  = std::accumulate(cnoL1.begin(), cnoL1.begin() +  5, 0.0f) /  5.0f; }
+        if (cnoL2.size() >=  5) { row.cno_avg_top5_l2  = std::accumulate(cnoL2.begin(), cnoL2.begin() +  5, 0.0f) /  5.0f; }
+        if (cnoL5.size() >=  5) { row.cno_avg_top5_l5  = std::accumulate(cnoL5.begin(), cnoL5.begin() +  5, 0.0f) /  5.0f; }
+        if (cnoL1.size() >= 10) { row.cno_avg_top10_l1 = std::accumulate(cnoL1.begin(), cnoL1.begin() + 10, 0.0f) / 10.0f; }
+        if (cnoL2.size() >= 10) { row.cno_avg_top10_l2 = std::accumulate(cnoL2.begin(), cnoL2.begin() + 10, 0.0f) / 10.0f; }
+        if (cnoL5.size() >= 10) { row.cno_avg_top10_l5 = std::accumulate(cnoL5.begin(), cnoL5.begin() + 10, 0.0f) / 10.0f; }
     }
 
     _rows.push_back(row);
@@ -615,7 +655,7 @@ double Database::Row::operator[](const FieldIx field) const
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define _DB_FIELD_INFO( _field_, _type_, _init_, _fmt_, _label_) { _label_, # _field_, CONCAT(ix_, _field_) },
+#define _DB_FIELD_INFO( _field_, _type_, _init_, _fmt_, _label_) { _label_, # _field_, _fmt_, CONCAT(ix_, _field_) },
 
 /*static*/ const Database::FieldDef Database::FIELDS[Database::NUM_FIELDS] =
 {

@@ -428,7 +428,7 @@ typedef struct EPOCH_s
 #define EPOCH_NUM_GPS        32
 #define EPOCH_NUM_SBAS       39
 #define EPOCH_NUM_GAL        36
-#define EPOCH_NUM_BDS        37
+#define EPOCH_NUM_BDS        63
 #define EPOCH_NUM_QZSS       10
 #define EPOCH_NUM_GLO        32
 #define EPOCH_FIRST_GPS       1

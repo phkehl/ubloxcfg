@@ -528,7 +528,7 @@ void InputLogfile::_Thread(Ff::Thread *thread)
             if (epochCollect(&coll, &msg, &epoch))
             {
                 // Update database
-                _inputDatabase->AddEpoch(epoch);
+                _inputDatabase->AddEpoch(epoch, false);
 
                 // Send epoch
                 _SEND_EVENT(LogfileEventEpoch, &epoch);

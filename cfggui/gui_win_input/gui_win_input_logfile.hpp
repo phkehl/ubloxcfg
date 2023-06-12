@@ -41,10 +41,11 @@ class GuiWinInputLogfile : public GuiWinInput
     protected:
 
         std::shared_ptr<InputLogfile>  _logfile;
-        GuiWinFileDialog          _fileDialog;
-        float                     _seekProgress;
-        float                     _playSpeed;
-        bool                      _limitPlaySpeed;
+        GuiWinFileDialog  _fileDialog;
+        float             _seekProgress;
+        float             _playSpeed;
+        bool              _limitPlaySpeed;
+        std::string       _progressBarFmt;
 
         void _DrawActionButtons() final;
         void _DrawControls() final;

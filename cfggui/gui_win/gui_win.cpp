@@ -49,7 +49,7 @@ GuiWin::GuiWin(const std::string &name) :
     _winName = name;
     _newWinInitPos = NEW_WIN_POS[_newWinPosIx++];
     _newWinPosIx %= NEW_WIN_POS.size();
-    WinSetTitle(name); // by default the (internal) name (= ID) is also the displayed title
+    WinSetTitle(); // by default the (internal) name (= ID) is also the displayed title
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -116,7 +116,7 @@ const std::string &GuiWin::WinTitle()
 
 void GuiWin::WinSetTitle(const std::string &title)
 {
-    _winTitle = title;
+    _winTitle = title.empty() ? _winName : title;
     _winImguiName = _winTitle + std::string("###") + _winName;
 }
 

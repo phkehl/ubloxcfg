@@ -94,10 +94,10 @@ void GuiWinDataSignals::Count::Add(const EPOCH_SIGINFO_t &sig)
     GnssIx ix = OTHER;
     switch (sig.gnss)
     {
-        case EPOCH_GNSS_GPS: ix = GPS; break;
-        case EPOCH_GNSS_GLO: ix = GLO; break;
-        case EPOCH_GNSS_BDS: ix = BDS; break;
-        case EPOCH_GNSS_GAL: ix = GAL; break;
+        case EPOCH_GNSS_GPS: ix = GnssIx::GPS; break;
+        case EPOCH_GNSS_GLO: ix = GnssIx::GLO; break;
+        case EPOCH_GNSS_BDS: ix = GnssIx::BDS; break;
+        case EPOCH_GNSS_GAL: ix = GnssIx::GAL; break;
         case EPOCH_GNSS_SBAS:
         case EPOCH_GNSS_QZSS:
         case EPOCH_GNSS_UNKNOWN:
@@ -342,7 +342,19 @@ void GuiWinDataSignals::_UpdateSignals()
         _table.SetRowSort(rowSort);
         _table.SetRowUid(rowUid);
 
-        _table.SetRowFilter(sig.gnss);
+        GnssIx gnssIx = OTHER;
+        switch (sig.gnss)
+        {
+            case EPOCH_GNSS_GPS: gnssIx = GPS; break;
+            case EPOCH_GNSS_GLO: gnssIx = GLO; break;
+            case EPOCH_GNSS_BDS: gnssIx = BDS; break;
+            case EPOCH_GNSS_GAL: gnssIx = GAL; break;
+            case EPOCH_GNSS_SBAS:
+            case EPOCH_GNSS_QZSS:
+            case EPOCH_GNSS_UNKNOWN:
+                break;
+        }
+        _table.SetRowFilter(gnssIx);
 
         // Update skyplot
         if (sig.satIx != EPOCH_NO_SV)

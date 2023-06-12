@@ -178,6 +178,12 @@ uint64_t FileSize(const std::string &file)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+std::string FileName(const std::string &path) {
+    return std::filesystem::path(path).filename();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 const std::vector<Port> &EnumeratePorts(const bool enumerate)
 {
     static std::vector<Port> ports;

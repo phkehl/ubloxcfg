@@ -41,11 +41,11 @@
 // P2: statistics pass 2 (must be float or double)
 #define DATABASE_COLUMNS(_PN_, _P0_, _P1_, _P2_) \
     /*  Field                Type     Init   Fmt       Label */ \
-    _PN_(time_ts,            uint32_t, 0,    NULL,     NULL                                         ) /* TIME() */ \
-    _P0_(time_monotonic,     double,  NAN,   NULL,     "Monotonic time [s]"                         ) \
-    _P0_(time_gps_tow,       double,  NAN,   NULL,     "GPS time of week [s]"                       ) \
-    _P1_(time_gps_tow_acc,   double,  NAN,   NULL,     "GPS time of week accuracy estimate [s]"     ) \
-    _P0_(time_posix,         double,  NAN,   NULL,     "POSIX time [s]"                             ) \
+    _PN_(time_ts,            uint32_t, 0,    NULL,     NULL /* reception/processing time */         ) /* TIME() */ \
+    _P0_(time_monotonic,     double,  NAN,   "%.3f",   "Monotonic time [s]"                         ) \
+    _P0_(time_gps_tow,       double,  NAN,   "%.3f",   "GPS time of week [s]"                       ) \
+    _P1_(time_gps_tow_acc,   double,  NAN,   "%.3e",   "GPS time of week accuracy estimate [s]"     ) \
+    _P0_(time_posix,         double,  NAN,   "%.3f",   "POSIX time [s]"                             ) \
     \
     _PN_(fix_type,           EPOCH_FIX_t, EPOCH_FIX_UNKNOWN, NULL, NULL                             ) \
     _PN_(fix_ok,             bool,    false, NULL,     NULL                                         ) \
@@ -55,10 +55,10 @@
     _PN_(fix_str,            const char *, "?", NULL,  NULL                                         ) \
     _P1_(fix_interval,       float,   NAN,   "%.3f",   "Fix interval [s]"                           ) \
     _P1_(fix_rate,           float,   NAN,   "%.1f",   "Fix rate [Hz]"                              ) \
-    _P1_(fix_latency,        float,   NAN,   "%.1f",   "Fix latency [s]"                            ) \
+    _P1_(fix_latency,        float,   NAN,   "%.3f",   "Fix latency [s]"                            ) \
     _P1_(fix_mean_interval,  float,   NAN,   "%.3f",   "Fix average interval (10 fixes window) [s]" ) \
     _P1_(fix_mean_rate,      float,   NAN,   "%.1f",   "Fix average rate (10 fixes window) [Hz]"    ) \
-    _P1_(fix_mean_latency,   float,   NAN,   "%.1f",   "Fix average latency (10 fixes window) [s]"  ) \
+    _P1_(fix_mean_latency,   float,   NAN,   "%.3f",   "Fix average latency (10 fixes window) [s]"  ) \
     \
     _PN_(pos_avail,          bool,    false, NULL,     NULL /* pos_* below have values */           ) \
     _P1_(pos_ecef_x,         double,  NAN,   "%.3f",   "Position ECEF X [m]"                        ) /* pos_ecef_* must be adjacent! */ \
@@ -138,6 +138,13 @@
     _P1_(cno_trk_45,         float,   NAN,   "%.1f",   "Number of signals tracked (45-49 dBHz) [-]" ) \
     _P1_(cno_trk_50,         float,   NAN,   "%.1f",   "Number of signals tracked (50-54 dBHz) [-]" ) \
     _P1_(cno_trk_55,         float,   NAN,   "%.1f",   "Number of signals tracked (55- dBHz) [-]"   ) \
+    \
+    _P1_(cno_avg_top5_l1,    float,   NAN,   "%.1f",   "Average of 5 strongest signals (L1) [dBHz]" ) \
+    _P1_(cno_avg_top5_l2,    float,   NAN,   "%.1f",   "Average of 5 strongest signals (L2) [dBHz]" ) \
+    _P1_(cno_avg_top5_l5,    float,   NAN,   "%.1f",   "Average of 5 strongest signals (L5) [dBHz]" ) \
+    _P1_(cno_avg_top10_l1,   float,   NAN,   "%.1f",   "Average of 10 strongest signals (L1) [dBHz]" ) \
+    _P1_(cno_avg_top10_l2,   float,   NAN,   "%.1f",   "Average of 10 strongest signals (L2) [dBHz]" ) \
+    _P1_(cno_avg_top10_l5,   float,   NAN,   "%.1f",   "Average of 10 strongest signals (L5) [dBHz]" ) \
     /* end*/
 
 
@@ -157,7 +164,7 @@ class Database
        ~Database();
 
         enum FieldIx { ix_none, DATABASE_COLUMNS(_DB_SKIP, _DB_FIELDS_ENUM, _DB_FIELDS_ENUM, _DB_FIELDS_ENUM) };
-        struct FieldDef { const char *label; const char *name; FieldIx field; };
+        struct FieldDef { const char *label; const char *name; const char *fmt; FieldIx field; };
         static constexpr int NUM_FIELDS = 0 DATABASE_COLUMNS(_DB_SKIP, _DB_COUNT, _DB_COUNT, _DB_COUNT);
         static const FieldDef FIELDS[NUM_FIELDS];
 
@@ -236,7 +243,7 @@ class Database
 
         const std::string   &GetName();
         void                 Clear();
-        void                 AddEpoch(const EPOCH_t &raw);
+        void                 AddEpoch(const EPOCH_t &epoch, const bool isRealTime);
         Info                 GetInfo();
         Row                  LatestRow();
         void                 ProcRows(std::function<bool(const Row &)> cb, const bool backwards = false);

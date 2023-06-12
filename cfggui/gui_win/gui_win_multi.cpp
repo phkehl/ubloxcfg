@@ -128,7 +128,7 @@ void GuiWinMulti::Loop(const uint32_t &frame, const double &now)
             {
                 if (row.pos_avail)
                 {
-                    const uint64_t key = std::isnan(row.time_posix) ? 0 : (uint64_t)((row.time_posix * 1e2) + 0.5) * 10;
+                    const uint64_t key = std::isnan(row.time_posix) ? 0 : (uint64_t)((row.time_posix * 0.5e2) + 0.5) * 10;
                     auto entry = _points.find(key);
                     if (entry == _points.end())
                     {
