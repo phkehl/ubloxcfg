@@ -42,7 +42,7 @@ void GuiWinDataEpoch::_ProcessData(const InputData &data)
     {
         _table.ClearRows();
 
-        const auto &row = _database->LatestRow();
+        const auto row = _database->LatestRow();
         for (const auto &def: _database->FIELDS) {
             if (def.label) {
                 _table.AddCellText(def.label);

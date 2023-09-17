@@ -25,31 +25,37 @@
 
 /*static*/ uint32_t GuiData::serial = 0;
 
-/*static*/ std::mutex GuiData::_receiversMutex {};
-/*static*/ std::mutex GuiData::_logfilesMutex  {};
-/*static*/ std::mutex GuiData::_databasesMutex {};
-
+/*static*/ std::mutex            GuiData::_mutex     {};
 /*static*/ GuiData::ReceiverList GuiData::_receivers {};
 /*static*/ GuiData::LogfileList  GuiData::_logfiles  {};
+/*static*/ GuiData::InputList    GuiData::_inputs    {};
 /*static*/ GuiData::DatabaseList GuiData::_databases {};
 
+#if 0
 /*static*/ std::shared_ptr<bool> GuiData::_triggers {};
+#endif
 
 /*static*/ GuiData::ReceiverList GuiData::Receivers()
 {
-    std::unique_lock<std::mutex> lock(_receiversMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     return _receivers;
 }
 
 /*static*/ GuiData::LogfileList GuiData::Logfiles()
 {
-    std::unique_lock<std::mutex> lock(_logfilesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     return _logfiles;
+}
+
+/*static*/ GuiData::InputList GuiData::Inputs()
+{
+    std::unique_lock<std::mutex> lock(_mutex);
+    return _inputs;
 }
 
 /*static*/ GuiData::DatabaseList GuiData::Databases()
 {
-    std::unique_lock<std::mutex> lock(_databasesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     return _databases;
 }
 
@@ -57,30 +63,30 @@
 
 /*static*/ void GuiData::AddReceiver(std::shared_ptr<InputReceiver> receiver)
 {
-    std::unique_lock<std::mutex> lock(_receiversMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_receivers.begin(), _receivers.end(), receiver);
     if (entry == _receivers.end())
     {
         _receivers.push_back(receiver);
-        _AddDatabase(receiver->GetDatabase());
     }
     std::sort(_receivers.begin(), _receivers.end(),
         [](const std::shared_ptr<InputReceiver> &a, const std::shared_ptr<InputReceiver> &b)
         {
             return a->GetName() < b->GetName();
         });
+    _Update();
     serial++;
 }
 
 /*static*/ void GuiData::RemoveReceiver(std::shared_ptr<InputReceiver> receiver)
 {
-    std::unique_lock<std::mutex> lock(_receiversMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_receivers.begin(), _receivers.end(), receiver);
     if (entry != _receivers.end())
     {
-        _RemoveDatabase(entry->get()->GetDatabase());
         _receivers.erase(entry);
     }
+    _Update();
     serial++;
 }
 
@@ -88,38 +94,56 @@
 
 /*static*/ void GuiData::AddLogfile(std::shared_ptr<InputLogfile> logfile)
 {
-    std::unique_lock<std::mutex> lock(_logfilesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_logfiles.begin(), _logfiles.end(), logfile);
     if (entry == _logfiles.end())
     {
         _logfiles.push_back(logfile);
-        _AddDatabase(logfile->GetDatabase());
     }
     std::sort(_logfiles.begin(), _logfiles.end(),
         [](const std::shared_ptr<InputLogfile> &a, const std::shared_ptr<InputLogfile> &b)
         {
             return a->GetName() < b->GetName();
         });
+    _Update();
     serial++;
 }
 
 /*static*/ void GuiData::RemoveLogfile(std::shared_ptr<InputLogfile> logfile)
 {
-    std::unique_lock<std::mutex> lock(_logfilesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_logfiles.begin(), _logfiles.end(), logfile);
     if (entry != _logfiles.end())
     {
-        _RemoveDatabase(entry->get()->GetDatabase());
         _logfiles.erase(entry);
     }
+    _Update();
     serial++;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+/*static*/ void GuiData::_Update()
+{
+    _inputs.clear();
+    _databases.clear();
+    for (auto receiver: _receivers)
+    {
+        _inputs.push_back(receiver);
+        _databases.push_back(receiver->GetDatabase());
+    }
+    for (auto logfile: _logfiles)
+    {
+        _inputs.push_back(logfile);
+        _databases.push_back(logfile->GetDatabase());
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 /*static*/ void GuiData::_AddDatabase(std::shared_ptr<Database> database)
 {
-    std::unique_lock<std::mutex> lock(_databasesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_databases.begin(), _databases.end(), database);
     if (entry == _databases.end())
     {
@@ -134,7 +158,7 @@
 
 /*static*/ void GuiData::_RemoveDatabase(std::shared_ptr<Database> database)
 {
-    std::unique_lock<std::mutex> lock(_databasesMutex);
+    std::unique_lock<std::mutex> lock(_mutex);
     auto entry = std::find(_databases.begin(), _databases.end(), database);
     if (entry != _databases.end())
     {

@@ -25,12 +25,14 @@
 
 GuiWinMulti::GuiWinMulti(const std::string &name) :
     GuiWin(name),
-    _guiDataSerial { 0 }
+    _guiDataSerial { 0 },
+    _latestTow     { NAN }
 {
     _winSize = { 70, 30 };
     DEBUG("GuiWinMulti(%s)", _winName.c_str());
 
     _map.SetSettings( GuiSettings::GetValue(_winName + ".map") );
+    _map.EnableFollowButton();
 }
 
 GuiWinMulti::~GuiWinMulti()
@@ -45,6 +47,7 @@ void GuiWinMulti::_Clear(const bool refresh)
 {
     _points.clear();
     _pointKeys.clear();
+    _latestTow = NAN;
     if (refresh)
     {
         _guiDataSerial = 0;
@@ -112,13 +115,20 @@ void GuiWinMulti::Loop(const uint32_t &frame, const double &now)
 
         // All databases
         GuiData::DatabaseList databases;
-        for (auto &receiver: _usedReceivers)
+        GuiData::InputList inputs;
+        inputs.insert(inputs.end(), _usedReceivers.begin(), _usedReceivers.end());
+        inputs.insert(inputs.end(), _usedLogfiles.begin(), _usedLogfiles.end());
+        for (auto &input: inputs)
         {
-            databases.push_back(receiver->GetDatabase());
-        }
-        for (auto &logfile: _usedLogfiles)
-        {
-            databases.push_back(logfile->GetDatabase());
+            databases.push_back(input->GetDatabase());
+            auto latestRow = input->LatestRow();
+            if (!std::isnan(latestRow.time_gps_tow))
+            {
+                if (std::isnan(_latestTow) || (latestRow.time_gps_tow > _latestTow))
+                {
+                    _latestTow = latestRow.time_gps_tow;
+                }
+            }
         }
 
         // Collect all points, index by timestamp with some tolerance
@@ -205,12 +215,14 @@ void GuiWinMulti::_DrawControls()
 {
     if (ImGui::BeginChild("##Controls", ImVec2(GuiSettings::charSize.x * 15, 0)))
     {
+        // --- Receivers -----
         for (auto &receiver: _allReceivers)
         {
             auto iter = std::find(_usedReceivers.begin(), _usedReceivers.end(), receiver);
             bool enabled = iter != _usedReceivers.end();
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0)); // smaller radio and checkbox
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
             if (ImGui::Checkbox(receiver->GetName().c_str(), &enabled))
             {
                 if (enabled)
@@ -223,13 +235,28 @@ void GuiWinMulti::_DrawControls()
                     _Clear();
                 }
             }
+            ImGui::PopStyleColor();
             ImGui::PopStyleVar();
+
+            auto latestRow = receiver->LatestRow();
+            if (!std::isnan(latestRow.time_gps_tow) && !std::isnan(_latestTow))
+            {
+                ImGui::Text("t: %+10.3f", latestRow.time_gps_tow - _latestTow);
+            }
+            else
+            {
+                ImGui::TextUnformatted("t: ?");
+            }
+
+
             ImGui::Separator();
         }
 
-        bool canPlayAll = false;
+        // ----- Logfiles -----
+
+        bool canPlayAll  = false;
         bool canPauseAll = false;
-        bool canStepAll = false;
+        bool canStepAll  = false;
 
         for (auto &logfile: _allLogfiles)
         {
@@ -239,6 +266,7 @@ void GuiWinMulti::_DrawControls()
             bool enabled = iter != _usedLogfiles.end();
 
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0)); // smaller radio and checkbox
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(TEXT_TITLE));
             if (ImGui::Checkbox(logfile->GetName().c_str(), &enabled))
             {
                 if (enabled)
@@ -251,11 +279,25 @@ void GuiWinMulti::_DrawControls()
                     _Clear();
                 }
             }
+            ImGui::PopStyleColor();
             ImGui::PopStyleVar();
 
-            const bool canPlay  = logfile->CanPlay();
-            const bool canPause = logfile->CanPause();
-            const bool canStep  = logfile->CanStep();
+            auto latestRow = logfile->LatestRow();
+            double dt = NAN;
+            if (!std::isnan(latestRow.time_gps_tow) && !std::isnan(_latestTow))
+            {
+                dt = latestRow.time_gps_tow - _latestTow;
+                ImGui::Text("t: %+10.3f", dt);
+            }
+            else
+            {
+                ImGui::TextUnformatted("t: ?");
+            }
+
+            const bool canPlay    = logfile->CanPlay();
+            const bool canPause   = logfile->CanPause();
+            const bool canStep    = logfile->CanStep();
+            const bool canCatchup = (!std::isnan(dt) && dt < -0.001);
 
             if (canPlay)
             {
@@ -287,6 +329,7 @@ void GuiWinMulti::_DrawControls()
                     logfile->Play();
                 }
             }
+            Gui::ItemTooltip(canPause ? "Pause" : "Play");
             ImGui::EndDisabled();
 
             ImGui::SameLine();
@@ -299,6 +342,7 @@ void GuiWinMulti::_DrawControls()
             }
             ImGui::PopButtonRepeat();
             ImGui::EndDisabled();
+            Gui::ItemTooltip("Step epoch");
 
             ImGui::SameLine();
 
@@ -310,12 +354,27 @@ void GuiWinMulti::_DrawControls()
             }
             ImGui::PopButtonRepeat();
             ImGui::EndDisabled();
+            Gui::ItemTooltip("Step message");
+
+            ImGui::SameLine();
+
+            ImGui::BeginDisabled(!canCatchup);
+            ImGui::PushButtonRepeat(true);
+            if (ImGui::Button(ICON_FK_FAST_FORWARD "##Catchup", GuiSettings::iconSize))
+            {
+                WARNING("catch up... not implemented...");
+            }
+            ImGui::PopButtonRepeat();
+            ImGui::EndDisabled();
+            Gui::ItemTooltip("Catch up with leading log");
 
             ImGui::EndDisabled();
 
             ImGui::Separator();
             ImGui::PopID();
         }
+
+        // ---- Controls for all selected inputs ----
 
         ImGui::Separator();
         ImGui::BeginDisabled(!canPlayAll && !canPauseAll);
@@ -340,6 +399,8 @@ void GuiWinMulti::_DrawControls()
             }
         }
         ImGui::EndDisabled();
+        Gui::ItemTooltip(canPauseAll ? "Pause all" : "Play all");
+
         ImGui::SameLine();
         ImGui::BeginDisabled(!canStepAll);
         if (ImGui::Button(ICON_FK_FORWARD "##StepEpochAll", GuiSettings::iconSize))
@@ -349,6 +410,7 @@ void GuiWinMulti::_DrawControls()
                 logfile->StepEpoch();
             }
         }
+        Gui::ItemTooltip("Step epoch all");
         ImGui::SameLine();
         if (ImGui::Button(ICON_FK_STEP_FORWARD "##StepMsgAll", GuiSettings::iconSize))
         {
@@ -358,6 +420,7 @@ void GuiWinMulti::_DrawControls()
             }
         }
         ImGui::EndDisabled();
+        Gui::ItemTooltip("Step message all");
     }
 
     ImGui::EndChild();
@@ -388,6 +451,15 @@ void GuiWinMulti::_DrawMap()
             }
 
             draw->AddRectFilled(xy - FfVec2f(2,2), xy + FfVec2f(2,2), point.colour);
+        }
+    }
+
+    if (!_pointKeys.empty() && _map.FollowEnabled())
+    {
+        const auto& latest = _points[_pointKeys.back()];
+        if (!latest.empty())
+        {
+            _map.SetPos(latest[0].lat, latest[0].lon);
         }
     }
 

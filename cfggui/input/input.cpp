@@ -67,6 +67,13 @@ const std::shared_ptr<Database> &Input::GetDatabase()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+const Database::Row &Input::LatestRow()
+{
+    return _latestRow;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 void Input::SetDataCb(std::function<void(const InputData &)> cb)
 {
     _inputDataCb = cb;
@@ -81,21 +88,33 @@ void Input::_CallDataCb(const InputData &data)
         _inputDataCb(data);
     }
 
-    if (data.type == InputData::DATA_MSG)
+    switch (data.type)
     {
-        if (data.msg->name == "UBX-MON-VER")
-        {
-            char str[100];
-            if (ubxMonVerToVerStr(str, sizeof(str), data.msg->data, data.msg->size))
+        case InputData::DATA_MSG:
+            if (data.msg->name == "UBX-MON-VER")
             {
-                _inputRxVer = str;
-                if (_inputDataCb)
+                char str[100];
+                if (ubxMonVerToVerStr(str, sizeof(str), data.msg->data, data.msg->size))
                 {
-                    _inputDataCb(InputData(InputData::RXVERSTR, _inputRxVer));
+                    _inputRxVer = str;
+                    if (_inputDataCb)
+                    {
+                        _inputDataCb(InputData(InputData::RXVERSTR, _inputRxVer));
+                    }
                 }
             }
-        }
+            break;
+        case InputData::DATA_EPOCH:
+        case InputData::EVENT_START:
+        case InputData::EVENT_STOP:
+        case InputData::RXVERSTR:
+        case InputData::INFO_NOTICE:
+        case InputData::INFO_WARNING:
+        case InputData::INFO_ERROR:
+            break;
+
     }
+
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

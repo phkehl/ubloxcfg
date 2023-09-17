@@ -243,7 +243,7 @@ class Database
 
         const std::string   &GetName();
         void                 Clear();
-        void                 AddEpoch(const EPOCH_t &epoch, const bool isRealTime);
+        Row                  AddEpoch(const EPOCH_t &epoch, const bool isRealTime);
         Info                 GetInfo();
         Row                  LatestRow();
         void                 ProcRows(std::function<bool(const Row &)> cb, const bool backwards = false);

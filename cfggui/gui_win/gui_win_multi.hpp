@@ -63,6 +63,7 @@ class GuiWinMulti : public GuiWin
 
         std::unordered_map<uint64_t, std::vector<Point>> _points;
         std::vector<uint64_t> _pointKeys;
+        double _latestTow;
 
         void _Clear(const bool refresh = false);
         void _DrawControls();

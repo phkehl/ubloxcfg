@@ -49,29 +49,34 @@ class GuiData
         using LogfileList = std::vector< std::shared_ptr<InputLogfile> >;
         static LogfileList Logfiles();
 
+        using InputList = std::vector< std::shared_ptr<Input> >;
+        static InputList Inputs();
+
         using DatabaseList = std::vector< std::shared_ptr<Database> >;
         static DatabaseList Databases();
 
+#if 0
         static void AddTrigger(std::shared_ptr<bool> trigger);
         static void RemoveTrigger(std::shared_ptr<bool> trigger);
+#endif
 
         static uint32_t serial; // increments whenever one of the lists change
 
     private:
 
-        static std::mutex _receiversMutex;
-        static std::mutex _logfilesMutex;
-        static std::mutex _databasesMutex;
-
+        static std::mutex   _mutex;
         static ReceiverList _receivers;
         static LogfileList  _logfiles;
+        static InputList    _inputs;
         static DatabaseList _databases;
 
+#if 0
         static std::shared_ptr<bool> _triggers;
+#endif
 
         static void _AddDatabase(std::shared_ptr<Database> database);
         static void _RemoveDatabase(std::shared_ptr<Database> database);
-
+        static void _Update();
 };
 
 /* ****************************************************************************************************************** */

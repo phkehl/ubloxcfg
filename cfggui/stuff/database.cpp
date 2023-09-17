@@ -204,7 +204,7 @@ void Database::EndGetRows()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-void Database::AddEpoch(const EPOCH_t &epoch, const bool isRealTime)
+Database::Row Database::AddEpoch(const EPOCH_t &epoch, const bool isRealTime)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     Row row;
@@ -418,6 +418,8 @@ void Database::AddEpoch(const EPOCH_t &epoch, const bool isRealTime)
     }
 
     _Sync();
+
+    return _rows.back();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

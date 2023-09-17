@@ -44,12 +44,14 @@ class Input
         const std::string &GetName();
         const std::string &GetRxVer();
         const std::shared_ptr<Database> &GetDatabase();
+        const Database::Row &LatestRow();
 
     protected:
 
         std::string                  _inputName;           // Name, for debugging
         std::shared_ptr<Database>    _inputDatabase;       // Database
         std::string                  _inputRxVer;          // Receiver version (if known)
+        Database::Row                _latestRow;           // Latest database row
 
         bool _ThreadStart();                               // Start input thread
         void _ThreadStop();                                // Stop input thread
