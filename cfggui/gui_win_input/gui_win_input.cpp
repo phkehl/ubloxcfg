@@ -633,6 +633,7 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
     //    +++ +++ +++ +++ +++     +++
     //   ---------------------------------
     //    === === === === === === === ...
+    //   ---------------------------------
     //           10      20     30
 
     // padding between bars and width of bars
@@ -640,7 +641,7 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
     const float width = (canvasSize.x - ((float)(EPOCH_SIGCNOHIST_NUM - 1) * padx)) / (float)EPOCH_SIGCNOHIST_NUM;
 
     // bottom space for x axis labelling
-    const float pady = 1.0f + 1.0f + 4.0f + charSize.y;
+    const float pady = 1.0f + charSize.y + 1.0f + 1.0f + 1.0 + charSize.y + 1.0;
 
     // scale for signal count (height of bars)
     //const float scale = (epoch->numSigUsed > 15 ? (2.0f / epoch->numSigUsed) : 0.1f) * canvasSize.y;
@@ -700,14 +701,29 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
     y = canvasMax.y - pady + 1.0f;
     draw->AddLine(ImVec2(x, y), ImVec2(canvasMax.x, y), GUI_COLOUR(PLOT_GRID_MAJOR));
 
-    // x-axis colours
+    // x-axis colours and counts
     y += 2.0f;
     for (int ix = 0; ix < EPOCH_SIGCNOHIST_NUM; ix++)
     {
-        draw->AddRectFilled(ImVec2(x, y), ImVec2(x + width, y + 4.0f), GUI_COLOUR(SIGNAL_00_05 + ix));
+        draw->AddRectFilled(ImVec2(x, y), ImVec2(x + width, y + 1.0f + charSize.y), GUI_COLOUR(SIGNAL_00_05 + ix));
+        if (epoch && (width > (2.0f * charSize.x)))
+        {
+            const int n = epoch->sigCnoHistNav[ix];
+            ImGui::SetCursorScreenPos(ImVec2(x + (0.5f * width) - (n < 10 ? 0.5f * charSize.x : charSize.x), y));
+
+            ImGui::PushStyleColor(ImGuiCol_Text, GUI_COLOUR(C_BLACK));
+            ImGui::Text("%d", n);
+            ImGui::PopStyleColor();
+        }
+
         x += width + padx;
     }
-    y += 4.0;
+    y += 1.0 + charSize.y;
+
+
+    x = canvasOffs.x;
+    y += 1.0;
+    draw->AddLine(ImVec2(x, y), ImVec2(canvasMax.x, y), GUI_COLOUR(PLOT_GRID_MAJOR));
 
     // x-axis labels
     x = canvasOffs.x + width + padx + width + padx - charSize.x;
@@ -724,7 +740,7 @@ void GuiWinInput::_DrawNavStatusRight(const EPOCH_t *epoch)
 
     ImGui::SetCursorScreenPos(canvasOffs);
     ImGui::InvisibleButton("##SigLevPlotTooltop", canvasSize);
-    Gui::ItemTooltip("Signal levels (x axis) vs. number of signals tracked/used (y axis)");
+    Gui::ItemTooltip("Signal levels (x axis) vs. number of signals used and tracked (y axis)");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

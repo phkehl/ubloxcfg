@@ -229,7 +229,7 @@ Command 'cfg2rx':
 
 Command 'rx2cfg':
 
-    Usage: cfgtool rx2cfg [-o <outfile>] [-y] -p <port> -l <layer> [-u]
+    Usage: cfgtool rx2cfg [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]
 
     This reads the configuration of a layer in the receiver and saves the data
     as a configuration file (see the 'cfg2rx' command for a specification of
@@ -237,14 +237,15 @@ Command 'rx2cfg':
     (layers 'RAM' and 'Default') or only those that is available in the layer
     (layers 'BBR' and 'Flash'), which may be none at all.
 
-    The '-u' flag adds all unknown (to this tool) configuration items as well.
+    The '-u' flag adds all unknown (to this tool) configuration items.
+    The '-x' flag adds the item description as a comment.
 
     Entries in the generated configuration file are commented out if their
     values are the default values.
 
 Command 'rx2list':
 
-    Usage: cfgtool rx2list [-o <outfile>] [-y] -p <port> -l <layer> [-u]
+    Usage: cfgtool rx2list [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]
 
     This behaves like the 'rx2cfg' command with the differnece that all
     configuration is reported as <key> <value> pairs. That is, no <port> or

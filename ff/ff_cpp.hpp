@@ -61,7 +61,7 @@ namespace Ff
     // RX_t
     struct Rx
     {
-        Rx(const std::string &port, const RX_ARGS_t *args);
+        Rx(const std::string &port, const RX_OPTS_t *opts);
        ~Rx();
         void Abort();
         RX_t *rx;

@@ -51,7 +51,8 @@ class GuiWinInputReceiver : public GuiWinInput
         std::shared_ptr<InputReceiver> _receiver;
 
         std::string          _port;
-        int                  _baudrate;
+        RX_OPTS_t            _rxOpts;
+        std::string          _rxOptsTooltip;
 
         bool                 _stopSent;
         bool                 _triggerConnect;
@@ -78,6 +79,7 @@ class GuiWinInputReceiver : public GuiWinInput
         void _AddDataWindow(std::unique_ptr<GuiWinData> dataWin) final;
         void _LogOpen(const std::string &path);
         void _LogClose();
+        void _UpdateRxOptsTooltip();
 };
 
 /* ****************************************************************************************************************** */

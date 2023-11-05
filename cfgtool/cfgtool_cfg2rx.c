@@ -338,6 +338,13 @@ UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
         }
     }
 
+    if (db.nKv <= 0)
+    {
+        WARNING("No configuration found in input file!");
+        free(kv);
+        return NULL;
+    }
+
     if (!res)
     {
         WARNING("Failed reading config file!");

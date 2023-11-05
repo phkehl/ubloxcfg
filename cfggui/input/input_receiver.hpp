@@ -44,7 +44,7 @@ class InputReceiver : public Input
         InputReceiver(const std::string &name, std::shared_ptr<Database> database);
        ~InputReceiver();
 
-        bool Start(const std::string &port, const int baudrate = 0);
+        bool Start(const std::string &port, const RX_OPTS_t &opts);
         void Stop();
         bool IsIdle();
         bool IsBusy();
@@ -76,6 +76,7 @@ class InputReceiver : public Input
         std::mutex           _commandMutex;
         std::atomic<enum State_e> _state;
         std::atomic<int>     _baudrate;
+        RX_OPTS_t            _rxOpts;
         std::string          _port;
         std::unique_ptr<Ff::Rx> _rx;
 

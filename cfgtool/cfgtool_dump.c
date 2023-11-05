@@ -70,13 +70,14 @@ static void _sigHandler(int signal)
 
 int dumpRun(const char *portArg, const bool extraInfo, const bool noProbe)
 {
-    RX_ARGS_t args = RX_ARGS_DEFAULT();
+    RX_OPTS_t opts = RX_OPTS_DEFAULT();
     if (noProbe)
     {
-        args.autobaud = false;
-        args.detect   = false;
+        opts.autobaud = false;
+        opts.detect   = RX_DET_NONE;
     }
-    RX_t *rx = rxInit(portArg, &args);
+
+    RX_t *rx = rxInit(portArg, &opts);
     if ( (rx == NULL) || !rxOpen(rx) )
     {
         free(rx);

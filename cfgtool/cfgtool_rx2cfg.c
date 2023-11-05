@@ -35,7 +35,7 @@ const char *rx2cfgHelp(void)
 // -----------------------------------------------------------------------------
 "Command 'rx2cfg':\n"
 "\n"
-"    Usage: cfgtool rx2cfg [-o <outfile>] [-y] -p <port> -l <layer> [-u]\n"
+"    Usage: cfgtool rx2cfg [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]\n"
 "\n"
 "    This reads the configuration of a layer in the receiver and saves the data\n"
 "    as a configuration file (see the 'cfg2rx' command for a specification of\n"
@@ -43,7 +43,8 @@ const char *rx2cfgHelp(void)
 "    (layers 'RAM' and 'Default') or only those that is available in the layer\n"
 "    (layers 'BBR' and 'Flash'), which may be none at all.\n"
 "\n"
-"    The '-u' flag adds all unknown (to this tool) configuration items as well.\n"
+"    The '-u' flag adds all unknown (to this tool) configuration items.\n"
+"    The '-x' flag adds the item description as a comment.\n"
 "\n"
 "    Entries in the generated configuration file are commented out if their\n"
 "    values are the default values.\n"
@@ -55,7 +56,7 @@ const char *rx2listHelp(void)
 // -----------------------------------------------------------------------------
 "Command 'rx2list':\n"
 "\n"
-"    Usage: cfgtool rx2list [-o <outfile>] [-y] -p <port> -l <layer> [-u]\n"
+"    Usage: cfgtool rx2list [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]\n"
 "\n"
 "    This behaves like the 'rx2cfg' command with the differnece that all\n"
 "    configuration is reported as <key> <value> pairs. That is, no <port> or\n"
@@ -88,6 +89,7 @@ typedef struct CFG_DB_s
 static CFG_DB_t *_getCfgDb(RX_t *rx, const UBLOXCFG_LAYER_t layer);
 static const UBLOXCFG_KEYVAL_t *_dbFindKeyVal(const CFG_DB_t *db, const uint32_t id);
 static void _dbFlag(CFG_DB_t *db, const uint32_t id);
+static void _addOutputItemDesc(const UBLOXCFG_ITEM_t *item);
 
 /* ****************************************************************************************************************** */
 
@@ -107,7 +109,7 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
 static bool _rateCfgStr(const UBLOXCFG_MSGRATE_t *cfg, const CFG_DB_t *db, char *str, const int size);
 static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, char *str, const int size);
 
-int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownItems)
+int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownItems, const bool extraInfo)
 {
     // Check parameters
     UBLOXCFG_LAYER_t layer;
@@ -162,6 +164,10 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     ioOutputStr("# %s, layer %s\n", verStr, layerName);
 
     // Ports
+    if (extraInfo)
+    {
+        ioOutputStr("# Port configuration: <port> <baudrate> <inprot> <outprot>\n");
+    }
     const PORT_CFG_t portCfgs[] =
     {
         { "UART1", UBLOXCFG_CFG_UART1_BAUDRATE_ID,
@@ -224,6 +230,10 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     }
 
     // Output message rates
+    if (extraInfo)
+    {
+        ioOutputStr("# Output message rates: <messagename> <uart1> <uart2> <spi> <i2c> <usb>\n");
+    }
     int numRateCfgs = 0;
     const UBLOXCFG_MSGRATE_t **rateCfgs = ubloxcfg_getAllMsgRateCfgs(&numRateCfgs);
     for (int ix = 0; ix < numRateCfgs; ix++)
@@ -292,6 +302,11 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         if ( dbLayer->recs[ix].flag || ((item == NULL) && !useUnknownItems) )
         {
             continue;
+        }
+
+        if (extraInfo && (item != NULL))
+        {
+            _addOutputItemDesc(item);
         }
 
         const UBLOXCFG_KEYVAL_t *kvDefault = _dbFindKeyVal(dbDefault, kvLayer->id);
@@ -365,9 +380,9 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
 
 /* ****************************************************************************************************************** */
 
-static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv);
+static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv, const bool extraInfo);
 
-int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownItems)
+int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownItems, const bool extraInfo)
 {
     // Check parameters
     UBLOXCFG_LAYER_t layer;
@@ -435,7 +450,7 @@ int rx2listRun(const char *portArg, const char *layerArg, const bool useUnknownI
         const UBLOXCFG_KEYVAL_t *defaultKv = dbLayer != dbDefault ?
             _dbFindKeyVal(dbDefault, kv->id) : NULL;
 
-        _addOutputKeyValuePair(kv, item, defaultKv);
+        _addOutputKeyValuePair(kv, item, defaultKv, extraInfo);
     }
 
     // Clean up
@@ -732,7 +747,19 @@ static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv)
+static void _addOutputItemDesc(const UBLOXCFG_ITEM_t *item)
+{
+    ioOutputStr("# %s\n", item->title);
+    for (int ix = 0; ix < item->nConsts; ix++)
+    {
+        char nameValueStr[100];
+        snprintf(nameValueStr, sizeof(nameValueStr), "%s (%s)", item->consts[ix].name, item->consts[ix].value);
+
+        ioOutputStr("# - %-20s %s\n", nameValueStr, item->consts[ix].title);
+    }
+}
+
+static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item, const UBLOXCFG_KEYVAL_t *defaultKv, const bool extraInfo)
 {
     UBLOXCFG_TYPE_t type = UBLOXCFG_TYPE_X8; // stringification format
 
@@ -741,6 +768,10 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     const char *sizeDesc = NULL;
     if (item != NULL)
     {
+        if (extraInfo)
+        {
+            _addOutputItemDesc(item);
+        }
         ioOutputStr("%-40s", item->name);
         type = item->type;
     }
@@ -852,6 +883,18 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
 
         // Add ID and type
         ioOutputStr("0x%08x, %s", kv->id, ubloxcfg_typeStr(type));
+
+        if (extraInfo && (item != NULL))
+        {
+            if (item->scale != NULL)
+            {
+                ioOutputStr(", %s", item->scale);
+            }
+            if (item->unit != NULL)
+            {
+                ioOutputStr(" [%s]", item->unit);
+            }
+        }
     }
 
     // Add default value if available and different

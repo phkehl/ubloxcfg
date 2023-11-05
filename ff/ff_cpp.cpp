@@ -62,10 +62,10 @@ Ff::Epoch::Epoch(const EPOCH_t *_epoch) :
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-Ff::Rx::Rx(const std::string &port, const RX_ARGS_t *args) :
+Ff::Rx::Rx(const std::string &port, const RX_OPTS_t *opts) :
     rx{NULL}
 {
-    rx = rxInit(port.c_str(), args);
+    rx = rxInit(port.c_str(), opts);
     if (rx == NULL)
     {
         throw std::runtime_error("rxInit() fail");

@@ -29,21 +29,32 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
+//! Receiver handle
 typedef struct RX_s RX_t;
 
-typedef struct RX_ARGS_s
+//! Receiver detection
+typedef enum RX_DET_e
 {
-    bool     autobaud;    // default: true
-    bool     detect;      // default: true
-    bool     verbose;     // default: true
-    char    *name;        // default: automatic
-    void   (*msgcb)(PARSER_MSG_t *, void *arg); // default: NULL
-    void    *cbarg;       // default: NULL
-} RX_ARGS_t;
+    RX_DET_NONE = 0,  //!< No receiver detection, assume port settings are correct and receiver is present
+    RX_DET_UBX,       //!< Actively check for a u-blox receiver
+    RX_DET_PASSIVE,   //!< Passively check for any receiver (that outputs messages using a known protocol)
+} RX_DET_t;
 
-#define RX_ARGS_DEFAULT() { .autobaud = true, .detect = true, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
+//! Receiver options
+typedef struct RX_OPTS_s
+{
+    RX_DET_t detect;   //!< Receiver detection method
+    bool     autobaud; //!< Automatically find baudrate (on ports that can change baudrate, and only for detect != RX_DET_NONE)
+    int      baudrate; //!< (Initial) baudrate
+    bool     verbose;  //!< Print what's going on for some operations
+    char    *name;     //!< Name of the receiver (automatic if NULL)
+    void   (*msgcb)(PARSER_MSG_t *, void *arg); //!< Optional callback for every message received
+    void    *cbarg;    //!< Optional user argument for callback
+} RX_OPTS_t;
 
-RX_t *rxInit(const char *port, const RX_ARGS_t *args);
+#define RX_OPTS_DEFAULT() { .detect = RX_DET_UBX, .autobaud = true, .baudrate = 115200, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
+
+RX_t *rxInit(const char *port, const RX_OPTS_t *opts);
 
 bool rxOpen(RX_t *rx);
 void rxClose(RX_t *rx);

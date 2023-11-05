@@ -38,7 +38,7 @@
 #  define RX_XTRA_TRACE(fmt, ...) /* nothing */
 #endif
 
-#define RX_PRINT(fmt, ...)   if (rx->verbose) { PRINT("%s: " fmt, rx->name, ## __VA_ARGS__); }
+#define RX_PRINT(fmt, ...)   if (rx->opts.verbose) { PRINT("%s: " fmt, rx->name, ## __VA_ARGS__); }
 #define RX_WARNING(fmt, ...) WARNING("%s: " fmt, rx->name, ## __VA_ARGS__)
 #define RX_DEBUG(fmt, ...)   DEBUG(  "%s: " fmt, rx->name, ## __VA_ARGS__)
 #define RX_TRACE(fmt, ...)   TRACE(  "%s: " fmt, rx->name, ## __VA_ARGS__)
@@ -48,21 +48,18 @@
 
 typedef struct RX_s
 {
+    RX_OPTS_t    opts;
     PORT_t       port;
     PARSER_t     parser;
     uint8_t      readBuf[1024];
     uint8_t      pollBuf[PARSER_MAX_ANY_SIZE];
     PARSER_MSG_t msg;
     char         name[100];
-    bool         verbose;
-    bool         autobaud;
-    bool         detect;
-    void       (*msgcb)(PARSER_MSG_t *, void *arg);
-    void        *cbarg;
     bool         abort;
+    char         detectInfo[100];
 } RX_t;
 
-RX_t *rxInit(const char *port, const RX_ARGS_t *args)
+RX_t *rxInit(const char *port, const RX_OPTS_t *opts)
 {
     if (port == NULL)
     {
@@ -79,22 +76,18 @@ RX_t *rxInit(const char *port, const RX_ARGS_t *args)
     memset(rx, 0, sizeof(*rx));
 
     {
-        const RX_ARGS_t rxArgsDefault = RX_ARGS_DEFAULT();
-        const RX_ARGS_t *rxArgs = args == NULL ? &rxArgsDefault : args;
-        rx->verbose  = rxArgs->verbose;
-        rx->detect   = rxArgs->detect;
-        rx->autobaud = rxArgs->autobaud; // but see below
+        const RX_OPTS_t rxOptsDefault = RX_OPTS_DEFAULT();
+        rx->opts = (opts == NULL ? rxOptsDefault : *opts);
         static int instCnt;
-        if ( (rxArgs->name != NULL) && (rxArgs->name[0] != '\0') )
+        if ( (rx->opts.name != NULL) && (rx->opts.name[0] != '\0') )
         {
-            snprintf(rx->name, sizeof(rx->name), "%s", rxArgs->name);
+            snprintf(rx->name, sizeof(rx->name), "%s", rx->opts.name);
         }
         else
         {
             snprintf(rx->name, sizeof(rx->name), "rx%d", instCnt);
         }
-        rx->msgcb = rxArgs->msgcb;
-        rx->cbarg = rxArgs->cbarg;
+        rx->opts.name = rx->name;
         instCnt++;
     }
     RX_PRINT("Connecting to receiver at port %s", port);
@@ -107,6 +100,13 @@ RX_t *rxInit(const char *port, const RX_ARGS_t *args)
     {
         free(rx);
         return NULL;
+    }
+
+    rxSetBaudrate(rx, rx->opts.baudrate);
+
+    if (rx->opts.autobaud && !portCanBaudrate(&rx->port))
+    {
+        rx->opts.autobaud = false;
     }
 
     return rx;
@@ -131,10 +131,10 @@ bool rxOpen(RX_t *rx)
         return false;
     }
 
-    // Autobaud
-    rx->autobaud = rx->autobaud && portCanBaudrate(&rx->port);
-    if (rx->detect && !_rxOpenDetect(rx))
+    // Detect (and autobaud) receiver
+    if (!_rxOpenDetect(rx))
     {
+        RX_WARNING("Could not detect receiver!");
         portClose(&rx->port);
         return false;
     }
@@ -142,56 +142,74 @@ bool rxOpen(RX_t *rx)
     return true;
 }
 
+static bool _rxDetect(RX_t *rx)
+{
+    bool detected = false;
+    rx->detectInfo[0] = '\0';
+    switch (rx->opts.detect)
+    {
+        case RX_DET_NONE:
+            snprintf(rx->detectInfo, sizeof(rx->detectInfo), "UNKNOWN");
+            detected = true;
+            break;
+        case RX_DET_UBX: {
+            char verStr[50];
+            if (rxGetVerStr(rx, verStr, sizeof(verStr)))
+            {
+                snprintf(rx->detectInfo, sizeof(rx->detectInfo), "%s", verStr);
+                detected = true;
+            }
+            break; }
+        case RX_DET_PASSIVE: {
+            PARSER_MSG_t *msg = rxGetNextMessageTimeout(rx, 1000);
+            if (msg && (msg->type != PARSER_MSGTYPE_GARBAGE))
+            {
+                snprintf(rx->detectInfo, sizeof(rx->detectInfo), "%s", parserMsgtypeName(msg->type));
+                detected = true;
+            }
+            break; }
+    }
+    return detected;
+}
+
 static bool _rxOpenDetect(RX_t *rx)
 {
     // Quick first try, which may just work..
-    char verStr[100];
-    if (rxGetVerStr(rx, verStr, sizeof(verStr)))
+    if (_rxDetect(rx))
     {
-        RX_PRINT("Receiver detected: %s", verStr);
+        RX_PRINT("Receiver detected: %s", rx->detectInfo);
         return true;
     }
 
     // Try different baudrates
-    if (rx->autobaud)
+    if (rx->opts.autobaud && !rxAutobaud(rx))
     {
-        if (!rxAutobaud(rx))
-        {
-            RX_WARNING("Failed autobauding!");
-            return false;
-        }
-        if (!rx->detect) // unless we print below
-        {
-            RX_PRINT("Receiver detected at baudrate %d", rxGetBaudrate(rx));
-        }
+        RX_WARNING("Failed autobauding!");
+        return false;
     }
 
     // And check again
-    if (rx->detect)
+    if (_rxDetect(rx))
     {
-        if (!rxGetVerStr(rx, verStr, sizeof(verStr)))
+        if (rx->opts.autobaud)
         {
-            RX_WARNING("Could not detect receiver!");
-            return false;
-        }
-        RX_DEBUG("Receiver detected: %s", verStr);
-        if (rx->autobaud)
-        {
-            RX_PRINT("Receiver detected at baudrate %d: %s", rxGetBaudrate(rx), verStr);
+            RX_PRINT("Receiver detected at baudrate %d: %s", rxGetBaudrate(rx), rx->detectInfo);
         }
         else
         {
-            RX_PRINT("Receiver detected: %s", verStr);
+            RX_PRINT("Receiver detected: %s", rx->detectInfo);
         }
+        return true;
     }
-    return true;
+
+    return false;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *buf, const int size)
 {
-    if (rx->msgcb != NULL)
+    if (rx->opts.msgcb != NULL)
     {
         PARSER_t p;
         parserInit(&p);
@@ -204,7 +222,7 @@ static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *
         if (parserProcess(&p, &msg, true))
         {
             msg.src = src;
-            rx->msgcb(&msg, rx->cbarg);
+            rx->opts.msgcb(&msg, rx->opts.cbarg);
         }
         //else // should not happen, parserProcess() should always return at least GARBAGE
     }
@@ -212,9 +230,9 @@ static void _rxCallbackData(RX_t *rx, const PARSER_MSGSRC_t src, const uint8_t *
 
 static void _rxCallbackMsg(RX_t *rx, PARSER_MSG_t *msg)
 {
-    if (rx->msgcb != NULL)
+    if (rx->opts.msgcb != NULL)
     {
-        rx->msgcb(msg, rx->cbarg);
+        rx->opts.msgcb(msg, rx->opts.cbarg);
     }
 }
 
@@ -541,11 +559,9 @@ bool rxAutobaud(RX_t *rx)
     int baudrate = 0;
     const int currentBaudrate = rxGetBaudrate(rx);
     int baudrates[] = { currentBaudrate, 9600, 38400, 115200, 230400, 460800, 921600 };
-    PARSER_MSG_t *ubxMonVer = NULL;
 
     // First, try quickly..
     {
-        RX_POLL_UBX_t pollParam = { .clsId = UBX_MON_CLSID, .msgId = UBX_MON_VER_MSGID, .retries = 1, .timeout = 1000 };
         for (int ix = 0; !rx->abort && (ix < NUMOF(baudrates)); ix++)
         {
             if ( (ix > 0) && (baudrates[ix] == currentBaudrate) )
@@ -557,10 +573,8 @@ bool rxAutobaud(RX_t *rx)
                 continue;
             }
             RX_DEBUG("autobaud %d (quick)", baudrates[ix]);
-            ubxMonVer = rxPollUbx(rx, &pollParam, NULL);
-            if (ubxMonVer != NULL)
+            if (_rxDetect(rx))
             {
-                _rxCallbackMsg(rx, ubxMonVer);
                 baudrate = baudrates[ix];
                 break;
             }
@@ -569,7 +583,6 @@ bool rxAutobaud(RX_t *rx)
     // Try harder
     if (baudrate == 0)
     {
-        RX_POLL_UBX_t pollParam = { .clsId = UBX_MON_CLSID, .msgId = UBX_MON_VER_MSGID, .retries = 2, .timeout = 2500 };
         for (int ix = 0; !rx->abort && (ix < NUMOF(baudrates)); ix++)
         {
             if ( (ix > 0) && (baudrates[ix] == currentBaudrate) )
@@ -583,10 +596,8 @@ bool rxAutobaud(RX_t *rx)
             RX_DEBUG("autobaud %d (flush rx/tx)", baudrates[ix]);
             _rxFlushRx(rx);
             _rxFlushTx(rx);
-            ubxMonVer = rxPollUbx(rx, &pollParam, NULL);
-            if (ubxMonVer != NULL)
+            if (_rxDetect(rx))
             {
-                _rxCallbackMsg(rx, ubxMonVer);
                 baudrate = baudrates[ix];
                 break;
             }
@@ -595,13 +606,7 @@ bool rxAutobaud(RX_t *rx)
 
     if ( !rx->abort && (baudrate != 0) )
     {
-        char verStr[100];
-        if (!ubxMonVerToVerStr(verStr, sizeof(verStr), ubxMonVer->data, ubxMonVer->size))
-        {
-            verStr[0] = '?';
-            verStr[1] = '\0';
-        }
-        RX_DEBUG("autobaud %d success: %s", baudrate, verStr);
+        RX_DEBUG("autobaud %d success: %s", baudrate, rx->detectInfo);
         return true;
     }
     else

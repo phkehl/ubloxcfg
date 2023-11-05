@@ -31,7 +31,6 @@
 
 GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     GuiWinInput(name),
-    _baudrate        { 0 },
     _stopSent        { false },
     _triggerConnect  { false },
     _focusPortInput  { false },
@@ -41,6 +40,12 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     DEBUG("GuiWinInputReceiver(%s)", _winName.c_str());
 
     WinSetTitle("Receiver X");
+
+    _rxOpts = RX_OPTS_DEFAULT();
+    _rxOpts.detect = RX_DET_UBX;
+    _rxOpts.autobaud = true;
+    _rxOpts.baudrate = 38400;
+    _UpdateRxOptsTooltip();
 
     _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
@@ -326,7 +331,7 @@ void GuiWinInputReceiver::_DrawControls()
             ImGui::BeginDisabled(disabled);
             if (ImGui::Button(ICON_FK_PLAY "###StartStop", GuiSettings::iconSize) || (!disabled && _triggerConnect))
             {
-                _receiver->Start(_port, _baudrate);
+                _receiver->Start(_port, _rxOpts);
             }
             ImGui::EndDisabled();
             Gui::ItemTooltip("Connect receiver");
@@ -357,40 +362,55 @@ void GuiWinInputReceiver::_DrawControls()
 
     ImGui::SameLine();
 
-    // Baudrate
+    // Receiver options
     {
         const bool disabled = _receiver->IsBusy();
         ImGui::BeginDisabled(disabled);
-        if (ImGui::Button(ICON_FK_TACHOMETER "##Baudrate", GuiSettings::iconSize))
+        if (ImGui::Button(ICON_FK_TACHOMETER "##RxOpts", GuiSettings::iconSize))
         {
-            ImGui::OpenPopup("Baudrate");
+            ImGui::OpenPopup("RxOpts");
         }
-        Gui::ItemTooltip(_baudrate > 0 ?
-            Ff::Sprintf("Baudrate (currently: %d)", (int)_baudrate).c_str() : "Baudrate (currently: autobaud)");
-        if (ImGui::BeginPopup("Baudrate"))
+        Gui::ItemTooltip(_rxOptsTooltip);
+
+        if (ImGui::BeginPopup("RxOpts"))
         {
-            const int baudrates[] = { PORT_BAUDRATES };
-            ImGui::TextUnformatted("Baudrate");
-            int baudrate = _baudrate;
             bool update = false;
-            if (ImGui::RadioButton("Auto", &baudrate, 0))
-            {
-                update = true;
-            }
+
+            Gui::TextTitle("Detect receiver");
+            ImGui::BeginDisabled(!_receiver->IsIdle());
+            if (ImGui::RadioButton("No detection",             _rxOpts.detect == RX_DET_NONE))    { _rxOpts.detect = RX_DET_NONE;    update = true; }
+            if (ImGui::RadioButton("u-blox receiver (active)", _rxOpts.detect == RX_DET_UBX))     { _rxOpts.detect = RX_DET_UBX;     update = true; }
+            if (ImGui::RadioButton("any receiver (passive)",   _rxOpts.detect == RX_DET_PASSIVE)) { _rxOpts.detect = RX_DET_PASSIVE; update = true; }
+            ImGui::BeginDisabled(_rxOpts.detect == RX_DET_NONE);
+            if (ImGui::Checkbox("Autobaud", &_rxOpts.autobaud)) { update = true; };
+            ImGui::EndDisabled();
+            ImGui::EndDisabled();
+
+            Gui::TextTitle("Baudrate");
+            const int baudrates[] = { PORT_BAUDRATES };
+            const char *baudrateStrs[] = { "9600", "19'200", "38'400", "57'600", "115'200", "230'400", "460'800", "921'600" };
+            static_assert(NUMOF(baudrates) == NUMOF(baudrateStrs), "");
+            int baudrate = _rxOpts.baudrate;
             for (int ix = 0; ix < NUMOF(baudrates); ix++)
             {
-                char tmp[10];
-                snprintf(tmp, sizeof(tmp), "%6d", baudrates[ix]);
-                if (ImGui::RadioButton(tmp, &baudrate, baudrates[ix]))
+                if (ImGui::RadioButton(baudrateStrs[ix], &baudrate, baudrates[ix]))
                 {
                     update = true;
                 }
             }
-            _baudrate = baudrate;
-            if (update && _receiver->IsReady())
+
+            // Change baudrate on connected receiver (if connected)
+            if (update && _receiver->IsReady() && (baudrate != _rxOpts.baudrate))
             {
                 _receiver->SetBaudrate(baudrate);
+                _rxOpts.baudrate = baudrate; // let's hope... :-/
             }
+
+            if (update)
+            {
+                _UpdateRxOptsTooltip();
+            }
+
             ImGui::EndPopup();
         }
         ImGui::EndDisabled();
@@ -487,7 +507,6 @@ void GuiWinInputReceiver::_DrawControls()
             if (selectedPort)
             {
                 _port = *selectedPort;
-                _baudrate = 0;
                 _focusPortInput = true;
                 GuiSettings::AddRecentItem(GuiSettings::RECENT_RECEIVERS, *selectedPort);
             }
@@ -514,7 +533,7 @@ void GuiWinInputReceiver::_LogOpen(const std::string &path)
         if (_recordLog.OpenWrite(path))
         {
             std::string marker = (_rxVerStr.empty() ? "unknown receiver" : _rxVerStr) + ", " +
-                _port + "@" + std::to_string(_baudrate) + ", " + Ff::Strftime("%Y-%m-%d %H:%M:%S") + ", " +
+                _port + ", " + Ff::Strftime("%Y-%m-%d %H:%M:%S") + ", " +
                 "cfggui " CONFIG_VERSION " (" CONFIG_GITHASH ")";
             Ff::UbxMessage msg(UBX_INF_CLSID, UBX_INF_TEST_MSGID, marker, false);
             _recordLog.Write(msg.raw);
@@ -533,6 +552,23 @@ void GuiWinInputReceiver::_LogClose()
 {
     _recordLog.Close();
     _logWidget.AddLine("Recording stopped", GUI_COLOUR(DEBUG_NOTICE));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+void GuiWinInputReceiver::_UpdateRxOptsTooltip()
+{
+    _rxOptsTooltip.clear();
+    const char *detectStrs[] = { "NONE", "UBX", "PASSIVE" };
+    _rxOptsTooltip = Ff::Sprintf("Detect: %s, ", _rxOpts.detect < NUMOF(detectStrs) ? detectStrs[_rxOpts.detect] : "?");
+    if (_rxOpts.autobaud)
+    {
+        _rxOptsTooltip += Ff::Sprintf("autobaud (%d)", _rxOpts.baudrate);
+    }
+    else
+    {
+        _rxOptsTooltip += Ff::Sprintf("baudrate %d", _rxOpts.baudrate);
+    }
 }
 
 /* ****************************************************************************************************************** */

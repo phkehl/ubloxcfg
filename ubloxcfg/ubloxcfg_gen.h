@@ -6201,7 +6201,9 @@ typedef enum UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_e
     UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_USNO                 = 3,                                       //!< UTC as operated by the U.S. Naval Observatory (USNO); derived from GPS time
     UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_EU                   = 5,                                       //!< UTC as combined from multiple European laboratories; derived from Galileo time
     UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_SU                   = 6,                                       //!< UTC as operated by the former Soviet Union (SU); derived from GLONASS time
-    UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_NTSC                 = 7                                        //!< UTC as operated by the National Time Service Center (NTSC), China; derived from BeiDou time
+    UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_NTSC                 = 7,                                       //!< UTC as operated by the National Time Service Center (NTSC), China; derived from BeiDou time
+    UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_NPLI                 = 8,                                       //!< UTC as operated by the National Physics Laboratory (NLPI), India; derived from NavIC time
+    UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_NICT                 = 9                                        //!< UTC as operated by the National Institute of Information and Communications Technology (NICT), Japan; derived from QZSS time
 } UBLOXCFG_CFG_NAVSPG_UTCSTANDARD_t;
 ///@}
 
@@ -6224,6 +6226,7 @@ typedef enum UBLOXCFG_CFG_NAVSPG_DYNMODEL_e
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_AIR2                    = 7,                                       //!< Airborne with <2g acceleration
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_AIR4                    = 8,                                       //!< Airborne with <4g acceleration
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_WRIST                   = 9,                                       //!< Wrist-worn watch (not available in all products)
+    UBLOXCFG_CFG_NAVSPG_DYNMODEL_BIKE                    = 10,                                      //!< Motorbike (not available in all products)
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_LAWNMOWER               = 11,                                      //!< Lawn mower (not available in all products)
     UBLOXCFG_CFG_NAVSPG_DYNMODEL_SCOOTER                 = 12                                       //!< Scooters (hyper hyper) (not available in all products)
 } UBLOXCFG_CFG_NAVSPG_DYNMODEL_t;
@@ -7723,7 +7726,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GPS_L1CA_ENA CFG-SIGNAL-GPS_L1CA_ENA (GPS L1C/A)
+    \defgroup UBLOXCFG_CFG_SIGNAL_GPS_L1CA_ENA CFG-SIGNAL-GPS_L1CA_ENA (GPS L1C/A enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GPS_L1CA_ENA_ID                0x10310001                               //!< ID of CFG-SIGNAL-GPS_L1CA_ENA
@@ -7732,7 +7735,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GPS_L2C_ENA CFG-SIGNAL-GPS_L2C_ENA (GPS L2C (only on u-blox F9 platform products))
+    \defgroup UBLOXCFG_CFG_SIGNAL_GPS_L2C_ENA CFG-SIGNAL-GPS_L2C_ENA (GPS L2C enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GPS_L2C_ENA_ID                 0x10310003                               //!< ID of CFG-SIGNAL-GPS_L2C_ENA
@@ -7750,7 +7753,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_SBAS_L1CA_ENA CFG-SIGNAL-SBAS_L1CA_ENA (SBAS L1C/A)
+    \defgroup UBLOXCFG_CFG_SIGNAL_SBAS_L1CA_ENA CFG-SIGNAL-SBAS_L1CA_ENA (SBAS L1C/A enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_SBAS_L1CA_ENA_ID               0x10310005                               //!< ID of CFG-SIGNAL-SBAS_L1CA_ENA
@@ -7768,7 +7771,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E1_ENA CFG-SIGNAL-GAL_E1_ENA (Galileo E1)
+    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E1_ENA CFG-SIGNAL-GAL_E1_ENA (Galileo E1 enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GAL_E1_ENA_ID                  0x10310007                               //!< ID of CFG-SIGNAL-GAL_E1_ENA
@@ -7777,7 +7780,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E5B_ENA CFG-SIGNAL-GAL_E5B_ENA (Galileo E5b (only on u-blox F9 platform products))
+    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E5B_ENA CFG-SIGNAL-GAL_E5B_ENA (Galileo E5b enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GAL_E5B_ENA_ID                 0x1031000a                               //!< ID of CFG-SIGNAL-GAL_E5B_ENA
@@ -7795,7 +7798,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B1_ENA CFG-SIGNAL-BDS_B1_ENA (BeiDou B1I)
+    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B1_ENA CFG-SIGNAL-BDS_B1_ENA (BeiDou B1I enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_BDS_B1_ENA_ID                  0x1031000d                               //!< ID of CFG-SIGNAL-BDS_B1_ENA
@@ -7804,7 +7807,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA CFG-SIGNAL-BDS_B2_ENA (BeiDou B2I (only on u-blox F9 platform products))
+    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA CFG-SIGNAL-BDS_B2_ENA (BeiDou B2I enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA_ID                  0x1031000e                               //!< ID of CFG-SIGNAL-BDS_B2_ENA
@@ -7822,7 +7825,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L1CA_ENA CFG-SIGNAL-QZSS_L1CA_ENA (QZSS L1C/A)
+    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L1CA_ENA CFG-SIGNAL-QZSS_L1CA_ENA (QZSS L1C/A enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_QZSS_L1CA_ENA_ID               0x10310012                               //!< ID of CFG-SIGNAL-QZSS_L1CA_ENA
@@ -7831,7 +7834,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L1S_ENA CFG-SIGNAL-QZSS_L1S_ENA (QZSS L1S)
+    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L1S_ENA CFG-SIGNAL-QZSS_L1S_ENA (QZSS L1S enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_QZSS_L1S_ENA_ID                0x10310014                               //!< ID of CFG-SIGNAL-QZSS_L1S_ENA
@@ -7840,7 +7843,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L2C_ENA CFG-SIGNAL-QZSS_L2C_ENA (QZSS L2C (only on u-blox F9 platform products))
+    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L2C_ENA CFG-SIGNAL-QZSS_L2C_ENA (QZSS L2C enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_QZSS_L2C_ENA_ID                0x10310015                               //!< ID of CFG-SIGNAL-QZSS_L2C_ENA
@@ -7858,7 +7861,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GLO_L1_ENA CFG-SIGNAL-GLO_L1_ENA (GLONASS L1)
+    \defgroup UBLOXCFG_CFG_SIGNAL_GLO_L1_ENA CFG-SIGNAL-GLO_L1_ENA (GLONASS L1 enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GLO_L1_ENA_ID                  0x10310018                               //!< ID of CFG-SIGNAL-GLO_L1_ENA
@@ -7867,7 +7870,7 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA CFG-SIGNAL-GLO_L2_ENA (GLONASS L2 (only on u-blox F9 platform products))
+    \defgroup UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA CFG-SIGNAL-GLO_L2_ENA (GLONASS L2 enable)
     @{
 */
 #define UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA_ID                  0x1031001a                               //!< ID of CFG-SIGNAL-GLO_L2_ENA

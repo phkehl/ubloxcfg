@@ -153,7 +153,7 @@ static int _strNovatelRawdmi(char *info, const int size, const uint8_t *msg, con
             CHKBITS(dmi.mask, BIT(0)) ? '1' : '.', dmi.dmi1,
             CHKBITS(dmi.mask, BIT(1)) ? '2' : '.', dmi.dmi2,
             CHKBITS(dmi.mask, BIT(2)) ? '3' : '.', dmi.dmi3,
-            CHKBITS(dmi.mask, BIT(3)) ? '4' : '.', dmi.dmi3);
+            CHKBITS(dmi.mask, BIT(3)) ? '4' : '.', dmi.dmi4);
     }
 
     return len;

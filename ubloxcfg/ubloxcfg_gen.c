@@ -4354,7 +4354,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavspgUsePpp =
     .order =  659, .title ="Use precise point positioning (PPP)"
 };
 
-static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgUtcstandard_consts[5] =
+static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgUtcstandard_consts[7] =
 {
     {
         .name = "AUTO",              .value = "0",                 .val = { .E = 0 },
@@ -4375,6 +4375,14 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgUtcstandard_consts[5] =
     {
         .name = "NTSC",              .value = "7",                 .val = { .E = 7 },
         .title = "UTC as operated by the National Time Service Center (NTSC), China; derived from BeiDou time"
+    },
+    {
+        .name = "NPLI",              .value = "8",                 .val = { .E = 8 },
+        .title = "UTC as operated by the National Physics Laboratory (NLPI), India; derived from NavIC time"
+    },
+    {
+        .name = "NICT",              .value = "9",                 .val = { .E = 9 },
+        .title = "UTC as operated by the National Institute of Information and Communications Technology (NICT), Japan; derived from QZSS time"
     }
 };
 
@@ -4382,10 +4390,10 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavspgUtcstandard =
 {
     .id = 0x2011001c, .name = "CFG-NAVSPG-UTCSTANDARD",                          .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
     .order =  660, .title ="UTC standard to be used",
-    .nConsts =   5, .consts = ubloxcfg_cfgNavspgUtcstandard_consts
+    .nConsts =   7, .consts = ubloxcfg_cfgNavspgUtcstandard_consts
 };
 
-static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgDynmodel_consts[11] =
+static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgDynmodel_consts[12] =
 {
     {
         .name = "PORT",              .value = "0",                 .val = { .E = 0 },
@@ -4424,6 +4432,10 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgNavspgDynmodel_consts[11] =
         .title = "Wrist-worn watch (not available in all products)"
     },
     {
+        .name = "BIKE",              .value = "10",                .val = { .E = 10 },
+        .title = "Motorbike (not available in all products)"
+    },
+    {
         .name = "LAWNMOWER",         .value = "11",                .val = { .E = 11 },
         .title = "Lawn mower (not available in all products)"
     },
@@ -4437,7 +4449,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavspgDynmodel =
 {
     .id = 0x20110021, .name = "CFG-NAVSPG-DYNMODEL",                             .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
     .order =  661, .title ="Dynamic platform model",
-    .nConsts =  11, .consts = ubloxcfg_cfgNavspgDynmodel_consts
+    .nConsts =  12, .consts = ubloxcfg_cfgNavspgDynmodel_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavspgAckaiding =
@@ -5904,13 +5916,13 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGpsEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGpsL1caEna =
 {
     .id = 0x10310001, .name = "CFG-SIGNAL-GPS_L1CA_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  793, .title ="GPS L1C/A"
+    .order =  793, .title ="GPS L1C/A enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGpsL2cEna =
 {
     .id = 0x10310003, .name = "CFG-SIGNAL-GPS_L2C_ENA",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  794, .title ="GPS L2C (only on u-blox F9 platform products)"
+    .order =  794, .title ="GPS L2C enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalSbasEna =
@@ -5922,7 +5934,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalSbasEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalSbasL1caEna =
 {
     .id = 0x10310005, .name = "CFG-SIGNAL-SBAS_L1CA_ENA",                        .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  796, .title ="SBAS L1C/A"
+    .order =  796, .title ="SBAS L1C/A enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalEna =
@@ -5934,13 +5946,13 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalE1Ena =
 {
     .id = 0x10310007, .name = "CFG-SIGNAL-GAL_E1_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  798, .title ="Galileo E1"
+    .order =  798, .title ="Galileo E1 enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalE5bEna =
 {
     .id = 0x1031000a, .name = "CFG-SIGNAL-GAL_E5B_ENA",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  799, .title ="Galileo E5b (only on u-blox F9 platform products)"
+    .order =  799, .title ="Galileo E5b enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsEna =
@@ -5952,13 +5964,13 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB1Ena =
 {
     .id = 0x1031000d, .name = "CFG-SIGNAL-BDS_B1_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  801, .title ="BeiDou B1I"
+    .order =  801, .title ="BeiDou B1I enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB2Ena =
 {
     .id = 0x1031000e, .name = "CFG-SIGNAL-BDS_B2_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  802, .title ="BeiDou B2I (only on u-blox F9 platform products)"
+    .order =  802, .title ="BeiDou B2I enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssEna =
@@ -5970,19 +5982,19 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL1caEna =
 {
     .id = 0x10310012, .name = "CFG-SIGNAL-QZSS_L1CA_ENA",                        .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  804, .title ="QZSS L1C/A"
+    .order =  804, .title ="QZSS L1C/A enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL1sEna =
 {
     .id = 0x10310014, .name = "CFG-SIGNAL-QZSS_L1S_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  805, .title ="QZSS L1S"
+    .order =  805, .title ="QZSS L1S enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL2cEna =
 {
     .id = 0x10310015, .name = "CFG-SIGNAL-QZSS_L2C_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  806, .title ="QZSS L2C (only on u-blox F9 platform products)"
+    .order =  806, .title ="QZSS L2C enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloEna =
@@ -5994,13 +6006,13 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloEna =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloL1Ena =
 {
     .id = 0x10310018, .name = "CFG-SIGNAL-GLO_L1_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  808, .title ="GLONASS L1"
+    .order =  808, .title ="GLONASS L1 enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloL2Ena =
 {
     .id = 0x1031001a, .name = "CFG-SIGNAL-GLO_L2_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  809, .title ="GLONASS L2 (only on u-blox F9 platform products)"
+    .order =  809, .title ="GLONASS L2 enable"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgSpartnUseSource_consts[2] =

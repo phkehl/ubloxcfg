@@ -158,6 +158,7 @@ InputReceiver::InputReceiver(const std::string &name, std::shared_ptr<Database> 
     _eventQueueSaturation  { false }
 {
     DEBUG("InputReceiver(%s)", _inputName.c_str());
+    _rxOpts = RX_OPTS_DEFAULT();
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -170,9 +171,9 @@ InputReceiver::~InputReceiver()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool InputReceiver::Start(const std::string &port, const int baudrate)
+bool InputReceiver::Start(const std::string &port, const RX_OPTS_t &opts)
 {
-    DEBUG("InputReceiver::Start(%s, %d)", port.c_str(), baudrate);
+    DEBUG("InputReceiver::Start(%s)", port.c_str());
     if ( (_state != IDLE) || port.empty() )
     {
         return false;
@@ -195,7 +196,7 @@ bool InputReceiver::Start(const std::string &port, const int baudrate)
     }
 
     _port     = port;
-    _baudrate = baudrate;
+    _rxOpts = opts;
     return _ThreadStart();
 }
 
@@ -431,28 +432,14 @@ void InputReceiver::_Thread(Ff::Thread *thread)
         bool connected = false;
         _state = BUSY;
         _msgSeq = 0;
-        _SEND_EVENT(ReceiverEventNotice, "Connecting receiver (" + _port + ", " +
-             (_baudrate > 0 ? Ff::Sprintf("baudrate %d", (int)_baudrate) : "autobaud") +")");
+        _SEND_EVENT(ReceiverEventNotice, "Connecting receiver (" + _port + ")");
 
-        RX_ARGS_t args = RX_ARGS_DEFAULT();
-        args.msgcb = _ReceiverMsgCb;
-        args.cbarg = this;
-        if (_baudrate > 0)
-        {
-            args.autobaud = false;
-            args.detect   = false;
-        }
         try
         {
-            _rx = std::unique_ptr<Ff::Rx>( new Ff::Rx(_port, &args) );
+            _rx = std::make_unique<Ff::Rx>(_port, &_rxOpts);
             if (rxOpen(_rx->rx))
             {
                 _state = READY;
-                // Set baudrate manually
-                if (_baudrate > 0)
-                {
-                    rxSetBaudrate(_rx->rx, _baudrate);
-                }
                 _baudrate = rxGetBaudrate(_rx->rx);
                 _SEND_EVENT(ReceiverEventNotice, "InputReceiver connected (" + _port + ", baudrate " +
                     Ff::Sprintf("%d", (int)_baudrate) + ")");
@@ -573,6 +560,7 @@ void InputReceiver::_Thread(Ff::Thread *thread)
                             char str[100];
                             snprintf(str, sizeof(str), "Failed setting baudrate to %d", baudrate);
                             _SEND_EVENT(ReceiverEventWarning, std::string {str});
+                            baudrate = rxGetBaudrate(_rx->rx);
                         }
                     }
                     else
@@ -587,9 +575,14 @@ void InputReceiver::_Thread(Ff::Thread *thread)
                         else
                         {
                             _SEND_EVENT(ReceiverEventWarning, "Autobaud failed!");
+                            baudrate = rxGetBaudrate(_rx->rx);
                         }
                     }
                     _baudrate = baudrate;
+                    if (_state == BUSY)
+                    {
+                        _state = READY;
+                    }
                     break;
                 }
                 case ReceiverCommand::RESET:

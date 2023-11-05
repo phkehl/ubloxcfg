@@ -165,13 +165,13 @@ static bool _printInfo(const bool colours, const INFO_t *info, const EPOCH_t *ep
 
 int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
 {
-    RX_ARGS_t args = RX_ARGS_DEFAULT();
+    RX_OPTS_t opts = RX_OPTS_DEFAULT();
     if (noProbe)
     {
-        args.autobaud = false;
-        args.detect   = false;
+        opts.autobaud = false;
+        opts.detect   = false;
     }
-    RX_t *rx = rxInit(portArg, &args);
+    RX_t *rx = rxInit(portArg, &opts);
     if ( (rx == NULL) || !rxOpen(rx) )
     {
         free(rx);

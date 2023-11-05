@@ -86,8 +86,8 @@ typedef struct ARGS_s
 
 static ARGS_t gArgs;
 
-static int rx2cfg(void)  { return rx2cfgRun( gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown); }
-static int rx2list(void) { return rx2listRun(gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown); }
+static int rx2cfg(void)  { return rx2cfgRun( gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown, gArgs.extraInfo); }
+static int rx2list(void) { return rx2listRun(gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown, gArgs.extraInfo); }
 static int cfg2rx(void)  { return cfg2rxRun( gArgs.rxPort, gArgs.cfgLayer, gArgs.resetType, gArgs.applyConfig, gArgs.updateOnly); }
 static int cfg2ubx(void) { return cfg2ubxRun(gArgs.cfgLayer, gArgs.extraInfo); }
 static int cfg2hex(void) { return cfg2hexRun(gArgs.cfgLayer, gArgs.extraInfo); }
@@ -616,8 +616,9 @@ int main(int argc, char **argv)
     }
 
     // Execute
-    DEBUG("args: inName=%s outName=%s rxPort=%s cfgLayer=%s useUnknown=%d",
-        gArgs.inName, gArgs.outName, gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown);
+    DEBUG("args: inName=%s outName=%s outOverwrite=%d rxPort=%s cfgLayer=%s useUnknown=%d extraInfo=%d applyConfig=%d noProbe=%d doEpoch=%d updateOnly=%d",
+        gArgs.inName, gArgs.outName, gArgs.outOverwrite, gArgs.rxPort, gArgs.cfgLayer, gArgs.useUnknown, gArgs.extraInfo, gArgs.applyConfig, gArgs.noProbe, gArgs.doEpoch, gArgs.updateOnly);
+
     const int exitCode = gArgs.cmd->run();
 
     return exitCode;
