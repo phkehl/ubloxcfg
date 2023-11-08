@@ -102,12 +102,7 @@ RX_t *rxInit(const char *port, const RX_OPTS_t *opts)
         return NULL;
     }
 
-    rxSetBaudrate(rx, rx->opts.baudrate);
-
-    if (rx->opts.autobaud && !portCanBaudrate(&rx->port))
-    {
-        rx->opts.autobaud = false;
-    }
+    RX_DEBUG("init detect=%d autobaud=%d baudrate=%d", rx->opts.detect, rx->opts.autobaud, rx->opts.baudrate);
 
     return rx;
 }
@@ -130,6 +125,14 @@ bool rxOpen(RX_t *rx)
     {
         return false;
     }
+
+    // We can only do this once the port is open
+    rxSetBaudrate(rx, rx->opts.baudrate);
+    if (rx->opts.autobaud && !portCanBaudrate(&rx->port))
+    {
+        rx->opts.autobaud = false;
+    }
+    RX_DEBUG("open detect=%d autobaud=%d baudrate=%d", rx->opts.detect, rx->opts.autobaud, rx->opts.baudrate);
 
     // Detect (and autobaud) receiver
     if (!_rxOpenDetect(rx))
@@ -161,11 +164,15 @@ static bool _rxDetect(RX_t *rx)
             }
             break; }
         case RX_DET_PASSIVE: {
-            PARSER_MSG_t *msg = rxGetNextMessageTimeout(rx, 1000);
-            if (msg && (msg->type != PARSER_MSGTYPE_GARBAGE))
+            const uint32_t t0 = TIME();
+            while (!detected && ((TIME() - t0) < 1000))
             {
-                snprintf(rx->detectInfo, sizeof(rx->detectInfo), "%s", parserMsgtypeName(msg->type));
-                detected = true;
+                PARSER_MSG_t *msg = rxGetNextMessageTimeout(rx, 100);
+                if (msg && (msg->type != PARSER_MSGTYPE_GARBAGE))
+                {
+                    snprintf(rx->detectInfo, sizeof(rx->detectInfo), "%s", parserMsgtypeName(msg->type));
+                    detected = true;
+                }
             }
             break; }
     }
