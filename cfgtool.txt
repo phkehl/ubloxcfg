@@ -127,7 +127,7 @@ Exit status:
 
 Command 'cfg2rx':
 
-    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U]
+    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U] [-R]
 
     This configures a receiver from a configuration file. The configuration is
     stored to one or more (comma-separated) of the following <layers>: 'RAM',
@@ -149,7 +149,9 @@ Command 'cfg2rx':
     A configuration file consists of one or more lines of configuration
     parameters. Leading and trailing whitespace, empty lines as well as comments
     (# style) are ignored. Acceptable separators for the tokens are (any number
-    of) spaces and/or tabs.
+    of) spaces and/or tabs. Each item should be listed only once. The '-R' flag
+    can be used to allow listing items more than once. In this case the last
+    occurrence of the item is used.
 
     The following types of configuration can be used:
 
@@ -253,15 +255,16 @@ Command 'rx2list':
 
 Commands 'cfg2ubx', 'cfg2hex' and 'cfg2c':
 
-    Usage: cfgtool cfg2ubx [-i <infile>] [-o <outfile>] [-y] -l <layer(s)>
-           cfgtool cfg2hex [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-x]
-           cfgtool cfg2c [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-x]
+    Usage: cfgtool cfg2ubx [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R]
+           cfgtool cfg2hex [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]
+           cfgtool cfg2c   [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]
 
     The cfg2ubx, cfg2hex and cfg2c modes convert a configuration file into one
     or more UBX-CFG-VALSET messages, output as binary UBX messages, u-center
     compatible hex dumps, or c code. Optional extra comments can be enabled
     using the -x flag.
-    See the 'rx2cfg' command for the specification of the configuration file.
+    See the 'rx2cfg' command for the specification of the configuration file and
+    the documentation of the other flags.
 
 Command 'uc2cfg':
 

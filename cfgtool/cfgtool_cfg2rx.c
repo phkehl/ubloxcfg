@@ -40,7 +40,7 @@ const char *cfg2rxHelp(void)
 // -----------------------------------------------------------------------------
 "Command 'cfg2rx':\n"
 "\n"
-"    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U]\n"
+"    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U] [-R]\n"
 "\n"
 "    This configures a receiver from a configuration file. The configuration is\n"
 "    stored to one or more (comma-separated) of the following <layers>: 'RAM',\n"
@@ -62,7 +62,9 @@ const char *cfg2rxHelp(void)
 "    A configuration file consists of one or more lines of configuration\n"
 "    parameters. Leading and trailing whitespace, empty lines as well as comments\n"
 "    (# style) are ignored. Acceptable separators for the tokens are (any number\n"
-"    of) spaces and/or tabs.\n"
+"    of) spaces and/or tabs. Each item should be listed only once. The '-R' flag\n"
+"    can be used to allow listing items more than once. In this case the last\n"
+"    occurrence of the item is used.\n"
 "\n"
 "    The following types of configuration can be used:\n"
 "\n"
@@ -157,7 +159,7 @@ const char *cfg2rxHelp(void)
 
 /* ****************************************************************************************************************** */
 
-int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig, const bool updateOnly)
+int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig, const bool updateOnly, const bool allowReplace)
 {
     bool ram = false;
     bool bbr = false;
@@ -175,7 +177,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
 
     PRINT("Loading configuration");
     int nAllKvCfg = 0;
-    UBLOXCFG_KEYVAL_t *allKvCfg = cfgToKeyVal(&nAllKvCfg);
+    UBLOXCFG_KEYVAL_t *allKvCfg = cfgToKeyVal(&nAllKvCfg, allowReplace);
     if (allKvCfg == NULL)
     {
         return EXIT_OTHERFAIL;
@@ -309,9 +311,9 @@ typedef struct CFG_DB_s
     int                    maxKv;
 } CFG_DB_t;
 
-static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line);
+static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace);
 
-UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
+UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv, const bool allow_replace)
 {
     const int kvSize = CFG_SET_MAX_KV * sizeof(UBLOXCFG_KEYVAL_t);
     UBLOXCFG_KEYVAL_t *kv = malloc(kvSize);
@@ -331,7 +333,7 @@ UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv)
         {
             break;
         }
-        if (!_cfgDbAdd(&db, line))
+        if (!_cfgDbAdd(&db, line, allow_replace))
         {
             res = false;
             break;
@@ -390,10 +392,10 @@ static const char * const kCfgTokSep = " \t";
 // separator for parts inside fields
 static const char * const kCfgPartSep = ",";
 
-static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value);
-static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg);
+static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value, const bool allow_replace);
+static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg, const bool allow_replace);
 
-static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
+static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
 {
     TRACE_INFILE("%s", line->line);
     // Named key-value pair
@@ -428,7 +430,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         }
 
         // Add key-value pari to the list
-        if (!_cfgDbAddKeyVal(db, line, item->id, &value))
+        if (!_cfgDbAddKeyVal(db, line, item->id, &value, allow_replace))
         {
             return false;
         }
@@ -507,7 +509,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         }
 
         // Add key-value pari to the list
-        if (!_cfgDbAddKeyVal(db, line, id, &value))
+        if (!_cfgDbAddKeyVal(db, line, id, &value, allow_replace))
         {
             return false;
         }
@@ -572,7 +574,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
             }
 
             // Add key-value pair to the list
-            if (!_cfgDbAddKeyVal(db, line, msgrateCfg[ix].item->id, &value))
+            if (!_cfgDbAddKeyVal(db, line, msgrateCfg[ix].item->id, &value, allow_replace))
             {
                 return false;
             }
@@ -683,7 +685,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
                 if (strcmp(baudCfg[ix].str, baudrate) == 0)
                 {
                     UBLOXCFG_VALUE_t value = { .U4 = baudCfg[ix].val };
-                    if (!_cfgDbAddKeyVal(db, line, cfg->baudrateId, &value))
+                    if (!_cfgDbAddKeyVal(db, line, cfg->baudrateId, &value, allow_replace))
                     {
                         return false;
                     }
@@ -705,14 +707,14 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
         // Input/output protocol filters
         if ( (inprot[0] != '-') && (inprot[1] != '\0') )
         {
-            if (!_cfgDbApplyProtfilt(db, line, inprot, cfg->inProt, NUMOF(cfg->inProt)))
+            if (!_cfgDbApplyProtfilt(db, line, inprot, cfg->inProt, NUMOF(cfg->inProt), allow_replace))
             {
                 return false;
             }
         }
         if ( (outprot[0] != '-') && (outprot[1] != '\0') )
         {
-            if (!_cfgDbApplyProtfilt(db, line, outprot, cfg->outProt, NUMOF(cfg->outProt)))
+            if (!_cfgDbApplyProtfilt(db, line, outprot, cfg->outProt, NUMOF(cfg->outProt), allow_replace))
             {
                 return false;
             }
@@ -729,7 +731,7 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value)
+static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, const UBLOXCFG_VALUE_t *value, const bool allow_replace)
 {
     if (db->nKv >= db->maxKv)
     {
@@ -737,41 +739,59 @@ static bool _cfgDbAddKeyVal(CFG_DB_t *db, IO_LINE_t *line, const uint32_t id, co
         return false;
     }
 
+    // Check if item is already present in the list of items to configure
+    int replace_ix = -1;
     for (int ix = 0; ix < db->maxKv; ix++)
     {
         if (db->kv[ix].id == id)
         {
-            const UBLOXCFG_ITEM_t *item = ubloxcfg_getItemById(id);
-            if (item != NULL)
+            // Replace previously added item
+            if (allow_replace)
             {
-                WARNING_INFILE("Duplicate item '%s'!", item->name);
+                replace_ix = ix;
+                break;
             }
+            // Complain about duplicate item
             else
             {
-                WARNING_INFILE("Duplicate item!");
+                const UBLOXCFG_ITEM_t *item = ubloxcfg_getItemById(id);
+                if (item != NULL)
+                {
+                    WARNING_INFILE("Duplicate item '%s'!", item->name);
+                }
+                else
+                {
+                    WARNING_INFILE("Duplicate item!");
+                }
+                return false;
             }
-            return false;
         }
     }
 
-    db->kv[db->nKv].id = id;
-    db->kv[db->nKv].val = *value;
+    // Add/replace item
+    const bool do_replace = (replace_ix >= 0);
+    const int kv_ix = (do_replace ? replace_ix : db->nKv);
+    db->kv[kv_ix].id = id;
+    db->kv[kv_ix].val = *value;
     if (isDEBUG())
     {
         char debugStr[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
-        if (ubloxcfg_stringifyKeyVal(debugStr, sizeof(debugStr), &db->kv[db->nKv]))
+        if (ubloxcfg_stringifyKeyVal(debugStr, sizeof(debugStr), &db->kv[kv_ix]))
         {
-            DEBUG_INFILE("Adding item %d: %s", db->nKv + 1, debugStr);
+            DEBUG_INFILE("%s item %d: %s", do_replace ? "Replacing" : "Adding", kv_ix + 1, debugStr);
         }
     }
-    db->nKv++;
+    if (!do_replace)
+    {
+        db->nKv++;
+    }
 
     return true;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg)
+static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, const PROTFILT_CFG_t *protfiltCfg, const int nProtfiltCfg, const bool allow_replace)
 {
     char *pCfgFilt = strtok(protfilt, kCfgPartSep);
     while (pCfgFilt != NULL)
@@ -787,7 +807,7 @@ static bool _cfgDbApplyProtfilt(CFG_DB_t *db, IO_LINE_t *line, char *protfilt, c
             if (strcmp(protfiltCfg[ix].name, pCfgFilt) == 0)
             {
                 UBLOXCFG_VALUE_t value = { .L = protEna };
-                if (!_cfgDbAddKeyVal(db, line, protfiltCfg[ix].id, &value))
+                if (!_cfgDbAddKeyVal(db, line, protfiltCfg[ix].id, &value, allow_replace))
                 {
                     return false;
                 }

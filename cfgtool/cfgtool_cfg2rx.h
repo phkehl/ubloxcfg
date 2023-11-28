@@ -28,11 +28,11 @@
 /* ****************************************************************************************************************** */
 
 const char *cfg2rxHelp(void);
-int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig, const bool updateOnly);
+int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, const bool applyConfig, const bool updateOnly, const bool allowReplace);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv);
+UBLOXCFG_KEYVAL_t *cfgToKeyVal(int *nKv, const bool allowReplace);
 
 /* ****************************************************************************************************************** */
 #endif // __CFGTOOL_RX2CFG_H__

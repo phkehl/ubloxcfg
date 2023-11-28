@@ -34,15 +34,16 @@ const char *cfg2ubxHelp(void)
 // -----------------------------------------------------------------------------
 "Commands 'cfg2ubx', 'cfg2hex' and 'cfg2c':\n"
 "\n"
-"    Usage: cfgtool cfg2ubx [-i <infile>] [-o <outfile>] [-y] -l <layer(s)>\n"
-"           cfgtool cfg2hex [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-x]\n"
-"           cfgtool cfg2c [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-x]\n"
+"    Usage: cfgtool cfg2ubx [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R]\n"
+"           cfgtool cfg2hex [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]\n"
+"           cfgtool cfg2c   [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]\n"
 "\n"
 "    The cfg2ubx, cfg2hex and cfg2c modes convert a configuration file into one\n"
 "    or more UBX-CFG-VALSET messages, output as binary UBX messages, u-center\n"
 "    compatible hex dumps, or c code. Optional extra comments can be enabled\n"
 "    using the -x flag.\n"
-"    See the 'rx2cfg' command for the specification of the configuration file.\n"
+"    See the 'rx2cfg' command for the specification of the configuration file and\n"
+"    the documentation of the other flags.\n"
 "\n";
 }
 
@@ -53,26 +54,26 @@ typedef enum FMT_e
     FMT_UBX, FMT_HEX, FMT_C
 } FMT_t;
 
-static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt);
+static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt, const bool allow_replace);
 
-int cfg2ubxRun(const char *layerArg, const bool extraInfo)
+int cfg2ubxRun(const char *layerArg, const bool extraInfo, const bool allow_replace)
 {
-    return _cfg2fmt(layerArg, extraInfo, FMT_UBX);
+    return _cfg2fmt(layerArg, extraInfo, FMT_UBX, allow_replace);
 }
 
-int cfg2hexRun(const char *layerArg, const bool extraInfo)
+int cfg2hexRun(const char *layerArg, const bool extraInfo, const bool allow_replace)
 {
-    return _cfg2fmt(layerArg, extraInfo, FMT_HEX);
+    return _cfg2fmt(layerArg, extraInfo, FMT_HEX, allow_replace);
 }
 
-int cfg2cRun(const char *layerArg, const bool extraInfo)
+int cfg2cRun(const char *layerArg, const bool extraInfo, const bool allow_replace)
 {
-    return _cfg2fmt(layerArg, extraInfo, FMT_C);
+    return _cfg2fmt(layerArg, extraInfo, FMT_C, allow_replace);
 }
 
 /* ****************************************************************************************************************** */
 
-static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
+static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt, const bool allow_replace)
 {
     bool ram = false;
     bool bbr = false;
@@ -84,7 +85,7 @@ static int _cfg2fmt(const char *layerArg, const bool extraInfo, const FMT_t fmt)
 
     PRINT("Loading configuration");
     int nKv = 0;
-    UBLOXCFG_KEYVAL_t *kv = cfgToKeyVal(&nKv);
+    UBLOXCFG_KEYVAL_t *kv = cfgToKeyVal(&nKv, allow_replace);
     if (kv == NULL)
     {
         return EXIT_OTHERFAIL;

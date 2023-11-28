@@ -434,6 +434,9 @@ void InputReceiver::_Thread(Ff::Thread *thread)
         _msgSeq = 0;
         _SEND_EVENT(ReceiverEventNotice, "Connecting receiver (" + _port + ")");
 
+        _rxOpts.msgcb = _ReceiverMsgCb;
+        _rxOpts.cbarg = this;
+
         try
         {
             _rx = std::make_unique<Ff::Rx>(_port, &_rxOpts);

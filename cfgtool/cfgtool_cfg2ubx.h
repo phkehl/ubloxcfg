@@ -24,9 +24,9 @@
 /* ****************************************************************************************************************** */
 
 const char *cfg2ubxHelp(void);
-int cfg2ubxRun(const char *layerArg, const bool extraInfo);
-int cfg2hexRun(const char *layerArg, const bool extraInfo);
-int cfg2cRun(const char *layerArg, const bool extraInfo);
+int cfg2ubxRun(const char *layerArg, const bool extraInfo, const bool allow_replace);
+int cfg2hexRun(const char *layerArg, const bool extraInfo, const bool allow_replace);
+int cfg2cRun(const char *layerArg, const bool extraInfo, const bool allow_replace);
 
 /* ****************************************************************************************************************** */
 #endif // __CFGTOOL_CFG2UBX_H__
