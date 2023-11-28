@@ -1,6 +1,6 @@
-#define CONFIG_VERSION       "0.0"
-#define CONFIG_VERSION_MAJOR 0
-#define CONFIG_VERSION_MINOR 0
+#define CONFIG_VERSION       "1.16"
+#define CONFIG_VERSION_MAJOR 1
+#define CONFIG_VERSION_MINOR 16
 #define CONFIG_GITHASH       "%HASH%"
 #define CONFIG_DATE          "%DATE%"
 #define CONFIG_TIME          "%TIME%"
