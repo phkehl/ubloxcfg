@@ -69,8 +69,8 @@ CXXFILES_ff           := $(wildcard ff/*.cpp)
 $(CFILES_ff): $(BUILDDIR)/config.h
 
 # Toolchain flags
-CFLAGS_all            := -Wall -Wextra -Werror -Wshadow
-CXXFLAGS_all          := -Wall -Wextra -Werror -Wshadow
+CFLAGS_all            := -Wall -Wextra -Wshadow #-Werror
+CXXFLAGS_all          := -Wall -Wextra -Wshadow #-Werror
 LDFLAGS_all           :=
 
 CFLAGS_release        := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g

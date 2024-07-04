@@ -17,6 +17,7 @@
 
 #include <regex>
 #include <cmath>
+#include <cstring>
 
 #include "base64.hpp"
 
