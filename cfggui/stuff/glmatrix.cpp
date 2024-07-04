@@ -376,7 +376,7 @@ GlMatrixRenderer::GlMatrixRenderer(const GlMatrix::Options &options) :
         glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &fragmentSuccess);
         if (fragmentSuccess != GL_TRUE)
         {
-            WARNING("Failed compiling vertex shader");
+            WARNING("Failed compiling fragment shader");
         }
 
         // Link shader program

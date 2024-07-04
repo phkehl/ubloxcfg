@@ -72,18 +72,55 @@ const char *rtcm3TypeDesc(const int msgType, const int subType)
         case 1031: return "GLONASS network RTK residual message";
         case 1230: return "GLONASS code-phase biases";
 
+        case 1071: return "GPS MSM1 (C)";
+        case 1072: return "GPS MSM2 (L)";
+        case 1073: return "GPS MSM3 (C, L)";
         case 1074: return "GPS MSM4 (full C, full L, S)";
         case 1075: return "GPS MSM5 (full C, full L, S, D)";
+        case 1076: return "GPS MSM6 (ext full C, ext full L, S)";
         case 1077: return "GPS MSM7 (ext full C, ext full L, S, D)";
+        case 1081: return "GLONASS MSM1 (C)";
+        case 1082: return "GLONASS MSM2 (L)";
+        case 1083: return "GLONASS MSM3 (C, L)";
         case 1084: return "GLONASS MSM4 (full C, full L, S)";
         case 1085: return "GLONASS MSM5 (full C, full L, S, D)";
+        case 1086: return "GLONASS MSM6 (ext full C, ext full L, S)";
         case 1087: return "GLONASS MSM7 (ext full C, ext full L, S, D)";
+        case 1091: return "Galileo MSM1 (C)";
+        case 1092: return "Galileo MSM2 (L)";
+        case 1093: return "Galileo MSM3 (C, L)";
         case 1094: return "Galileo MSM4 (full C, full L, S)";
         case 1095: return "Galileo MSM5 (full C, full L, S, D)";
+        case 1096: return "Galileo MSM6 (full C, full L, S)";
         case 1097: return "Galileo MSM7 (ext full C, ext full L, S, D)";
+        case 1121: return "BeiDou MSM1 (C)";
+        case 1122: return "BeiDou MSM2 (L)";
+        case 1123: return "BeiDou MSM3 (C, L)";
         case 1124: return "BeiDou MSM4 (full C, full L, S)";
         case 1125: return "BeiDou MSM5 (full C, full L, S, D)";
+        case 1126: return "BeiDou MSM6 (full C, full L, S)";
         case 1127: return "BeiDou MSM7 (ext full C, ext full L, S, D)";
+        case 1101: return "SBAS MSM1 (C)";
+        case 1102: return "SBAS MSM2 (L)";
+        case 1103: return "SBAS MSM3 (C, L)";
+        case 1104: return "SBAS MSM4 (full C, full L, S)";
+        case 1105: return "SBAS MSM5 (full C, full L, S, D)";
+        case 1106: return "SBAS MSM6 (full C, full L, S)";
+        case 1107: return "SBAS MSM7 (ext full C, ext full L, S, D)";
+        case 1111: return "QZSS MSM1 (C)";
+        case 1112: return "QZSS MSM2 (L)";
+        case 1113: return "QZSS MSM3 (C, L)";
+        case 1114: return "QZSS MSM4 (full C, full L, S)";
+        case 1115: return "QZSS MSM5 (full C, full L, S, D)";
+        case 1116: return "QZSS MSM6 (full C, full L, S)";
+        case 1117: return "QZSS MSM7 (ext full C, ext full L, S, D)";
+
+        case 1019: return "GPS ephemerides";
+        case 1020: return "GLONASS ephemerides";
+        case 1042: return "BeiDou satellite ephemeris data";
+        case 1044: return "QZSS ephemerides";
+        case 1045: return "Galileo F/NAV satellite ephemeris data";
+        case 1046: return "Galileo I/NAV satellite ephemeris data";
 
         case 4072: switch (subType)
                    {

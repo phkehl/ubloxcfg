@@ -95,11 +95,11 @@ const char *cfg2rxHelp(void)
 "            'I2C' or 'USB'), its baudrate (for UARTs only, use '-' otherwise)\n"
 "            and the input and output protocol filters must be specified. The\n"
 "            protocol filters are space-separated words for the different\n"
-"            protocols ('UBX', 'NMEA', 'RTCM3') or '-' to not configure the\n"
-"            filter. Prepending a '!' to the protocol disables it.\n"
+"            protocols ('UBX', 'NMEA', 'RTCM3', 'SPARTN') or '-' to not configure\n"
+"            the filter. Prepending a '!' to the protocol disables it.\n"
 "            This is a shortcut to using some of the various <key> <value> pairs\n"
 "            that configure the communication ports (e.g. CFG-UART1-..., etc.).\n"
-"            See the note on changing baudrate below.\n"
+"            See the note on changing UART baudrates below.\n"
 "\n"
 "    Example configuration file:\n"
 "\n"
@@ -197,8 +197,10 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         bool configNeedsUpdate = false;
         // Get current and default config
         const uint32_t keys[] = { UBX_CFG_VALGET_V0_ALL_WILDCARD };
+        PRINT("Getting current configuration");
         UBLOXCFG_KEYVAL_t allKvRam[3000];
         const int nAllKvRam = rxGetConfig(rx, UBLOXCFG_LAYER_RAM, keys, NUMOF(keys), allKvRam, NUMOF(allKvRam));
+        PRINT("Getting default configuration");
         UBLOXCFG_KEYVAL_t allKvDef[NUMOF(allKvRam)];
         const int nAllKvDef = reset == RX_RESET_FACTORY ?
             rxGetConfig(rx, UBLOXCFG_LAYER_DEFAULT, keys, NUMOF(keys), allKvDef, NUMOF(allKvDef)) : 0;
@@ -383,7 +385,7 @@ typedef struct PORT_CFG_s
 {
     const char    *name;
     uint32_t       baudrateId;
-    PROTFILT_CFG_t inProt[3];
+    PROTFILT_CFG_t inProt[4];
     PROTFILT_CFG_t outProt[3];
 } PORT_CFG_t;
 
@@ -617,7 +619,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
               .name = "UART1", .baudrateId = UBLOXCFG_CFG_UART1_BAUDRATE_ID,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART1INPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART1INPROT_NMEA_ID },
-                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID },
+                           { .name = "SPARTN", .id = UBLOXCFG_CFG_UART1INPROT_SPARTN_ID },},
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART1OUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART1OUTPROT_NMEA_ID },
                            { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART1OUTPROT_RTCM3X_ID } }
@@ -626,7 +629,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
               .name = "UART2", .baudrateId = UBLOXCFG_CFG_UART2_BAUDRATE_ID,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART2INPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART2INPROT_NMEA_ID },
-                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID },
+                           { .name = "SPARTN", .id = UBLOXCFG_CFG_UART2INPROT_SPARTN_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_UART2OUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_UART2OUTPROT_NMEA_ID },
                            { .name = "RTCM3",  .id = UBLOXCFG_CFG_UART2OUTPROT_RTCM3X_ID } }
@@ -635,7 +639,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
               .name = "SPI", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_SPIINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_SPIINPROT_NMEA_ID },
-                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID },
+                           { .name = "SPARTN", .id = UBLOXCFG_CFG_SPIINPROT_SPARTN_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_SPIOUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_SPIOUTPROT_NMEA_ID },
                            { .name = "RTCM3",  .id = UBLOXCFG_CFG_SPIOUTPROT_RTCM3X_ID } }
@@ -644,7 +649,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
               .name = "I2C", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_I2CINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_I2CINPROT_NMEA_ID },
-                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID },
+                           { .name = "SPARTN", .id = UBLOXCFG_CFG_I2CINPROT_SPARTN_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_I2COUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_I2COUTPROT_NMEA_ID },
                            { .name = "RTCM3",  .id = UBLOXCFG_CFG_I2COUTPROT_RTCM3X_ID } }
@@ -653,7 +659,8 @@ static bool _cfgDbAdd(CFG_DB_t *db, IO_LINE_t *line, const bool allow_replace)
               .name = "USB", .baudrateId = 0,
               .inProt  = { { .name = "UBX",    .id = UBLOXCFG_CFG_USBINPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_USBINPROT_NMEA_ID },
-                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_USBINPROT_RTCM3X_ID } },
+                           { .name = "RTCM3",  .id = UBLOXCFG_CFG_USBINPROT_RTCM3X_ID },
+                           { .name = "SPARTN", .id = UBLOXCFG_CFG_USBINPROT_SPARTN_ID } },
               .outProt = { { .name = "UBX",    .id = UBLOXCFG_CFG_USBOUTPROT_UBX_ID },
                            { .name = "NMEA",   .id = UBLOXCFG_CFG_USBOUTPROT_NMEA_ID },
                            { .name = "RTCM3",  .id = UBLOXCFG_CFG_USBOUTPROT_RTCM3X_ID } }

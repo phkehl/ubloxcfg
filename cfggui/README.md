@@ -108,11 +108,13 @@ See the [main README](../README.md) for more.
 * OpenGL::SaveState()/RervertState() or something like that
 * Something's wrong when stepping logs by epoch: UBX-NAV-EOE is not shown?!
 * Use JSON to store config and states
+* Waterfall plot of UBX-MON-SPAN
 
 * Check out stuff here: <https://github.com/mahilab/mahi-gui>
 * Check out <https://github.com/bkaradzic/bgfx>
 * Check out <https://github.com/jnmaloney/WebGui>
 * Checkout icons in <https://github.com/leiradel/ImGuiAl/tree/master/fonts>
 * <https://gist.github.com/gorbatschow/ce36c15d9265b61d12a1be1783bf0abf>
-* Checkout <https://github.com/CedricGuillemet/ImGuizmo>
+* Check out <https://github.com/CedricGuillemet/ImGuizmo>
+* Check out <https://github.com/WerWolv/ImHex/blob/master/lib/libimhex/source/api/layout_manager.cpp>
 

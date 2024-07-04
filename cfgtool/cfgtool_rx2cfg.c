@@ -100,6 +100,7 @@ typedef struct PORT_CFG_s
     uint32_t idInprotUbx;
     uint32_t idInprotNmea;
     uint32_t idInprotRtcm3x;
+    uint32_t idInprotSpartn;
     uint32_t idOutprotUbx;
     uint32_t idOutprotNmea;
     uint32_t idOutprotRtcm3x;
@@ -171,19 +172,19 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
     const PORT_CFG_t portCfgs[] =
     {
         { "UART1", UBLOXCFG_CFG_UART1_BAUDRATE_ID,
-          UBLOXCFG_CFG_UART1INPROT_UBX_ID, UBLOXCFG_CFG_UART1INPROT_NMEA_ID, UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID,
+          UBLOXCFG_CFG_UART1INPROT_UBX_ID, UBLOXCFG_CFG_UART1INPROT_NMEA_ID, UBLOXCFG_CFG_UART1INPROT_RTCM3X_ID, UBLOXCFG_CFG_UART1INPROT_SPARTN_ID,
           UBLOXCFG_CFG_UART1OUTPROT_UBX_ID, UBLOXCFG_CFG_UART1OUTPROT_NMEA_ID, UBLOXCFG_CFG_UART1OUTPROT_RTCM3X_ID },
         { "UART2", UBLOXCFG_CFG_UART2_BAUDRATE_ID,
-          UBLOXCFG_CFG_UART2INPROT_UBX_ID, UBLOXCFG_CFG_UART2INPROT_NMEA_ID, UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID,
+          UBLOXCFG_CFG_UART2INPROT_UBX_ID, UBLOXCFG_CFG_UART2INPROT_NMEA_ID, UBLOXCFG_CFG_UART2INPROT_RTCM3X_ID, UBLOXCFG_CFG_UART2INPROT_SPARTN_ID,
           UBLOXCFG_CFG_UART2OUTPROT_UBX_ID, UBLOXCFG_CFG_UART2OUTPROT_NMEA_ID, UBLOXCFG_CFG_UART2OUTPROT_RTCM3X_ID },
         { "SPI", 0,
-          UBLOXCFG_CFG_SPIINPROT_UBX_ID, UBLOXCFG_CFG_SPIINPROT_NMEA_ID, UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID,
+          UBLOXCFG_CFG_SPIINPROT_UBX_ID, UBLOXCFG_CFG_SPIINPROT_NMEA_ID, UBLOXCFG_CFG_SPIINPROT_RTCM3X_ID, UBLOXCFG_CFG_SPIINPROT_SPARTN_ID,
           UBLOXCFG_CFG_SPIOUTPROT_UBX_ID, UBLOXCFG_CFG_SPIOUTPROT_NMEA_ID, UBLOXCFG_CFG_SPIOUTPROT_RTCM3X_ID },
         { "I2C", 0,
-          UBLOXCFG_CFG_I2CINPROT_UBX_ID, UBLOXCFG_CFG_I2CINPROT_NMEA_ID, UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID,
+          UBLOXCFG_CFG_I2CINPROT_UBX_ID, UBLOXCFG_CFG_I2CINPROT_NMEA_ID, UBLOXCFG_CFG_I2CINPROT_RTCM3X_ID, UBLOXCFG_CFG_I2CINPROT_SPARTN_ID,
           UBLOXCFG_CFG_I2COUTPROT_UBX_ID, UBLOXCFG_CFG_I2COUTPROT_NMEA_ID, UBLOXCFG_CFG_I2COUTPROT_RTCM3X_ID },
         { "USB", 0,
-          UBLOXCFG_CFG_USBINPROT_UBX_ID, UBLOXCFG_CFG_USBINPROT_NMEA_ID, UBLOXCFG_CFG_USBINPROT_RTCM3X_ID,
+          UBLOXCFG_CFG_USBINPROT_UBX_ID, UBLOXCFG_CFG_USBINPROT_NMEA_ID, UBLOXCFG_CFG_USBINPROT_RTCM3X_ID, UBLOXCFG_CFG_USBINPROT_SPARTN_ID,
           UBLOXCFG_CFG_USBOUTPROT_UBX_ID, UBLOXCFG_CFG_USBOUTPROT_NMEA_ID, UBLOXCFG_CFG_USBOUTPROT_RTCM3X_ID }
     };
     for (int ix = 0; ix < NUMOF(portCfgs); ix++)
@@ -224,6 +225,7 @@ int rx2cfgRun(const char *portArg, const char *layerArg, const bool useUnknownIt
         _dbFlag(dbLayer, portCfgs[ix].idInprotUbx);
         _dbFlag(dbLayer, portCfgs[ix].idInprotNmea);
         _dbFlag(dbLayer, portCfgs[ix].idInprotRtcm3x);
+        _dbFlag(dbLayer, portCfgs[ix].idInprotSpartn);
         _dbFlag(dbLayer, portCfgs[ix].idOutprotUbx);
         _dbFlag(dbLayer, portCfgs[ix].idOutprotNmea);
         _dbFlag(dbLayer, portCfgs[ix].idOutprotRtcm3x);
@@ -595,10 +597,11 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
     const UBLOXCFG_KEYVAL_t *kvInprotUbx     = _dbFindKeyVal(db, cfg->idInprotUbx);
     const UBLOXCFG_KEYVAL_t *kvInprotNmea    = _dbFindKeyVal(db, cfg->idInprotNmea);
     const UBLOXCFG_KEYVAL_t *kvInprotRtcm3x  = _dbFindKeyVal(db, cfg->idInprotRtcm3x);
+    const UBLOXCFG_KEYVAL_t *kvInprotSpartn  = _dbFindKeyVal(db, cfg->idInprotSpartn);
     const UBLOXCFG_KEYVAL_t *kvOutprotUbx    = _dbFindKeyVal(db, cfg->idOutprotUbx);
     const UBLOXCFG_KEYVAL_t *kvOutprotNmea   = _dbFindKeyVal(db, cfg->idOutprotNmea);
     const UBLOXCFG_KEYVAL_t *kvOutprotRtcm3x = _dbFindKeyVal(db, cfg->idOutprotRtcm3x);
-    if ( (kvBaudrate == NULL) && (kvInprotUbx == NULL) &&(kvInprotNmea == NULL) && (kvInprotRtcm3x == NULL) &&
+    if ( (kvBaudrate == NULL) && (kvInprotUbx == NULL) && (kvInprotNmea == NULL) && (kvInprotRtcm3x == NULL) && (kvInprotSpartn == NULL) &&
          (kvOutprotUbx == NULL) && (kvOutprotNmea == NULL) && (kvOutprotRtcm3x == NULL) )
     {
         return false;
@@ -612,33 +615,37 @@ static bool _portCfgStr(const PORT_CFG_t *cfg, const CFG_DB_t *db, char *str, co
     {
         snprintf(&str[strlen(str)], size - strlen(str), "%8s", "-");
     }
-    char protStr[50];
+    char protStr[100];
     protStr[0] = '\0';
-    if ( (kvInprotUbx != NULL) && (kvInprotUbx->val.L) )
+    if (kvInprotUbx != NULL)
     {
-        strcat(protStr, ",UBX");
+        strcat(protStr, (kvInprotUbx->val.L) ? ",UBX" : ",!UBX");
     }
-    if ((kvInprotNmea != NULL) && (kvInprotNmea->val.L) )
+    if (kvInprotNmea != NULL)
     {
-        strcat(protStr, ",NMEA");
+        strcat(protStr, kvInprotNmea->val.L ? ",NMEA" : ",!NMEA");
     }
-    if ( (kvInprotRtcm3x != NULL) && (kvInprotRtcm3x->val.L) )
+    if (kvInprotRtcm3x != NULL)
     {
-        strcat(protStr, ",RTCM3");
+        strcat(protStr, kvInprotRtcm3x->val.L ? ",RTCM3" : ",!RTCM3");
     }
-    snprintf(&str[strlen(str)], size - strlen(str), "  %-20s", strlen(protStr) > 0 ? &protStr[1] : "-");
+    if (kvInprotSpartn != NULL)
+    {
+        strcat(protStr, kvInprotSpartn->val.L ? ",SPARTN" : ",!SPARTN");
+    }
+    snprintf(&str[strlen(str)], size - strlen(str), "  %-23s", strlen(protStr) > 0 ? &protStr[1] : "-");
     protStr[0] = '\0';
-    if ( (kvInprotUbx != NULL) && (kvInprotUbx->val.L) )
+    if (kvInprotUbx != NULL)
     {
-        strcat(protStr, ",UBX");
+        strcat(protStr, kvInprotUbx->val.L ? ",UBX" : ",!UBX");
     }
-    if ( (kvOutprotNmea != NULL) && (kvOutprotNmea->val.L) )
+    if (kvOutprotNmea != NULL)
     {
-        strcat(protStr, ",NMEA");
+        strcat(protStr, kvOutprotNmea->val.L ? ",NMEA" : ",!NMEA");
     }
-    if ( (kvOutprotRtcm3x != NULL) && (kvOutprotRtcm3x->val.L) )
+    if (kvOutprotRtcm3x != NULL)
     {
-        strcat(protStr, ",RTCM3");
+        strcat(protStr, kvOutprotRtcm3x->val.L ? ",RTCM3" : ",!RTCM3");
     }
     snprintf(&str[strlen(str)], size - strlen(str), " %s", strlen(protStr) > 0 ? &protStr[1] : "-");
     return true;

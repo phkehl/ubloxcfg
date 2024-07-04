@@ -366,6 +366,7 @@ void printVersion(void)
 
 int main(int argc, char **argv)
 {
+    const uint32_t t0 = TIME();
     memset(&gArgs, 0, sizeof(gArgs));
 
     DEBUG_CFG_t debugCfg =
@@ -632,6 +633,7 @@ int main(int argc, char **argv)
 
     const int exitCode = gArgs.cmd->run();
 
+    DEBUG("Duration %.3f", (double)(TIME() - t0) * 1e-3);
     return exitCode;
 }
 

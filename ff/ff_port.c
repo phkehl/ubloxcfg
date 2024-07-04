@@ -36,6 +36,7 @@
 #else
 #  include <netdb.h>
 #  include <sys/socket.h>
+#  include <sys/ioctl.h>
 #  include <termios.h>
 #  include <netinet/in.h>
 #  include <netinet/tcp.h>
@@ -516,12 +517,44 @@ static bool _portOpenSer(PORT_t *port)
         return false;
     }
 
+    // ST eval kit needs this. Not sure if this affect other serial ports. We'll see...
+    // Man page: tty_ioctl(2)
+    const bool RTS = false; // false=clear, true=set
+    const bool DTR = false; // false=clear, true=set
+    const int RTSbits = TIOCM_RTS;
+    const int DTRbits = TIOCM_DTR;
+    if ((ioctl(fileno, RTS ? TIOCMBIS : TIOCMBIC, &RTSbits) < 0) ||
+        (ioctl(fileno, DTR ? TIOCMBIS : TIOCMBIC, &DTRbits) < 0)) {
+        PORT_WARNING("Failed setting RTS/DTR lines: %s", _portErrStr(port, 0));
+        // Let's continue anyway...
+    }
+
+
     struct termios settings;
     memset(&settings, 0, sizeof(settings));
-    settings.c_iflag = IGNBRK | IGNPAR;
-    settings.c_cflag = CS8 | CLOCAL | CREAD;
-    cfsetispeed(&settings, _portBaudrateValue(port->baudrate));
-    cfsetospeed(&settings, _portBaudrateValue(port->baudrate));
+    if (tcgetattr(fileno, &settings) != 0) {
+        PORT_WARNING("Failed getting port settings: %s", _portErrStr(port, 0));
+        // Let's continue anyway...
+    }
+
+    cfmakeraw(&settings);
+    settings.c_cflag |= CLOCAL;
+    settings.c_cc[VTIME] = 0;
+    settings.c_cc[VMIN] = 0;
+
+    // 8
+    settings.c_cflag &= ~CSIZE;
+    settings.c_cflag |= CS8;
+    // N
+    settings.c_iflag &= ~(PARMRK | INPCK);
+    settings.c_iflag |= IGNPAR;
+    settings.c_cflag &= ~PARENB;
+    // 1
+    settings.c_cflag &= ~CSTOPB;
+
+    // No flow control
+    settings.c_cflag &= ~CRTSCTS;
+    settings.c_iflag &= ~(IXON | IXOFF | IXANY);
 
     if (tcsetattr(fileno, TCSANOW, &settings) != 0)
     {
@@ -531,7 +564,16 @@ static bool _portOpenSer(PORT_t *port)
         return false;
     }
 
+    // We should be good now
     port->fd = fileno;
+
+    // Set baudrate
+    if (!_portSetBaudrateSer(port, port->baudrate)) {
+        port->fd = -1;
+        flock(fileno, LOCK_UN);
+        close(fileno);
+        return false;
+    }
 
 #endif
 

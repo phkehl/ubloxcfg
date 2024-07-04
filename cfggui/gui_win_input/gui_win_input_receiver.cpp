@@ -42,7 +42,7 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     WinSetTitle("Receiver X");
 
     _rxOpts = RX_OPTS_DEFAULT();
-    _rxOpts.detect = RX_DET_UBX;
+    _rxOpts.detect = RX_DET_PASSIVE;
     _rxOpts.autobaud = true;
     _rxOpts.baudrate = 38400;
     _UpdateRxOptsTooltip();
@@ -163,6 +163,7 @@ void GuiWinInputReceiver::_ProcessData(const InputData &data)
                     _recordLog.Close();
                 }
             }
+            _rxOpts.baudrate = _receiver->GetBaudrate(); // FIXME: hack
             break;
         case InputData::DATA_EPOCH:
             if (data.epoch->epoch.valid)
@@ -400,9 +401,11 @@ void GuiWinInputReceiver::_DrawControls()
             }
 
             // Change baudrate on connected receiver (if connected)
-            if (update && _receiver->IsReady() && (baudrate != _rxOpts.baudrate))
+            if (update && (baudrate != _rxOpts.baudrate))
             {
-                _receiver->SetBaudrate(baudrate);
+                if (_receiver->IsReady()) {
+                    _receiver->SetBaudrate(baudrate);
+                }
                 _rxOpts.baudrate = baudrate; // let's hope... :-/
             }
 

@@ -114,6 +114,7 @@ void xyz2llh_vec(const double xyz[3], double llh[3])
         llh[_LAT_] = xyz[_Z_] < 0.0 ? (-M_PI / 2.0) : (M_PI / 2.0);
         llh[_LON_] = 0.0;
         llh[_HEIGHT_] = fabs(xyz[_Z_]) - 6356752.314213634 /* = sqrt(WGS84_A * WGS84_A * (1.0 - WGS84_E2)) */;
+        return;
     }
 
     const double p = sqrt( (xyz[_X_] * xyz[_X_]) + (xyz[_Y_] * xyz[_Y_]) );

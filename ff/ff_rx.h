@@ -52,7 +52,7 @@ typedef struct RX_OPTS_s
     void    *cbarg;    //!< Optional user argument for callback
 } RX_OPTS_t;
 
-#define RX_OPTS_DEFAULT() { .detect = RX_DET_UBX, .autobaud = true, .baudrate = 115200, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
+#define RX_OPTS_DEFAULT() { .detect = RX_DET_UBX, .autobaud = true, .baudrate = 0, .verbose = true, .name = NULL, .msgcb = NULL, .cbarg = NULL }
 
 RX_t *rxInit(const char *port, const RX_OPTS_t *opts);
 

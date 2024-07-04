@@ -181,11 +181,11 @@ Command 'cfg2rx':
             'I2C' or 'USB'), its baudrate (for UARTs only, use '-' otherwise)
             and the input and output protocol filters must be specified. The
             protocol filters are space-separated words for the different
-            protocols ('UBX', 'NMEA', 'RTCM3') or '-' to not configure the
-            filter. Prepending a '!' to the protocol disables it.
+            protocols ('UBX', 'NMEA', 'RTCM3', 'SPARTN') or '-' to not configure
+            the filter. Prepending a '!' to the protocol disables it.
             This is a shortcut to using some of the various <key> <value> pairs
             that configure the communication ports (e.g. CFG-UART1-..., etc.).
-            See the note on changing baudrate below.
+            See the note on changing UART baudrates below.
 
     Example configuration file:
 
