@@ -176,8 +176,8 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         RTCM3_MSM_HEADER_t header;
         if (rtcm3GetMsmHeader(msg, &header))
         {
-            len = snprintf(info, size, "(#%d) %010.3f (%d * %d) - ",
-                header.refStaId, header.anyTow, header.numSat, header.numSig);
+            len = snprintf(info, size, "(#%d) %010.3f (%d * %d, %s) - ",
+                header.refStaId, header.anyTow, header.numSat, header.numSig, header.multiMsgBit ? "more" : "last");
         }
     }
 

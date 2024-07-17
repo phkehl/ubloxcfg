@@ -92,7 +92,7 @@ typedef struct RTCM3_MSM_HEADER_s
         double qzssTow;    //!< QZSS time of week [s] (DF428 uint30 [ms])
         double bdsTow;     //!< BeiDou time of week [s] (DF427 uint30 [ms])
     };
-    bool     multiMsgBit;  //!< Multiple message bit (DF393, bit(1))
+    bool     multiMsgBit;  //!< Multiple message bit (DF393, bit(1)), 1 = more to follow, 0 = last message
     uint8_t  iods;         //!< IODS, issue of data station (DF409, uint3)
     uint8_t  clkSteering;  //!< Clock steering indicator (DF411, uint2)
     uint8_t  extClock;     //!< External clock indicator (DF412, uint2)
