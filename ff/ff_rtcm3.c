@@ -93,13 +93,6 @@ const char *rtcm3TypeDesc(const int msgType, const int subType)
         case 1095: return "Galileo MSM5 (full C, full L, S, D)";
         case 1096: return "Galileo MSM6 (full C, full L, S)";
         case 1097: return "Galileo MSM7 (ext full C, ext full L, S, D)";
-        case 1121: return "BeiDou MSM1 (C)";
-        case 1122: return "BeiDou MSM2 (L)";
-        case 1123: return "BeiDou MSM3 (C, L)";
-        case 1124: return "BeiDou MSM4 (full C, full L, S)";
-        case 1125: return "BeiDou MSM5 (full C, full L, S, D)";
-        case 1126: return "BeiDou MSM6 (full C, full L, S)";
-        case 1127: return "BeiDou MSM7 (ext full C, ext full L, S, D)";
         case 1101: return "SBAS MSM1 (C)";
         case 1102: return "SBAS MSM2 (L)";
         case 1103: return "SBAS MSM3 (C, L)";
@@ -114,20 +107,78 @@ const char *rtcm3TypeDesc(const int msgType, const int subType)
         case 1115: return "QZSS MSM5 (full C, full L, S, D)";
         case 1116: return "QZSS MSM6 (full C, full L, S)";
         case 1117: return "QZSS MSM7 (ext full C, ext full L, S, D)";
-
+        case 1121: return "BeiDou MSM1 (C)";
+        case 1122: return "BeiDou MSM2 (L)";
+        case 1123: return "BeiDou MSM3 (C, L)";
+        case 1124: return "BeiDou MSM4 (full C, full L, S)";
+        case 1125: return "BeiDou MSM5 (full C, full L, S, D)";
+        case 1126: return "BeiDou MSM6 (full C, full L, S)";
+        case 1127: return "BeiDou MSM7 (ext full C, ext full L, S, D)";
+        case 1131: return "NavIC MSM1 (C)";
+        case 1132: return "NavIC MSM2 (L)";
+        case 1133: return "NavIC MSM3 (C, L)";
+        case 1134: return "NavIC MSM4 (full C, full L, S)";
+        case 1135: return "NavIC MSM5 (full C, full L, S, D)";
+        case 1136: return "NavIC MSM6 (full C, full L, S)";
+        case 1137: return "NavIC MSM7 (ext full C, ext full L, S, D)";
         case 1019: return "GPS ephemerides";
         case 1020: return "GLONASS ephemerides";
         case 1042: return "BeiDou satellite ephemeris data";
         case 1044: return "QZSS ephemerides";
         case 1045: return "Galileo F/NAV satellite ephemeris data";
         case 1046: return "Galileo I/NAV satellite ephemeris data";
-
-        case 4072: switch (subType)
-                   {
-                       case 0: return "u-blox proprietary: Reference station PVT";
-                       case 1: return "u-blox proprietary: Additional reference station information";
-                   }
-                   break;
+        case 4095: return "Ashtech proprietary";
+        case 4094: return "Trimble proprietary";
+        case 4093: return "NovAtel proprietary";
+        case 4092: return "Leica proprietary";
+        case 4091: return "Topcon proprietary";
+        case 4090: return "Geo++ proprietary";
+        case 4089: return "Septentrio proprietary";
+        case 4088: return "IfEN proprietary";
+        case 4087: return "Fugro proprietary";
+        case 4086: return "inPosition proprietary";
+        case 4085: return "EUSPA proprietary";
+        case 4084: return "Geodetics, Inc proprietary";
+        case 4083: return "DLR proprietary";
+        case 4082: return "CRCSI proprietary";
+        case 4081: return "SNU GNSS proprietary";
+        case 4080: return "NavCom proprietary";
+        case 4079: return "SubCarrier proprietary";
+        case 4078: return "ComNav proprietary";
+        case 4077: return "Hemisphere proprietary";
+        case 4076: return "IGS proprietary";
+        case 4075: return "Alberding proprietary";
+        case 4074: return "Unicore proprietary";
+        case 4073: return "Mitsubishi proprietary";
+        case 4072:
+            switch (subType)
+            {
+                case 0: return "u-blox proprietary: Reference station PVT";
+                case 1: return "u-blox proprietary: Additional reference station information";
+            }
+            break;
+        case 4071: return "Wuhan Navigation proprietary";
+        case 4070: return "Wuhan MengXin proprietary";
+        case 4069: return "Veripos proprietary";
+        case 4068: return "Qianxun proprietary";
+        case 4067: return "CIPPE proprietary";
+        case 4066: return "Lantmateriet proprietary";
+        case 4065: return "ALLYSTAR proprietary";
+        case 4064: return "NTLab proprietary";
+        case 4063: return "CHCNAV proprietary";
+        case 4062: return "SwiftNav proprietary";
+        case 4061: return "Geely proprietary";
+        case 4060: return "ALES proprietary";
+        case 4059: return "NRCan proprietary";
+        case 4058: return "Anello proprietary";
+        case 4057: return "Sixents proprietary";
+        case 4056: return "Dayou proprietary";
+        case 4055: return "KRISO proprietary";
+        case 4054: return "Geodnet proprietary";
+        case 4053: return "Qualcomm proprietary";
+        case 4052: return "Furuno proprietary";
+        case 4051: return "Hi-Target proprietary";
+        case 4050: return "STMicroelectronics proprietary";
     }
 
     return NULL;
@@ -210,7 +261,8 @@ bool rtcm3typeToMsm(int msgType, RTCM3_MSM_GNSS_t *gnss, RTCM3_MSM_TYPE_t *msm)
     const int msmVal  = msgType % 10;
     if ( (msmVal >= RTCM3_MSM_TYPE_1) && (msmVal <= RTCM3_MSM_TYPE_7) &&
          ( (gnssVal == RTCM3_MSM_GNSS_GPS)  || (gnssVal == RTCM3_MSM_GNSS_GLO)  || (gnssVal == RTCM3_MSM_GNSS_GAL) ||
-           (gnssVal == RTCM3_MSM_GNSS_SBAS) || (gnssVal == RTCM3_MSM_GNSS_QZSS) || (gnssVal == RTCM3_MSM_GNSS_BDS) ) )
+           (gnssVal == RTCM3_MSM_GNSS_SBAS) || (gnssVal == RTCM3_MSM_GNSS_QZSS) || (gnssVal == RTCM3_MSM_GNSS_BDS) ||
+           (gnssVal == RTCM3_MSM_GNSS_NAVIC) ) )
     {
         if (msm != NULL)
         {

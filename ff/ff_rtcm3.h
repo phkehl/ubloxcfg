@@ -46,12 +46,13 @@ const char *rtcm3TypeDesc(const int msgType, const int subType);
 
 typedef enum RTCM3_MSM_GNSS_e
 {
-    RTCM3_MSM_GNSS_GPS  =  70,
-    RTCM3_MSM_GNSS_GLO  =  80,
-    RTCM3_MSM_GNSS_GAL  =  90,
-    RTCM3_MSM_GNSS_SBAS = 100,
-    RTCM3_MSM_GNSS_QZSS = 110,
-    RTCM3_MSM_GNSS_BDS  = 120,
+    RTCM3_MSM_GNSS_GPS   =  70,
+    RTCM3_MSM_GNSS_GLO   =  80,
+    RTCM3_MSM_GNSS_GAL   =  90,
+    RTCM3_MSM_GNSS_SBAS  = 100,
+    RTCM3_MSM_GNSS_QZSS  = 110,
+    RTCM3_MSM_GNSS_BDS   = 120,
+    RTCM3_MSM_GNSS_NAVIC = 130,
 } RTCM3_MSM_GNSS_t;
 
 typedef enum RTCM3_MSM_TYPE_e
