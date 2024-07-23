@@ -163,7 +163,7 @@ const char *rtcm3TypeDesc(const int msgType, const int subType)
         case 4068: return "Qianxun proprietary";
         case 4067: return "CIPPE proprietary";
         case 4066: return "Lantmateriet proprietary";
-        case 4065: return "ALLYSTAR proprietary";
+        case 4065: return "Allystar proprietary";
         case 4064: return "NTLab proprietary";
         case 4063: return "CHCNAV proprietary";
         case 4062: return "SwiftNav proprietary";
@@ -218,11 +218,7 @@ bool rtcm3MessageInfo(char *info, const int size, const uint8_t *msg, const int 
         }
     }
 
-    const int gnss = ((type - 1000) / 10) * 10;
-    const int msm  = type % 10;
-
-    if ( (len == 0) && (gnss >= RTCM3_MSM_GNSS_GPS) && (gnss <= RTCM3_MSM_GNSS_BDS) &&
-         (msm >= RTCM3_MSM_TYPE_1) && (msm <= RTCM3_MSM_TYPE_7) )
+    if (rtcm3typeToMsm(type, NULL, NULL))
     {
         RTCM3_MSM_HEADER_t header;
         if (rtcm3GetMsmHeader(msg, &header))
