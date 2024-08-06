@@ -3,7 +3,7 @@
     "sources": [
 
     // Contents extracted from:
-    "u-blox ZED-F9P Interface Description (HPG 1.13) (https://www.u-blox.com/en/docs/UBX-18010854), copyright (c) 2020 u-blox AG",
+    "u-blox ZED-F9P Interface Description (HPG 1.50) (https://www.u-blox.com/en/docs/UBXDOC-963802114-12815), copyright (c) 2024 u-blox AG",
     "u-blox ZED-F9T Interface Description (R02) (https://www.u-blox.com/en/docs/UBX-19003606), copyright (c) 2020 u-blox AG",
     "u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG",
     "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG",
@@ -15,6 +15,10 @@
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10340014", "name" : "CFG-BDS-USE_GEO_PRN",                  "size" : 0, "type" : "L",                                          "title" : "Use BeiDou geostationary satellites (PRN 1-5, 59-63), a.k.a. CFG-BDS-USE_PRN_1_TO_5" },
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    { "id" : "0x10350005", "name" : "CFG-GAL-USE_OSNMA",                    "size" : 0, "type" : "L",                                          "title" : "Enable using Galileo Open Service Navigation Message Authentication (OSNMA) protocol" },
+    { "id" : "0x20350007", "name" : "CFG-GAL-OSNMA_MINTAGLENGTH",           "size" : 1, "type" : "U1",                                         "title" : "Minimum equivalent tag length" },
+    { "id" : "0x10350009", "name" : "CFG-GAL-OSNMA_TIMESYNC",               "size" : 0, "type" : "L",                                          "title" : "Apply the time synchronization requirement" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20240011", "name" : "CFG-GEOFENCE-CONFLVL",                 "size" : 1, "type" : "E1",                                         "title" : "Required confidence level for state evaluation",
             "consts" : [ { "name" : "L000",                                 "value" : "0",                                                     "title" : "No confidence" },
@@ -626,6 +630,12 @@
     { "id" : "0x20910386", "name" : "CFG-MSGOUT-UBX_NAV_TIMEQZSS_I2C",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEQZSS message on port I2C" },
     { "id" : "0x20910389", "name" : "CFG-MSGOUT-UBX_NAV_TIMEQZSS_USB",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEQZSS message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x209103a9", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_UART1", "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port UART1" },
+    { "id" : "0x209103aa", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_UART2", "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port UART2" },
+    { "id" : "0x209103ac", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_SPI",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port SPI" },
+    { "id" : "0x209103a8", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_I2C",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port I2C" },
+    { "id" : "0x209103ab", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_USB",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x2091005c", "name" : "CFG-MSGOUT-UBX_NAV_TIMEUTC_UART1",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEUTC message on port UART1" },
     { "id" : "0x2091005d", "name" : "CFG-MSGOUT-UBX_NAV_TIMEUTC_UART2",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEUTC message on port UART2" },
     { "id" : "0x2091005f", "name" : "CFG-MSGOUT-UBX_NAV_TIMEUTC_SPI",       "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEUTC message on port SPI" },
@@ -855,16 +865,29 @@
     { "id" : "0x20910092", "name" : "CFG-MSGOUT-UBX_TIM_VRFY_I2C",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-VRFY message on port I2C" },
     { "id" : "0x20910095", "name" : "CFG-MSGOUT-UBX_TIM_VRFY_USB",          "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-TIM-VRFY message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x209106cb", "name" : "CFG-MSGOUT-UBX_SEC_OSNMA_UART1",       "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-OSNMA message on port UART1" },
+    { "id" : "0x209106cc", "name" : "CFG-MSGOUT-UBX_SEC_OSNMA_UART2",       "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-OSNMA message on port UART2" },
+    { "id" : "0x209106ce", "name" : "CFG-MSGOUT-UBX_SEC_OSNMA_SPI",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-OSNMA message on port SPI" },
+    { "id" : "0x209106ca", "name" : "CFG-MSGOUT-UBX_SEC_OSNMA_I2C",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-OSNMA message on port I2C" },
+    { "id" : "0x209106cd", "name" : "CFG-MSGOUT-UBX_SEC_OSNMA_USB",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-OSNMA message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x20910635", "name" : "CFG-MSGOUT-UBX_SEC_SIG_UART1",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port UART1" },
     { "id" : "0x20910636", "name" : "CFG-MSGOUT-UBX_SEC_SIG_UART2",         "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port UART2" },
     { "id" : "0x20910638", "name" : "CFG-MSGOUT-UBX_SEC_SIG_SPI",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port SPI" },
     { "id" : "0x20910634", "name" : "CFG-MSGOUT-UBX_SEC_SIG_I2C",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port I2C" },
     { "id" : "0x20910637", "name" : "CFG-MSGOUT-UBX_SEC_SIG_USB",           "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIG message on port USB" },
+    // ......................................................................................................................................................................................................................
+    { "id" : "0x2091068a", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_UART1",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port UART1" },
+    { "id" : "0x2091068b", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_UART2",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port UART2" },
+    { "id" : "0x2091068d", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_SPI",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port SPI" },
+    { "id" : "0x20910689", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_I2C",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port I2C" },
+    { "id" : "0x2091068c", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_USB",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port USB" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20140011", "name" : "CFG-NAVHPG-DGNSSMODE",                 "size" : 1, "type" : "E1",                                         "title" : "Differential corrections mode",
             "consts" : [ { "name" : "RTK_FLOAT",                            "value" : "2",                                                     "title" : "No attempts made to fix ambiguities" },
-                         { "name" : "RTK_FIXED",                            "value" : "3",                                                     "title" : "Ambiguities are fixed whenever possible" } ] },
-    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+                         { "name" : "RTK_FIXED",                            "value" : "3",                                                     "title" : "Ambiguities are fixed whenever possible" },
+                         { "name" : "RTK_CAR",                              "value" : "5",                                                     "title" : "Conservative ambiguity resolution" } ] },
+            // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20110011", "name" : "CFG-NAVSPG-FIXMODE",                   "size" : 1, "type" : "E1",                                         "title" : "Position fix mode",
             "consts" : [ { "name" : "2DONLY",                               "value" : "1",                                                     "title" : "2D only" },
                          { "name" : "3DONLY",                               "value" : "2",                                                     "title" : "3D only" },
@@ -918,6 +941,9 @@
     { "id" : "0x401100c1", "name" : "CFG-NAVSPG-CONSTR_ALT",                "size" : 4, "type" : "I4", "unit" : "m",       "scale" : "0.01",   "title" : "Fixed altitude (mean sea level) for 2D fix mode" },
     { "id" : "0x401100c2", "name" : "CFG-NAVSPG-CONSTR_ALTVAR",             "size" : 4, "type" : "U4", "unit" : "m^2",     "scale" : "0.0001", "title" : "Fixed altitude variance for 2D mode" },
     { "id" : "0x201100c4", "name" : "CFG-NAVSPG-CONSTR_DGNSSTO",            "size" : 1, "type" : "U1", "unit" : "s",                           "title" : "DGNSS timeout" },
+    { "id" : "0x101100d7", "name" : "CFG-NAVSPG-PL_ENA",                    "size" : 0, "type" : "L",                                          "title" : "Enable Protection level" },
+    { "id" : "0x101100dd", "name" : "CFG-NAVSPG-ONLY_AUTHDATA",             "size" : 0, "type" : "L",                                          "title" : "Enable using only signals with authenticated navigation data" },
+    { "id" : "0x301100de", "name" : "CFG-NAVSPG-MAX_TIMETRUSTED_ACC",       "size" : 2, "type" : "U2", "unit": "s",                            "title" : "Maximum trusted time accuracy" },
     { "id" : "0x201100d6", "name" : "CFG-NAVSPG-SIGATTCOMP",                "size" : 1, "type" : "E1",                                         "title" : "Permanently attenuated signal compensation mode",
             "consts" : [ { "name" : "DIS",                                  "value" : "0",                                                     "title" : "Disabled" },
                          { "name" : "AUTO",                                 "value" : "255",                                                   "title" : "Automatic" },
@@ -987,6 +1013,7 @@
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10170001", "name" : "CFG-NAV2-OUT_ENABLED",                 "size" : 0, "type" : "L",                                          "title" : "Enable secondary (UBX-NAV2-*) output" },
     { "id" : "0x10170002", "name" : "CFG-NAV2-SBAS_USE_INTEGRITY",          "size" : 0, "type" : "L",                                          "title" : "Use SBAS integrity information in the secondary output" },
+    { "id" : "0x10170003", "name" : "CFG-NAV2-ONLY_AUTHDATA",               "size" : 0, "type" : "L",                                          "title" : "Enable using only signals with authenticated navigation data in the secondary output" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20930001", "name" : "CFG-NMEA-PROTVER",                     "size" : 1, "type" : "E1",                                         "title" : "NMEA protocol version",
             "consts" : [ { "name" : "V21",                                  "value" : "21",                                                    "title" : "NMEA protocol version 2.1" },
@@ -1100,6 +1127,15 @@
     { "id" : "0x10360003", "name" : "CFG-SBAS-USE_RANGING",                 "size" : 0, "type" : "L",                                          "title" : "Use SBAS GEOs as a ranging source (for navigation)" },
     { "id" : "0x10360004", "name" : "CFG-SBAS-USE_DIFFCORR",                "size" : 0, "type" : "L",                                          "title" : "Use SBAS differential corrections" },
     { "id" : "0x10360005", "name" : "CFG-SBAS-USE_INTEGRITY",               "size" : 0, "type" : "L",                                          "title" : "Use SBAS integrity information" },
+    { "id" : "0x10360007", "name" : "CFG-SBAS-USE_IONOONLY",                "size" : 0, "type" : "L",                                          "title" : "Use SBAS ionosphere correction only" },
+    { "id" : "0x30360008", "name" : "CFG-SBAS-ACCEPT_NOT_IN_PRNMASK",       "size" : 2, "type" : "X2",                                         "title" : "Accept corrections from SBAS SV, even if not self included in PRN MASK (Message Type 1)",
+            "consts" : [ { "name" : "WAAS",                                 "value" : "0x00001",                                               "title" : "WAAS bit" },
+                         { "name" : "EGNOS",                                "value" : "0x00002",                                               "title" : "EGNOS bit" },
+                         { "name" : "MSAS",                                 "value" : "0x00004",                                               "title" : "MSAS bit" },
+                         { "name" : "GAGAN",                                "value" : "0x00008",                                               "title" : "GAGAN bit" },
+                         { "name" : "SDCM",                                 "value" : "0x00010",                                               "title" : "SDCM bit" },
+                         { "name" : "BDSBAS",                               "value" : "0x00020",                                               "title" : "BDSBAS bit" },
+                         { "name" : "KASS",                                 "value" : "0x00040",                                               "title" : "KASS bit" } ] },
     { "id" : "0x50360006", "name" : "CFG-SBAS-PRNSCANMASK",                 "size" : 8, "type" : "X8",                                         "title" : "SBAS PRN search configuration",
             "consts" : [ { "name" : "ALL",                                  "value" : "0x0000000000000000",                                    "title" : "Enable search for all SBAS PRNs" },
                          { "name" : "PRN120",                               "value" : "0x0000000000000001",                                    "title" : "Enable search for SBAS PRN120" },
@@ -1145,6 +1181,8 @@
     { "id" : "0x10f60009", "name" : "CFG-SEC-CFG_LOCK",                     "size" : 0, "type" : "L",                                          "title" : "Configuration lockdown" },
     { "id" : "0x30f6000a", "name" : "CFG-SEC-CFG_LOCK_UNLOCKGRP1",          "size" : 2, "type" : "U2",                                         "title" : "Configuration lockdown exempted group 1" },
     { "id" : "0x30f6000b", "name" : "CFG-SEC-CFG_LOCK_UNLOCKGRP2",          "size" : 2, "type" : "U2",                                         "title" : "Configuration lockdown exempted group 1" },
+    { "id" : "0x10f6005d", "name" : "CFG-SEC-CFG_SPOOFDET_SIM_SIG_DIS",     "size" : 0, "type" : "L",                                          "title" : "Disabling the simulated signal spoofing detection" },
+    { "id" : "0x10f60051", "name" : "CFG-SEC-CFG_JAMDET_SENSITIVITY_HI",    "size" : 0, "type" : "L",                                          "title" : "When set, go for a more sensitive jamming detection (at the cost of increased false alarm rate)" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10080001", "name" : "CFG-SFCORE-USE_SF",                    "size" : 0, "type" : "L",                                          "title" : "Use ADR/UDR sensor fusion" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
