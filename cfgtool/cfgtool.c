@@ -30,6 +30,7 @@
 #include "cfgtool_cfg2ubx.h"
 #include "cfgtool_rx2cfg.h"
 #include "cfgtool_cfg2rx.h"
+#include "cfgtool_cmd2rx.h"
 #include "cfgtool_dump.h"
 #include "cfgtool_uc2cfg.h"
 #include "cfgtool_cfginfo.h"
@@ -103,6 +104,7 @@ static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
 static int status(void)  { return statusRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
 static int bin2hex(void) { return bin2hexRun(); }
 static int hex2bin(void) { return hex2binRun(); }
+static int cmd2rx(void)  { return cmd2rxRun( gArgs.rxPort, gArgs.noProbe); }
 
 const CMD_t kCmds[] =
 {
@@ -147,6 +149,9 @@ const CMD_t kCmds[] =
 
     { .name = "hex2bin", .info = "Convert from hex dump",                                      .help = NULL,        .run = hex2bin,
       .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false, .may_u = false, .may_U = false, .may_R = false, },
+
+    { .name = "cmd2rx", .info = "Send commands to a receiver",                                 .help = cmd2rxHelp,  .run = cmd2rx,
+      .need_i = true,  .need_o = false, .need_p = true, .need_l = false, .need_r = false,  .may_n = true, .may_e = false, .may_u = false, .may_U = false, .may_R = false, },
 
 };
 

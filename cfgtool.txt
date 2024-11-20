@@ -55,6 +55,7 @@ Where:
     status         Connects to receiver and prints status
     bin2hex        Convert to hex dump
     hex2bin        Convert from hex dump
+    cmd2rx         Send commands to a receiver
 
 License:
 
@@ -377,6 +378,59 @@ Commands 'bin2hex' and 'hex2bin':
     Example:
 
         echo 48 61 6B 75 6E 61 20 4D 61 74 61 74 61 21 0A | cfgtool -q hex2bin
+
+Command 'cmd2rx':
+
+    Usage: cfgtool cmd2rx [-n] -i <infile> -p <port>
+
+    This sends commands to a receiver and optionally waits for an expected
+    response with a timeout. This is useful to configure non-u-blox receivers
+    or other devices.
+
+    The command <infile> consists of one or more lines of commands to process.
+    Leading and trailing whitespace, empty lines as well as comments (# style)
+    are ignored. Acceptable separators for the tokens are (any number of) spaces
+    and/or tabs. Each line in the <infile> has one of the following formats:
+
+        COMMAND <cmd> <timeout> <rsp>
+        SLEEP <timeout>
+        DETECT
+        MESSAGE <timeout> <name>
+
+    Lines starting with 'COMMAND' specify a command to be sent to the receiver,
+    where <cmd> and <rsp> specify command to send to the receiver and the
+    response to expect. The <timeout> is in milliseconds and specifies the
+    maximum time to wait for the expected response. Both <cmd> and <rsp> are
+    in the form of <type>:<data>. The available <type>s are:
+
+        NMEA: NMEA sentence with <data> being the payload (framing is added
+              automatically. For example: 'NMEA:PQTMCFGFIXRATE,W,200'
+        HEX:  Arbitrary data with <data> being a hexdump of it. For example:
+              'HEX:48656c6c6f20576f726c6421'
+        NONE: No-op command, nothing is sent resp. expected. For example: 'NONE'
+              If <cmd> is NONE nothing is sent to the receiver. If the <rsp> is
+              NONE the <timeout> is used like in SLEEP
+
+    Lines starting with 'SLEEP' specify a pause of <timeout> milliseconds.
+
+    Lines starting with 'DETECT' specify a re-detection (autobauding) of the
+    receiver, for example after configuring the baudrate
+
+    Lines starting with 'MESSAGE' specify waiting up to <timeout> milliseconds
+    for any message matching the given <name>. For example: 'MESSAGE:NMEA-G' to
+    wait for any NMEA positioning message. Or 'MESSAGE:RTCM3-TYPE1234' for
+    waiting for a RTCM3 type 1234 message.
+
+    Example command file:
+
+        # Nav rate 5 Hz
+        COMMAND  NMEA:PQTMCFGFIXRATE,W,200 1000  NMEA:PQTMCFGFIXRATE,OK
+        # Save parameters
+        COMMAND  NMEA:PQTMSAVEPAR          1000  NMEA:PQTMSAVEPAR,OK
+        # Stop GNSS
+        COMMAND  NMEA:PQTMGNSSSTOP         2000  NMEA:PQTMGNSSSTOP,OK
+        # (Re-)start GNSS
+        COMMAND  NMEA:PQTMGNSSSTART        2000  NMEA:PQTMGNSSSTART,OK
 
 Happy hacking! :-)
 
