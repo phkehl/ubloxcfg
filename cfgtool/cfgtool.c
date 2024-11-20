@@ -151,7 +151,7 @@ const CMD_t kCmds[] =
       .need_i = true,  .need_o = true,  .need_p = false, .need_l = false, .need_r = false, .may_n = false, .may_e = false, .may_u = false, .may_U = false, .may_R = false, },
 
     { .name = "cmd2rx", .info = "Send commands to a receiver",                                 .help = cmd2rxHelp,  .run = cmd2rx,
-      .need_i = true,  .need_o = false, .need_p = true, .need_l = false, .need_r = false,  .may_n = true, .may_e = false, .may_u = false, .may_U = false, .may_R = false, },
+      .need_i = true,  .need_o = false, .need_p = true,  .need_l = false, .need_r = false, .may_n = true,  .may_e = false, .may_u = false, .may_U = false, .may_R = false, },
 
 };
 
