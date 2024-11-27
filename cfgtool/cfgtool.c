@@ -104,7 +104,7 @@ static int reset(void)   { return resetRun(  gArgs.rxPort, gArgs.resetType); }
 static int status(void)  { return statusRun( gArgs.rxPort, gArgs.extraInfo, gArgs.noProbe); }
 static int bin2hex(void) { return bin2hexRun(); }
 static int hex2bin(void) { return hex2binRun(); }
-static int cmd2rx(void)  { return cmd2rxRun( gArgs.rxPort, gArgs.noProbe); }
+static int cmd2rx(void)  { return cmd2rxRun( gArgs.rxPort, gArgs.noProbe, gArgs.extraInfo); }
 
 const CMD_t kCmds[] =
 {

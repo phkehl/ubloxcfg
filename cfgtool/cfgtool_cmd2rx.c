@@ -22,7 +22,7 @@ const char* cmd2rxHelp(void) {
 // -----------------------------------------------------------------------------
 "Command 'cmd2rx':\n"
 "\n"
-"    Usage: cfgtool cmd2rx [-n] -i <infile> -p <port>\n"
+"    Usage: cfgtool cmd2rx [-n] [-x] -i <infile> -p <port>\n"
 "\n"
 "    This sends commands to a receiver and optionally waits for an expected\n"
 "    response with a timeout. This is useful to configure non-u-blox receivers\n"
@@ -61,6 +61,9 @@ const char* cmd2rxHelp(void) {
 "    for any message matching the given <name>. For example: 'MESSAGE:NMEA-G' to\n"
 "    wait for any NMEA positioning message. Or 'MESSAGE:RTCM3-TYPE1234' for\n"
 "    waiting for a RTCM3 type 1234 message.\n"
+"\n"
+"    With the -x flag the response of successfull COMMANDs and MESSAGEs is printed\n"
+"    to stdout if it is printable (such as NMEA message, but not binary messages).\n"
 "\n"
 "    Example command file:\n"
 "\n"
@@ -350,10 +353,10 @@ static bool _strToMsg(MSG_t *msg, char *str, const char** errorHint)
 
 /* ****************************************************************************************************************** */
 
-static bool _processCommand(RX_t* rx, const CMD_RSP_t* cmdRsp);
-static bool _processMessage(RX_t* rx, const CMD_RSP_t* cmdRsp);
+static bool _processCommand(RX_t* rx, const CMD_RSP_t* cmdRsp, const bool extraInfo);
+static bool _processMessage(RX_t* rx, const CMD_RSP_t* cmdRsp, const bool extraInfo);
 
-int cmd2rxRun(const char* portArg, const bool noProbe)
+int cmd2rxRun(const char* portArg, const bool noProbe, const bool extraInfo)
 {
     PRINT("Loading configuration");
     CMD_RSP_DB_t* db = malloc(sizeof(CMD_RSP_DB_t));
@@ -390,10 +393,10 @@ int cmd2rxRun(const char* portArg, const bool noProbe)
         PRINT("Command %d/%d: %s", ix + 1, db->n, cmdRsp->info);
         switch (cmdRsp->type) {
             case CMD_TYPE_COMMAND:
-                ok = _processCommand(rx, cmdRsp);
+                ok = _processCommand(rx, cmdRsp, extraInfo);
                 break;
             case CMD_TYPE_MESSAGE:
-                ok = _processMessage(rx, cmdRsp);
+                ok = _processMessage(rx, cmdRsp, extraInfo);
                 break;
             case CMD_TYPE_SLEEP: {
                 const uint32_t t0 = TIME();
@@ -441,7 +444,18 @@ int cmd2rxRun(const char* portArg, const bool noProbe)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static bool _processCommand(RX_t *rx, const CMD_RSP_t* cmdRsp)
+static void _printMessage(const PARSER_MSG_t* msg, const bool extraInfo)
+{
+    if (extraInfo && (msg->type == PARSER_MSGTYPE_NMEA)) {
+        char str[PARSER_MAX_ANY_SIZE];
+        memcpy(str, msg->data, msg->size);
+        str[msg->size - 2] = '\n';
+        str[msg->size - 1] = '\0';
+        fputs(str, stdout);
+    }
+}
+
+static bool _processCommand(RX_t *rx, const CMD_RSP_t* cmdRsp, const bool extraInfo)
 {
     // Send command
     DEBUG_HEXDUMP(cmdRsp->cmd.data, cmdRsp->cmd.size, cmdRsp->cmd.size > 0 ? "> command" : "> (nothing)");
@@ -466,6 +480,7 @@ static bool _processCommand(RX_t *rx, const CMD_RSP_t* cmdRsp)
                 if (memcmp(cmdRsp->rsp.data, msg->data, cmdRsp->rsp.size) == 0) {
                     found_resp = true;
                     DEBUG_HEXDUMP(msg->data, msg->size, "< response found");
+                    _printMessage(msg, extraInfo);
                 }
             }
         } else {
@@ -484,7 +499,7 @@ static bool _processCommand(RX_t *rx, const CMD_RSP_t* cmdRsp)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-static bool _processMessage(RX_t *rx, const CMD_RSP_t* cmdRsp)
+static bool _processMessage(RX_t *rx, const CMD_RSP_t* cmdRsp, const bool extraInfo)
 {
     // Wait for a message that matches the name
     bool found_name = false;
@@ -495,6 +510,7 @@ static bool _processMessage(RX_t *rx, const CMD_RSP_t* cmdRsp)
             if (strncmp(msg->name, cmdRsp->name, strlen(cmdRsp->name)) == 0) {
                 found_name = true;
                 TRACE_HEXDUMP(msg->data, msg->size, "message found");
+                _printMessage(msg, extraInfo);
             }
         } else {
             SLEEP(5);

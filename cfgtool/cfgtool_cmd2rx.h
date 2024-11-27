@@ -13,7 +13,7 @@
 /* ****************************************************************************************************************** */
 
 const char *cmd2rxHelp(void);
-int cmd2rxRun(const char *portArg, const bool noProbe);
+int cmd2rxRun(const char *portArg, const bool noProbe, const bool extraInfo);
 
 /* ****************************************************************************************************************** */
 #endif // __CFGTOOL_CMD2RX_H__

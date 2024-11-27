@@ -381,7 +381,7 @@ Commands 'bin2hex' and 'hex2bin':
 
 Command 'cmd2rx':
 
-    Usage: cfgtool cmd2rx [-n] -i <infile> -p <port>
+    Usage: cfgtool cmd2rx [-n] [-x] -i <infile> -p <port>
 
     This sends commands to a receiver and optionally waits for an expected
     response with a timeout. This is useful to configure non-u-blox receivers
@@ -420,6 +420,9 @@ Command 'cmd2rx':
     for any message matching the given <name>. For example: 'MESSAGE:NMEA-G' to
     wait for any NMEA positioning message. Or 'MESSAGE:RTCM3-TYPE1234' for
     waiting for a RTCM3 type 1234 message.
+
+    With the -x flag the response of successfull COMMANDs and MESSAGEs is printed
+    to stdout if it is printable (such as NMEA message, but not binary messages).
 
     Example command file:
 
