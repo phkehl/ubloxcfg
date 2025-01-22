@@ -8673,6 +8673,150 @@ typedef enum UBLOXCFG_CFG_TP_DRSTR_TP1_e
 } UBLOXCFG_CFG_TP_DRSTR_TP1_t;
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_TP_PERIOD_TP2 CFG-TP-PERIOD_TP2 (Time pulse period (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_PERIOD_TP2_ID                      0x4005000d                               //!< ID of CFG-TP-PERIOD_TP2
+#define UBLOXCFG_CFG_TP_PERIOD_TP2_STR                     "CFG-TP-PERIOD_TP2"                      //!< Name of CFG-TP-PERIOD_TP2
+#define UBLOXCFG_CFG_TP_PERIOD_TP2_TYPE                    U4                                       //!< Type of CFG-TP-PERIOD_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_PERIOD_LOCK_TP2 CFG-TP-PERIOD_LOCK_TP2 (Time pulse period when locked to GNSS time (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_PERIOD_LOCK_TP2_ID                 0x4005000e                               //!< ID of CFG-TP-PERIOD_LOCK_TP2
+#define UBLOXCFG_CFG_TP_PERIOD_LOCK_TP2_STR                "CFG-TP-PERIOD_LOCK_TP2"                 //!< Name of CFG-TP-PERIOD_LOCK_TP2
+#define UBLOXCFG_CFG_TP_PERIOD_LOCK_TP2_TYPE               U4                                       //!< Type of CFG-TP-PERIOD_LOCK_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_FREQ_TP2 CFG-TP-FREQ_TP2 (Time pulse frequency (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_FREQ_TP2_ID                        0x40050026                               //!< ID of CFG-TP-FREQ_TP2
+#define UBLOXCFG_CFG_TP_FREQ_TP2_STR                       "CFG-TP-FREQ_TP2"                        //!< Name of CFG-TP-FREQ_TP2
+#define UBLOXCFG_CFG_TP_FREQ_TP2_TYPE                      U4                                       //!< Type of CFG-TP-FREQ_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_FREQ_LOCK_TP2 CFG-TP-FREQ_LOCK_TP2 (Time pulse frequency when locked to GNSS time (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_FREQ_LOCK_TP2_ID                   0x40050027                               //!< ID of CFG-TP-FREQ_LOCK_TP2
+#define UBLOXCFG_CFG_TP_FREQ_LOCK_TP2_STR                  "CFG-TP-FREQ_LOCK_TP2"                   //!< Name of CFG-TP-FREQ_LOCK_TP2
+#define UBLOXCFG_CFG_TP_FREQ_LOCK_TP2_TYPE                 U4                                       //!< Type of CFG-TP-FREQ_LOCK_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_LEN_TP2 CFG-TP-LEN_TP2 (Time pulse length (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_LEN_TP2_ID                         0x4005000f                               //!< ID of CFG-TP-LEN_TP2
+#define UBLOXCFG_CFG_TP_LEN_TP2_STR                        "CFG-TP-LEN_TP2"                         //!< Name of CFG-TP-LEN_TP2
+#define UBLOXCFG_CFG_TP_LEN_TP2_TYPE                       U4                                       //!< Type of CFG-TP-LEN_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_LEN_LOCK_TP2 CFG-TP-LEN_LOCK_TP2 (Time pulse length when locked to GNSS time (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_LEN_LOCK_TP2_ID                    0x40050010                               //!< ID of CFG-TP-LEN_LOCK_TP2
+#define UBLOXCFG_CFG_TP_LEN_LOCK_TP2_STR                   "CFG-TP-LEN_LOCK_TP2"                    //!< Name of CFG-TP-LEN_LOCK_TP2
+#define UBLOXCFG_CFG_TP_LEN_LOCK_TP2_TYPE                  U4                                       //!< Type of CFG-TP-LEN_LOCK_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_DUTY_TP2 CFG-TP-DUTY_TP2 (Time pulse duty cycle (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_DUTY_TP2_ID                        0x5005002c                               //!< ID of CFG-TP-DUTY_TP2
+#define UBLOXCFG_CFG_TP_DUTY_TP2_STR                       "CFG-TP-DUTY_TP2"                        //!< Name of CFG-TP-DUTY_TP2
+#define UBLOXCFG_CFG_TP_DUTY_TP2_TYPE                      R8                                       //!< Type of CFG-TP-DUTY_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_DUTY_LOCK_TP2 CFG-TP-DUTY_LOCK_TP2 (Time pulse duty cycle when locked to GNSS time (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_DUTY_LOCK_TP2_ID                   0x5005002d                               //!< ID of CFG-TP-DUTY_LOCK_TP2
+#define UBLOXCFG_CFG_TP_DUTY_LOCK_TP2_STR                  "CFG-TP-DUTY_LOCK_TP2"                   //!< Name of CFG-TP-DUTY_LOCK_TP2
+#define UBLOXCFG_CFG_TP_DUTY_LOCK_TP2_TYPE                 R8                                       //!< Type of CFG-TP-DUTY_LOCK_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_USER_DELAY_TP2 CFG-TP-USER_DELAY_TP2 (User-configurable time pulse delay (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_USER_DELAY_TP2_ID                  0x40050011                               //!< ID of CFG-TP-USER_DELAY_TP2
+#define UBLOXCFG_CFG_TP_USER_DELAY_TP2_STR                 "CFG-TP-USER_DELAY_TP2"                  //!< Name of CFG-TP-USER_DELAY_TP2
+#define UBLOXCFG_CFG_TP_USER_DELAY_TP2_TYPE                I4                                       //!< Type of CFG-TP-USER_DELAY_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_TP2_ENA CFG-TP-TP2_ENA (Enable the first timepulse)
+    @{
+*/
+#define UBLOXCFG_CFG_TP_TP2_ENA_ID                         0x10050012                               //!< ID of CFG-TP-TP2_ENA
+#define UBLOXCFG_CFG_TP_TP2_ENA_STR                        "CFG-TP-TP2_ENA"                         //!< Name of CFG-TP-TP2_ENA
+#define UBLOXCFG_CFG_TP_TP2_ENA_TYPE                       L                                        //!< Type of CFG-TP-TP2_ENA
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_SYNC_GNSS_TP2 CFG-TP-SYNC_GNSS_TP2 (Sync time pulse to GNSS time or local clock (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_SYNC_GNSS_TP2_ID                   0x10050013                               //!< ID of CFG-TP-SYNC_GNSS_TP2
+#define UBLOXCFG_CFG_TP_SYNC_GNSS_TP2_STR                  "CFG-TP-SYNC_GNSS_TP2"                   //!< Name of CFG-TP-SYNC_GNSS_TP2
+#define UBLOXCFG_CFG_TP_SYNC_GNSS_TP2_TYPE                 L                                        //!< Type of CFG-TP-SYNC_GNSS_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_USE_LOCKED_TP2 CFG-TP-USE_LOCKED_TP2 (Use locked parameters when possible (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_USE_LOCKED_TP2_ID                  0x10050014                               //!< ID of CFG-TP-USE_LOCKED_TP2
+#define UBLOXCFG_CFG_TP_USE_LOCKED_TP2_STR                 "CFG-TP-USE_LOCKED_TP2"                  //!< Name of CFG-TP-USE_LOCKED_TP2
+#define UBLOXCFG_CFG_TP_USE_LOCKED_TP2_TYPE                L                                        //!< Type of CFG-TP-USE_LOCKED_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_ALIGN_TO_TOW_TP2 CFG-TP-ALIGN_TO_TOW_TP2 (Align time pulse to top of second (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_ALIGN_TO_TOW_TP2_ID                0x10050015                               //!< ID of CFG-TP-ALIGN_TO_TOW_TP2
+#define UBLOXCFG_CFG_TP_ALIGN_TO_TOW_TP2_STR               "CFG-TP-ALIGN_TO_TOW_TP2"                //!< Name of CFG-TP-ALIGN_TO_TOW_TP2
+#define UBLOXCFG_CFG_TP_ALIGN_TO_TOW_TP2_TYPE              L                                        //!< Type of CFG-TP-ALIGN_TO_TOW_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_POL_TP2 CFG-TP-POL_TP2 (Set time pulse polarity (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_POL_TP2_ID                         0x10050016                               //!< ID of CFG-TP-POL_TP2
+#define UBLOXCFG_CFG_TP_POL_TP2_STR                        "CFG-TP-POL_TP2"                         //!< Name of CFG-TP-POL_TP2
+#define UBLOXCFG_CFG_TP_POL_TP2_TYPE                       L                                        //!< Type of CFG-TP-POL_TP2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_TP_TIMEGRID_TP2 CFG-TP-TIMEGRID_TP2 (Time grid to use (TP2))
+    @{
+*/
+#define UBLOXCFG_CFG_TP_TIMEGRID_TP2_ID                    0x20050017                               //!< ID of CFG-TP-TIMEGRID_TP2
+#define UBLOXCFG_CFG_TP_TIMEGRID_TP2_STR                   "CFG-TP-TIMEGRID_TP2"                    //!< Name of CFG-TP-TIMEGRID_TP2
+#define UBLOXCFG_CFG_TP_TIMEGRID_TP2_TYPE                  E1                                       //!< Type of CFG-TP-TIMEGRID_TP2
+//! constants for CFG-TP-TIMEGRID_TP2
+typedef enum UBLOXCFG_CFG_TP_TIMEGRID_TP2_e
+{
+    UBLOXCFG_CFG_TP_TIMEGRID_TP2_UTC                     = 0,                                       //!< UTC time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP2_GPS                     = 1,                                       //!< GPS time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP2_GLO                     = 2,                                       //!< GLONASS time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP2_BDS                     = 3,                                       //!< BeiDou time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP2_GAL                     = 4                                        //!< Galileo time reference
+} UBLOXCFG_CFG_TP_TIMEGRID_TP2_t;
+///@}
+
 ///@}
 
 /*!
@@ -12160,7 +12304,7 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 956
+#define _UBLOXCFG_NUM_ITEMS 971
 const void **_ubloxcfg_allItems(void);
 #define _UBLOXCFG_NUM_RATES 120
 const void **_ubloxcfg_allRates(void);
