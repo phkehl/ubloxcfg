@@ -51,6 +51,7 @@ bool rtcm3MessageName(char *name, const int size, const uint8_t *msg, const int 
 
 const char *rtcm3TypeDesc(const int msgType, const int subType)
 {
+    // Source: https://www.use-snip.com/kb/knowledge-base/rtcm-3-message-list/ and other pages...
     switch (msgType)
     {
         case 1001: return "L1-only GPS RTK observables";

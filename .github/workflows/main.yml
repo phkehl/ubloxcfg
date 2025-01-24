@@ -21,7 +21,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v3
+    - name: Checks-out
+      uses: actions/checkout@v4
     # Install additional packages that we need to build
     - name: install packages
       run: |
@@ -35,10 +36,10 @@ jobs:
 #      run: tar -czv --owner=0 --group=0 -f output.tar.gz output
     - name: make libubloxcfg.so
       run: make libubloxcfg.so
-    - name: Upload output
-      uses: actions/upload-artifact@v2
-      with:
-        name: ubloxcfg-build
-        path: output/*.zip
+    # - name: Upload output
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: ubloxcfg-build
+    #     path: output/*.zip
 
 # eof

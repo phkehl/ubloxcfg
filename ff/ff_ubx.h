@@ -1168,6 +1168,46 @@ typedef struct UBX_NAV_TIMEGLO_V0_GROUP0_s
 
 // ---------------------------------------------------------------------------------------------------------------------
 
+//! UBX-NAV-TIMEUTC payload
+typedef struct UBX_NAV_TIMEUTC_V0_GROUP0_s
+{
+    uint32_t iTow;
+    uint32_t tAcc;
+    int32_t  nano;
+    uint16_t year;
+    uint8_t  month;
+    uint8_t  day;
+    uint8_t  hour;
+    uint8_t  min;
+    uint8_t  sec;
+    uint8_t  valid;
+} UBX_NAV_TIMEUTC_V0_GROUP0_t;
+
+#define UBX_NAV_TIMEUTC_V0_ITOW_SCALE                 1e-3
+#define UBX_NAV_TIMEUTC_V0_TACC_SCALE                 1e-9
+#define UBX_NAV_TIMEUTC_V0_NANO_SCALE                 1e-9
+#define UBX_NAV_TIMEUTC_V0_VALID_VALIDTOW             0x01
+#define UBX_NAV_TIMEUTC_V0_VALID_VALIDWKN             0x02
+#define UBX_NAV_TIMEUTC_V0_VALID_VALIDUTC             0x04
+#define UBX_NAV_TIMEUTC_V0_VALID_AUTHSTATUS_GET(f)    ( ((uint8_t)(f) >> 3) & 0x01 )
+#define UBX_NAV_TIMEUTC_V0_VALID_AUTHSTATUS_UNKN      0x00
+#define UBX_NAV_TIMEUTC_V0_VALID_AUTHSTATUS_AUTH      0x01
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_GET(f)   ( ((uint8_t)(f) >> 4) & 0x0f )
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_INFONA     0
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_CRL        1
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_NIST       2
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_USNO       3
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_BIPM       4
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_EU         5
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_SU         6
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_NTSC       7
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_NPLI       8
+#define UBX_NAV_TIMEUTC_V0_VALID_UTCSTANDARD_UNNOWN    15
+
+#define UBX_NAV_TIMEUTC_V0_SIZE    ((int)(sizeof(UBX_NAV_TIMEUTC_V0_GROUP0_t) + UBX_FRAME_SIZE))
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 //! UBX-NAV-TIMELS payload
 typedef struct UBX_NAV_TIMELS_V0_GROUP0_s
 {

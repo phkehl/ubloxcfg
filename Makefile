@@ -161,7 +161,7 @@ $(OUTPUTDIR)/ubloxcfg_html/index.html: ubloxcfg/Doxyfile $(LIBHFILES) $(LIBCFILE
 
 # Used in .github/workflows/main.yml
 .PHONY: ci
-ci: all
+ci: test_m32-release test_m64-release cfgtool-release release cfgtool.txt
 
 # Make everything
 .PHONY: all
