@@ -50,7 +50,7 @@ GuiWinInputReceiver::GuiWinInputReceiver(const std::string &name) :
     _receiver = std::make_shared<InputReceiver>(name, _database);
     _receiver->SetDataCb( std::bind(&GuiWinInputReceiver::_ProcessData, this, std::placeholders::_1) );
 
-    auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
+    auto recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
     if (!recent.empty())
     {
         _port = recent[0];
@@ -464,7 +464,7 @@ void GuiWinInputReceiver::_DrawControls()
             Gui::TextTitle("Recently used ports");
 
             const std::string *selectedPort = nullptr;
-            const auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
+            const auto recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_RECEIVERS);
             for (auto &port: recent)
             {
                 if (ImGui::Selectable(port.c_str()))

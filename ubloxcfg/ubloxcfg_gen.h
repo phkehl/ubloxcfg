@@ -34,6 +34,7 @@ extern "C" {
     - u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG
     - u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG
     - u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG
+    - u-blox GPS L5 configuration Application Note (https://www.u-blox.com/en/docs/UBX-21038688), copyright (c) 2023 u-blox AG
     - u-center 20.01, copyright (c) 2020 u-blox AG
 
     @{
@@ -4393,6 +4394,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1 CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1 (Output rate of the UBX-NAV-TIMENAVIC message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_ID     0x209106a3                               //!< ID of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_STR    "CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1"     //!< Name of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_TYPE   U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2 CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2 (Output rate of the UBX-NAV-TIMENAVIC message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_ID     0x209106a4                               //!< ID of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_STR    "CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2"     //!< Name of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_TYPE   U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI (Output rate of the UBX-NAV-TIMENAVIC message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_ID       0x209106a6                               //!< ID of CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_STR      "CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI"       //!< Name of CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_TYPE     U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C (Output rate of the UBX-NAV-TIMENAVIC message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_ID       0x209106a2                               //!< ID of CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_STR      "CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C"       //!< Name of CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_TYPE     U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB (Output rate of the UBX-NAV-TIMENAVIC message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_ID       0x209106a5                               //!< ID of CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_STR      "CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB"       //!< Name of CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_TYPE     U1                                       //!< Type of CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMETRUSTED_UART1 CFG-MSGOUT-UBX_NAV_TIMETRUSTED_UART1 (Output rate of the UBX-NAV-TIMETRUSTED message on port UART1)
     @{
 */
@@ -5515,6 +5561,51 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 #define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMEQZSS_USB_ID       0x20910578                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMEQZSS_USB
 #define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMEQZSS_USB_STR      "CFG-MSGOUT-UBX_NAV2_TIMEQZSS_USB"       //!< Name of CFG-MSGOUT-UBX_NAV2_TIMEQZSS_USB
 #define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMEQZSS_USB_TYPE     U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMEQZSS_USB
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1 CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1 (Output rate of the UBX-NAV2-TIMENAVIC message on port UART1)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_ID    0x209106a8                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_STR   "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1"    //!< Name of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_TYPE  U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2 CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2 (Output rate of the UBX-NAV2-TIMENAVIC message on port UART2)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_ID    0x209106a9                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_STR   "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2"    //!< Name of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_TYPE  U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI (Output rate of the UBX-NAV2-TIMENAVIC message on port SPI)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_ID      0x209106ab                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_STR     "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI"      //!< Name of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_TYPE    U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C (Output rate of the UBX-NAV2-TIMENAVIC message on port I2C)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_ID      0x209106a7                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_STR     "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C"      //!< Name of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_TYPE    U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB (Output rate of the UBX-NAV2-TIMENAVIC message on port USB)
+    @{
+*/
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_ID      0x209106aa                               //!< ID of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_STR     "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB"      //!< Name of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB
+#define UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_TYPE    U1                                       //!< Type of CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB
 ///@}
 
 /*!
@@ -7996,6 +8087,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_GPS_L5_ENA CFG-SIGNAL-GPS_L5_ENA (GPS L5 enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_GPS_L5_ENA_ID                  0x10310004                               //!< ID of CFG-SIGNAL-GPS_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_GPS_L5_ENA_STR                 "CFG-SIGNAL-GPS_L5_ENA"                  //!< Name of CFG-SIGNAL-GPS_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_GPS_L5_ENA_TYPE                L                                        //!< Type of CFG-SIGNAL-GPS_L5_ENA
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL_SBAS_ENA CFG-SIGNAL-SBAS_ENA (SBAS enable)
     @{
 */
@@ -8041,6 +8141,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E5A_ENA CFG-SIGNAL-GAL_E5A_ENA (Galileo E5b enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_GAL_E5A_ENA_ID                 0x10310009                               //!< ID of CFG-SIGNAL-GAL_E5A_ENA
+#define UBLOXCFG_CFG_SIGNAL_GAL_E5A_ENA_STR                "CFG-SIGNAL-GAL_E5A_ENA"                 //!< Name of CFG-SIGNAL-GAL_E5A_ENA
+#define UBLOXCFG_CFG_SIGNAL_GAL_E5A_ENA_TYPE               L                                        //!< Type of CFG-SIGNAL-GAL_E5A_ENA
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL_BDS_ENA CFG-SIGNAL-BDS_ENA (BeiDou Enable)
     @{
 */
@@ -8065,6 +8174,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA_ID                  0x1031000e                               //!< ID of CFG-SIGNAL-BDS_B2_ENA
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA_STR                 "CFG-SIGNAL-BDS_B2_ENA"                  //!< Name of CFG-SIGNAL-BDS_B2_ENA
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA_TYPE                L                                        //!< Type of CFG-SIGNAL-BDS_B2_ENA
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA CFG-SIGNAL-BDS_B2A_ENA (BeiDou B2a enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_ID                 0x10310028                               //!< ID of CFG-SIGNAL-BDS_B2A_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_STR                "CFG-SIGNAL-BDS_B2A_ENA"                 //!< Name of CFG-SIGNAL-BDS_B2A_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_TYPE               L                                        //!< Type of CFG-SIGNAL-BDS_B2A_ENA
 ///@}
 
 /*!
@@ -8104,6 +8222,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_QZSS_L5_ENA CFG-SIGNAL-QZSS_L5_ENA (QZSS L5 enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_QZSS_L5_ENA_ID                 0x10310017                               //!< ID of CFG-SIGNAL-QZSS_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_QZSS_L5_ENA_STR                "CFG-SIGNAL-QZSS_L5_ENA"                 //!< Name of CFG-SIGNAL-QZSS_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_QZSS_L5_ENA_TYPE               L                                        //!< Type of CFG-SIGNAL-QZSS_L5_ENA
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL_GLO_ENA CFG-SIGNAL-GLO_ENA (GLONASS enable)
     @{
 */
@@ -8128,6 +8255,24 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 #define UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA_ID                  0x1031001a                               //!< ID of CFG-SIGNAL-GLO_L2_ENA
 #define UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA_STR                 "CFG-SIGNAL-GLO_L2_ENA"                  //!< Name of CFG-SIGNAL-GLO_L2_ENA
 #define UBLOXCFG_CFG_SIGNAL_GLO_L2_ENA_TYPE                L                                        //!< Type of CFG-SIGNAL-GLO_L2_ENA
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_NAVIC_ENA CFG-SIGNAL-NAVIC_ENA (NavIC enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_ENA_ID                   0x10310026                               //!< ID of CFG-SIGNAL-NAVIC_ENA
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_ENA_STR                  "CFG-SIGNAL-NAVIC_ENA"                   //!< Name of CFG-SIGNAL-NAVIC_ENA
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_ENA_TYPE                 L                                        //!< Type of CFG-SIGNAL-NAVIC_ENA
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_NAVIC_L5_ENA CFG-SIGNAL-NAVIC_L5_ENA (NavIC L5 enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_L5_ENA_ID                0x1031001d                               //!< ID of CFG-SIGNAL-NAVIC_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_L5_ENA_STR               "CFG-SIGNAL-NAVIC_L5_ENA"                //!< Name of CFG-SIGNAL-NAVIC_L5_ENA
+#define UBLOXCFG_CFG_SIGNAL_NAVIC_L5_ENA_TYPE              L                                        //!< Type of CFG-SIGNAL-NAVIC_L5_ENA
 ///@}
 
 ///@}
@@ -9439,6 +9584,24 @@ typedef enum UBLOXCFG_CFG_UART2_PARITY_e
 #define UBLOXCFG_CFG_USBOUTPROT_RTCM3X_ID                  0x10780004                               //!< ID of CFG-USBOUTPROT-RTCM3X
 #define UBLOXCFG_CFG_USBOUTPROT_RTCM3X_STR                 "CFG-USBOUTPROT-RTCM3X"                  //!< Name of CFG-USBOUTPROT-RTCM3X
 #define UBLOXCFG_CFG_USBOUTPROT_RTCM3X_TYPE                L                                        //!< Type of CFG-USBOUTPROT-RTCM3X
+///@}
+
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_GRP32 CFG-GRP32
+    @{
+*/
+
+#define UBLOXCFG_CFG_GRP32_ID  0x00320000 //!< Group ID of the CFG-GRP32-* items
+
+/*!
+    \defgroup UBLOXCFG_CFG_GRP32_IGNORE_GPS_L5_HEALTH CFG-GRP32-IGNORE_GPS_L5_HEALTH (Ignore GPS L5 health (use L1 health instead))
+    @{
+*/
+#define UBLOXCFG_CFG_GRP32_IGNORE_GPS_L5_HEALTH_ID         0x10320001                               //!< ID of CFG-GRP32-IGNORE_GPS_L5_HEALTH
+#define UBLOXCFG_CFG_GRP32_IGNORE_GPS_L5_HEALTH_STR        "CFG-GRP32-IGNORE_GPS_L5_HEALTH"         //!< Name of CFG-GRP32-IGNORE_GPS_L5_HEALTH
+#define UBLOXCFG_CFG_GRP32_IGNORE_GPS_L5_HEALTH_TYPE       L                                        //!< Type of CFG-GRP32-IGNORE_GPS_L5_HEALTH
 ///@}
 
 ///@}
@@ -11379,6 +11542,28 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_NAV_TIMENAVIC UBX-NAV-TIMENAVIC
+    @{
+*/
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_STR                     "UBX-NAV-TIMENAVIC"                                //!< Message UBX-NAV-TIMENAVIC name
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART1_ID                UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_ID     //!< Config item ID for UBX-NAV-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART1_STR               UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_STR    //!< Config item name for UBX-NAV-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART1_TYPE              UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART1_TYPE   //!< Config item type for UBX-NAV-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART2_ID                UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_ID     //!< Config item ID for UBX-NAV-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART2_STR               UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_STR    //!< Config item name for UBX-NAV-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_UART2_TYPE              UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_UART2_TYPE   //!< Config item type for UBX-NAV-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_SPI_ID                  UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_ID       //!< Config item ID for UBX-NAV-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_SPI_STR                 UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_STR      //!< Config item name for UBX-NAV-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_SPI_TYPE                UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_SPI_TYPE     //!< Config item type for UBX-NAV-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_I2C_ID                  UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_ID       //!< Config item ID for UBX-NAV-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_I2C_STR                 UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_STR      //!< Config item name for UBX-NAV-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_I2C_TYPE                UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_I2C_TYPE     //!< Config item type for UBX-NAV-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_USB_ID                  UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_ID       //!< Config item ID for UBX-NAV-TIMENAVIC rate on port USB
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_USB_STR                 UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_STR      //!< Config item name for UBX-NAV-TIMENAVIC rate on port USB
+#define UBLOXCFG_UBX_NAV_TIMENAVIC_USB_TYPE                UBLOXCFG_CFG_MSGOUT_UBX_NAV_TIMENAVIC_USB_TYPE     //!< Config item type for UBX-NAV-TIMENAVIC rate on port USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_MSGOUT_UBX_NAV_TIMEQZSS UBX-NAV-TIMEQZSS
     @{
 */
@@ -11907,6 +12092,28 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_MSGOUT_UBX_NAV2_TIMENAVIC UBX-NAV2-TIMENAVIC
+    @{
+*/
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_STR                    "UBX-NAV2-TIMENAVIC"                               //!< Message UBX-NAV2-TIMENAVIC name
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART1_ID               UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_ID    //!< Config item ID for UBX-NAV2-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART1_STR              UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_STR   //!< Config item name for UBX-NAV2-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART1_TYPE             UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART1_TYPE  //!< Config item type for UBX-NAV2-TIMENAVIC rate on port UART1
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART2_ID               UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_ID    //!< Config item ID for UBX-NAV2-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART2_STR              UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_STR   //!< Config item name for UBX-NAV2-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_UART2_TYPE             UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_UART2_TYPE  //!< Config item type for UBX-NAV2-TIMENAVIC rate on port UART2
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_SPI_ID                 UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_ID      //!< Config item ID for UBX-NAV2-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_SPI_STR                UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_STR     //!< Config item name for UBX-NAV2-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_SPI_TYPE               UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_SPI_TYPE    //!< Config item type for UBX-NAV2-TIMENAVIC rate on port SPI
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_I2C_ID                 UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_ID      //!< Config item ID for UBX-NAV2-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_I2C_STR                UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_STR     //!< Config item name for UBX-NAV2-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_I2C_TYPE               UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_I2C_TYPE    //!< Config item type for UBX-NAV2-TIMENAVIC rate on port I2C
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_USB_ID                 UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_ID      //!< Config item ID for UBX-NAV2-TIMENAVIC rate on port USB
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_USB_STR                UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_STR     //!< Config item name for UBX-NAV2-TIMENAVIC rate on port USB
+#define UBLOXCFG_UBX_NAV2_TIMENAVIC_USB_TYPE               UBLOXCFG_CFG_MSGOUT_UBX_NAV2_TIMENAVIC_USB_TYPE    //!< Config item type for UBX-NAV2-TIMENAVIC rate on port USB
+///@}
+
+/*!
     \defgroup UBLOXCFG_MSGOUT_UBX_NAV2_TIMEQZSS UBX-NAV2-TIMEQZSS
     @{
 */
@@ -12304,13 +12511,13 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 971
+#define _UBLOXCFG_NUM_ITEMS 988
 const void **_ubloxcfg_allItems(void);
-#define _UBLOXCFG_NUM_RATES 120
+#define _UBLOXCFG_NUM_RATES 122
 const void **_ubloxcfg_allRates(void);
 #define _UBLOXCFG_MAX_ITEM_LEN 36
 #define _UBLOXCFG_MAX_CONSTS_LEN 449
-#define _UBLOXCFG_NUM_SOURCES 6
+#define _UBLOXCFG_NUM_SOURCES 7
 const char **_ubloxcfg_allSources(void);
 #endif
 

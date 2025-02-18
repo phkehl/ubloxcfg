@@ -482,6 +482,8 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
                 case UBX_SIGID_GPS_L1CA: return "L1CA";
                 case UBX_SIGID_GPS_L2CL: return "L2CL";
                 case UBX_SIGID_GPS_L2CM: return "L2CM";
+                case UBX_SIGID_GPS_L5I:  return "L5I";
+                case UBX_SIGID_GPS_L5Q:  return "L5Q";
             }
             break;
         case UBX_GNSSID_SBAS:
@@ -498,6 +500,8 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
                 case UBX_SIGID_GAL_E1B:  return "E1B";
                 case UBX_SIGID_GAL_E5BI: return "E5BI";
                 case UBX_SIGID_GAL_E5BQ: return "E5BQ";
+                case UBX_SIGID_GAL_E5AI: return "E5AI";
+                case UBX_SIGID_GAL_E5AQ: return "E5AQ";
             }
             break;
         case UBX_GNSSID_BDS:
@@ -507,6 +511,10 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
                 case UBX_SIGID_BDS_B1ID2: return "B1ID2";
                 case UBX_SIGID_BDS_B2ID1: return "B2ID1";
                 case UBX_SIGID_BDS_B2ID2: return "B2ID2";
+                case UBX_SIGID_BDS_B1CP:  return "B1CP";
+                case UBX_SIGID_BDS_B1CD:  return "B1CD";
+                case UBX_SIGID_BDS_B2AP:  return "B2AP";
+                case UBX_SIGID_BDS_B2AD:  return "B2AD";
             }
             break;
         case UBX_GNSSID_QZSS:
@@ -516,6 +524,8 @@ const char *ubxSigStr(const uint8_t gnssId, const uint8_t sigId)
                 case UBX_SIGID_QZSS_L1S:  return "L1S";
                 case UBX_SIGID_QZSS_L2CM: return "L2CM";
                 case UBX_SIGID_QZSS_L2CL: return "L2CL";
+                case UBX_SIGID_QZSS_L5I:  return "L5I";
+                case UBX_SIGID_QZSS_L5Q:  return "L5Q";
             }
             break;
         case UBX_GNSSID_GLO:

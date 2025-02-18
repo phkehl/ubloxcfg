@@ -8,6 +8,7 @@
     "u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG",
     "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG",
     "u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG",
+    "u-blox GPS L5 configuration Application Note (https://www.u-blox.com/en/docs/UBX-21038688), copyright (c) 2023 u-blox AG",
     "u-center 20.01, copyright (c) 2020 u-blox AG"
     // (Which may or may not have worked fully and may or may not be fully correct... YMMV)
 
@@ -630,6 +631,12 @@
     { "id" : "0x20910386", "name" : "CFG-MSGOUT-UBX_NAV_TIMEQZSS_I2C",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEQZSS message on port I2C" },
     { "id" : "0x20910389", "name" : "CFG-MSGOUT-UBX_NAV_TIMEQZSS_USB",      "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMEQZSS message on port USB" },
     // ......................................................................................................................................................................................................................
+    { "id" : "0x209106a3", "name" : "CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART1",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMENAVIC message on port UART1" },
+    { "id" : "0x209106a4", "name" : "CFG-MSGOUT-UBX_NAV_TIMENAVIC_UART2",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMENAVIC message on port UART2" },
+    { "id" : "0x209106a6", "name" : "CFG-MSGOUT-UBX_NAV_TIMENAVIC_SPI",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMENAVIC message on port SPI" },
+    { "id" : "0x209106a2", "name" : "CFG-MSGOUT-UBX_NAV_TIMENAVIC_I2C",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMENAVIC message on port I2C" },
+    { "id" : "0x209106a5", "name" : "CFG-MSGOUT-UBX_NAV_TIMENAVIC_USB",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMENAVIC message on port USB" },
+    // ......................................................................................................................................................................................................................
     { "id" : "0x209103a9", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_UART1", "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port UART1" },
     { "id" : "0x209103aa", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_UART2", "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port UART2" },
     { "id" : "0x209103ac", "name" : "CFG-MSGOUT-UBX_NAV_TIMETRUSTED_SPI",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV-TIMETRUSTED message on port SPI" },
@@ -779,6 +786,12 @@
     { "id" : "0x20910579", "name" : "CFG-MSGOUT-UBX_NAV2_TIMEQZSS_SPI",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMEQZSS message on port SPI" },
     { "id" : "0x20910575", "name" : "CFG-MSGOUT-UBX_NAV2_TIMEQZSS_I2C",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMEQZSS message on port I2C" },
     { "id" : "0x20910578", "name" : "CFG-MSGOUT-UBX_NAV2_TIMEQZSS_USB",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMEQZSS message on port USB" },
+    // ......................................................................................................................................................................................................................
+    { "id" : "0x209106a8", "name" : "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART1",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMENAVIC message on port UART1" },
+    { "id" : "0x209106a9", "name" : "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_UART2",   "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMENAVIC message on port UART2" },
+    { "id" : "0x209106ab", "name" : "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_SPI",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMENAVIC message on port SPI" },
+    { "id" : "0x209106a7", "name" : "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_I2C",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMENAVIC message on port I2C" },
+    { "id" : "0x209106aa", "name" : "CFG-MSGOUT-UBX_NAV2_TIMENAVIC_USB",     "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMENAVIC message on port USB" },
     // ......................................................................................................................................................................................................................
     { "id" : "0x20910551", "name" : "CFG-MSGOUT-UBX_NAV2_TIMEUTC_UART1",    "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMEUTC message on port UART1" },
     { "id" : "0x20910552", "name" : "CFG-MSGOUT-UBX_NAV2_TIMEUTC_UART2",    "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-NAV2-TIMEUTC message on port UART2" },
@@ -1221,21 +1234,27 @@
     { "id" : "0x1031001f", "name" : "CFG-SIGNAL-GPS_ENA",                   "size" : 0, "type" : "L",                                          "title" : "GPS enable" },
     { "id" : "0x10310001", "name" : "CFG-SIGNAL-GPS_L1CA_ENA",              "size" : 0, "type" : "L",                                          "title" : "GPS L1C/A enable" },
     { "id" : "0x10310003", "name" : "CFG-SIGNAL-GPS_L2C_ENA",               "size" : 0, "type" : "L",                                          "title" : "GPS L2C enable" },
+    { "id" : "0x10310004", "name" : "CFG-SIGNAL-GPS_L5_ENA",                "size" : 0, "type" : "L",                                          "title" : "GPS L5 enable" },
     { "id" : "0x10310020", "name" : "CFG-SIGNAL-SBAS_ENA",                  "size" : 0, "type" : "L",                                          "title" : "SBAS enable" },
     { "id" : "0x10310005", "name" : "CFG-SIGNAL-SBAS_L1CA_ENA",             "size" : 0, "type" : "L",                                          "title" : "SBAS L1C/A enable" },
     { "id" : "0x10310021", "name" : "CFG-SIGNAL-GAL_ENA",                   "size" : 0, "type" : "L",                                          "title" : "Galileo enable" },
     { "id" : "0x10310007", "name" : "CFG-SIGNAL-GAL_E1_ENA",                "size" : 0, "type" : "L",                                          "title" : "Galileo E1 enable" },
     { "id" : "0x1031000a", "name" : "CFG-SIGNAL-GAL_E5B_ENA",               "size" : 0, "type" : "L",                                          "title" : "Galileo E5b enable" },
+    { "id" : "0x10310009", "name" : "CFG-SIGNAL-GAL_E5A_ENA",               "size" : 0, "type" : "L",                                          "title" : "Galileo E5b enable" },
     { "id" : "0x10310022", "name" : "CFG-SIGNAL-BDS_ENA",                   "size" : 0, "type" : "L",                                          "title" : "BeiDou Enable" },
     { "id" : "0x1031000d", "name" : "CFG-SIGNAL-BDS_B1_ENA",                "size" : 0, "type" : "L",                                          "title" : "BeiDou B1I enable" },
     { "id" : "0x1031000e", "name" : "CFG-SIGNAL-BDS_B2_ENA",                "size" : 0, "type" : "L",                                          "title" : "BeiDou B2I enable" },
+    { "id" : "0x10310028", "name" : "CFG-SIGNAL-BDS_B2A_ENA",               "size" : 0, "type" : "L",                                          "title" : "BeiDou B2a enable" },
     { "id" : "0x10310024", "name" : "CFG-SIGNAL-QZSS_ENA",                  "size" : 0, "type" : "L",                                          "title" : "QZSS enable" },
     { "id" : "0x10310012", "name" : "CFG-SIGNAL-QZSS_L1CA_ENA",             "size" : 0, "type" : "L",                                          "title" : "QZSS L1C/A enable" },
     { "id" : "0x10310014", "name" : "CFG-SIGNAL-QZSS_L1S_ENA",              "size" : 0, "type" : "L",                                          "title" : "QZSS L1S enable" },
     { "id" : "0x10310015", "name" : "CFG-SIGNAL-QZSS_L2C_ENA",              "size" : 0, "type" : "L",                                          "title" : "QZSS L2C enable" },
+    { "id" : "0x10310017", "name" : "CFG-SIGNAL-QZSS_L5_ENA",               "size" : 0, "type" : "L",                                          "title" : "QZSS L5 enable" },
     { "id" : "0x10310025", "name" : "CFG-SIGNAL-GLO_ENA",                   "size" : 0, "type" : "L",                                          "title" : "GLONASS enable" },
     { "id" : "0x10310018", "name" : "CFG-SIGNAL-GLO_L1_ENA",                "size" : 0, "type" : "L",                                          "title" : "GLONASS L1 enable" },
     { "id" : "0x1031001a", "name" : "CFG-SIGNAL-GLO_L2_ENA",                "size" : 0, "type" : "L",                                          "title" : "GLONASS L2 enable" },
+    { "id" : "0x10310026", "name" : "CFG-SIGNAL-NAVIC_ENA",                 "size" : 0, "type" : "L",                                          "title" : "NavIC enable" },
+    { "id" : "0x1031001d", "name" : "CFG-SIGNAL-NAVIC_L5_ENA",              "size" : 0, "type" : "L",                                          "title" : "NavIC L5 enable" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20a70001", "name" : "CFG-SPARTN-USE_SOURCE",                "size" : 1, "type" : "E1",                                         "title" : "Selector for source SPARTN stream",
             "consts" : [ { "name" : "IP",                                   "value" : "0",                                                     "title" : "IP source" },
@@ -1414,7 +1433,10 @@
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x10780001", "name" : "CFG-USBOUTPROT-UBX",                   "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if UBX should be an output protocol on USB" },
     { "id" : "0x10780002", "name" : "CFG-USBOUTPROT-NMEA",                  "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if NMEA should be an output protocol on USB" },
-    { "id" : "0x10780004", "name" : "CFG-USBOUTPROT-RTCM3X",                "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an output protocol on USB" }
+    { "id" : "0x10780004", "name" : "CFG-USBOUTPROT-RTCM3X",                "size" : 0, "type" : "L",                                          "title" : "Flag to indicate if RTCM3X should be an output protocol on USB" },
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    // Documented (indirectly) in "GPS L5 configuration Application Note (UBX-21038688)"
+    { "id" : "0x10320001", "name" : "CFG-GRP32-IGNORE_GPS_L5_HEALTH",       "size" : 0, "type" : "L",                                          "title" : "Ignore GPS L5 health (use L1 health instead)" }
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ]
 }

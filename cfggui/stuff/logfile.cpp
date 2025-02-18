@@ -23,6 +23,7 @@
 
 #include "ff_stuff.h"
 #include "ff_debug.h"
+#include "ff_utils.hpp"
 
 #include "platform.hpp"
 #include "logfile.hpp"
@@ -91,7 +92,7 @@ bool Logfile::OpenRead(const std::string &path)
 {
     if (_isOpen)
     {
-        _errorStr = "Logfile::OpenRead(%s) already open: %s", path.c_str(), _path.c_str();
+        _errorStr = Ff::Sprintf("Logfile::OpenRead(%s) already open: %s", path.c_str(), _path.c_str());
         return false;
     }
 
@@ -130,7 +131,7 @@ bool Logfile::OpenWrite(const std::string &path)
 {
     if (_isOpen)
     {
-        _errorStr = "Logfile::OpenWrite(%s) already open: %s", path.c_str(), _path.c_str();
+        _errorStr = Ff::Sprintf("Logfile::OpenWrite(%s) already open: %s", path.c_str(), _path.c_str());
         return false;
     }
 

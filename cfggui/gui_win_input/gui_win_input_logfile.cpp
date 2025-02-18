@@ -145,7 +145,7 @@ void GuiWinInputLogfile::_DrawControls()
         if (ImGui::BeginCombo("##RecentLogs", NULL, ImGuiComboFlags_HeightLarge | ImGuiComboFlags_NoPreview))
         {
             const std::string *selectedLog = nullptr;
-            const auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_LOGFILES);
+            const auto recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_LOGFILES);
             if (recent.empty())
             {
                 ImGui::TextUnformatted("No recent logs");

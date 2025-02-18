@@ -648,7 +648,7 @@ void GuiWinDataMessages::_DrawMessage()
     const float sepPadding     = (2 * GuiSettings::style->ItemSpacing.y) + 1;
     const ImVec2 sizeAvail     = ImGui::GetContentRegionAvail();
     const ImVec2 msgInfoSize   { 0, (2 * GuiSettings::charSize.y) + (1 * GuiSettings::style->ItemSpacing.y) };
-    const ImVec2 hexDumpSize   { 0, _showHexDump ? (info.hexdump.size(), 10) * GuiSettings::charSize.y : 0 };
+    const ImVec2 hexDumpSize   { 0, _showHexDump ? std::min(info.hexdump.size(), (std::size_t)10) * GuiSettings::charSize.y : 0 };
     const float remHeight      = sizeAvail.y - msgInfoSize.y - hexDumpSize.y - sepPadding - (_showHexDump ? sepPadding : 0);
     const float minHeight      = 10 * GuiSettings::charSize.y;
     const ImVec2 msgDetailSize { 0, MAX(remHeight, minHeight) };

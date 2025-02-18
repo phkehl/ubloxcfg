@@ -154,6 +154,7 @@ typedef enum EPOCH_GNSS_e
     EPOCH_GNSS_GAL,           //!< Galileo
     EPOCH_GNSS_SBAS,          //!< SNAS
     EPOCH_GNSS_QZSS,          //!< QZSS
+    EPOCH_GNSS_NAVIC          //!< NavIC
     // Keep in sync with kEpochGnssStrs!
 } EPOCH_GNSS_t;
 
@@ -163,16 +164,22 @@ typedef enum EPOCH_SIGNAL_e
     EPOCH_SIGNAL_UNKNOWN = 0,               //!< Unknown or unspecified signal
     EPOCH_SIGNAL_GPS_L1CA,                  //!< GPS L1 C/A signal
     EPOCH_SIGNAL_GPS_L2C,                   //!< GPS L2 C signal
+    EPOCH_SIGNAL_GPS_L5,                    //!< GPS L5 signal        (L5 I and L5 Q)
     EPOCH_SIGNAL_SBAS_L1CA,                 //!< SBAS L1 C/A signal
     EPOCH_SIGNAL_GAL_E1,                    //!< Galileo E1 signal
     EPOCH_SIGNAL_GAL_E5B,                   //!< Galileo E5b signal
+    EPOCH_SIGNAL_GAL_E5A,                   //!< Galileo E5a signal   (E5 aI and E5 aQ)
+    EPOCH_SIGNAL_BDS_B1C,                   //!< BeiDou B1c signal    (B1 Cp and B1 Cd)
     EPOCH_SIGNAL_BDS_B1I,                   //!< BeiDou B1I signal
     EPOCH_SIGNAL_BDS_B2I,                   //!< BeiDou B2I signal
+    EPOCH_SIGNAL_BDS_B2A,                   //!< BeiDou B2a signal    (B2 ap and B2 ad)
     EPOCH_SIGNAL_QZSS_L1CA,                 //!< QZSS L1 C/A signal
     EPOCH_SIGNAL_QZSS_L1S,                  //!< QZSS L1 S signal
     EPOCH_SIGNAL_QZSS_L2C,                  //!< QZSS L2 CM signal
+    EPOCH_SIGNAL_QZSS_L5,                   //!< QZSS L5 signal       (L5 I and L5 Q)
     EPOCH_SIGNAL_GLO_L1OF,                  //!< GLONASS L1 OF signal
     EPOCH_SIGNAL_GLO_L2OF,                  //!< GLONASS L2 OF signal
+    EPOCH_SIGNAL_NAVIC_L5A,                 //!< NavIC L5 A
     // Keep in sync with kEpochSignalStrs!
 } EPOCH_SIGNAL_t;
 
@@ -398,6 +405,7 @@ typedef struct EPOCH_s
     int                 numSigUsedBds;
     int                 numSigUsedSbas;
     int                 numSigUsedQzss;
+    int                 numSigUsedNavic;
 
     bool                haveNumSat;
     int                 numSatUsed;
@@ -407,6 +415,7 @@ typedef struct EPOCH_s
     int                 numSatUsedBds;
     int                 numSatUsedSbas;
     int                 numSatUsedQzss;
+    int                 numSatUsedNavic;
 
     bool                haveSigCnoHist;
     int                 sigCnoHistTrk[EPOCH_SIGCNOHIST_NUM];
@@ -429,15 +438,17 @@ typedef struct EPOCH_s
 #define EPOCH_NUM_SBAS       39
 #define EPOCH_NUM_GAL        36
 #define EPOCH_NUM_BDS        63
-#define EPOCH_NUM_QZSS       10
 #define EPOCH_NUM_GLO        32
+#define EPOCH_NUM_QZSS       10
+#define EPOCH_NUM_NAVIC      14
 #define EPOCH_FIRST_GPS       1
 #define EPOCH_FIRST_SBAS    120
 #define EPOCH_FIRST_GAL       1
 #define EPOCH_FIRST_BDS       1
-#define EPOCH_FIRST_QZSS      1
 #define EPOCH_FIRST_GLO       1
-#define EPOCH_NUM_SV (EPOCH_NUM_GPS + EPOCH_NUM_SBAS + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_QZSS + EPOCH_NUM_GLO)
+#define EPOCH_FIRST_QZSS      1
+#define EPOCH_FIRST_NAVIC     1
+#define EPOCH_NUM_SV (EPOCH_NUM_GPS + EPOCH_NUM_SBAS + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_QZSS + EPOCH_NUM_GLO + EPOCH_NUM_NAVIC)
 #define EPOCH_NO_SV (EPOCH_NUM_SV + 1)
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -43,7 +43,7 @@ GuiWinNtrip::GuiWinNtrip(const std::string &name) :
     _winSize = { 70, 30 };
     DEBUG("GuiWinNtrip(%s)", _winName.c_str());
 
-    auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_NTRIP_CASTERS);
+    auto recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_NTRIP_CASTERS);
     if (!recent.empty())
     {
         _SetCaster(recent[0]);
@@ -153,7 +153,7 @@ void GuiWinNtrip::DrawWindow()
         Gui::ItemTooltip("Recent NTRIP casters");
         if (ImGui::BeginPopup("Recent"))
         {
-            auto &recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_NTRIP_CASTERS);
+            auto recent = GuiSettings::GetRecentItems(GuiSettings::RECENT_NTRIP_CASTERS);
             for (auto &caster: recent)
             {
                 if (ImGui::Selectable(caster.c_str()))

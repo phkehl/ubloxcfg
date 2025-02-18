@@ -302,6 +302,7 @@ static EPOCH_GNSS_t _nmeaGnssToGnss(NMEA_GNSS_t gnss)
         case NMEA_GNSS_GAL:     return EPOCH_GNSS_GAL;
         case NMEA_GNSS_SBAS:    return EPOCH_GNSS_SBAS;
         case NMEA_GNSS_QZSS:    return EPOCH_GNSS_QZSS;
+        case NMEA_GNSS_NAVIC:   return EPOCH_GNSS_QZSS;
     }
     return EPOCH_GNSS_UNKNOWN;
 }
@@ -315,6 +316,7 @@ static const char * const kEpochGnssStrs[] =
     [EPOCH_GNSS_BDS]     = "BDS",
     [EPOCH_GNSS_SBAS]    = "SBAS",
     [EPOCH_GNSS_QZSS]    = "QZSS",
+    [EPOCH_GNSS_NAVIC]   = "NAVIC",
 };
 
 const char *epochGnssStr(const EPOCH_GNSS_t gnss)
@@ -332,6 +334,8 @@ static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigI
                 case UBX_SIGID_GPS_L1CA: return EPOCH_SIGNAL_GPS_L1CA;
                 case UBX_SIGID_GPS_L2CL:
                 case UBX_SIGID_GPS_L2CM: return EPOCH_SIGNAL_GPS_L2C;
+                case UBX_SIGID_GPS_L5I:
+                case UBX_SIGID_GPS_L5Q:  return EPOCH_SIGNAL_GPS_L5;
             }
             break;
         case UBX_GNSSID_SBAS:
@@ -347,15 +351,21 @@ static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigI
                 case UBX_SIGID_GAL_E1B:  return EPOCH_SIGNAL_GAL_E1;
                 case UBX_SIGID_GAL_E5BI:
                 case UBX_SIGID_GAL_E5BQ: return EPOCH_SIGNAL_GAL_E5B;
+                case UBX_SIGID_GAL_E5AI:
+                case UBX_SIGID_GAL_E5AQ: return EPOCH_SIGNAL_GAL_E5A;
             }
             break;
         case UBX_GNSSID_BDS:
             switch (sigId)
             {
+                case UBX_SIGID_BDS_B1CP:
+                case UBX_SIGID_BDS_B1CD:  return EPOCH_SIGNAL_BDS_B1C;
                 case UBX_SIGID_BDS_B1ID1:
                 case UBX_SIGID_BDS_B1ID2: return EPOCH_SIGNAL_BDS_B1I;
                 case UBX_SIGID_BDS_B2ID1:
                 case UBX_SIGID_BDS_B2ID2: return EPOCH_SIGNAL_BDS_B2I;
+                case UBX_SIGID_BDS_B2AP:
+                case UBX_SIGID_BDS_B2AD:  return EPOCH_SIGNAL_BDS_B2A;
             }
             break;
         case UBX_GNSSID_QZSS:
@@ -365,16 +375,18 @@ static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigI
                 case UBX_SIGID_QZSS_L1S:  return EPOCH_SIGNAL_QZSS_L1S;
                 case UBX_SIGID_QZSS_L2CM:
                 case UBX_SIGID_QZSS_L2CL: return EPOCH_SIGNAL_QZSS_L2C;
+                case UBX_SIGID_QZSS_L5I:
+                case UBX_SIGID_QZSS_L5Q:  return EPOCH_SIGNAL_QZSS_L5;
             }
             break;
         case UBX_GNSSID_GLO:
             switch (sigId)
             {
-                case UBX_SIGID_GLO_L1OF: return EPOCH_SIGNAL_GLO_L1OF;
-                case UBX_SIGID_GLO_L2OF: return EPOCH_SIGNAL_GLO_L2OF;
+                case UBX_SIGID_GLO_L1OF:  return EPOCH_SIGNAL_GLO_L1OF;
+                case UBX_SIGID_GLO_L2OF:  return EPOCH_SIGNAL_GLO_L2OF;
             }
             break;
-    }
+        }
     return EPOCH_SIGNAL_UNKNOWN;
 }
 
@@ -382,19 +394,28 @@ static EPOCH_SIGNAL_t _nmeaSignalToSignal(NMEA_SIGNAL_t signal)
 {
     switch (signal)
     {
-        case NMEA_SIGNAL_UNKNOWN:    break;
-        case NMEA_SIGNAL_GPS_L1CA:   return EPOCH_SIGNAL_GPS_L1CA;
-        case NMEA_SIGNAL_GPS_L2C:    return EPOCH_SIGNAL_GPS_L2C;
-        case NMEA_SIGNAL_SBAS_L1CA:  return EPOCH_SIGNAL_SBAS_L1CA;
-        case NMEA_SIGNAL_GAL_E1:     return EPOCH_SIGNAL_GAL_E1;
-        case NMEA_SIGNAL_GAL_E5B:    return EPOCH_SIGNAL_GAL_E5B;
-        case NMEA_SIGNAL_BDS_B1I:    return EPOCH_SIGNAL_BDS_B1I;
-        case NMEA_SIGNAL_BDS_B2I:    return EPOCH_SIGNAL_BDS_B2I;
-        case NMEA_SIGNAL_QZSS_L1CA:  return EPOCH_SIGNAL_QZSS_L1CA;
-        case NMEA_SIGNAL_QZSS_L1S:   return EPOCH_SIGNAL_QZSS_L1S;
-        case NMEA_SIGNAL_QZSS_L2C:   return EPOCH_SIGNAL_QZSS_L2C;
-        case NMEA_SIGNAL_GLO_L1OF:   return EPOCH_SIGNAL_GLO_L1OF;
-        case NMEA_SIGNAL_GLO_L2OF:   return EPOCH_SIGNAL_GLO_L2OF;
+        case NMEA_SIGNAL_UNKNOWN:     break;
+        case NMEA_SIGNAL_GPS_L1CA:    return EPOCH_SIGNAL_GPS_L1CA;
+        case NMEA_SIGNAL_GPS_L2CL:
+        case NMEA_SIGNAL_GPS_L2CM:    return EPOCH_SIGNAL_GPS_L2C;
+        case NMEA_SIGNAL_GPS_L5I:
+        case NMEA_SIGNAL_GPS_L5Q:     return EPOCH_SIGNAL_GPS_L5;
+        case NMEA_SIGNAL_GLO_L1OF:    return EPOCH_SIGNAL_GLO_L1OF;
+        case NMEA_SIGNAL_GLO_L2OF:    return EPOCH_SIGNAL_GLO_L2OF;
+        case NMEA_SIGNAL_GAL_E1:      return EPOCH_SIGNAL_GAL_E1;
+        case NMEA_SIGNAL_GAL_E5A:     return EPOCH_SIGNAL_GAL_E5A;
+        case NMEA_SIGNAL_GAL_E5B:     return EPOCH_SIGNAL_GAL_E5B;
+        case NMEA_SIGNAL_BDS_B1ID:
+        case NMEA_SIGNAL_BDS_B2ID:    return EPOCH_SIGNAL_BDS_B1I;
+        case NMEA_SIGNAL_BDS_B1C:     return EPOCH_SIGNAL_BDS_B1C;
+        case NMEA_SIGNAL_BDS_B2A:     return EPOCH_SIGNAL_BDS_B2A;
+        case NMEA_SIGNAL_QZSS_L1CA:   return EPOCH_SIGNAL_QZSS_L1CA;
+        case NMEA_SIGNAL_QZSS_L1S:    return EPOCH_SIGNAL_QZSS_L1S;
+        case NMEA_SIGNAL_QZSS_L2CM:
+        case NMEA_SIGNAL_QZSS_L2CL:   return EPOCH_SIGNAL_QZSS_L2C;
+        case NMEA_SIGNAL_QZSS_L5I:
+        case NMEA_SIGNAL_QZSS_L5Q:    return EPOCH_SIGNAL_QZSS_L5;
+        case NMEA_SIGNAL_NAVIC_L5A:   return EPOCH_SIGNAL_NAVIC_L5A;
     }
     return EPOCH_SIGNAL_UNKNOWN;
 }
@@ -404,16 +425,22 @@ const char * const kEpochSignalStrs[] =
     [EPOCH_SIGNAL_UNKNOWN]   = "?",
     [EPOCH_SIGNAL_GPS_L1CA]  = "L1CA",
     [EPOCH_SIGNAL_GPS_L2C]   = "L2C",
+    [EPOCH_SIGNAL_GPS_L5]    = "L5",
     [EPOCH_SIGNAL_SBAS_L1CA] = "L1CA",
     [EPOCH_SIGNAL_GAL_E1]    = "E1",
-    [EPOCH_SIGNAL_GAL_E5B]   = "E5B",
+    [EPOCH_SIGNAL_GAL_E5B]   = "E5b",
+    [EPOCH_SIGNAL_GAL_E5A]   = "E5a",
+    [EPOCH_SIGNAL_BDS_B1C]   = "B1c",
     [EPOCH_SIGNAL_BDS_B1I]   = "B1I",
     [EPOCH_SIGNAL_BDS_B2I]   = "B2I",
+    [EPOCH_SIGNAL_BDS_B2A]   = "B2a",
     [EPOCH_SIGNAL_QZSS_L1CA] = "L1CA",
     [EPOCH_SIGNAL_QZSS_L1S]  = "L1S",
     [EPOCH_SIGNAL_QZSS_L2C]  = "L2C",
+    [EPOCH_SIGNAL_QZSS_L5]   = "L5",
     [EPOCH_SIGNAL_GLO_L1OF]  = "L1OF",
     [EPOCH_SIGNAL_GLO_L2OF]  = "L2OF",
+    [EPOCH_SIGNAL_NAVIC_L5A] = "L5A",
 };
 
 const char *epochSignalStr(const EPOCH_SIGNAL_t signal)
@@ -425,26 +452,25 @@ EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal)
 {
     switch (signal)
     {
-        case EPOCH_SIGNAL_UNKNOWN:
-            return EPOCH_GNSS_UNKNOWN;
+        case EPOCH_SIGNAL_UNKNOWN:     return EPOCH_GNSS_UNKNOWN;
         case EPOCH_SIGNAL_GPS_L1CA:
         case EPOCH_SIGNAL_GPS_L2C:
-            return EPOCH_GNSS_GPS;
-        case EPOCH_SIGNAL_SBAS_L1CA:
-            return EPOCH_GNSS_SBAS;
+        case EPOCH_SIGNAL_GPS_L5:      return EPOCH_GNSS_GPS;
+        case EPOCH_SIGNAL_SBAS_L1CA:   return EPOCH_GNSS_SBAS;
         case EPOCH_SIGNAL_GAL_E1:
         case EPOCH_SIGNAL_GAL_E5B:
-            return EPOCH_GNSS_GAL;
+        case EPOCH_SIGNAL_GAL_E5A:     return EPOCH_GNSS_GAL;
+        case EPOCH_SIGNAL_BDS_B1C:
         case EPOCH_SIGNAL_BDS_B1I:
         case EPOCH_SIGNAL_BDS_B2I:
-            return EPOCH_GNSS_BDS;
+        case EPOCH_SIGNAL_BDS_B2A:     return EPOCH_GNSS_BDS;
         case EPOCH_SIGNAL_QZSS_L1CA:
         case EPOCH_SIGNAL_QZSS_L1S:
         case EPOCH_SIGNAL_QZSS_L2C:
-            return EPOCH_GNSS_QZSS;
+        case EPOCH_SIGNAL_QZSS_L5:     return EPOCH_GNSS_QZSS;
         case EPOCH_SIGNAL_GLO_L1OF:
-        case EPOCH_SIGNAL_GLO_L2OF:
-            return EPOCH_GNSS_GLO;
+        case EPOCH_SIGNAL_GLO_L2OF:    return EPOCH_GNSS_GLO;
+        case EPOCH_SIGNAL_NAVIC_L5A:   return EPOCH_GNSS_NAVIC;
     }
     return EPOCH_GNSS_UNKNOWN;
 }
@@ -492,7 +518,13 @@ int epochSvToIx(const EPOCH_GNSS_t gnss, const int sv)
                 ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_SBAS + sv - EPOCH_FIRST_QZSS;
             }
             break;
-    }
+        case EPOCH_GNSS_NAVIC:
+            if ( (sv >= EPOCH_FIRST_NAVIC) && (sv <= EPOCH_NUM_NAVIC) )
+            {
+                ix = EPOCH_NUM_GPS + EPOCH_NUM_GLO + EPOCH_NUM_GAL + EPOCH_NUM_BDS + EPOCH_NUM_SBAS + EPOCH_NUM_QZSS + sv - EPOCH_FIRST_NAVIC;
+            }
+            break;
+        }
     return ix;
 }
 
@@ -1265,6 +1297,7 @@ static void _collectNmea(EPOCH_t *coll, EPOCH_COLLECT_t *collect, const NMEA_MSG
                         case NMEA_GNSS_GAL:     sig->gnss = EPOCH_GNSS_GAL;     break;
                         case NMEA_GNSS_SBAS:    sig->gnss = EPOCH_GNSS_SBAS;    break;
                         case NMEA_GNSS_QZSS:    sig->gnss = EPOCH_GNSS_QZSS;    break;
+                        case NMEA_GNSS_NAVIC:   sig->gnss = EPOCH_GNSS_NAVIC;   break;
                     }
                     sig->gnss      = _nmeaGnssToGnss(nmea->gsv.svs[ix].gnss);
                     sig->sv        = nmea->gsv.svs[ix].svId;
@@ -1365,13 +1398,19 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
             case EPOCH_SIGNAL_SBAS_L1CA:  sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GAL_E1:     sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GAL_E5B:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_BDS_B1C:    sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_BDS_B1I:    sig->band = EPOCH_BAND_L1; break;
+            case EPOCH_SIGNAL_BDS_B2A:    sig->band = EPOCH_BAND_L5; break;
             case EPOCH_SIGNAL_BDS_B2I:    sig->band = EPOCH_BAND_L2; break;
             case EPOCH_SIGNAL_QZSS_L1CA:  sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_QZSS_L1S:   sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_QZSS_L2C:   sig->band = EPOCH_BAND_L2; break;
             case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_GPS_L5:     sig->band = EPOCH_BAND_L5; break;
+            case EPOCH_SIGNAL_GAL_E5A:    sig->band = EPOCH_BAND_L5; break;
+            case EPOCH_SIGNAL_QZSS_L5:    sig->band = EPOCH_BAND_L5; break;
+            case EPOCH_SIGNAL_NAVIC_L5A:  sig->band = EPOCH_BAND_L5; break;
         }
         sig->anyUsed     = sig->prUsed || sig->crUsed || sig->doUsed;
         sig->gnssStr     = sig->gnss   < NUMOF(kEpochGnssStrs)      ? kEpochGnssStrs[sig->gnss]        : kEpochGnssStrs[EPOCH_GNSS_UNKNOWN];
@@ -1432,12 +1471,13 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
                 epoch->numSigUsed++;
                 switch (sig->gnss)
                 {
-                    case EPOCH_GNSS_GPS:  epoch->numSigUsedGps++;  break;
-                    case EPOCH_GNSS_GLO:  epoch->numSigUsedGlo++;  break;
-                    case EPOCH_GNSS_BDS:  epoch->numSigUsedGal++;  break;
-                    case EPOCH_GNSS_GAL:  epoch->numSigUsedBds++;  break;
-                    case EPOCH_GNSS_SBAS: epoch->numSigUsedSbas++; break;
-                    case EPOCH_GNSS_QZSS: epoch->numSigUsedQzss++; break;
+                    case EPOCH_GNSS_GPS:   epoch->numSigUsedGps++;   break;
+                    case EPOCH_GNSS_GLO:   epoch->numSigUsedGlo++;   break;
+                    case EPOCH_GNSS_BDS:   epoch->numSigUsedGal++;   break;
+                    case EPOCH_GNSS_GAL:   epoch->numSigUsedBds++;   break;
+                    case EPOCH_GNSS_SBAS:  epoch->numSigUsedSbas++;  break;
+                    case EPOCH_GNSS_QZSS:  epoch->numSigUsedQzss++;  break;
+                    case EPOCH_GNSS_NAVIC: epoch->numSigUsedNavic++; break;
                     case EPOCH_GNSS_UNKNOWN: break;
                 }
 
@@ -1446,12 +1486,13 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
                     epoch->numSatUsed++;
                     switch (sig->gnss)
                     {
-                        case EPOCH_GNSS_GPS:  epoch->numSatUsedGps++;  break;
-                        case EPOCH_GNSS_GLO:  epoch->numSatUsedGlo++;  break;
-                        case EPOCH_GNSS_BDS:  epoch->numSatUsedGal++;  break;
-                        case EPOCH_GNSS_GAL:  epoch->numSatUsedBds++;  break;
-                        case EPOCH_GNSS_SBAS: epoch->numSatUsedSbas++; break;
-                        case EPOCH_GNSS_QZSS: epoch->numSatUsedQzss++; break;
+                        case EPOCH_GNSS_GPS:   epoch->numSatUsedGps++;   break;
+                        case EPOCH_GNSS_GLO:   epoch->numSatUsedGlo++;   break;
+                        case EPOCH_GNSS_BDS:   epoch->numSatUsedGal++;   break;
+                        case EPOCH_GNSS_GAL:   epoch->numSatUsedBds++;   break;
+                        case EPOCH_GNSS_SBAS:  epoch->numSatUsedSbas++;  break;
+                        case EPOCH_GNSS_QZSS:  epoch->numSatUsedQzss++;  break;
+                        case EPOCH_GNSS_NAVIC: epoch->numSatUsedNavic++; break;
                         case EPOCH_GNSS_UNKNOWN: break;
                     }
                 }

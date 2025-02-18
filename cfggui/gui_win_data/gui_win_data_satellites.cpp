@@ -98,6 +98,7 @@ GuiWinDataSatellites::Sat::Sat(const EPOCH_SATINFO_t &satInfo, const EPOCH_t &ep
         case EPOCH_GNSS_GAL: gnssIx_ = GnssIx::GAL; break;
         case EPOCH_GNSS_SBAS:
         case EPOCH_GNSS_QZSS:
+        case EPOCH_GNSS_NAVIC:
         case EPOCH_GNSS_UNKNOWN:
             break;
     }

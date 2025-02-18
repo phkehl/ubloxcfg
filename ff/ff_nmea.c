@@ -760,15 +760,8 @@ static bool sNmeaDecodeGsv(NMEA_GSV_t *gsv, char *payload, const char *talker)
     }
     const int nSat = (nFields - 3) / 4;
     const int remFields = nFields - (nSat * 4) - 3;
-    int nmeaSig = 0;
-    if (remFields > 0)
-    {
-        if (!sStrToInt(&nmeaSig, fields[3 + (nSat * 4)], false, 0, false, 0))
-        {
-            return false;
-        }
-    }
-    NMEA_DEBUG("nFields=%d/%d nSat=%d remFields=%d nmeaSig=%d", nFields, NUMOF(fields), nSat, remFields, nmeaSig);
+    const char nmeaSig = (remFields > 0 ? fields[3 + (nSat * 4)][0] : '?');
+    NMEA_DEBUG("nFields=%d/%d nSat=%d remFields=%d nmeaSig=%c", nFields, NUMOF(fields), nSat, remFields, nmeaSig);
 
     NMEA_GNSS_t   gnss = NMEA_GNSS_UNKNOWN;
     NMEA_SIGNAL_t sig  = NMEA_SIGNAL_UNKNOWN;
@@ -780,46 +773,60 @@ static bool sNmeaDecodeGsv(NMEA_GSV_t *gsv, char *payload, const char *talker)
                 gnss = NMEA_GNSS_GPS;  // or SBAS
                 switch (nmeaSig)
                 {
-                    case 1: sig = NMEA_SIGNAL_GPS_L1CA; break;
-                    case 5:
-                    case 6: sig = NMEA_SIGNAL_GPS_L2C; break;
+                    case '1': sig = NMEA_SIGNAL_GPS_L1CA; break;
+                    case '5': sig = NMEA_SIGNAL_GPS_L2CL; break;
+                    case '6': sig = NMEA_SIGNAL_GPS_L2CM; break;
+                    case '7': sig = NMEA_SIGNAL_GPS_L5I;  break;
+                    case '8': sig = NMEA_SIGNAL_GPS_L5Q;  break;
                 }
                 break;
             case 'L':
                 gnss = NMEA_GNSS_GLO;
                 switch (nmeaSig)
                 {
-                    case 1: sig = NMEA_SIGNAL_GLO_L1OF; break;
-                    case 3: sig = NMEA_SIGNAL_GLO_L2OF; break;
+                    case '1': sig = NMEA_SIGNAL_GLO_L1OF; break;
+                    case '3': sig = NMEA_SIGNAL_GLO_L2OF; break;
                 }
                 break;
             case 'A':
                 gnss = NMEA_GNSS_GAL;
                 switch (nmeaSig)
                 {
-                    case 7: sig = NMEA_SIGNAL_GAL_E1; break;
-                    case 2: sig = NMEA_SIGNAL_GAL_E5B; break;
+                    case '7': sig = NMEA_SIGNAL_GAL_E1;  break;
+                    case '1': sig = NMEA_SIGNAL_GAL_E5A; break;
+                    case '2': sig = NMEA_SIGNAL_GAL_E5B; break;
                 }
                 break;
             case 'B':
                 gnss = NMEA_GNSS_BDS;
                 switch (nmeaSig)
                 {
-                    case  1: sig = NMEA_SIGNAL_BDS_B1I; break;
-                    case 11: sig = NMEA_SIGNAL_BDS_B2I; break;
+                    case '1': sig = NMEA_SIGNAL_BDS_B1ID; break;
+                    case 'B': sig = NMEA_SIGNAL_BDS_B2ID; break;
+                    case '3': sig = NMEA_SIGNAL_BDS_B1C;  break;
+                    case '5': sig = NMEA_SIGNAL_BDS_B2A;  break;
                 }
                 break;
             case 'Q':
                 gnss = NMEA_GNSS_QZSS;
                 switch (nmeaSig)
                 {
-                    case 1: sig = NMEA_SIGNAL_QZSS_L1CA; break;
-                    case 4: sig = NMEA_SIGNAL_QZSS_L1S; break;
-                    case 5:
-                    case 6: sig = NMEA_SIGNAL_QZSS_L2C; break;
+                    case '1': sig = NMEA_SIGNAL_QZSS_L1CA; break;
+                    case '4': sig = NMEA_SIGNAL_QZSS_L1S;  break;
+                    case '5': sig = NMEA_SIGNAL_QZSS_L2CM; break;
+                    case '6': sig = NMEA_SIGNAL_QZSS_L2CL; break;
+                    case '7': sig = NMEA_SIGNAL_QZSS_L5I;  break;
+                    case '8': sig = NMEA_SIGNAL_QZSS_L5Q;  break;
                 }
                 break;
-        }
+            case 'I':
+                gnss = NMEA_GNSS_NAVIC;
+                switch (nmeaSig)
+                {
+                    case '5': sig = NMEA_SIGNAL_NAVIC_L5A; break;
+                }
+                break;
+            }
     }
 
     for (int satIx = 0; (satIx < nSat) && (satIx < (int)NUMOF(gsv->svs)); satIx++)
@@ -837,7 +844,7 @@ static bool sNmeaDecodeGsv(NMEA_GSV_t *gsv, char *payload, const char *talker)
         if ( (gnss == NMEA_GNSS_GPS) && (gsv->svs[satIx].svId > 32) )
         {
             gsv->svs[satIx].gnss = NMEA_GNSS_SBAS;
-            gsv->svs[satIx].sig = (sig == NMEA_SIGNAL_GPS_L1CA ? NMEA_SIGNAL_SBAS_L1CA : NMEA_SIGNAL_UNKNOWN);
+            //gsv->svs[satIx].sig = (sig == NMEA_SIGNAL_GPS_L1CA ? NMEA_SIGNAL_SBAS_L1CA : NMEA_SIGNAL_UNKNOWN);
             // S120-S158 (39) = 33-64 (32, S120-S151) and 152-158 (7, S152-158)
             if  ((gsv->svs[satIx].svId >= 33) && (gsv->svs[satIx].svId <= 64) )
             {

@@ -67,23 +67,33 @@ typedef enum NMEA_GNSS_e
     NMEA_GNSS_GAL,
     NMEA_GNSS_SBAS,
     NMEA_GNSS_QZSS,
+    NMEA_GNSS_NAVIC,
 } NMEA_GNSS_t;
 
 typedef enum NMEA_SIGNAL_e
 {
-    NMEA_SIGNAL_UNKNOWN = 0,               //!< Unspecified signal
-    NMEA_SIGNAL_GPS_L1CA,                  //!< GPS L1 C/A signal
-    NMEA_SIGNAL_GPS_L2C,                   //!< GPS L2 C signal
-    NMEA_SIGNAL_SBAS_L1CA,                 //!< SBAS L1 C/A signal
-    NMEA_SIGNAL_GAL_E1,                    //!< Galileo E1 signal
-    NMEA_SIGNAL_GAL_E5B,                   //!< Galileo E5b signal
-    NMEA_SIGNAL_BDS_B1I,                   //!< BeiDou B1I signal
-    NMEA_SIGNAL_BDS_B2I,                   //!< BeiDou B2I signal
-    NMEA_SIGNAL_QZSS_L1CA,                 //!< QZSS L1 C/A signal
-    NMEA_SIGNAL_QZSS_L1S,                  //!< QZSS L1 S signal
-    NMEA_SIGNAL_QZSS_L2C,                  //!< QZSS L2 CM signal
-    NMEA_SIGNAL_GLO_L1OF,                  //!< GLONASS L1 OF signal
-    NMEA_SIGNAL_GLO_L2OF,                  //!< GLONASS L2 OF signal
+    NMEA_SIGNAL_UNKNOWN = 0,
+    NMEA_SIGNAL_GPS_L1CA,
+    NMEA_SIGNAL_GPS_L2CL,
+    NMEA_SIGNAL_GPS_L2CM,
+    NMEA_SIGNAL_GPS_L5I,
+    NMEA_SIGNAL_GPS_L5Q,
+    NMEA_SIGNAL_GLO_L1OF,
+    NMEA_SIGNAL_GLO_L2OF,
+    NMEA_SIGNAL_GAL_E1,
+    NMEA_SIGNAL_GAL_E5A,
+    NMEA_SIGNAL_GAL_E5B,
+    NMEA_SIGNAL_BDS_B1ID,
+    NMEA_SIGNAL_BDS_B2ID,
+    NMEA_SIGNAL_BDS_B1C,
+    NMEA_SIGNAL_BDS_B2A,
+    NMEA_SIGNAL_QZSS_L1CA,
+    NMEA_SIGNAL_QZSS_L1S,
+    NMEA_SIGNAL_QZSS_L2CM,
+    NMEA_SIGNAL_QZSS_L2CL,
+    NMEA_SIGNAL_QZSS_L5I,
+    NMEA_SIGNAL_QZSS_L5Q,
+    NMEA_SIGNAL_NAVIC_L5A,
 } NMEA_SIGNAL_t;
 
 typedef struct NMEA_GGA_s

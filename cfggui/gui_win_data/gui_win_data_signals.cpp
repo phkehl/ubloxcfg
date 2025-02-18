@@ -100,6 +100,7 @@ void GuiWinDataSignals::Count::Add(const EPOCH_SIGINFO_t &sig)
         case EPOCH_GNSS_GAL: ix = GnssIx::GAL; break;
         case EPOCH_GNSS_SBAS:
         case EPOCH_GNSS_QZSS:
+        case EPOCH_GNSS_NAVIC:
         case EPOCH_GNSS_UNKNOWN:
             break;
     }
@@ -248,6 +249,7 @@ void GuiWinDataSignals::CnoSky::AddCno(const EPOCH_SIGINFO_t &sig, const EPOCH_S
         case EPOCH_GNSS_GAL: gnssIx = GAL; break;
         case EPOCH_GNSS_SBAS:
         case EPOCH_GNSS_QZSS:
+        case EPOCH_GNSS_NAVIC:
         case EPOCH_GNSS_UNKNOWN:
             break;
     }
@@ -351,6 +353,7 @@ void GuiWinDataSignals::_UpdateSignals()
             case EPOCH_GNSS_GAL: gnssIx = GAL; break;
             case EPOCH_GNSS_SBAS:
             case EPOCH_GNSS_QZSS:
+            case EPOCH_GNSS_NAVIC:
             case EPOCH_GNSS_UNKNOWN:
                 break;
         }
