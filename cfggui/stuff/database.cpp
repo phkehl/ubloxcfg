@@ -396,6 +396,7 @@ Database::Row Database::AddEpoch(const EPOCH_t &epoch, const bool isRealTime)
                     case EPOCH_BAND_L1: cnoL1.push_back(sig.cno); break;
                     case EPOCH_BAND_L2: cnoL2.push_back(sig.cno); break;
                     case EPOCH_BAND_L5: cnoL5.push_back(sig.cno); break;
+                    case EPOCH_BAND_E6: cnoL5.push_back(sig.cno); break; // FIXME shoul be its own bin... :-/
                     case EPOCH_BAND_UNKNOWN: break;
                 }
             }

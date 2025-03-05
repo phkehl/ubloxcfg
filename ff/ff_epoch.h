@@ -169,9 +169,11 @@ typedef enum EPOCH_SIGNAL_e
     EPOCH_SIGNAL_GAL_E1,                    //!< Galileo E1 signal
     EPOCH_SIGNAL_GAL_E5B,                   //!< Galileo E5b signal
     EPOCH_SIGNAL_GAL_E5A,                   //!< Galileo E5a signal   (E5 aI and E5 aQ)
+    EPOCH_SIGNAL_GAL_E6,                    //!< Galileo E6 signal    (E6A, E6B, adn E6C)
     EPOCH_SIGNAL_BDS_B1C,                   //!< BeiDou B1c signal    (B1 Cp and B1 Cd)
     EPOCH_SIGNAL_BDS_B1I,                   //!< BeiDou B1I signal
     EPOCH_SIGNAL_BDS_B2I,                   //!< BeiDou B2I signal
+    EPOCH_SIGNAL_BDS_B3I,                   //!< BeiDou B3I signal    (B3I D1 and B3I D2)
     EPOCH_SIGNAL_BDS_B2A,                   //!< BeiDou B2a signal    (B2 ap and B2 ad)
     EPOCH_SIGNAL_QZSS_L1CA,                 //!< QZSS L1 C/A signal
     EPOCH_SIGNAL_QZSS_L1S,                  //!< QZSS L1 S signal
@@ -238,6 +240,7 @@ typedef enum EPOCH_BAND_e
     EPOCH_BAND_UNKNOWN = 0,     //!< Unknown or unspecified frequency band
     EPOCH_BAND_L1,              //!< L1 band (~1.5GHz)
     EPOCH_BAND_L2,              //!< L2 band (~1.2GHz)
+    EPOCH_BAND_E6,             //!< E6 band (~1.3GHz)
     EPOCH_BAND_L5,              //!< L5 band (~1.1GHz)
     // Keep in sync with kEpochBandStrs!
 } EPOCH_BAND_t;

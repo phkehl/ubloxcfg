@@ -353,6 +353,9 @@ static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigI
                 case UBX_SIGID_GAL_E5BQ: return EPOCH_SIGNAL_GAL_E5B;
                 case UBX_SIGID_GAL_E5AI:
                 case UBX_SIGID_GAL_E5AQ: return EPOCH_SIGNAL_GAL_E5A;
+                case UBX_SIGID_GAL_E6B:
+                case UBX_SIGID_GAL_E6C:
+                case UBX_SIGID_GAL_E6A:  return EPOCH_SIGNAL_GAL_E6;
             }
             break;
         case UBX_GNSSID_BDS:
@@ -366,6 +369,8 @@ static EPOCH_SIGNAL_t _ubxSigIdToSignal(const uint8_t gnssId, const uint8_t sigI
                 case UBX_SIGID_BDS_B2ID2: return EPOCH_SIGNAL_BDS_B2I;
                 case UBX_SIGID_BDS_B2AP:
                 case UBX_SIGID_BDS_B2AD:  return EPOCH_SIGNAL_BDS_B2A;
+                case UBX_SIGID_BDS_B3ID1:
+                case UBX_SIGID_BDS_B3ID2: return EPOCH_SIGNAL_BDS_B3I;
             }
             break;
         case UBX_GNSSID_QZSS:
@@ -430,9 +435,11 @@ const char * const kEpochSignalStrs[] =
     [EPOCH_SIGNAL_GAL_E1]    = "E1",
     [EPOCH_SIGNAL_GAL_E5B]   = "E5b",
     [EPOCH_SIGNAL_GAL_E5A]   = "E5a",
+    [EPOCH_SIGNAL_GAL_E6]    = "E6",
     [EPOCH_SIGNAL_BDS_B1C]   = "B1c",
     [EPOCH_SIGNAL_BDS_B1I]   = "B1I",
     [EPOCH_SIGNAL_BDS_B2I]   = "B2I",
+    [EPOCH_SIGNAL_BDS_B3I]   = "B3I",
     [EPOCH_SIGNAL_BDS_B2A]   = "B2a",
     [EPOCH_SIGNAL_QZSS_L1CA] = "L1CA",
     [EPOCH_SIGNAL_QZSS_L1S]  = "L1S",
@@ -459,10 +466,12 @@ EPOCH_GNSS_t epochSignalGnss(const EPOCH_SIGNAL_t signal)
         case EPOCH_SIGNAL_SBAS_L1CA:   return EPOCH_GNSS_SBAS;
         case EPOCH_SIGNAL_GAL_E1:
         case EPOCH_SIGNAL_GAL_E5B:
-        case EPOCH_SIGNAL_GAL_E5A:     return EPOCH_GNSS_GAL;
+        case EPOCH_SIGNAL_GAL_E5A:
+        case EPOCH_SIGNAL_GAL_E6:      return EPOCH_GNSS_GAL;
         case EPOCH_SIGNAL_BDS_B1C:
         case EPOCH_SIGNAL_BDS_B1I:
         case EPOCH_SIGNAL_BDS_B2I:
+        case EPOCH_SIGNAL_BDS_B3I:
         case EPOCH_SIGNAL_BDS_B2A:     return EPOCH_GNSS_BDS;
         case EPOCH_SIGNAL_QZSS_L1CA:
         case EPOCH_SIGNAL_QZSS_L1S:
@@ -533,6 +542,7 @@ const char * const kEpochBandStrs[] =
     [EPOCH_BAND_UNKNOWN] = "?",
     [EPOCH_BAND_L1]      = "L1",
     [EPOCH_BAND_L2]      = "L2",
+    [EPOCH_BAND_E6]      = "E6",
     [EPOCH_BAND_L5]      = "L5",
 };
 
@@ -1398,17 +1408,19 @@ static void _epochComplete(const EPOCH_COLLECT_t *collect, EPOCH_t *epoch)
             case EPOCH_SIGNAL_SBAS_L1CA:  sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GAL_E1:     sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GAL_E5B:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_GAL_E5A:    sig->band = EPOCH_BAND_L5; break;
             case EPOCH_SIGNAL_BDS_B1C:    sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_BDS_B1I:    sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_BDS_B2A:    sig->band = EPOCH_BAND_L5; break;
             case EPOCH_SIGNAL_BDS_B2I:    sig->band = EPOCH_BAND_L2; break;
+            case EPOCH_SIGNAL_BDS_B3I:    sig->band = EPOCH_BAND_E6; break;
             case EPOCH_SIGNAL_QZSS_L1CA:  sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_QZSS_L1S:   sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_QZSS_L2C:   sig->band = EPOCH_BAND_L2; break;
             case EPOCH_SIGNAL_GLO_L1OF:   sig->band = EPOCH_BAND_L1; break;
             case EPOCH_SIGNAL_GLO_L2OF:   sig->band = EPOCH_BAND_L2; break;
             case EPOCH_SIGNAL_GPS_L5:     sig->band = EPOCH_BAND_L5; break;
-            case EPOCH_SIGNAL_GAL_E5A:    sig->band = EPOCH_BAND_L5; break;
+            case EPOCH_SIGNAL_GAL_E6:     sig->band = EPOCH_BAND_E6; break;
             case EPOCH_SIGNAL_QZSS_L5:    sig->band = EPOCH_BAND_L5; break;
             case EPOCH_SIGNAL_NAVIC_L5A:  sig->band = EPOCH_BAND_L5; break;
         }
