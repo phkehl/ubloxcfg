@@ -6222,88 +6222,106 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalE5aEna =
     .order =  837, .title ="Galileo E5b enable"
 };
 
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGalE6Ena =
+{
+    .id = 0x1031000b, .name = "CFG-SIGNAL-GAL_E6_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
+    .order =  838, .title ="Galileo E6 enable"
+};
+
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsEna =
 {
     .id = 0x10310022, .name = "CFG-SIGNAL-BDS_ENA",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  838, .title ="BeiDou Enable"
+    .order =  839, .title ="BeiDou Enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB1Ena =
 {
     .id = 0x1031000d, .name = "CFG-SIGNAL-BDS_B1_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  839, .title ="BeiDou B1I enable"
+    .order =  840, .title ="BeiDou B1I enable"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB1cEna =
+{
+    .id = 0x1031000f, .name = "CFG-SIGNAL-BDS_B1C_ENA",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
+    .order =  841, .title ="BeiDou B1C enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB2Ena =
 {
     .id = 0x1031000e, .name = "CFG-SIGNAL-BDS_B2_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  840, .title ="BeiDou B2I enable"
+    .order =  842, .title ="BeiDou B2I enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB2aEna =
 {
     .id = 0x10310028, .name = "CFG-SIGNAL-BDS_B2A_ENA",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  841, .title ="BeiDou B2a enable"
+    .order =  843, .title ="BeiDou B2a enable"
+};
+
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalBdsB3Ena =
+{
+    .id = 0x10310010, .name = "CFG-SIGNAL-BDS_B3_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
+    .order =  844, .title ="BeiDou B3I enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssEna =
 {
     .id = 0x10310024, .name = "CFG-SIGNAL-QZSS_ENA",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  842, .title ="QZSS enable"
+    .order =  845, .title ="QZSS enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL1caEna =
 {
     .id = 0x10310012, .name = "CFG-SIGNAL-QZSS_L1CA_ENA",                        .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  843, .title ="QZSS L1C/A enable"
+    .order =  846, .title ="QZSS L1C/A enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL1sEna =
 {
     .id = 0x10310014, .name = "CFG-SIGNAL-QZSS_L1S_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  844, .title ="QZSS L1S enable"
+    .order =  847, .title ="QZSS L1S enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL2cEna =
 {
     .id = 0x10310015, .name = "CFG-SIGNAL-QZSS_L2C_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  845, .title ="QZSS L2C enable"
+    .order =  848, .title ="QZSS L2C enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalQzssL5Ena =
 {
     .id = 0x10310017, .name = "CFG-SIGNAL-QZSS_L5_ENA",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  846, .title ="QZSS L5 enable"
+    .order =  849, .title ="QZSS L5 enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloEna =
 {
     .id = 0x10310025, .name = "CFG-SIGNAL-GLO_ENA",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  847, .title ="GLONASS enable"
+    .order =  850, .title ="GLONASS enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloL1Ena =
 {
     .id = 0x10310018, .name = "CFG-SIGNAL-GLO_L1_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  848, .title ="GLONASS L1 enable"
+    .order =  851, .title ="GLONASS L1 enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalGloL2Ena =
 {
     .id = 0x1031001a, .name = "CFG-SIGNAL-GLO_L2_ENA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  849, .title ="GLONASS L2 enable"
+    .order =  852, .title ="GLONASS L2 enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalNavicEna =
 {
     .id = 0x10310026, .name = "CFG-SIGNAL-NAVIC_ENA",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  850, .title ="NavIC enable"
+    .order =  853, .title ="NavIC enable"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSignalNavicL5Ena =
 {
     .id = 0x1031001d, .name = "CFG-SIGNAL-NAVIC_L5_ENA",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  851, .title ="NavIC L5 enable"
+    .order =  854, .title ="NavIC L5 enable"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgSpartnUseSource_consts[2] =
@@ -6321,80 +6339,80 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgSpartnUseSource_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpartnUseSource =
 {
     .id = 0x20a70001, .name = "CFG-SPARTN-USE_SOURCE",                           .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  852, .title ="Selector for source SPARTN stream",
+    .order =  855, .title ="Selector for source SPARTN stream",
     .nConsts =   2, .consts = ubloxcfg_cfgSpartnUseSource_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiMaxff =
 {
     .id = 0x20640001, .name = "CFG-SPI-MAXFF",                                   .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  853, .title ="Number of bytes containing 0xFF to receive before switching off reception. Range: 0 (mechanism off) - 63"
+    .order =  856, .title ="Number of bytes containing 0xFF to receive before switching off reception. Range: 0 (mechanism off) - 63"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiCpolarity =
 {
     .id = 0x10640002, .name = "CFG-SPI-CPOLARITY",                               .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  854, .title ="Clock polarity select: 0: Active Hight Clock, SCLK idles low, 1: Active Low Clock, SCLK idles high"
+    .order =  857, .title ="Clock polarity select: 0: Active Hight Clock, SCLK idles low, 1: Active Low Clock, SCLK idles high"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiCphase =
 {
     .id = 0x10640003, .name = "CFG-SPI-CPHASE",                                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  855, .title ="Clock phase select: 0: Data captured on first edge of SCLK, 1: Data captured on second edge of SCLK"
+    .order =  858, .title ="Clock phase select: 0: Data captured on first edge of SCLK, 1: Data captured on second edge of SCLK"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiExtendedtimeout =
 {
     .id = 0x10640005, .name = "CFG-SPI-EXTENDEDTIMEOUT",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  856, .title ="Flag to disable timeouting the interface after 1.5s"
+    .order =  859, .title ="Flag to disable timeouting the interface after 1.5s"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiEnabled =
 {
     .id = 0x10640006, .name = "CFG-SPI-ENABLED",                                 .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  857, .title ="Flag to indicate if the SPI interface should be enabled"
+    .order =  860, .title ="Flag to indicate if the SPI interface should be enabled"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiinprotUbx =
 {
     .id = 0x10790001, .name = "CFG-SPIINPROT-UBX",                               .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  858, .title ="Flag to indicate if UBX should be an input protocol on SPI"
+    .order =  861, .title ="Flag to indicate if UBX should be an input protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiinprotNmea =
 {
     .id = 0x10790002, .name = "CFG-SPIINPROT-NMEA",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  859, .title ="Flag to indicate if NMEA should be an input protocol on SPI"
+    .order =  862, .title ="Flag to indicate if NMEA should be an input protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiinprotRtcm3x =
 {
     .id = 0x10790004, .name = "CFG-SPIINPROT-RTCM3X",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  860, .title ="Flag to indicate if RTCM3X should be an input protocol on SPI"
+    .order =  863, .title ="Flag to indicate if RTCM3X should be an input protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpiinprotSpartn =
 {
     .id = 0x10790005, .name = "CFG-SPIINPROT-SPARTN",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  861, .title ="Flag to indicate if SPARTN should be an input protocol on SPI"
+    .order =  864, .title ="Flag to indicate if SPARTN should be an input protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpioutprotUbx =
 {
     .id = 0x107a0001, .name = "CFG-SPIOUTPROT-UBX",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  862, .title ="Flag to indicate if UBX should be an output protocol on SPI"
+    .order =  865, .title ="Flag to indicate if UBX should be an output protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpioutprotNmea =
 {
     .id = 0x107a0002, .name = "CFG-SPIOUTPROT-NMEA",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  863, .title ="Flag to indicate if NMEA should be an output protocol on SPI"
+    .order =  866, .title ="Flag to indicate if NMEA should be an output protocol on SPI"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgSpioutprotRtcm3x =
 {
     .id = 0x107a0004, .name = "CFG-SPIOUTPROT-RTCM3X",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  864, .title ="Flag to indicate if RTCM3X should be an output protocol on SPI"
+    .order =  867, .title ="Flag to indicate if RTCM3X should be an output protocol on SPI"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgTmodeMode_consts[3] =
@@ -6416,7 +6434,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTmodeMode_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeMode =
 {
     .id = 0x20030001, .name = "CFG-TMODE-MODE",                                  .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  865, .title ="Receiver mode",
+    .order =  868, .title ="Receiver mode",
     .nConsts =   3, .consts = ubloxcfg_cfgTmodeMode_consts
 };
 
@@ -6435,112 +6453,112 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTmodePosType_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodePosType =
 {
     .id = 0x20030002, .name = "CFG-TMODE-POS_TYPE",                              .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  866, .title ="Determines whether the ARP position is given in ECEF or LAT/LON/HEIGHT?",
+    .order =  869, .title ="Determines whether the ARP position is given in ECEF or LAT/LON/HEIGHT?",
     .nConsts =   2, .consts = ubloxcfg_cfgTmodePosType_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefX =
 {
     .id = 0x40030003, .name = "CFG-TMODE-ECEF_X",                                .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  867, .title ="ECEF X coordinate of the ARP position.",
+    .order =  870, .title ="ECEF X coordinate of the ARP position.",
         .unit = "cm"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefY =
 {
     .id = 0x40030004, .name = "CFG-TMODE-ECEF_Y",                                .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  868, .title ="ECEF Y coordinate of the ARP position.",
+    .order =  871, .title ="ECEF Y coordinate of the ARP position.",
         .unit = "cm"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefZ =
 {
     .id = 0x40030005, .name = "CFG-TMODE-ECEF_Z",                                .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  869, .title ="ECEF Z coordinate of the ARP position.",
+    .order =  872, .title ="ECEF Z coordinate of the ARP position.",
         .unit = "cm"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefXHp =
 {
     .id = 0x20030006, .name = "CFG-TMODE-ECEF_X_HP",                             .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  870, .title ="High-precision ECEF X coordinate of the ARP position.",
+    .order =  873, .title ="High-precision ECEF X coordinate of the ARP position.",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefYHp =
 {
     .id = 0x20030007, .name = "CFG-TMODE-ECEF_Y_HP",                             .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  871, .title ="High-precision ECEF Y coordinate of the ARP position.",
+    .order =  874, .title ="High-precision ECEF Y coordinate of the ARP position.",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeEcefZHp =
 {
     .id = 0x20030008, .name = "CFG-TMODE-ECEF_Z_HP",                             .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  872, .title ="High-precision ECEF Z coordinate of the ARP position.",
+    .order =  875, .title ="High-precision ECEF Z coordinate of the ARP position.",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeLat =
 {
     .id = 0x40030009, .name = "CFG-TMODE-LAT",                                   .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  873, .title ="Latitude of the ARP position.",
+    .order =  876, .title ="Latitude of the ARP position.",
     .unit = "deg",      .scale = "1e-7",    .scalefact = +0x1.ad7f29abcaf48p-24 /* = 9.99999999999999954748e-08 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeLon =
 {
     .id = 0x4003000a, .name = "CFG-TMODE-LON",                                   .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  874, .title ="Longitude of the ARP position.",
+    .order =  877, .title ="Longitude of the ARP position.",
     .unit = "deg",      .scale = "1e-7",    .scalefact = +0x1.ad7f29abcaf48p-24 /* = 9.99999999999999954748e-08 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeHeight =
 {
     .id = 0x4003000b, .name = "CFG-TMODE-HEIGHT",                                .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  875, .title ="Height of the ARP position.",
+    .order =  878, .title ="Height of the ARP position.",
         .unit = "cm"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeLatHp =
 {
     .id = 0x2003000c, .name = "CFG-TMODE-LAT_HP",                                .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  876, .title ="High-precision latitude of the ARP position",
+    .order =  879, .title ="High-precision latitude of the ARP position",
     .unit = "deg",      .scale = "1e-9",    .scalefact = +0x1.12e0be826d695p-30 /* = 1.00000000000000006228e-09 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeLonHp =
 {
     .id = 0x2003000d, .name = "CFG-TMODE-LON_HP",                                .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  877, .title ="High-precision longitude of the ARP position.",
+    .order =  880, .title ="High-precision longitude of the ARP position.",
     .unit = "deg",      .scale = "1e-9",    .scalefact = +0x1.12e0be826d695p-30 /* = 1.00000000000000006228e-09 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeHeightHp =
 {
     .id = 0x2003000e, .name = "CFG-TMODE-HEIGHT_HP",                             .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  878, .title ="High-precision height of the ARP position.",
+    .order =  881, .title ="High-precision height of the ARP position.",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeFixedPosAcc =
 {
     .id = 0x4003000f, .name = "CFG-TMODE-FIXED_POS_ACC",                         .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  879, .title ="Fixed position 3D accuracy",
+    .order =  882, .title ="Fixed position 3D accuracy",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeSvinMinDur =
 {
     .id = 0x40030010, .name = "CFG-TMODE-SVIN_MIN_DUR",                          .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  880, .title ="Survey-in minimum duration",
+    .order =  883, .title ="Survey-in minimum duration",
         .unit = "s"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTmodeSvinAccLimit =
 {
     .id = 0x40030011, .name = "CFG-TMODE-SVIN_ACC_LIMIT",                        .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  881, .title ="Survey-in position accuracy limit",
+    .order =  884, .title ="Survey-in position accuracy limit",
     .unit = "mm",       .scale = "0.1",     .scalefact = +0x1.999999999999ap-4 /* = 1.00000000000000005551e-01 */,
 };
 
@@ -6559,7 +6577,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpPulseDef_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPulseDef =
 {
     .id = 0x20050023, .name = "CFG-TP-PULSE_DEF",                                .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  882, .title ="Determines whether the time pulse is interpreted as frequency or period",
+    .order =  885, .title ="Determines whether the time pulse is interpreted as frequency or period",
     .nConsts =   2, .consts = ubloxcfg_cfgTpPulseDef_consts
 };
 
@@ -6578,108 +6596,108 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpPulseLengthDef_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPulseLengthDef =
 {
     .id = 0x20050030, .name = "CFG-TP-PULSE_LENGTH_DEF",                         .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  883, .title ="Determines whether the time pulse length is interpreted as length[us] or pulse ratio[%]",
+    .order =  886, .title ="Determines whether the time pulse length is interpreted as length[us] or pulse ratio[%]",
     .nConsts =   2, .consts = ubloxcfg_cfgTpPulseLengthDef_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpAntCabledelay =
 {
     .id = 0x30050001, .name = "CFG-TP-ANT_CABLEDELAY",                           .type = UBLOXCFG_TYPE_I2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  884, .title ="Antenna cable delay",
+    .order =  887, .title ="Antenna cable delay",
     .unit = "s",        .scale = "0.000000001", .scalefact = +0x1.12e0be826d695p-30 /* = 1.00000000000000006228e-09 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPeriodTp1 =
 {
     .id = 0x40050002, .name = "CFG-TP-PERIOD_TP1",                               .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  885, .title ="Time pulse period (TP1)",
+    .order =  888, .title ="Time pulse period (TP1)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPeriodLockTp1 =
 {
     .id = 0x40050003, .name = "CFG-TP-PERIOD_LOCK_TP1",                          .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  886, .title ="Time pulse period when locked to GNSS time (TP1)",
+    .order =  889, .title ="Time pulse period when locked to GNSS time (TP1)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpFreqTp1 =
 {
     .id = 0x40050024, .name = "CFG-TP-FREQ_TP1",                                 .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  887, .title ="Time pulse frequency (TP1)",
+    .order =  890, .title ="Time pulse frequency (TP1)",
         .unit = "Hz"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpFreqLockTp1 =
 {
     .id = 0x40050025, .name = "CFG-TP-FREQ_LOCK_TP1",                            .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  888, .title ="Time pulse frequency when locked to GNSS time (TP1)",
+    .order =  891, .title ="Time pulse frequency when locked to GNSS time (TP1)",
         .unit = "Hz"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpLenTp1 =
 {
     .id = 0x40050004, .name = "CFG-TP-LEN_TP1",                                  .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  889, .title ="Time pulse length (TP1)",
+    .order =  892, .title ="Time pulse length (TP1)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpLenLockTp1 =
 {
     .id = 0x40050005, .name = "CFG-TP-LEN_LOCK_TP1",                             .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  890, .title ="Time pulse length when locked to GNSS time (TP1)",
+    .order =  893, .title ="Time pulse length when locked to GNSS time (TP1)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpDutyTp1 =
 {
     .id = 0x5005002a, .name = "CFG-TP-DUTY_TP1",                                 .type = UBLOXCFG_TYPE_R8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  891, .title ="Time pulse duty cycle (TP1)",
+    .order =  894, .title ="Time pulse duty cycle (TP1)",
         .unit = "%"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpDutyLockTp1 =
 {
     .id = 0x5005002b, .name = "CFG-TP-DUTY_LOCK_TP1",                            .type = UBLOXCFG_TYPE_R8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  892, .title ="Time pulse duty cycle when locked to GNSS time (TP1)",
+    .order =  895, .title ="Time pulse duty cycle when locked to GNSS time (TP1)",
         .unit = "%"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpUserDelayTp1 =
 {
     .id = 0x40050006, .name = "CFG-TP-USER_DELAY_TP1",                           .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  893, .title ="User-configurable time pulse delay (TP1)",
+    .order =  896, .title ="User-configurable time pulse delay (TP1)",
     .unit = "s",        .scale = "0.000000001", .scalefact = +0x1.12e0be826d695p-30 /* = 1.00000000000000006228e-09 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpTp1Ena =
 {
     .id = 0x10050007, .name = "CFG-TP-TP1_ENA",                                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  894, .title ="Enable the first timepulse"
+    .order =  897, .title ="Enable the first timepulse"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpSyncGnssTp1 =
 {
     .id = 0x10050008, .name = "CFG-TP-SYNC_GNSS_TP1",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  895, .title ="Sync time pulse to GNSS time or local clock (TP1)"
+    .order =  898, .title ="Sync time pulse to GNSS time or local clock (TP1)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpUseLockedTp1 =
 {
     .id = 0x10050009, .name = "CFG-TP-USE_LOCKED_TP1",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  896, .title ="Use locked parameters when possible (TP1)"
+    .order =  899, .title ="Use locked parameters when possible (TP1)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpAlignToTowTp1 =
 {
     .id = 0x1005000a, .name = "CFG-TP-ALIGN_TO_TOW_TP1",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  897, .title ="Align time pulse to top of second (TP1)"
+    .order =  900, .title ="Align time pulse to top of second (TP1)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPolTp1 =
 {
     .id = 0x1005000b, .name = "CFG-TP-POL_TP1",                                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  898, .title ="Set time pulse polarity (TP1)"
+    .order =  901, .title ="Set time pulse polarity (TP1)"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp1_consts[5] =
@@ -6709,7 +6727,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp1_consts[5] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpTimegridTp1 =
 {
     .id = 0x2005000c, .name = "CFG-TP-TIMEGRID_TP1",                             .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  899, .title ="Time grid to use (TP1)",
+    .order =  902, .title ="Time grid to use (TP1)",
     .nConsts =   5, .consts = ubloxcfg_cfgTpTimegridTp1_consts
 };
 
@@ -6736,101 +6754,101 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpDrstrTp1_consts[4] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpDrstrTp1 =
 {
     .id = 0x20050035, .name = "CFG-TP-DRSTR_TP1",                                .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  900, .title ="Drive strength (TP1)",
+    .order =  903, .title ="Drive strength (TP1)",
     .nConsts =   4, .consts = ubloxcfg_cfgTpDrstrTp1_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPeriodTp2 =
 {
     .id = 0x4005000d, .name = "CFG-TP-PERIOD_TP2",                               .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  901, .title ="Time pulse period (TP2)",
+    .order =  904, .title ="Time pulse period (TP2)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPeriodLockTp2 =
 {
     .id = 0x4005000e, .name = "CFG-TP-PERIOD_LOCK_TP2",                          .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  902, .title ="Time pulse period when locked to GNSS time (TP2)",
+    .order =  905, .title ="Time pulse period when locked to GNSS time (TP2)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpFreqTp2 =
 {
     .id = 0x40050026, .name = "CFG-TP-FREQ_TP2",                                 .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  903, .title ="Time pulse frequency (TP2)",
+    .order =  906, .title ="Time pulse frequency (TP2)",
         .unit = "Hz"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpFreqLockTp2 =
 {
     .id = 0x40050027, .name = "CFG-TP-FREQ_LOCK_TP2",                            .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  904, .title ="Time pulse frequency when locked to GNSS time (TP2)",
+    .order =  907, .title ="Time pulse frequency when locked to GNSS time (TP2)",
         .unit = "Hz"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpLenTp2 =
 {
     .id = 0x4005000f, .name = "CFG-TP-LEN_TP2",                                  .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  905, .title ="Time pulse length (TP2)",
+    .order =  908, .title ="Time pulse length (TP2)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpLenLockTp2 =
 {
     .id = 0x40050010, .name = "CFG-TP-LEN_LOCK_TP2",                             .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  906, .title ="Time pulse length when locked to GNSS time (TP2)",
+    .order =  909, .title ="Time pulse length when locked to GNSS time (TP2)",
     .unit = "s",        .scale = "0.000001", .scalefact = +0x1.0c6f7a0b5ed8dp-20 /* = 9.99999999999999954748e-07 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpDutyTp2 =
 {
     .id = 0x5005002c, .name = "CFG-TP-DUTY_TP2",                                 .type = UBLOXCFG_TYPE_R8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  907, .title ="Time pulse duty cycle (TP2)",
+    .order =  910, .title ="Time pulse duty cycle (TP2)",
         .unit = "%"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpDutyLockTp2 =
 {
     .id = 0x5005002d, .name = "CFG-TP-DUTY_LOCK_TP2",                            .type = UBLOXCFG_TYPE_R8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  908, .title ="Time pulse duty cycle when locked to GNSS time (TP2)",
+    .order =  911, .title ="Time pulse duty cycle when locked to GNSS time (TP2)",
         .unit = "%"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpUserDelayTp2 =
 {
     .id = 0x40050011, .name = "CFG-TP-USER_DELAY_TP2",                           .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  909, .title ="User-configurable time pulse delay (TP2)",
+    .order =  912, .title ="User-configurable time pulse delay (TP2)",
     .unit = "s",        .scale = "0.000000001", .scalefact = +0x1.12e0be826d695p-30 /* = 1.00000000000000006228e-09 */,
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpTp2Ena =
 {
     .id = 0x10050012, .name = "CFG-TP-TP2_ENA",                                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  910, .title ="Enable the first timepulse"
+    .order =  913, .title ="Enable the first timepulse"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpSyncGnssTp2 =
 {
     .id = 0x10050013, .name = "CFG-TP-SYNC_GNSS_TP2",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  911, .title ="Sync time pulse to GNSS time or local clock (TP2)"
+    .order =  914, .title ="Sync time pulse to GNSS time or local clock (TP2)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpUseLockedTp2 =
 {
     .id = 0x10050014, .name = "CFG-TP-USE_LOCKED_TP2",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  912, .title ="Use locked parameters when possible (TP2)"
+    .order =  915, .title ="Use locked parameters when possible (TP2)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpAlignToTowTp2 =
 {
     .id = 0x10050015, .name = "CFG-TP-ALIGN_TO_TOW_TP2",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  913, .title ="Align time pulse to top of second (TP2)"
+    .order =  916, .title ="Align time pulse to top of second (TP2)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPolTp2 =
 {
     .id = 0x10050016, .name = "CFG-TP-POL_TP2",                                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  914, .title ="Set time pulse polarity (TP2)"
+    .order =  917, .title ="Set time pulse polarity (TP2)"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp2_consts[5] =
@@ -6860,32 +6878,32 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp2_consts[5] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpTimegridTp2 =
 {
     .id = 0x20050017, .name = "CFG-TP-TIMEGRID_TP2",                             .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  915, .title ="Time grid to use (TP2)",
+    .order =  918, .title ="Time grid to use (TP2)",
     .nConsts =   5, .consts = ubloxcfg_cfgTpTimegridTp2_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTxreadyEnabled =
 {
     .id = 0x10a20001, .name = "CFG-TXREADY-ENABLED",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  916, .title ="Flag to indicate if TX ready pin mechanism should be enabled"
+    .order =  919, .title ="Flag to indicate if TX ready pin mechanism should be enabled"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTxreadyPolarity =
 {
     .id = 0x10a20002, .name = "CFG-TXREADY-POLARITY",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  917, .title ="The polarity of the TX ready pin: false:high-active, true:low-active"
+    .order =  920, .title ="The polarity of the TX ready pin: false:high-active, true:low-active"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTxreadyPin =
 {
     .id = 0x20a20003, .name = "CFG-TXREADY-PIN",                                 .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  918, .title ="Pin number to use for the TX ready functionality"
+    .order =  921, .title ="Pin number to use for the TX ready functionality"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTxreadyThreshold =
 {
     .id = 0x30a20004, .name = "CFG-TXREADY-THRESHOLD",                           .type = UBLOXCFG_TYPE_U2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  919, .title ="Amount of data that should be ready on the interface before triggering the TX ready pin"
+    .order =  922, .title ="Amount of data that should be ready on the interface before triggering the TX ready pin"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgTxreadyInterface_consts[2] =
@@ -6903,14 +6921,14 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTxreadyInterface_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgTxreadyInterface =
 {
     .id = 0x20a20005, .name = "CFG-TXREADY-INTERFACE",                           .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  920, .title ="Interface where the TX ready feature should be linked to",
+    .order =  923, .title ="Interface where the TX ready feature should be linked to",
     .nConsts =   2, .consts = ubloxcfg_cfgTxreadyInterface_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1Baudrate =
 {
     .id = 0x40520001, .name = "CFG-UART1-BAUDRATE",                              .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  921, .title ="The baud rate that should be configured on the UART1"
+    .order =  924, .title ="The baud rate that should be configured on the UART1"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgUart1Stopbits_consts[4] =
@@ -6936,7 +6954,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart1Stopbits_consts[4] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1Stopbits =
 {
     .id = 0x20520002, .name = "CFG-UART1-STOPBITS",                              .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  922, .title ="Number of stopbits that should be used on UART1",
+    .order =  925, .title ="Number of stopbits that should be used on UART1",
     .nConsts =   4, .consts = ubloxcfg_cfgUart1Stopbits_consts
 };
 
@@ -6955,7 +6973,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart1Databits_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1Databits =
 {
     .id = 0x20520003, .name = "CFG-UART1-DATABITS",                              .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  923, .title ="Number of databits that should be used on UART1",
+    .order =  926, .title ="Number of databits that should be used on UART1",
     .nConsts =   2, .consts = ubloxcfg_cfgUart1Databits_consts
 };
 
@@ -6978,62 +6996,62 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart1Parity_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1Parity =
 {
     .id = 0x20520004, .name = "CFG-UART1-PARITY",                                .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  924, .title ="Parity mode that should be used on UART1",
+    .order =  927, .title ="Parity mode that should be used on UART1",
     .nConsts =   3, .consts = ubloxcfg_cfgUart1Parity_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1Enabled =
 {
     .id = 0x10520005, .name = "CFG-UART1-ENABLED",                               .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  925, .title ="Flag to indicate if the UART1 should be enabled"
+    .order =  928, .title ="Flag to indicate if the UART1 should be enabled"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1inprotUbx =
 {
     .id = 0x10730001, .name = "CFG-UART1INPROT-UBX",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  926, .title ="Flag to indicate if UBX should be an input protocol on UART1"
+    .order =  929, .title ="Flag to indicate if UBX should be an input protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1inprotNmea =
 {
     .id = 0x10730002, .name = "CFG-UART1INPROT-NMEA",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  927, .title ="Flag to indicate if NMEA should be an input protocol on UART1"
+    .order =  930, .title ="Flag to indicate if NMEA should be an input protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1inprotRtcm3x =
 {
     .id = 0x10730004, .name = "CFG-UART1INPROT-RTCM3X",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  928, .title ="Flag to indicate if RTCM3X should be an input protocol on UART1"
+    .order =  931, .title ="Flag to indicate if RTCM3X should be an input protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1inprotSpartn =
 {
     .id = 0x10730005, .name = "CFG-UART1INPROT-SPARTN",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  929, .title ="Flag to indicate if SPARTN should be an input protocol on UART1"
+    .order =  932, .title ="Flag to indicate if SPARTN should be an input protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1outprotUbx =
 {
     .id = 0x10740001, .name = "CFG-UART1OUTPROT-UBX",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  930, .title ="Flag to indicate if UBX should be an output protocol on UART1"
+    .order =  933, .title ="Flag to indicate if UBX should be an output protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1outprotNmea =
 {
     .id = 0x10740002, .name = "CFG-UART1OUTPROT-NMEA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  931, .title ="Flag to indicate if NMEA should be an output protocol on UART1"
+    .order =  934, .title ="Flag to indicate if NMEA should be an output protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart1outprotRtcm3x =
 {
     .id = 0x10740004, .name = "CFG-UART1OUTPROT-RTCM3X",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  932, .title ="Flag to indicate if RTCM3X should be an output protocol on UART1"
+    .order =  935, .title ="Flag to indicate if RTCM3X should be an output protocol on UART1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Baudrate =
 {
     .id = 0x40530001, .name = "CFG-UART2-BAUDRATE",                              .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  933, .title ="The baud rate that should be configured on the UART2"
+    .order =  936, .title ="The baud rate that should be configured on the UART2"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgUart2Stopbits_consts[4] =
@@ -7059,7 +7077,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart2Stopbits_consts[4] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Stopbits =
 {
     .id = 0x20530002, .name = "CFG-UART2-STOPBITS",                              .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  934, .title ="Number of stopbits that should be used on UART2",
+    .order =  937, .title ="Number of stopbits that should be used on UART2",
     .nConsts =   4, .consts = ubloxcfg_cfgUart2Stopbits_consts
 };
 
@@ -7078,7 +7096,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart2Databits_consts[2] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Databits =
 {
     .id = 0x20530003, .name = "CFG-UART2-DATABITS",                              .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  935, .title ="Number of databits that should be used on UART2",
+    .order =  938, .title ="Number of databits that should be used on UART2",
     .nConsts =   2, .consts = ubloxcfg_cfgUart2Databits_consts
 };
 
@@ -7101,267 +7119,267 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUart2Parity_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Parity =
 {
     .id = 0x20530004, .name = "CFG-UART2-PARITY",                                .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  936, .title ="Parity mode that should be used on UART2",
+    .order =  939, .title ="Parity mode that should be used on UART2",
     .nConsts =   3, .consts = ubloxcfg_cfgUart2Parity_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Enabled =
 {
     .id = 0x10530005, .name = "CFG-UART2-ENABLED",                               .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  937, .title ="Flag to indicate if the UART2 should be enabled"
+    .order =  940, .title ="Flag to indicate if the UART2 should be enabled"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2Remap =
 {
     .id = 0x10530006, .name = "CFG-UART2-REMAP",                                 .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  938, .title ="UART2 Remapping"
+    .order =  941, .title ="UART2 Remapping"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2inprotUbx =
 {
     .id = 0x10750001, .name = "CFG-UART2INPROT-UBX",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  939, .title ="Flag to indicate if UBX should be an input protocol on UART2"
+    .order =  942, .title ="Flag to indicate if UBX should be an input protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2inprotNmea =
 {
     .id = 0x10750002, .name = "CFG-UART2INPROT-NMEA",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  940, .title ="Flag to indicate if NMEA should be an input protocol on UART2"
+    .order =  943, .title ="Flag to indicate if NMEA should be an input protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2inprotRtcm3x =
 {
     .id = 0x10750004, .name = "CFG-UART2INPROT-RTCM3X",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  941, .title ="Flag to indicate if RTCM3X should be an input protocol on UART2"
+    .order =  944, .title ="Flag to indicate if RTCM3X should be an input protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2inprotSpartn =
 {
     .id = 0x10750005, .name = "CFG-UART2INPROT-SPARTN",                          .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  942, .title ="Flag to indicate if SPARTN should be an input protocol on UART2"
+    .order =  945, .title ="Flag to indicate if SPARTN should be an input protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2outprotUbx =
 {
     .id = 0x10760001, .name = "CFG-UART2OUTPROT-UBX",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  943, .title ="Flag to indicate if UBX should be an output protocol on UART2"
+    .order =  946, .title ="Flag to indicate if UBX should be an output protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2outprotNmea =
 {
     .id = 0x10760002, .name = "CFG-UART2OUTPROT-NMEA",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  944, .title ="Flag to indicate if NMEA should be an output protocol on UART2"
+    .order =  947, .title ="Flag to indicate if NMEA should be an output protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUart2outprotRtcm3x =
 {
     .id = 0x10760004, .name = "CFG-UART2OUTPROT-RTCM3X",                         .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  945, .title ="Flag to indicate if RTCM3X should be an output protocol on UART2"
+    .order =  948, .title ="Flag to indicate if RTCM3X should be an output protocol on UART2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbEnabled =
 {
     .id = 0x10650001, .name = "CFG-USB-ENABLED",                                 .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  946, .title ="Flag to indicate if the USB interface should be enabled"
+    .order =  949, .title ="Flag to indicate if the USB interface should be enabled"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbSelfpow =
 {
     .id = 0x10650002, .name = "CFG-USB-SELFPOW",                                 .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  947, .title ="Self-powered device"
+    .order =  950, .title ="Self-powered device"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbVendorId =
 {
     .id = 0x3065000a, .name = "CFG-USB-VENDOR_ID",                               .type = UBLOXCFG_TYPE_U2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  948, .title ="Vendor ID"
+    .order =  951, .title ="Vendor ID"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbProductId =
 {
     .id = 0x3065000b, .name = "CFG-USB-PRODUCT_ID",                              .type = UBLOXCFG_TYPE_U2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  949, .title ="Vendor ID"
+    .order =  952, .title ="Vendor ID"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbPower =
 {
     .id = 0x3065000c, .name = "CFG-USB-POWER",                                   .type = UBLOXCFG_TYPE_U2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  950, .title ="Power consumption",
+    .order =  953, .title ="Power consumption",
         .unit = "mA"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbVendorStr0 =
 {
     .id = 0x5065000d, .name = "CFG-USB-VENDOR_STR0",                             .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  951, .title ="Vendor string characters 0-7"
+    .order =  954, .title ="Vendor string characters 0-7"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbVendorStr1 =
 {
     .id = 0x5065000e, .name = "CFG-USB-VENDOR_STR1",                             .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  952, .title ="Vendor string characters 8-15"
+    .order =  955, .title ="Vendor string characters 8-15"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbVendorStr2 =
 {
     .id = 0x5065000f, .name = "CFG-USB-VENDOR_STR2",                             .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  953, .title ="Vendor string characters 16-23"
+    .order =  956, .title ="Vendor string characters 16-23"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbVendorStr3 =
 {
     .id = 0x50650010, .name = "CFG-USB-VENDOR_STR3",                             .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  954, .title ="Vendor string characters 24-31"
+    .order =  957, .title ="Vendor string characters 24-31"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbProductStr0 =
 {
     .id = 0x50650011, .name = "CFG-USB-PRODUCT_STR0",                            .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  955, .title ="Product string characters 0-7"
+    .order =  958, .title ="Product string characters 0-7"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbProductStr1 =
 {
     .id = 0x50650012, .name = "CFG-USB-PRODUCT_STR1",                            .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  956, .title ="Product string characters 8-15"
+    .order =  959, .title ="Product string characters 8-15"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbProductStr2 =
 {
     .id = 0x50650013, .name = "CFG-USB-PRODUCT_STR2",                            .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  957, .title ="Product string characters 16-23"
+    .order =  960, .title ="Product string characters 16-23"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbProductStr3 =
 {
     .id = 0x50650014, .name = "CFG-USB-PRODUCT_STR3",                            .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  958, .title ="Product string characters 24-31"
+    .order =  961, .title ="Product string characters 24-31"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbSerialNoStr0 =
 {
     .id = 0x50650015, .name = "CFG-USB-SERIAL_NO_STR0",                          .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  959, .title ="Serial number string characters 0-7"
+    .order =  962, .title ="Serial number string characters 0-7"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbSerialNoStr1 =
 {
     .id = 0x50650016, .name = "CFG-USB-SERIAL_NO_STR1",                          .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  960, .title ="Serial number string characters 8-15"
+    .order =  963, .title ="Serial number string characters 8-15"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbSerialNoStr2 =
 {
     .id = 0x50650017, .name = "CFG-USB-SERIAL_NO_STR2",                          .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  961, .title ="Serial number string characters 16-23"
+    .order =  964, .title ="Serial number string characters 16-23"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbSerialNoStr3 =
 {
     .id = 0x50650018, .name = "CFG-USB-SERIAL_NO_STR3",                          .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  962, .title ="Serial number string characters 24-31"
+    .order =  965, .title ="Serial number string characters 24-31"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbinprotUbx =
 {
     .id = 0x10770001, .name = "CFG-USBINPROT-UBX",                               .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  963, .title ="Flag to indicate if UBX should be an input protocol on USB"
+    .order =  966, .title ="Flag to indicate if UBX should be an input protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbinprotNmea =
 {
     .id = 0x10770002, .name = "CFG-USBINPROT-NMEA",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  964, .title ="Flag to indicate if NMEA should be an input protocol on USB"
+    .order =  967, .title ="Flag to indicate if NMEA should be an input protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbinprotRtcm3x =
 {
     .id = 0x10770004, .name = "CFG-USBINPROT-RTCM3X",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  965, .title ="Flag to indicate if RTCM3X should be an input protocol on USB"
+    .order =  968, .title ="Flag to indicate if RTCM3X should be an input protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsbinprotSpartn =
 {
     .id = 0x10770005, .name = "CFG-USBINPROT-SPARTN",                            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  966, .title ="Flag to indicate if SPARTN should be an input protocol on USB"
+    .order =  969, .title ="Flag to indicate if SPARTN should be an input protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsboutprotUbx =
 {
     .id = 0x10780001, .name = "CFG-USBOUTPROT-UBX",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  967, .title ="Flag to indicate if UBX should be an output protocol on USB"
+    .order =  970, .title ="Flag to indicate if UBX should be an output protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsboutprotNmea =
 {
     .id = 0x10780002, .name = "CFG-USBOUTPROT-NMEA",                             .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  968, .title ="Flag to indicate if NMEA should be an output protocol on USB"
+    .order =  971, .title ="Flag to indicate if NMEA should be an output protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUsboutprotRtcm3x =
 {
     .id = 0x10780004, .name = "CFG-USBOUTPROT-RTCM3X",                           .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  969, .title ="Flag to indicate if RTCM3X should be an output protocol on USB"
+    .order =  972, .title ="Flag to indicate if RTCM3X should be an output protocol on USB"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgGrp32IgnoreGpsL5Health =
 {
     .id = 0x10320001, .name = "CFG-GRP32-IGNORE_GPS_L5_HEALTH",                  .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  970, .title ="Ignore GPS L5 health (use L1 health instead)"
+    .order =  973, .title ="Ignore GPS L5 health (use L1 health instead)"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestL =
 {
     .id = 0x10fe0001, .name = "CFG-UBLOXCFGTEST-L",                              .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
-    .order =  971, .title ="ubloxcfg library test item type L"
+    .order =  974, .title ="ubloxcfg library test item type L"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestU1 =
 {
     .id = 0x20fe0011, .name = "CFG-UBLOXCFGTEST-U1",                             .type = UBLOXCFG_TYPE_U1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  972, .title ="ubloxcfg library test item type U1"
+    .order =  975, .title ="ubloxcfg library test item type U1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestU2 =
 {
     .id = 0x30fe0012, .name = "CFG-UBLOXCFGTEST-U2",                             .type = UBLOXCFG_TYPE_U2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  973, .title ="ubloxcfg library test item type U2"
+    .order =  976, .title ="ubloxcfg library test item type U2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestU4 =
 {
     .id = 0x40fe0013, .name = "CFG-UBLOXCFGTEST-U4",                             .type = UBLOXCFG_TYPE_U4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  974, .title ="ubloxcfg library test item type U4"
+    .order =  977, .title ="ubloxcfg library test item type U4"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestU8 =
 {
     .id = 0x50fe0014, .name = "CFG-UBLOXCFGTEST-U8",                             .type = UBLOXCFG_TYPE_U8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  975, .title ="ubloxcfg library test item type U8"
+    .order =  978, .title ="ubloxcfg library test item type U8"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestI1 =
 {
     .id = 0x20fe0021, .name = "CFG-UBLOXCFGTEST-I1",                             .type = UBLOXCFG_TYPE_I1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  976, .title ="ubloxcfg library test item type I1"
+    .order =  979, .title ="ubloxcfg library test item type I1"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestI2 =
 {
     .id = 0x30fe0022, .name = "CFG-UBLOXCFGTEST-I2",                             .type = UBLOXCFG_TYPE_I2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  977, .title ="ubloxcfg library test item type I2"
+    .order =  980, .title ="ubloxcfg library test item type I2"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestI4 =
 {
     .id = 0x40fe0023, .name = "CFG-UBLOXCFGTEST-I4",                             .type = UBLOXCFG_TYPE_I4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  978, .title ="ubloxcfg library test item type I4"
+    .order =  981, .title ="ubloxcfg library test item type I4"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestI8 =
 {
     .id = 0x50fe0024, .name = "CFG-UBLOXCFGTEST-I8",                             .type = UBLOXCFG_TYPE_I8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  979, .title ="ubloxcfg library test item type I8"
+    .order =  982, .title ="ubloxcfg library test item type I8"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestX1_consts[3] =
@@ -7383,7 +7401,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestX1_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestX1 =
 {
     .id = 0x20fe0031, .name = "CFG-UBLOXCFGTEST-X1",                             .type = UBLOXCFG_TYPE_X1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  980, .title ="ubloxcfg library test item type X1",
+    .order =  983, .title ="ubloxcfg library test item type X1",
     .nConsts =   3, .consts = ubloxcfg_cfgUbloxcfgtestX1_consts
 };
 
@@ -7406,7 +7424,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestX2_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestX2 =
 {
     .id = 0x30fe0032, .name = "CFG-UBLOXCFGTEST-X2",                             .type = UBLOXCFG_TYPE_X2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  981, .title ="ubloxcfg library test item type X2",
+    .order =  984, .title ="ubloxcfg library test item type X2",
     .nConsts =   3, .consts = ubloxcfg_cfgUbloxcfgtestX2_consts
 };
 
@@ -7429,7 +7447,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestX4_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestX4 =
 {
     .id = 0x40fe0033, .name = "CFG-UBLOXCFGTEST-X4",                             .type = UBLOXCFG_TYPE_X4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  982, .title ="ubloxcfg library test item type X4",
+    .order =  985, .title ="ubloxcfg library test item type X4",
     .nConsts =   3, .consts = ubloxcfg_cfgUbloxcfgtestX4_consts
 };
 
@@ -7452,20 +7470,20 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestX8_consts[3] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestX8 =
 {
     .id = 0x50fe0034, .name = "CFG-UBLOXCFGTEST-X8",                             .type = UBLOXCFG_TYPE_X8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  983, .title ="ubloxcfg library test item type X8",
+    .order =  986, .title ="ubloxcfg library test item type X8",
     .nConsts =   3, .consts = ubloxcfg_cfgUbloxcfgtestX8_consts
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestR4 =
 {
     .id = 0x40fe0041, .name = "CFG-UBLOXCFGTEST-R4",                             .type = UBLOXCFG_TYPE_R4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  984, .title ="ubloxcfg library test item type R4"
+    .order =  987, .title ="ubloxcfg library test item type R4"
 };
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestR8 =
 {
     .id = 0x50fe0042, .name = "CFG-UBLOXCFGTEST-R8",                             .type = UBLOXCFG_TYPE_R8, .size = UBLOXCFG_SIZE_EIGHT,
-    .order =  985, .title ="ubloxcfg library test item type R8"
+    .order =  988, .title ="ubloxcfg library test item type R8"
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestE1_consts[5] =
@@ -7495,7 +7513,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestE1_consts[5] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestE1 =
 {
     .id = 0x20fe0041, .name = "CFG-UBLOXCFGTEST-E1",                             .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
-    .order =  986, .title ="ubloxcfg library test item type E1",
+    .order =  989, .title ="ubloxcfg library test item type E1",
     .nConsts =   5, .consts = ubloxcfg_cfgUbloxcfgtestE1_consts
 };
 
@@ -7526,7 +7544,7 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestE2_consts[5] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestE2 =
 {
     .id = 0x30fe0042, .name = "CFG-UBLOXCFGTEST-E2",                             .type = UBLOXCFG_TYPE_E2, .size = UBLOXCFG_SIZE_TWO,
-    .order =  987, .title ="ubloxcfg library test item type E2",
+    .order =  990, .title ="ubloxcfg library test item type E2",
     .nConsts =   5, .consts = ubloxcfg_cfgUbloxcfgtestE2_consts
 };
 
@@ -7557,11 +7575,11 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgUbloxcfgtestE4_consts[5] =
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgUbloxcfgtestE4 =
 {
     .id = 0x40fe0043, .name = "CFG-UBLOXCFGTEST-E4",                             .type = UBLOXCFG_TYPE_E4, .size = UBLOXCFG_SIZE_FOUR,
-    .order =  988, .title ="ubloxcfg library test item type E4",
+    .order =  991, .title ="ubloxcfg library test item type E4",
     .nConsts =   5, .consts = ubloxcfg_cfgUbloxcfgtestE4_consts
 };
 
-static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[988] =
+static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[991] =
 {
     &ubloxcfg_cfgBdsUseGeoPrn,
     &ubloxcfg_cfgGalUseOsnma,
@@ -8400,10 +8418,13 @@ static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[988] =
     &ubloxcfg_cfgSignalGalE1Ena,
     &ubloxcfg_cfgSignalGalE5bEna,
     &ubloxcfg_cfgSignalGalE5aEna,
+    &ubloxcfg_cfgSignalGalE6Ena,
     &ubloxcfg_cfgSignalBdsEna,
     &ubloxcfg_cfgSignalBdsB1Ena,
+    &ubloxcfg_cfgSignalBdsB1cEna,
     &ubloxcfg_cfgSignalBdsB2Ena,
     &ubloxcfg_cfgSignalBdsB2aEna,
+    &ubloxcfg_cfgSignalBdsB3Ena,
     &ubloxcfg_cfgSignalQzssEna,
     &ubloxcfg_cfgSignalQzssL1caEna,
     &ubloxcfg_cfgSignalQzssL1sEna,

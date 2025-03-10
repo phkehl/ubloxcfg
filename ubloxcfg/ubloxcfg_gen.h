@@ -8150,6 +8150,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_GAL_E6_ENA CFG-SIGNAL-GAL_E6_ENA (Galileo E6 enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_GAL_E6_ENA_ID                  0x1031000b                               //!< ID of CFG-SIGNAL-GAL_E6_ENA
+#define UBLOXCFG_CFG_SIGNAL_GAL_E6_ENA_STR                 "CFG-SIGNAL-GAL_E6_ENA"                  //!< Name of CFG-SIGNAL-GAL_E6_ENA
+#define UBLOXCFG_CFG_SIGNAL_GAL_E6_ENA_TYPE                L                                        //!< Type of CFG-SIGNAL-GAL_E6_ENA
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL_BDS_ENA CFG-SIGNAL-BDS_ENA (BeiDou Enable)
     @{
 */
@@ -8168,6 +8177,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B1C_ENA CFG-SIGNAL-BDS_B1C_ENA (BeiDou B1C enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_BDS_B1C_ENA_ID                 0x1031000f                               //!< ID of CFG-SIGNAL-BDS_B1C_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B1C_ENA_STR                "CFG-SIGNAL-BDS_B1C_ENA"                 //!< Name of CFG-SIGNAL-BDS_B1C_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B1C_ENA_TYPE               L                                        //!< Type of CFG-SIGNAL-BDS_B1C_ENA
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B2_ENA CFG-SIGNAL-BDS_B2_ENA (BeiDou B2I enable)
     @{
 */
@@ -8183,6 +8201,15 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_ID                 0x10310028                               //!< ID of CFG-SIGNAL-BDS_B2A_ENA
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_STR                "CFG-SIGNAL-BDS_B2A_ENA"                 //!< Name of CFG-SIGNAL-BDS_B2A_ENA
 #define UBLOXCFG_CFG_SIGNAL_BDS_B2A_ENA_TYPE               L                                        //!< Type of CFG-SIGNAL-BDS_B2A_ENA
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_BDS_B3_ENA CFG-SIGNAL-BDS_B3_ENA (BeiDou B3I enable)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_BDS_B3_ENA_ID                  0x10310010                               //!< ID of CFG-SIGNAL-BDS_B3_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B3_ENA_STR                 "CFG-SIGNAL-BDS_B3_ENA"                  //!< Name of CFG-SIGNAL-BDS_B3_ENA
+#define UBLOXCFG_CFG_SIGNAL_BDS_B3_ENA_TYPE                L                                        //!< Type of CFG-SIGNAL-BDS_B3_ENA
 ///@}
 
 /*!
@@ -12511,7 +12538,7 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 988
+#define _UBLOXCFG_NUM_ITEMS 991
 const void **_ubloxcfg_allItems(void);
 #define _UBLOXCFG_NUM_RATES 122
 const void **_ubloxcfg_allRates(void);
