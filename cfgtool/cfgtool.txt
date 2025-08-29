@@ -1,0 +1,438 @@
+cfgtool -- u-blox positioning receivers configuration tool
+
+    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+
+Usage:
+
+    cfgtool -h | -H | -h <command> | -V
+    cfgtool [-v] [-q] [...] <command>
+
+Where:
+
+    -h             Prints help summary
+    -H             Prints full help
+    -h <command>   Prints help for a command
+    -V             Displays version and license information
+
+    -v / -q        Increases / decreases verbosity
+
+    <command>      Command
+
+    And depending on the <command>:
+
+    -i <infile>    Input file (default: '-', i.e. standard input)
+    -o <outfile>   Output file (default: '-', i.e. standard output)
+    -y             Overwrite output file if it already exists
+    -p <serial>    Serial port where the receiver is connected:
+                       [ser://]<device>[:<baudrate>]
+                       tcp://<host>:<port>[:<baudrate>]
+                       telnet://<host>:<port>[:<baudrate>]
+    -l <layer(s)>  Configuration layer(s) to use:
+                       RAM, BBR, Flash, Default
+    -r <reset>     Reset mode to use to reset the receiver:
+                       soft, hard, hot, warm, cold, default, factory,
+                       stop, start, gnss
+    -u             Use unknown (undocumented) configuation items
+    -x             Output extra information (comments, hex dumps, ...)
+    -a             Activate configuration after storing
+    -n             Do not probe/autobaud receiver, use passive reading only.
+                   For example, for other receivers or read-only connection.
+
+    Available <commands>s:
+
+    cfg2rx         Configure a receiver from a configuration file
+    rx2cfg         Create configuration file from config in a receiver
+    rx2list        Like rx2cfg but output a flat list of key-value pairs
+    cfg2ubx        Convert config file to UBX-CFG-VALSET message(s)
+    cfg2hex        Like cfg2ubx but prints a hex dump of the message(s)
+    cfg2c          Like cfg2ubx but prints a c source code of the message(s)
+    uc2cfg         Convert u-center config file to sane config file
+    cfginfo        Print information about known configuration items etc.
+    dump           Connects to receiver and prints received message frames
+    parse          Parse file and output message frames
+    reset          Reset receiver
+    status         Connects to receiver and prints status
+    bin2hex        Convert to hex dump
+    hex2bin        Convert from hex dump
+    cmd2rx         Send commands to a receiver
+
+License:
+
+    This program is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the Free
+    Software Foundation, either version 3 of the License, or (at your option)
+    any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+    more details.
+
+    You should have received a copy of the GNU General Public License along with
+    this program. If not, see https://www.gnu.org/licenses/.
+
+Third-party data:
+
+    This program includes data, such as identifiers, constants and descriptions
+    of configuration items, from public sources. Namely:
+
+Serial ports:
+
+    Local serial ports: [ser://]<device>[@<baudrate>], where:
+
+        <device>     /dev/ttyUSB0, /dev/ttyACM1, /dev/serial/..., etc.
+        <baudrate>   Baudrate (optional)
+
+        Note that 'ser://' is the default and can be omitted. If no <baudrate>
+        is specified, it is be automatically detected. That is, '-p <device>'
+        works in most cases.
+
+        It is recommended to use /dev/serial/by-path/... device names for USB
+        (CDC ACM) connections as the names remain after a hardware reset and
+        USB re-enumeration. See the 'reset' command.
+
+    Raw TCP/IP ports: tcp://<addr>:<port>, where:
+
+        <addr>       Hostname or IP address
+        <port>       Port number
+
+    Telnet TCP/IP ports: telnet://<addr>:<port>[@<baudrate>], where
+
+        <addr>       Hostname or IP address
+        <port>       Port number
+        <baudrate>   Baudrate (optional)
+
+        This uses telnet (RFC854, etc.) in-band control using com port control
+        option (RFC2217) to set the baudrate on the remote serial port. This
+        works for example with ser2net(8) and some hardware RS232 servers.
+
+        A minimal ser2net command line that should work is:
+           ser2net -d -C "12345:telnet:0:/dev/ttyUSB0: remctl"
+        This should allow using '-p telnet://localhost:12345'.
+
+Configuration layers:
+
+    RAM         Current(ly used) configuration, has all items
+    BBR         Battery-backed RAM item storage, may have no items at all
+    Flash       Flash (if available) items storage, may have no items at all
+    Default     Default configuration, has all items
+
+Exit status:
+
+    Command successful:            0
+    Bad command-line arguments:    1
+    Detecting receiver failed:     2
+    No data from receiver:         3
+    Unspecified error:             99
+
+Command 'cfg2rx':
+
+    Usage: cfgtool cfg2rx [-i <infile>] -p <port> -l <layers> [-r <reset>] [-a] [-U] [-R]
+
+    This configures a receiver from a configuration file. The configuration is
+    stored to one or more (comma-separated) of the following <layers>: 'RAM',
+    'BBR' or 'Flash'. See the notes on using the RAM layer below.
+
+    Optionally the receiver can be reset to default configuration before storing
+    the configuration. See the 'reset' command for details.
+
+    The -a switch soft resets the receiver after storing the configuration in
+    order to activate the changed configuration. See the notes below and the
+    'reset' command description.
+
+    The -U switch makes the command only update the receiver configuration if
+    necessary. If the current configuration of the receiver already contains all
+    the configuration from <infile>, no action is taken and the command finishes
+    early. Additionally, with '-r factory', the items not covered by <infile>
+    are checked against the default configuration.
+
+    A configuration file consists of one or more lines of configuration
+    parameters. Leading and trailing whitespace, empty lines as well as comments
+    (# style) are ignored. Acceptable separators for the tokens are (any number
+    of) spaces and/or tabs. Each item should be listed only once. The '-R' flag
+    can be used to allow listing items more than once. In this case the last
+    occurrence of the item is used.
+
+    The following types of configuration can be used:
+
+        <key> <value>
+            A key-value pair to set a particular configuration parameter (item)
+            to a value. The key can be the item name (e.g. 'CFG-NAVSPG-FIXMODE')
+            or its ID as hexadecimal number (e.g. '0x20110011').
+            The acceptable strings for values depend on the item type: Type L
+            values can be converted from: 'true', 'false' or any decimal,
+            hexadecimal or octal string that translate to the value 1 or 0.
+            Type U and X values can be converted from decimal, hexadecimal or
+            octal strings. Type I and E values can be converted from decimal or
+            hexadecimal strings. For known type E and X items converting
+            constant names is attempted first. Type E constants are single
+            words such as 'AUTO'. Type X constants are one or more words or
+            hexadecimal strings separated by a '|', e.g. 'FIRST|0x02'.
+
+         <messagename> <uart1> <uart2> <spi> <i2c> <usb>
+            A message name (e.g. 'UBX-NAV-PVT', 'NMEA-STANDARD-GGA', etc.) and
+            output rates for the listed ports. For each port a value '0'...'255'
+            or the '-' character must be given to set the given rate resp.
+            to not configure the rate for that port.
+            This is a shortcut to using the CFG-MSGOUT-... <key> <value> pairs.
+
+         <port> <baudrate> <inprot> <outprot>
+            To configure a communication port its name ('UART1', 'UART2', 'SPI',
+            'I2C' or 'USB'), its baudrate (for UARTs only, use '-' otherwise)
+            and the input and output protocol filters must be specified. The
+            protocol filters are space-separated words for the different
+            protocols ('UBX', 'NMEA', 'RTCM3', 'SPARTN') or '-' to not configure
+            the filter. Prepending a '!' to the protocol disables it.
+            This is a shortcut to using some of the various <key> <value> pairs
+            that configure the communication ports (e.g. CFG-UART1-..., etc.).
+            See the note on changing UART baudrates below.
+
+    Example configuration file:
+
+        # Set some navigation parameters:
+        CFG-NAVSPG-INIFIX3D        true    # Want initial fix to be a 3D one
+        CFG-NAVSPG-FIXMODE         AUTO    # Use automatic fixmode
+        CFG-NAVSPG-WKNROLLOVER     2099    # Set GPS weeknumber rollover value
+        0x20110021                 6       # = CFG-NAVSPG-DYNMODEL AIR1
+        CFG-NAVSPG-INFIL_CNOTHRS   0x23    # Require C/N0 >= 35
+        # Configure UART1 baudrate, don't change in/out filters
+        UART1 115200   -        -
+        # Disable NMEA and RTCM3 output on USB and SPI
+        USB            -        !NMEA,!RTCM3
+        SPI            -        !NMEA,!RTCM3
+        # Enable some UBX messages on UART1 and USB
+        UBX-NAV-PVT        1 - - - 1
+        UBX-NAV-SIG        1 - - - 1
+        UBX-NAV-SAT        1 - - - 1
+        UBX-MON-COMMS      5 - - - 5 # Every 5 seconds
+        # Disable some NMEA messages on all ports
+        NMEA-STANDARD-GGA  0 0 0 0 0
+        NMEA-STANDARD-RMC  0 0 0 0 0
+        NMEA-STANDARD-GSV  0 0 0 0 0
+
+    Example usage:
+
+        cfgtool cfg2rx -p /dev/ttyUSB0 -r factory -l Flash -a -i some.cfg
+
+    Notes:
+
+        When storing configuration to the RAM layer (that is, the 'current
+        configuration') changes become effective immediately. This is often
+        not desired. The 'correct' way to configure the receiver is changing
+        the configuration in the BBR and Flash layers and then resetting the
+        receiver in order to activate the changed configuration.
+
+        This command likely fails when changing the baudrate of the port used
+        for the connection in the RAM layer. This is because the receiver sends
+        the success/failure result at the new baudrate. The command is therefore
+        not be able to determine the result and fails. The correct way of doing
+        this is outlined in the note above. A ugly and unreliable work-around is
+        running the command twice.
+
+Command 'rx2cfg':
+
+    Usage: cfgtool rx2cfg [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]
+
+    This reads the configuration of a layer in the receiver and saves the data
+    as a configuration file (see the 'cfg2rx' command for a specification of
+    the format). Depending on the layer this produces all configuration
+    (layers 'RAM' and 'Default') or only those that is available in the layer
+    (layers 'BBR' and 'Flash'), which may be none at all.
+
+    The '-u' flag adds all unknown (to this tool) configuration items.
+    The '-x' flag adds the item description as a comment.
+
+    Entries in the generated configuration file are commented out if their
+    values are the default values.
+
+Command 'rx2list':
+
+    Usage: cfgtool rx2list [-o <outfile>] [-y] -p <port> -l <layer> [-u] [-x]
+
+    This behaves like the 'rx2cfg' command with the differnece that all
+    configuration is reported as <key> <value> pairs. That is, no <port> or
+    <messagename> shortcuts are generated.
+
+Commands 'cfg2ubx', 'cfg2hex' and 'cfg2c':
+
+    Usage: cfgtool cfg2ubx [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R]
+           cfgtool cfg2hex [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]
+           cfgtool cfg2c   [-i <infile>] [-o <outfile>] [-y] -l <layer(s)> [-R] [-x]
+
+    The cfg2ubx, cfg2hex and cfg2c modes convert a configuration file into one
+    or more UBX-CFG-VALSET messages, output as binary UBX messages, u-center
+    compatible hex dumps, or c code. Optional extra comments can be enabled
+    using the -x flag.
+    See the 'rx2cfg' command for the specification of the configuration file and
+    the documentation of the other flags.
+
+Command 'uc2cfg':
+
+    Usage: cfgtool uc2cfg [-i <infile>] [-o <outfile>] [-y]
+
+    This converts a configuration file from u-center's 'Generation 9 Advanced
+    Configuration' tool and converts it into the format cfgtool understands.
+    It reads all key-value pairs in the [set] section of the input file. The
+    layer tokens are ignored. Duplicate key-value pairs are silently ignored
+    unless the values are inconsistent. No formal checks on the key names or
+    values are performed and the data is passed-through as-is. Empty lines,
+    comments as well as sections other than the [set] section are ignored.
+    A maximum of 200 key-value pairs are processed. Key and value strings must
+    not exceed 50 respectively 25 characters.
+
+Command 'cfginfo':
+
+    Usage: cfgtool cfginfo [-o <outfile>] [-y]
+
+    This generates a list with information on all configuration items and
+    messages known to this tool.
+
+Command 'dump':
+
+    Usage: cfgtool dump -p <port> [-o <outfile>] [-y] [-x] [-n]
+
+    Connects to the receiver and outputs information on the received messages
+    and optionally a hex dump of the messages until SIGINT (e.g. CTRL-C), SIGHUP
+    or SIGTERM is received.
+
+    Returns success (0) if receiver was detected and at least one message was
+    received. Otherwise returns 2 (rx not detected) or 3 (no messages).
+
+    Examples:
+
+        cfgtool dump -p /dev/ttyUSB0
+        timeout 20 cfgtool dump -p /dev/ttyACM0
+
+Command 'parse':
+
+    Usage: cfgtool parse [-i <infile>] [-o <outfile>] [-y] [-x] [-e]
+
+    This processes data from the input file through the parser and outputs
+    information on the found messages and optionally a hex dump of the messages.
+    It stops at the end of the file or when SIGINT (e.g. CTRL-C), SIGHUP
+    or SIGTERM is received.
+
+    Add -e to enable epoch detection and to output detected epochs.
+
+Command 'reset':
+
+    Usage: cfgtool reset -p <port> -r <reset>
+
+    This resets the receiver. Depending on the <reset> type different parts of
+    the navigation data and the configuration are deleted.
+
+        <reset>   Navigation   Configuration   Reset
+        ------------------------------------------------------------
+        soft      -            - (update)      Software (controlled)
+        hard      -            - (update)      Hardware (controlled)
+        hot       -            -               Software (GNSS only)
+        warm      Ephemerides  -               Software (GNSS only)
+        cold      All          -               Software (GNSS only)
+        default   -            All             Hardware (controlled)
+        factory   All          All             Hardware (controlled)
+        stop      -            -               -
+        start     -            -               -
+        gnss      -            -               -
+        safeboot  -            -               Safeboot
+
+    Notes:
+
+        All hardware resets cause a USB disconnect, which triggers the the host
+        to re-enumerate the device. For local serial <port>s (ser://<device>)
+        this is taken into account and should be handled by this command.
+        However, this is not 100% reliable. Don't use USB...
+
+        The hot, warm, and cold resets use the same command as the corresponding
+        buttons in u-center.
+
+        The soft and hard resets both trigger a full restart, which includes re-
+        freshing the RAM configuration layer.
+
+        Note that for hardware resets the navigation and configuration data is
+        only preserved with battery backup respectively configuration in the
+        Flash layer.
+
+        The stop, start and gnss resets do not actually reset anything but
+        instead stop, start and restart the GNSS operation.
+
+        The safeboot reset makes the receiver restart into safeboot mode.
+        Use a 'soft' reset to reboot into normal operation.
+
+Command 'status':
+
+    Usage: cfgtool status -p <port> [-n] [-x]
+
+    Connects to the receiver and outputs the navigation status for each
+    detected epoch. This requires navigation messages, such as UBX-NAV-PVT to
+    be enabled. The program stops when SIGINT (e.g. CTRL-C), SIGHUP
+    or SIGTERM is received.
+
+Commands 'bin2hex' and 'hex2bin':
+
+    Usage: cfgtool bin2hex [-i <infile>] [-o <outfile>] [-y]
+           cfgtool hex2bin [-i <infile>] [-o <outfile>] [-y]
+
+    Convert data from or to u-center style hex dump.
+
+    Example:
+
+        echo 48 61 6B 75 6E 61 20 4D 61 74 61 74 61 21 0A | cfgtool -q hex2bin
+
+Command 'cmd2rx':
+
+    Usage: cfgtool cmd2rx [-n] [-x] -i <infile> -p <port>
+
+    This sends commands to a receiver and optionally waits for an expected
+    response with a timeout. This is useful to configure non-u-blox receivers
+    or other devices.
+
+    The command <infile> consists of one or more lines of commands to process.
+    Leading and trailing whitespace, empty lines as well as comments (# style)
+    are ignored. Acceptable separators for the tokens are (any number of) spaces
+    and/or tabs. Each line in the <infile> has one of the following formats:
+
+        COMMAND <cmd> <timeout> <rsp>
+        SLEEP <timeout>
+        DETECT
+        MESSAGE <timeout> <name>
+
+    Lines starting with 'COMMAND' specify a command to be sent to the receiver,
+    where <cmd> and <rsp> specify command to send to the receiver and the
+    response to expect. The <timeout> is in milliseconds and specifies the
+    maximum time to wait for the expected response. Both <cmd> and <rsp> are
+    in the form of <type>:<data>. The available <type>s are:
+
+        NMEA: NMEA sentence with <data> being the payload (framing is added
+              automatically. For example: 'NMEA:PQTMCFGFIXRATE,W,200'
+        HEX:  Arbitrary data with <data> being a hexdump of it. For example:
+              'HEX:48656c6c6f20576f726c6421'
+        NONE: No-op command, nothing is sent resp. expected. For example: 'NONE'
+              If <cmd> is NONE nothing is sent to the receiver. If the <rsp> is
+              NONE the <timeout> is used like in SLEEP
+
+    Lines starting with 'SLEEP' specify a pause of <timeout> milliseconds.
+
+    Lines starting with 'DETECT' specify a re-detection (autobauding) of the
+    receiver, for example after configuring the baudrate
+
+    Lines starting with 'MESSAGE' specify waiting up to <timeout> milliseconds
+    for any message matching the given <name>. For example: 'MESSAGE:NMEA-G' to
+    wait for any NMEA positioning message. Or 'MESSAGE:RTCM3-TYPE1234' for
+    waiting for a RTCM3 type 1234 message.
+
+    With the -x flag the response of successfull COMMANDs and MESSAGEs is printed
+    to stdout if it is printable (such as NMEA message, but not binary messages).
+
+    Example command file:
+
+        # Nav rate 5 Hz
+        COMMAND  NMEA:PQTMCFGFIXRATE,W,200 1000  NMEA:PQTMCFGFIXRATE,OK
+        # Save parameters
+        COMMAND  NMEA:PQTMSAVEPAR          1000  NMEA:PQTMSAVEPAR,OK
+        # Stop GNSS
+        COMMAND  NMEA:PQTMGNSSSTOP         2000  NMEA:PQTMGNSSSTOP,OK
+        # (Re-)start GNSS
+        COMMAND  NMEA:PQTMGNSSSTART        2000  NMEA:PQTMGNSSSTART,OK
+
+Happy hacking! :-)
+

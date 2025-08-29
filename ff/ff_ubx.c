@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's UBX protocol stuff
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -1477,6 +1478,7 @@ int ubxRxmSfrbxInfo(char *info, const int size, const uint8_t *msg, const int ms
         const uint8_t wordType2 = (dwrd[4] & 0x3f000000) >> 24;
         return len + snprintf(&info[len], size - len, "GAL I/NAV %c %c %u, %c %c %u", pageType1, evenOdd1, wordType1, pageType2, evenOdd2, wordType2);
     }
+    // Galileo F/NAV
     else if ( (head.gnssId == UBX_GNSSID_GAL) && ((head.sigId == UBX_SIGID_GAL_E5AI) || (head.sigId == UBX_SIGID_GAL_E5AQ)) )
     {
         const uint8_t pageType  = (dwrd[0] & 0xfc000000) >> 26;

@@ -1,8 +1,8 @@
-/* ************************************************************************************************/ // clang-format off
-// u-blox 9 positioning receivers configuration tool
+// clang-format off
+/* ****************************************************************************************************************** */
+// u-blox positioning receivers configuration tool
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -200,11 +200,11 @@ int statusRun(const char *portArg, const bool extraInfo, const bool noProbe)
     ioOutputStr("UBX  NMEA RTCM SPAR NOVA GARB Epoch | %s\n", epochStrHeader());
     ioWriteOutput(false);
 
-    uint32_t lastEpoch = TIME();
+    uint64_t lastEpoch = TIME();
 
     while (!gAbort)
     {
-        const uint32_t now = TIME();
+        const uint64_t now = TIME();
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL)
         {

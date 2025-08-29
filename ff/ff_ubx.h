@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's UBX protocol stuff
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
 //
@@ -632,22 +633,22 @@ typedef struct UBX_MON_HW_V0_GROUP0_s
     uint32_t pullL;
 } UBX_MON_HW_V0_GROUP0_t;
 
-#define UBX_MON_HW_V0_FLAGS_RTCCALIB                  0x01
-#define UBX_MON_HW_V0_FLAGS_SAFEBOOT                  0x02
+#define UBX_MON_HW_V0_FLAGS_RTCCALIB                  (uint8_t)0x01
+#define UBX_MON_HW_V0_FLAGS_SAFEBOOT                  (uint8_t)0x02
 #define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_GET(f)       ( ((int8_t)(f) >> 2) & 0x03 )
-#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_UNKNOWN      0x00
-#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_OK           0x01
-#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_WARNING      0x02
-#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_CRITICAL     0x03
-#define UBX_MON_HW_V0_FLAGS_XTALABSENT                0x10
-#define UBX_MON_HW_V0_ASTATUS_INIT                    0x00
-#define UBX_MON_HW_V0_ASTATUS_UNKNOWN                 0x01
-#define UBX_MON_HW_V0_ASTATUS_OK                      0x02
-#define UBX_MON_HW_V0_ASTATUS_SHORT                   0x03
-#define UBX_MON_HW_V0_ASTATUS_OPEN                    0x04
-#define UBX_MON_HW_V0_APOWER_OFF                      0x00
-#define UBX_MON_HW_V0_APOWER_ON                       0x01
-#define UBX_MON_HW_V0_APOWER_UNKNOWN                  0x02
+#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_UNKNOWN      (uint8_t)0x00
+#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_OK           (uint8_t)0x01
+#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_WARNING      (uint8_t)0x02
+#define UBX_MON_HW_V0_FLAGS_JAMMINGSTATE_CRITICAL     (uint8_t)0x03
+#define UBX_MON_HW_V0_FLAGS_XTALABSENT                (uint8_t)0x10
+#define UBX_MON_HW_V0_ASTATUS_INIT                    (uint8_t)0x00
+#define UBX_MON_HW_V0_ASTATUS_UNKNOWN                 (uint8_t)0x01
+#define UBX_MON_HW_V0_ASTATUS_OK                      (uint8_t)0x02
+#define UBX_MON_HW_V0_ASTATUS_SHORT                   (uint8_t)0x03
+#define UBX_MON_HW_V0_ASTATUS_OPEN                    (uint8_t)0x04
+#define UBX_MON_HW_V0_APOWER_OFF                      (uint8_t)0x00
+#define UBX_MON_HW_V0_APOWER_ON                       (uint8_t)0x01
+#define UBX_MON_HW_V0_APOWER_UNKNOWN                  (uint8_t)0x02
 #define UBX_MON_HW_V0_NOISEPERMS_MAX                  200 // This seems to be what u-center uses..
 #define UBX_MON_HW_V0_AGCCNT_MAX                      8191
 #define UBX_MON_HW_V0_JAMIND_MAX                      255
@@ -698,11 +699,11 @@ typedef struct UBX_MON_HW3_V0_GROUP1_s
     uint8_t  reserved1;
 } UBX_MON_HW3_V0_GROUP1_t;
 
-#define UBX_MON_HW3_V0_VERSION                        0x00
-#define UBX_MON_HW3_V0_FLAGS_RTCCALIB                 0x01
-#define UBX_MON_HW3_V0_FLAGS_SAFEBOOT                 0x02
-#define UBX_MON_HW3_V0_FLAGS_XTALABSENT               0x04
-#define UBX_MON_HW3_V0_PINMASK_PERIPHPIO              0x01
+#define UBX_MON_HW3_V0_VERSION                        (uint8_t)0x00
+#define UBX_MON_HW3_V0_FLAGS_RTCCALIB                 (uint8_t)0x01
+#define UBX_MON_HW3_V0_FLAGS_SAFEBOOT                 (uint8_t)0x02
+#define UBX_MON_HW3_V0_FLAGS_XTALABSENT               (uint8_t)0x04
+#define UBX_MON_HW3_V0_PINMASK_PERIPHPIO              (uint16_t)0x0001
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_GET(f)         ( ((int16_t)(f) >> 1) & 0x07 )
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_A              0
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_B              1
@@ -712,12 +713,12 @@ typedef struct UBX_MON_HW3_V0_GROUP1_s
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_F              5
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_G              6
 #define UBX_MON_HW3_V0_PINMASK_PINBANK_H              7
-#define UBX_MON_HW3_V0_PINMASK_DIRECTION              0x0010
-#define UBX_MON_HW3_V0_PINMASK_VALUE                  0x0020
-#define UBX_MON_HW3_V0_PINMASK_VPMANAGER              0x0040
-#define UBX_MON_HW3_V0_PINMASK_PIOIRQ                 0x0080
-#define UBX_MON_HW3_V0_PINMASK_PIOPULLHIGH            0x0100
-#define UBX_MON_HW3_V0_PINMASK_PIOPULLLOW             0x0200
+#define UBX_MON_HW3_V0_PINMASK_DIRECTION              (uint16_t)0x0010
+#define UBX_MON_HW3_V0_PINMASK_VALUE                  (uint16_t)0x0020
+#define UBX_MON_HW3_V0_PINMASK_VPMANAGER              (uint16_t)0x0040
+#define UBX_MON_HW3_V0_PINMASK_PIOIRQ                 (uint16_t)0x0080
+#define UBX_MON_HW3_V0_PINMASK_PIOPULLHIGH            (uint16_t)0x0100
+#define UBX_MON_HW3_V0_PINMASK_PIOPULLLOW             (uint16_t)0x0200
 
 #define UBX_MON_HW3_V0_MIN_SIZE    ((int)(sizeof(UBX_MON_HW3_V0_GROUP0_t) + UBX_FRAME_SIZE))
 #define UBX_MON_HW3_V0_SIZE(msg) \
@@ -1471,9 +1472,9 @@ typedef struct UBX_RXM_RAWX_V1_GROUP1_s
     uint8_t  reserved[1];
 } UBX_RXM_RAWX_V1_GROUP1_t;
 
-#define UBX_RXM_RAWX_V1_VERSION                       0x01
-#define UBX_RXM_RAWX_V1_RECSTAT_LEAPSEC               0x01
-#define UBX_RXM_RAWX_V1_RECSTAT_CLKRESET              0x02
+#define UBX_RXM_RAWX_V1_VERSION                       (uint8_t)0x01
+#define UBX_RXM_RAWX_V1_RECSTAT_LEAPSEC               (uint8_t)0x01
+#define UBX_RXM_RAWX_V1_RECSTAT_CLKRESET              (uint8_t)0x02
 #define UBX_RXM_RAWX_V1_PRSTDEV_PRSTD_GET(f)          ((f) & 0x0f)
 #define UBX_RXM_RAWX_V1_PRSTD_SCALE(s)                (0.01 * exp2(s))
 #define UBX_RXM_RAWX_V1_CPSTDEV_CPSTD_GET(f)          ((f) & 0x0f)
@@ -1481,10 +1482,10 @@ typedef struct UBX_RXM_RAWX_V1_GROUP1_s
 #define UBX_RXM_RAWX_V1_DOSTDEV_DOSTD_GET(f)          ((f) & 0x0f)
 #define UBX_RXM_RAWX_V1_DOSTD_SCALE(s)                (0.002 * exp2(s))
 #define UBX_RXM_RAWX_V1_LOCKTIME_SCALE                1e-3
-#define UBX_RXM_RAWX_V1_TRKSTAT_PRVALID               0x01
-#define UBX_RXM_RAWX_V1_TRKSTAT_CPVALID               0x02
-#define UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC               0x04
-#define UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC            0x08
+#define UBX_RXM_RAWX_V1_TRKSTAT_PRVALID               (uint8_t)0x01
+#define UBX_RXM_RAWX_V1_TRKSTAT_CPVALID               (uint8_t)0x02
+#define UBX_RXM_RAWX_V1_TRKSTAT_HALFCYC               (uint8_t)0x04
+#define UBX_RXM_RAWX_V1_TRKSTAT_SUBHALFCYC            (uint8_t)0x08
 
 #define UBX_RXM_RAWX_V1_MIN_SIZE    ((int)(sizeof(UBX_RXM_RAWX_V1_GROUP0_t) + UBX_FRAME_SIZE))
 #define UBX_RXM_RAWX_V1_SIZE(msg) \
@@ -1504,12 +1505,12 @@ typedef struct UBX_RXM_RTCM_V2_GROUP0_s
     uint16_t msgType;
 } UBX_RXM_RTCM_V2_GROUP0_t;
 
-#define UBX_RXM_RTCM_V2_VERSION                       0x02
-#define UBX_RXM_RTCM_V2_FLAGS_CRCFAILED               0x01
+#define UBX_RXM_RTCM_V2_VERSION                       (uint8_t)0x02
+#define UBX_RXM_RTCM_V2_FLAGS_CRCFAILED               (uint8_t)0x01
 #define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_GET(f)          ( ((f) >> 1) & 0x03 )
-#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_UNKNOWN         0x00
-#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_UNUSED          0x01
-#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_USED            0x02
+#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_UNKNOWN         (uint8_t)0x00
+#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_UNUSED          (uint8_t)0x01
+#define UBX_RXM_RTCM_V2_FLAGS_MSGUSED_USED            (uint8_t)0x02
 
 #define UBX_RXM_RTCM_V2_SIZE    ((int)(sizeof(UBX_RXM_RTCM_V2_GROUP0_t) + UBX_FRAME_SIZE))
 
@@ -1651,8 +1652,8 @@ typedef struct UBX_MON_COMMS_V0_GROUP1_s
 
 #define UBX_MON_COMMS_V0_VERSION             0x00
 
-#define UBX_MON_COMMS_V0_TXERRORS_MEM        0x01
-#define UBX_MON_COMMS_V0_TXERRORS_ALLOC      0x02
+#define UBX_MON_COMMS_V0_TXERRORS_MEM        (uint8_t)0x01
+#define UBX_MON_COMMS_V0_TXERRORS_ALLOC      (uint8_t)0x02
 
 #define UBX_MON_COMMS_V0_PROTIDS_UBX         0x00
 #define UBX_MON_COMMS_V0_PROTIDS_NMEA        0x01
@@ -1722,7 +1723,7 @@ typedef struct UBX_ESF_MEAS_V0_GROUP2_s
 #define UBX_ESF_MEAS_V0_FLAGS_TIMEMARKSENT_NONE       0
 #define UBX_ESF_MEAS_V0_FLAGS_TIMEMARKSENT_EXT0       1
 #define UBX_ESF_MEAS_V0_FLAGS_TIMEMARKSENT_EXT1       2
-#define UBX_ESF_MEAS_V0_FLAGS_CALIBTTAGVALID          0x0008
+#define UBX_ESF_MEAS_V0_FLAGS_CALIBTTAGVALID          (uint16_t)0x0008
 #define UBX_ESF_MEAS_V0_FLAGS_NUMMEAS_GET(f)          ( ((uint16_t)(f) >> 11) & 0x1f )
 #define UBX_ESF_MEAS_V0_DATA_DATAFIELD_GET(f)         ( (uint32_t)(f) & 0x00ffffff )
 #define UBX_ESF_MEAS_V0_DATA_DATATYPE_GET(f)          ( ((uint32_t)(f) >> 24) & 0x0000003f ) // same enum as UBX-ESF-STATUS.type it seems
@@ -1785,8 +1786,8 @@ typedef struct UBX_ESF_STATUS_V2_GROUP1_s
 #define UBX_ESF_STATUS_V2_FUSIONMODE_SUSPENDED                       0x02
 #define UBX_ESF_STATUS_V2_FUSIONMODE_DISABLED                        0x03
 #define UBX_ESF_STATUS_V2_SENSSTATUS1_TYPE_GET(f)                    ( (uint8_t)(f) & 0x3f ) // same enum as UBX-ESF-MEAS.dataType it seems
-#define UBX_ESF_STATUS_V2_SENSSTATUS1_USED                           0x40
-#define UBX_ESF_STATUS_V2_SENSSTATUS1_READY                          0x80
+#define UBX_ESF_STATUS_V2_SENSSTATUS1_USED                           (uint8_t)0x40
+#define UBX_ESF_STATUS_V2_SENSSTATUS1_READY                          (uint8_t)0x80
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_CALIBSTATUS_GET(f)             ( (uint8_t)(f) & 0x03 )
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_CALIBSTATUS_NOTCALIB           0
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_CALIBSTATUS_CALIBRATING        1
@@ -1797,10 +1798,10 @@ typedef struct UBX_ESF_STATUS_V2_GROUP1_s
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_TIMESTATUS_FIRSTBYTE           1
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_TIMESTATUS_EVENT               2
 #define UBX_ESF_STATUS_V2_SENSSTATUS2_TIMESTATUS_TIMETAG             3
-#define UBX_ESF_STATUS_V2_FAULTS_BADMEAS                             0x01
-#define UBX_ESF_STATUS_V2_FAULTS_BADTTAG                             0x02
-#define UBX_ESF_STATUS_V2_FAULTS_MISSINGMEAS                         0x04
-#define UBX_ESF_STATUS_V2_FAULTS_NOISYMEAS                           0x08
+#define UBX_ESF_STATUS_V2_FAULTS_BADMEAS                             (uint8_t)0x01
+#define UBX_ESF_STATUS_V2_FAULTS_BADTTAG                             (uint8_t)0x02
+#define UBX_ESF_STATUS_V2_FAULTS_MISSINGMEAS                         (uint8_t)0x04
+#define UBX_ESF_STATUS_V2_FAULTS_NOISYMEAS                           (uint8_t)0x08
 
 #define UBX_ESF_STATUS_V2_MIN_SIZE    ((int)(sizeof(UBX_ESF_STATUS_V2_GROUP0_t) + UBX_FRAME_SIZE))
 #define UBX_ESF_STATUS_V2_SIZE(msg) \
@@ -1879,14 +1880,14 @@ typedef struct UBX_TIM_TM2_V0_GROUP0_s
 #define UBX_TIM_TM2_V0_FLAGS_RUN_GET(f)              ( ((uint8_t)(f) >> 1) & 0x01 )
 #define UBX_TIM_TM2_V0_FLAGS_RUN_ARMED               0
 #define UBX_TIM_TM2_V0_FLAGS_RUN_STOPPED             1
-#define UBX_TIM_TM2_V0_FLAGS_NEWFALLINGEDGE          0x04
+#define UBX_TIM_TM2_V0_FLAGS_NEWFALLINGEDGE          (uint8_t)0x04
 #define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_GET(f)         ( ((uint8_t)(f) >> 3) & 0x03 )
 #define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_RX             0
 #define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_GNSS           1
 #define UBX_TIM_TM2_V0_FLAGS_TIMEBASE_UTC            2
-#define UBX_TIM_TM2_V0_FLAGS_UTCACAVAIL              0x20
-#define UBX_TIM_TM2_V0_FLAGS_TIMEVALID               0x40
-#define UBX_TIM_TM2_V0_FLAGS_NEWRISINGEDGE           0x80
+#define UBX_TIM_TM2_V0_FLAGS_UTCACAVAIL              (uint8_t)0x20
+#define UBX_TIM_TM2_V0_FLAGS_TIMEVALID               (uint8_t)0x40
+#define UBX_TIM_TM2_V0_FLAGS_NEWRISINGEDGE           (uint8_t)0x80
 #define UBX_TIM_TM2_V0_TOW_SCALE                     1e-3
 #define UBX_TIM_TM2_V0_SUBMS_SCALE                   1e-9
 #define UBX_TIM_TM2_V0_ACCEST_SCALE                  1e-9

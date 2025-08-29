@@ -8,10 +8,10 @@
 #include <time.h>
 
 #include <ubloxcfg/ubloxcfg.h>
-#include <ubloxcfg/ff_rx.h>
-#include <ubloxcfg/ff_parser.h>
-#include <ubloxcfg/ff_epoch.h>
-#include <ubloxcfg/ff_stuff.h>
+#include <ff/ff_rx.h>
+#include <ff/ff_parser.h>
+#include <ff/ff_epoch.h>
+#include <ff/ff_stuff.h>
 
 int main()
 {
@@ -25,7 +25,7 @@ int main()
 
 	uint32_t nMsgs = 0, sMsgs = 0;
 
-	const uint32_t tOffs = TIME() - timeOfDay(); // Offset between wall clock and parser time reference
+	const uint64_t tOffs = TIME() - timeOfDay(); // Offset between wall clock and parser time reference
 
 	EPOCH_t coll;
 	EPOCH_t epoch;

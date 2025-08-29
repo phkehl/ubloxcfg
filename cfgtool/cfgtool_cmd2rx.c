@@ -1,8 +1,21 @@
-/* ************************************************************************************************/  // clang-format off
-// Quectel positioning receivers configuration tool
+// clang-format off
+/* ****************************************************************************************************************** */
+// u-blox positioning receivers configuration tool
+//
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+//
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+// even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along with this program.
+// If not, see <https://www.gnu.org/licenses/>.
 
-/* ************************************************************************************************/
-
+/* ****************************************************************************************************************** */
 
 #include "cfgtool_cmd2rx.h"
 
@@ -399,7 +412,7 @@ int cmd2rxRun(const char* portArg, const bool noProbe, const bool extraInfo)
                 ok = _processMessage(rx, cmdRsp, extraInfo);
                 break;
             case CMD_TYPE_SLEEP: {
-                const uint32_t t0 = TIME();
+                const uint64_t t0 = TIME();
                 while ((TIME() - t0) < cmdRsp->timeout) {
                     PARSER_MSG_t *msg = rxGetNextMessage(rx);
                     if (msg == NULL) {
@@ -469,7 +482,7 @@ static bool _processCommand(RX_t *rx, const CMD_RSP_t* cmdRsp, const bool extraI
     // Wait for response (or just wait if we don't expect a response)
     DEBUG_HEXDUMP(cmdRsp->rsp.data, cmdRsp->rsp.size, cmdRsp->rsp.size > 0 ? "< expected response" : "< (no response expected)");
     bool found_resp = false;
-    const uint32_t t0 = TIME();
+    const uint64_t t0 = TIME();
     while (!found_resp && ((TIME() - t0) < cmdRsp->timeout)) {
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL) {
@@ -503,7 +516,7 @@ static bool _processMessage(RX_t *rx, const CMD_RSP_t* cmdRsp, const bool extraI
 {
     // Wait for a message that matches the name
     bool found_name = false;
-    const uint32_t t0 = TIME();
+    const uint64_t t0 = TIME();
     while (!found_name && ((TIME() - t0) < cmdRsp->timeout)) {
         PARSER_MSG_t *msg = rxGetNextMessage(rx);
         if (msg != NULL) {

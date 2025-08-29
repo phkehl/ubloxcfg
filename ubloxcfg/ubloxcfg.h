@@ -1,10 +1,10 @@
-/* ************************************************************************************************/ // clang-format off
+// clang-format off
+/* ****************************************************************************************************************** */
 /*!
     \file
-    \brief u-blox 9 positioning receivers configuration library
+    \brief ubloxcfg -- u-blox positioning receivers configuration library
 
-    - Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-      https://oinkzwurgl.org/hacking/ubloxcfg
+    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
 
     This program is free software: you can redistribute it and/or modify it under the terms of the
     GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -24,9 +24,8 @@
 #ifndef __UBLOXCFG_H__
 #define __UBLOXCFG_H__
 
-#include <stdint.h>
 #include <stdbool.h>
-
+#include <stdint.h>
 #include "ubloxcfg_gen.h"
 
 #ifdef __cplusplus
@@ -543,12 +542,11 @@ bool ubloxcfg_valueFromString(const char *str, const UBLOXCFG_TYPE_t type, const
     @{
 */
 
-//! Get library version
+//! Get library version string
 /*!
-    \return the library version as major and minor versions encoded in two bytes ((major << 8) | minor),
-        or 0 if unknown
+    \returns the library version string
 */
-uint16_t ubloxcfg_getVersion(void);
+const char* ubloxcfg_getVersionStr(void);
 
 
 //! Get strings describing the data sources

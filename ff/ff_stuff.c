@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's Allencheibs
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -25,20 +26,19 @@
 
 /* ****************************************************************************************************************** */
 
-uint32_t TIME(void)
+uint64_t TIME(void)
 {
-    static uint32_t t0;
+    static uint64_t t0 = 0;
     struct timespec tp;
     clock_gettime(CLOCK_MONOTONIC, &tp);
+    uint64_t t = (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000);
     if (t0 == 0)
     {
-        t0 = (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000);
+        t0 = t;
         return 0;
     }
 
-    uint32_t dt = (tp.tv_sec * 1000) + (tp.tv_nsec / 1000000) - t0;
-
-    return dt;
+    return t - t0;
 }
 
 void SLEEP(uint32_t dur)
@@ -50,11 +50,11 @@ void SLEEP(uint32_t dur)
 #endif
 }
 
-uint32_t timeOfDay(void)
+uint64_t timeOfDay(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    uint32_t t = ts.tv_sec % 86400;
+    uint64_t t = ts.tv_sec % 86400;
     t *= 1000;
     t += ts.tv_nsec / 1000000;
     return t;

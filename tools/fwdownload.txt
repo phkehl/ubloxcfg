@@ -1,0 +1,660 @@
+Understanding how fwdownload works.
+
+Setup:
+- u-center, ZED-F9P receiver on serial port
+  - fw download dialog options:
+    - baudrate 230400
+    - enter safeboot before update
+    - send training sequence
+    - use chip erase
+  - packet console
+  - binary console
+- serial port sniffer
+- firmware UBX_F9_100_HPG_113_ZED_F9P.7e6e899c5597acddf2f5f2f70fdf5fbe.bin, 1193636 bytes
+
+
+TODO: throw unknown messages at u-center..
+
+
+Log from firmware download window interleved with ucenter console and binary logs and sniffed data on serial port:
+
+fwdownload log: Setup pipes
+fwdownload log:
+fwdownload log: Firmware update tool launched
+fwdownload log:
+fwdownload log:  -p STDIO -b 38400:9600:230400 --no-fis 1 -C 1 -s 1 -t 1 -v 1 "Z:\Downloads\UBX_F9_100_HPG_113_ZED_F9P.7e6e899c5597acddf2f5f2f70fdf5fbe.bin"
+fwdownload log:
+fwdownload log: ----------CMD line arguments-----------
+fwdownload log:
+fwdownload log: Image file:        Z:\Downloads\UBX_F9_100_HPG_113_ZED_F9P.7e6e899c5597acddf2f5f2f70fdf5fbe.bin
+fwdownload log: Flash:             <compiled-in>
+fwdownload log: Fis:               flash.xml
+fwdownload log: Port:              STDIO
+fwdownload log: Baudrates:         38400/9600/230400
+fwdownload log: Safeboot:          1
+fwdownload log: Reset:             1
+fwdownload log: AutoBaud:          0
+fwdownload log: Verbose:           1
+fwdownload log: Erase all:         1
+fwdownload log: Erase only:        0
+fwdownload log: Training sequence: 1
+fwdownload log: Chip erase:        1
+fwdownload log: Merging FIS:       1
+fwdownload log: Update RAM:        0
+fwdownload log: Use USB alt:       0
+fwdownload log: ---------------------------------------
+fwdownload log:
+fwdownload log:   0.0 u-blox Firmware Update Tool version 19.03
+fwdownload log:
+fwdownload log:   0.0 Updating Firmware 'Z:\Downloads\UBX_F9_100_HPG_113_ZED_F9P.7e6e899c5597acddf2f5f2f70fdf5fbe.bin' of receiver over 'STDIO'
+fwdownload log:   0.0   - Opening and buffering image file
+fwdownload log:
+fwdownload log:   0.0   - Verifying image
+fwdownload log:
+fwdownload log:   0.0   - image 0 size 675668
+fwdownload log:   0.0   - image 1 size 517932
+
+                firmware UBX_F9_100_HPG_113_ZED_F9P.7e6e899c5597acddf2f5f2f70fdf5fbe.bin
+                1193636 bytes, but 675668 + 517932 = 1193600  ---> 36 less than the file...
+
+                1193636 fw.bin
+                1193600 says fwupdate above, not sure what this is about... just wrong, i guess?
+                1193636 says sum of sizes in UBX-UPD-09 seen in transfer, which matches the file size
+
+                Hexdump of fw file:
+                    00000000  f3 10 67 df ca 7d 3f 4e  1f 0c d7 d8 76 d1 15 4a  |..g..}?N....v..J|
+                    00000010  79 66 e2 64 15 86 0f 49  98 f3 d7 bc 5f 7e e4 74  |yf.d...I...._~.t|
+                    00000020  40 14 62 c4 ac 2c f8 bf  c0 b8 44 a5 d9 b7 41 5c  |@.b..,....D...A\|
+                    00000030  ae dc 95 3a 75 5f 75 f0  e9 b9 97 1f da 2e c7 9f  |...:u_u.........|
+                    00000040  68 89 f3 bf d9 0b 91 75  c5 4b d4 ad 48 63 fe bc  |h......u.K..Hc..|
+                    ...
+                    00123660  e3 f8 37 91 4e a1 6a fd  07 df e0 2e 0d c3 86 02  |..7.N.j.........|
+                    00123670  5b c1 47 8f 4f 21 62 80  00 a0 6a 5b 57 0f 06 12  |[.G.O!b...j[W...|
+                    00123680  a5 f2 04 a0 00 00 00 00  92 6f 60 c5 54 4f 0a 00  |.........o`.TO..|
+                    00123690  2c e7 07 00 02 00 00 00  00 00 00 00 00 00 00 00  |,...............|
+                    001236a0  55 42 46 4c                                       |UBFL|
+
+fwdownload log:   0.0   - config size 0
+fwdownload log:   0.0   - Trying to open port STDIO
+fwdownload log:
+fwdownload log:   0.0   - Setting baudrate to 38400
+fwdownload log:
+fwdownload log:   0.2   - Sending training sequence
+fwdownload log:
+fwdownload log:   0.8   - Received Version information
+fwdownload log:
+fwdownload log:   0.8   - Receiver currently running SW 'EXT CORE 1.00 (f10c36)'
+fwdownload log:
+fwdownload log:   0.8   - Receiver HW '00190000', Generation 9.0
+fwdownload log:
+fwdownload log:   0.8   - Sending ROM CRC Poll
+fwdownload log:
+fwdownload log:   0.8 ROM CRC: 0xDD3FE36C
+fwdownload log:
+fwdownload log:   0.8 u-blox9 ROM1.01 hardware detected (0xDD3FE36C)
+fwdownload log:
+fwdownload log:   0.8  Getting Port connection to receiver
+fwdownload log:
+fwdownload log:   0.9   - Connected port is: UART1
+fwdownload log:
+fwdownload log:   0.9  Commanding Safeboot
+fwdownload log:
+fwdownload log:   1.7   - Re-enumerating...
+fwdownload log:
+fwdownload log:   2.8   - Setting baudrate to 9600
+fwdownload log:
+fwdownload log:   3.0   - Sending training sequence
+fwdownload log:
+fwdownload log:   3.2  Detecting Flash manufacturer and device IDs
+fwdownload log:
+fwdownload log:   3.3   - Flash ManId: 0x00EF DevId: 0x4015
+fwdownload log:
+fwdownload log:   3.4   - Not merging anything
+fwdownload log:
+fwdownload log:   3.4   - Flash size:   2097152
+fwdownload log:
+fwdownload log:   3.4   -  Flash block:  512 x 4096
+fwdownload log:
+fwdownload log:   3.7   - Setting baudrate to 230400
+fwdownload log:
+fwdownload log:   4.1 Chip erase started
+fwdownload log:
+fwdownload log:   4.1  Receiver info collected, downloading to flash...
+fwdownload log:
+fwdownload log: Writing packet 1/2332
+fwdownload log: Writing packet 2/2332
+fwdownload log: Writing packet 3/2332
+fwdownload log: Writing packet 4/2332
+fwdownload log: Writing packet 5/2332
+fwdownload log: Writing packet 6/2332
+fwdownload log: Writing packet 7/2332
+fwdownload log: Writing packet 8/2332
+fwdownload log: Writing packet 9/2332
+fwdownload log: Writing packet 10/2332
+fwdownload log: Write ACK for packet 1
+fwdownload log: Write ACK for packet 2
+fwdownload log: Write ACK for packet 3
+fwdownload log: Write ACK for packet 4
+fwdownload log: Write ACK for packet 5
+fwdownload log: Write ACK for packet 6
+fwdownload log: Write ACK for packet 7
+fwdownload log: Write ACK for packet 8
+fwdownload log: Write ACK for packet 9
+fwdownload log: Write ACK for packet 10
+fwdownload log: Writing packet 11/2332
+fwdownload log: Writing packet 12/2332
+fwdownload log: Writing packet 13/2332
+fwdownload log: Writing packet 14/2332
+fwdownload log: Writing packet 15/2332
+fwdownload log: Writing packet 16/2332
+fwdownload log: Write ACK for packet 11
+fwdownload log: Writing packet 17/2332
+fwdownload log: Write ACK for packet 12
+fwdownload log: Writing packet 18/2332
+fwdownload log: Write ACK for packet 13
+fwdownload log: Writing packet 19/2332
+fwdownload log: Writing packet 20/2332
+fwdownload log: Write ACK for packet 14
+fwdownload log: Writing packet 21/2332
+fwdownload log: Write ACK for packet 15
+fwdownload log: Writing packet 22/2332
+fwdownload log: Write ACK for packet 16
+fwdownload log: Writing packet 23/2332
+fwdownload log: [ ...and so on... ]
+fwdownload log: Write ACK for packet 2320
+fwdownload log: Writing packet 2330/2332
+fwdownload log: Write ACK for packet 2321
+fwdownload log: Writing packet 2331/2332
+fwdownload log: Write ACK for packet 2322
+fwdownload log: Writing packet 2332/2332
+fwdownload log: Write ACK for packet 2323
+fwdownload log: Write ACK for packet 2324
+fwdownload log: Write ACK for packet 2325
+fwdownload log: Write ACK for packet 2326
+fwdownload log: Write ACK for packet 2327
+fwdownload log: Write ACK for packet 2328
+fwdownload log: Write ACK for packet 2329
+fwdownload log: Write ACK for packet 2330
+fwdownload log: Write ACK for packet 2331
+fwdownload log: Write ACK for packet 2332
+fwdownload log:  64.9  Writing marker for the file system to speed up first initialization
+fwdownload log:
+fwdownload log:  65.0  Verifying Image on hardware
+fwdownload log:
+fwdownload log:  67.2  CRC check SUCCESS
+fwdownload log:
+fwdownload log:  67.2  Rebooting receiver
+fwdownload log:
+fwdownload log:  67.2 Firmware Update SUCCESS
+fwdownload log:
+fwdownload log:
+fwdownload log: Firmware Update Utility completed successfully
+fwdownload log:
+fwdownload log: Exit code (0)
+
+
+
+
+
+> 55 55
+
+> b5 62 0a 04 00 00 0e 34
+00000562	2021-11-06 17:27:49.6724321	+0.0000048	IRP_MJ_READ	UP	0x00000000	b5 62 0a 04 dc 00 45 58 54 20 43 4f 52 45 20 31 2e 30 30 20 …	.b....EXT CORE 1.00 …
+
+00000569	2021-11-06 17:27:49.7502841	+0.0153532	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 25 00 00 2e 93 	.b.%....
+00000572	2021-11-06 17:27:49.8133930	+0.0000076	IRP_MJ_READ	UP	0x00000000	b5 62 09 25 0c 00 00 00 00 00 53 84 30 aa 6c e3 3f dd 56 bd …	.b.%......S.0.l.?.V.…
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  20,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 25 0C 00 00 00 00 00 53 84 30 AA 6C E3  µb.%......S.0ªlã  > UBX-UPD-25
+ucenter log:              0010  3F DD 56 BD                                      ?ÝV½.
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 25 36 62                    µb.....%6b.       < UBX-ACK-ACK (of UBX-UPD-25)
+
+00000575	2021-11-06 17:27:49.8167481	+0.0033346	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 06 00 00 00 06 18 	.b......
+00000578	2021-11-06 17:27:49.8762003	+0.0000102	IRP_MJ_READ	UP	0x00000000	b5 62 06 00 14 00 01 00 00 00 c0 08 00 00 00 96 00 00 23 00 …	.b................#.…
+
+ucenter log:    15:44:47  R -> UBX CFG-PRT,  Size  28,  'Ports'
+ucenter log:    15:44:47  0000  B5 62 06 00 14 00 01 00 00 00 C0 08 00 00 00 96  µb........À.....  > UBX-CFG-PRT
+ucenter log:              0010  00 00 23 00 23 00 00 00 00 00 BF 30              ..#.#.....¿0.
+ucenter log:
+ucenter log:    B5 62 06 00 14 00 01 00 00 00 C0 08 00 00 00 96 00 00 23 00 23 00 00 00 00 00 BF 30 --> UART1 38400
+ucenter log:
+
+00000581	2021-11-06 17:27:49.9187529	+0.0425127	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 07 00 00 10 39 	.b.....9
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 06 00 0E 37                    µb.......7.       < UBX-ACK-ACK (of UBX-CFG-PRT)
+
+
+
+ucenter log:
+ucenter log:    15:44:47  R -> UNKNOWN ???,  Size 787,  'UNKNOWN'
+ucenter log:    15:44:47  0000  00 80 80 F8 00 78 C0 80 78 00 78 3C 1E 00 78 3C  ...ø.xÀ.x.x<..x<    hmmm?!
+ucenter log:              0010  00 87 78 3C 00 FF 3C E0 00 80 78 00 80 00 78 C0  ..x<.ÿ<à..x...xÀ
+ucenter log:              0020  00 80 78 00 80 00 78 C0 00 80 80 80 80 00 78 C0  ..x...xÀ......xÀ
+ucenter log:              0030  78 3C FE 78 3C FE 78 C0 80 00 78 00 F8 78 FC F8  x<þx<þxÀ..x.øxüø
+ucenter log:              0040  78 00 78 00 80 78 00 78 FC 00 78 00 80 78 FC 78  x.x..x.xü.x..xüx
+ucenter log:              0050  C0 00 80 F8 F8 78 FC F8 78 FC F8 78 C0 78 C0 78  À..øøxüøxüøxÀxÀx
+ucenter log:              0060  3C FE 78 3C FE 78 C0 80 00 78 00 F8 78 FC F8 78  <þx<þxÀ..x.øxüøx
+ucenter log:              0070  00 78 C0 78 C0 F8 00 78 FC F8 78 3C FE F8 78 C0  .xÀxÀø.xüøx<þøxÀ
+ucenter log:              0080  78 3C E0 00 F8 80 78 3C 00 87 78 FC 00 80 78 00  x<à.ø.x<..xü..x.
+ucenter log:              0090  00 80 80 F8 00 78 C0 80 78 00 78 3C 1E 00 78 3C  ...ø.xÀ.x.x<..x<
+ucenter log:              00A0  00 87 78 3C 00 FF 3C E0 00 80 78 00 80 00 78 C0  ..x<.ÿ<à..x...xÀ
+ucenter log:              00B0  00 80 78 00 80 00 78 C0 00 80 80 80 80 00 78 C0  ..x...xÀ......xÀ
+ucenter log:              00C0  00 80 78 FC 78 3C 1E 00 80 78 3C 1E 0F 80 00 78  ..xüx<...x<....x
+ucenter log:              00D0  00 78 3C 00 80 78 C0 80 00 80 00 80 00 80 F8 00  .x<..xÀ.......ø.
+ucenter log:              00E0  80 78 C0 00 00 80 00 80 00 00 00 80 00 80 F8 80  .xÀ...........ø.
+ucenter log:              00F0  78 C0 78 3C E0 00 F8 80 78 00 80 78 FC 00 80 78  xÀx<à.ø.x..xü..x
+ucenter log:              0100  00 00 80 80 F8 00 78 C0 80 78 00 78 3C 1E 00 78  ....ø.xÀ.x.x<..x
+ucenter log:              0110  3C 00 87 78 3C 00 FF 3C E0 00 80 78 00 80 00 78  <..x<.ÿ<à..x...x
+ucenter log:              0120  C0 00 80 78 00 80 00 78 C0 00 80 80 80 80 00 78  À..x...xÀ......x
+ucenter log:              0130  C0 80 80 78 3C FE 80 78 3C FE 80 78 00 80 80 00  À..x<þ.x<þ.x....
+ucenter log:              0140  78 FC 80 78 FC 80 78 00 78 3C 1E 00 80 78 00 80  xü.xü.x.x<...x..
+ucenter log:              0150  80 78 C0 00 80 78 00 80 00 80 00 78 C0 00 80 F8  .xÀ..x.....xÀ..ø
+ucenter log:              0160  00 78 3C 1E F0 78 00 80 F8 80 80 00 80 78 3C E0  .x<.ðx..ø....x<à
+ucenter log:              0170  78 C0 80 78 3C E0 F8 F8 80 80 00 78 3C FE 00 80  xÀ.x<àøø...x<þ..
+ucenter log:              0180  78 00 00 80 80 F8 00 78 C0 80 78 00 78 3C 1E 00  x....ø.xÀ.x.x<..
+ucenter log:              0190  78 3C 00 87 78 3C 00 7F 3C E0 00 80 78 00 80 00  x<..x<..<à..x...
+ucenter log:              01A0  78 C0 00 80 78 00 80 00 78 C0 00 80 80 80 80 00  xÀ..x...xÀ......
+ucenter log:              01B0  78 C0 00 78 3C E0 80 78 3C FE 80 78 00 78 3C 1E  xÀ.x<à.x<þ.x.x<.
+ucenter log:              01C0  F0 78 3C 1E 0F 00 78 C0 80 78 3C 1E FF 80 80 80  ðx<...xÀ.x<.ÿ...
+ucenter log:              01D0  80 80 F8 80 80 78 C0 00 80 00 80 80 78 3C E0 78  ..ø..xÀ.....x<àx
+ucenter log:              01E0  00 80 F8 00 78 3C FE 00 80 78 00 00 80 80 F8 00  ..ø.x<þ..x....ø.
+ucenter log:              01F0  78 C0 80 78 00 78 3C 1E 00 78 3C 00 07 F8 3C 00  xÀ.x.x<..x<..ø<.
+ucenter log:              0200  FF 3C E0 00 80 78 00 80 00 78 C0 00 80 78 00 80  ÿ<à..x...xÀ..x..
+ucenter log:              0210  00 78 C0 00 80 80 80 80 00 78 C0 78 FC 80 78 FC  .xÀ......xÀxü.xü
+ucenter log:              0220  80 78 00 00 78 3C FE 80 80 F8 78 3C 1E 0F 80 78  .x..x<þ..øx<...x
+ucenter log:              0230  00 00 78 3C FE 78 C0 80 00 78 3C E0 80 00 78 3C  ..x<þxÀ..x<à..x<
+ucenter log:              0240  E0 78 3C E0 F8 F8 80 78 00 80 78 FC 00 80 78 00  àx<àøø.x..xü..x.
+ucenter log:              0250  00 80 80 F8 00 78 C0 80 78 00 78 3C 1E 00 78 3C  ...ø.xÀ.x.x<..x<
+ucenter log:              0260  00 07 78 3C 00 FF 3C E0 00 80 78 00 80 00 78 C0  ..x<.ÿ<à..x...xÀ
+ucenter log:              0270  00 80 78 00 80 00 78 C0 00 80 80 80 80 00 78 C0  ..x...xÀ......xÀ
+ucenter log:              0280  00 78 3C E0 00 78 3C FE 80 80 00 78 C0 00 78 C0  .x<à.x<þ...xÀ.xÀ
+ucenter log:              0290  00 78 FC F8 80 78 C0 80 80 78 3C E0 F8 80 80 00  .xüø.xÀ..x<àø...
+ucenter log:              02A0  80 78 FC 00 80 78 00 00 80 80 F8 00 78 C0 80 78  .xü..x....ø.xÀ.x
+ucenter log:              02B0  00 78 3C 1E 00 78 3C 00 07 78 3C 00 FF 3C E0 00  .x<..x<..x<.ÿ<à.
+ucenter log:              02C0  80 78 00 00 00 78 C0 00 80 78 00 80 00 78 C0 00  .x...xÀ..x...xÀ.
+ucenter log:              02D0  80 80 80 80 00 78 C0 78 3C 1E 0F 80 00 78 00 78  .....xÀx<....x.x
+ucenter log:              02E0  3C 00 07 C0 78 C0 00 78 FC 00 78 00 80 78 3C 00  <..ÀxÀ.xü.x..x<.
+ucenter log:              02F0  07 80 80 78 3C 00 78 C0 00 78 00 80 78 3C 1E 00  ...x<.xÀ.x..x<..
+ucenter log:              0300  78 00 00 78 C0 78 3C E0 F8 80 80 00 80 78 FC 00  x..xÀx<àø....xü.
+ucenter log:              0310  80 78 00                                         .x..
+
+change baudrate on port
+
+00000679	2021-11-06 17:27:51.9570013	+0.0198869	IRP_MJ_WRITE	DOWN	0x00000000	55 55 	UU
+00000681	2021-11-06 17:27:51.9906077	+0.0330005	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 0a 04 00 00 0e 34 	.b.....4
+
+ucenter log:    15:44:47  R -> UBX MON-VER,  Size 108,  'Version'
+ucenter log:    15:44:47  0000  B5 62 0A 04 64 00 52 4F 4D 20 42 4F 4F 54 20 31  µb..d.ROM BOOT 1  < UBX-MON-VER
+ucenter log:              0010  2E 30 31 20 28 38 63 65 38 33 64 29 00 00 00 00  .01 (8ce83d)....
+ucenter log:              0020  00 00 00 00 30 30 31 39 30 30 30 30 00 00 50 52  ....00190000..PR
+ucenter log:              0030  4F 54 56 45 52 3D 32 36 2E 30 30 00 00 00 00 00  OTVER=26.00.....
+ucenter log:              0040  00 00 00 00 00 00 00 00 00 00 00 00 4D 4F 44 3D  ............MOD=
+ucenter log:              0050  5A 45 44 2D 46 39 50 00 00 00 00 00 00 00 00 00  ZED-F9P.........
+ucenter log:              0060  00 00 00 00 00 00 00 00 00 00 BF 60              ..........¿`.
+
+00000693	2021-11-06 17:27:52.1720906	+0.0154657	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 08 04 00 48 00 00 00 5d b8 	.b....H...].
+
+ucenter log:    15:44:47  R -> UBX UPD-FLDET,  Size  16,  'Flash Detection'
+ucenter log:    15:44:47  0000  B5 62 09 08 08 00 00 00 00 00 EF 00 15 40 5D 3A  µb........ï..@]:. < UBX-UPD-FLDET
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 08 19 45                    µb.......E.       < UBX-ACK-ACK (UBX-UPD-FLDET)
+
+00000703	2021-11-06 17:27:52.3299227	+0.0315340	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 19 00 00 22 6f 	.b...."o
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  80,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 19 48 00 EF 40 15 00 01 05 20 06 00 02  µb..H.ï@.... ...  > UBX-UPD-19
+ucenter log:              0010  B9 AB 01 00 05 03 00 01 66 99 0B 01 00 00 00 9F  ¹«......f.......
+ucenter log:              0020  06 04 C7 02 21 18 00 00 00 00 00 00 00 00 00 00  ..Ç.!...........
+ucenter log:              0030  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
+ucenter log:              0040  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 8E  .................
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 19 2A 56                    µb......*V.       < UBX-ACK-ACK (UBX-UPD-19)
+
+
+00000715	2021-11-06 17:27:52.5094783	+0.0081197	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 06 00 14 00 01 00 00 00 c0 08 00 00 00 84 03 00 01 00 …	.b..................…
+switch baudrate
+
+ucenter log:    15:44:47  R -> UNKNOWN ???,  Size   2,  'UNKNOWN'
+ucenter log:    15:44:47  0000  F6 FE                                            öþ.
+
+change baudrate on port
+
+00000753	2021-11-06 17:27:52.9223163	+0.0148448	IRP_MJ_WRITE	DOWN	0x00000000	ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff …	....................…
+total 64 * 16 = 1024 time 0xff, what for?
+
+ B5 62 0A 04 00 00 0E 34                           µb.....4
+
+
+ucenter log:    15:44:47  R -> UBX MON-VER,  Size 108,  'Version'
+ucenter log:    15:44:47  0000  B5 62 0A 04 64 00 52 4F 4D 20 42 4F 4F 54 20 31  µb..d.ROM BOOT 1  < UBX-MON-VER
+ucenter log:              0010  2E 30 31 20 28 38 63 65 38 33 64 29 00 00 00 00  .01 (8ce83d)....
+ucenter log:              0020  00 00 00 00 30 30 31 39 30 30 30 30 00 00 50 52  ....00190000..PR
+ucenter log:              0030  4F 54 56 45 52 3D 32 36 2E 30 30 00 00 00 00 00  OTVER=26.00.....
+ucenter log:              0040  00 00 00 00 00 00 00 00 00 00 00 00 4D 4F 44 3D  ............MOD=
+ucenter log:              0050  5A 45 44 2D 46 39 50 00 00 00 00 00 00 00 00 00  ZED-F9P.........
+ucenter log:              0060  00 00 00 00 00 00 00 00 00 00 BF 60              ..........¿`.
+
+
+00000781	2021-11-06 17:27:53.0472091	+0.0296502	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 16 00 00 1f 66 	.b.....f
+ B5 62 09 16 00 00 1F 66                           µb.....f
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 16 27 53                    µb......'S.       < UBX-ACK-ACK (UBX-UPD-16)
+
+ B5 62 09 0C 08 02 48 00 00 00 00 02 00 00 F3 10  address=0x00000048 size=0x00000200
+             ^^^^^ ^^^^^^^^^^^ ^^^^^^^^^^^ -----
+             520   address     size        520 - 8 = 512 bytes of firmware?
+ 67 DF CA 7D 3F 4E 1F 0C D7 D8 76 D1 15 4A 79 66
+ E2 64 15 86 0F 49 98 F3 D7 BC 5F 7E E4 74 40 14
+ 62 C4 AC 2C F8 BF C0 B8 44 A5 D9 B7 41 5C AE DC
+ 95 3A 75 5F 75 F0 E9 B9 97 1F DA 2E C7 9F 68 89
+ F3 BF D9 0B 91 75 C5 4B D4 AD 48 63 FE BC F3 6A
+ 98 5E E5 A8 EF 7F 03 68 04 F1 C6 1E 37 8F 16 AD
+ D9 1F 63 52 5A DA FC 0A 91 EE 4D 8B 4A 59 63 ED
+ 94 2D 10 51 BD E5 D0 A0 C4 38 C6 9A 66 BA 0A 3C
+ 6C 3F AA A1 F0 5B CF 21 CD 86 59 E3 AE F6 14 F6
+ 19 EA A5 A1 5E A9 2E 09 7A 56 C9 F1 32 44 15 9C
+ 75 D8 CD CC A7 AC 8E 11 16 01 85 00 BF 24 B6 65
+ 8A 36 13 E1 C2 A9 F1 CE 85 B8 38 1F D1 43 D2 F0
+ B0 95 B4 3F BD D7 CF 9C C0 C1 2F B7 0B 30 DE 7B
+ 19 1D CE B4 45 6E 00 3B 75 52 9A 99 F3 96 69 92
+ F9 71 D3 CC CC 66 30 8C 25 6B B9 E2 DA F3 B2 AE
+ DA 3D 75 6F 0A A4 FC FF 73 99 EF 90 81 1E 74 AC
+ 8C F3 7F 29 49 59 39 0B 9D 5B 11 D7 13 A7 24 61
+ 46 35 34 AB 9D 9B AC F8 95 14 A7 AD 81 3B BB 5E
+ 29 0A BD E6 53 E8 DE 1C 45 90 72 83 BC 55 3F 49
+ E5 2B C1 EC A0 15 85 B5 84 B9 8F C1 B3 18 0B EE
+ 57 2D 6F 45 39 DD A2 E0 25 B0 23 F9 AF 04 BB AC
+ 49 CA 36 4E 44 30 B0 27 B8 8C 22 15 7F 14 82 16
+ 2D C7 95 DB 0E B2 E2 C8 56 EC 30 4C 89 95 39 E6
+ 7A 09 16 82 0E 52 38 21 1B 3F 68 A5 A9 80 7D 11
+ B4 F4 89 1C 24 F5 EE D7 E5 A8 4E DD D8 71 CC 59
+ 09 86 7C 34 89 C4 20 B4 01 A8 80 2C 0F 4B 66 7C
+ 90 14 3B EF 17 0A 92 E0 32 79 33 43 C3 78 AA 2E
+ 61 40 58 41 19 FB 37 44 82 E4 77 58 A0 9D 38 3D
+ 2A FB 56 1E 3B EA 3A ED AB 0C 71 75 7B 15 01 6E
+ 33 15 5B EF 00 C5 30 56 39 58 FC 80 BF 98 96 2C
+ 29 4C 23 0C F3 49 1E 7A 08 D4 44 DE ED 3C F2 07
+ 3B ED 61 E1 F6 26 8D 98 75 7B DE FD CA C3 7B 5E
+
+
+ B5 62 09 0C 08 02 48 02 00 00 00 02 00 00 0F A4   address=0x00000248 size=0x00000200
+             ^^^^^ ^^^^^^^^^^^ ^^^^^^^^^^^ -----
+             520                           indeed! more fw data at 0x200
+ 6C 93 14 E0 A7 FF EE 15 59 88 ED 7A BF 1F D3 D2
+ EC 3D 13 24 4A B7 68 46 29 C5 F3 FB 96 F3 9C 22
+ 3A 44 85 25 83 F2 6D 68 1D F8 9B DF C5 E7 12 6B
+ 8F 56 34 31 61 8D EA 41 9F 12 39 FD 60 05 3B C5
+ 32 AB C5 4A A6 95 52 39 6A F6 7C F5 14 81 AC A6
+ 2B 66 57 47 EE EA BF 9F C6 49 66 DB A7 8E 7C E0
+ 6B A1 0C 6E 6A F0 6C 60 B7 30 8C 2A FD 0A 0D 7E
+ A9 53 B3 8C 83 EC CA A0 42 0F 61 E1 9E 5E 57 B9
+ 28 B7 F2 B6 6F 4D 03 99 10 EF 94 2F 6A 5E EE 15
+ D3 40 6C F8 11 95 C6 1C 92 CA A7 8F DF 55 3F D4
+ 78 C5 69 89 99 3A 02 49 97 08 41 A6 9F 9C A1 02
+ 5A DC 23 C9 21 F0 10 A9 99 3A 87 49 23 29 1E E4
+ 3C 9F BC 81 7D E0 D5 43 C7 A9 6E B7 C2 8E 4E 0F
+ 09 5D 0B E8 B9 51 B0 21 CA EE 1C E5 EA 79 2A 80
+ E1 44 85 8E 93 19 77 0A 38 01 89 82 E1 9A F0 C5
+ D7 A7 39 A5 C3 E8 73 98 4B B1 FA FE 32 5E 0A D2
+ D9 97 C4 5C 51 7F 6A B0 3D 23 28 86 A9 C6 97 30
+ A6 16 C3 16 20 C9 57 DB 32 46 F6 E1 48 77 DF 56
+ 4D 93 23 DF 34 38 95 3E 0F 46 CF 78 3C 60 D0 FA
+ 96 53 83 E9 CF 03 D7 A3 03 30 D3 D1 BC B7 80 24
+ 3F 02 34 3F 8D 42 79 12 D1 F1 40 8F 50 4C E0 F0
+ 91 88 3D 85 6B 4A FA 24 29 A5 76 11 71 DA B5 00
+ D1 01 CB 40 39 ED 85 F0 96 DF BB E0 92 5A ED 01
+ 9E 04 29 EE 04 5E 81 3D 32 0C E7 5C 4B 42 03 B4
+ 98 B9 0E 57 CD 2C A6 96 42 FC 36 F3 1A CB E7 30
+ 7F FF 02 07 79 FA DB 82 CA AC D7 90 A8 5C 7D B8
+ 42 49 46 94 B4 5B 42 AA 7E 87 E5 8F 79 70 F5 AB
+ D3 A4 40 B0 26 D2 7A C3 45 93 2F A1 DC 77 D4 6C
+ B9 76 0F 36 C5 A3 78 7B 5F 14 62 0D 84 2D 8F B6
+ FB 7E 03 A3 C8 21 87 E2 A7 BF F0 54 42 4C 7A 4B
+ 67 35 7F 70 5A 7B C8 BF 25 68 D5 7D A0 50 4F BE
+ 07 57 05 B4 51 B8 54 D4 39 B4 4D 5C B8 8F 16 85
+
+ B5 62 09 0C 08 02 48 04 00 00 00 02 00 00 E7 95  address=0x00000448 size=0x00000200
+             ^^^^^ ^^^^^^^^^^^ ^^^^^^^^^^^ -----
+             520                           indeed! more fw data at 0x400
+ 5A 0F 54 02 B1 5F 1E 7B 94 15 03 3A 5C F5 03 58
+ AA 4A 38 1F A1 BE EE 37 AF C3 AC 3C 90 C1 C2 73
+ D5 60 75 DB D7 FB 7D D0 11 0B 3B 27 D8 A2 A6 02
+ CF 8C 84 D5 3A 7B D7 57 CF 21 E0 BF 1A C0 FD A9
+ C3 14 06 EE C4 8D B7 9F 37 BD DD D7 A2 79 33 92
+ D2 44 94 A1 27 2C FE E1 DB 51 D1 8D 5A FE 85 EB
+ E1 7B 95 88 BE AC 7A 90 57 1B D9 D4 2B 93 87 40
+ FD B6 46 7F BD 30 D1 7B 28 9D CC D2 A0 B4 46 1F
+ 2D 2F 17 C0 DE 30 78 63 57 61 67 71 CC DF 15 13
+ 82 3F DF 7E 13 71 F0 D5 AF 21 E7 8E 8D 82 C9 EE
+ 8C 48 15 CC 8B 09 AF BA 3D DC 57 78 25 F6 99 70
+ AB 3E 38 41 A7 BB 7B 0B 0D 47 5C D9 BC 2A 0F 8B
+ 1F 42 28 17 3C 51 14 1F E9 FE A7 FE B1 33 61 14
+ AC D4 1E 8E 4F 71 27 78 AE 3F 0E E6 69 E5 05 AC
+ DA 23 63 F2 EE D6 74 DD A1 29 E9 4D 87 D7 35 29
+ 9D 80 77 C6 F8 F6 02 B5 DD 11 3D 73 9E 1A 5D 43
+ CA 5A 27 D9 A8 22 75 C0 E7 64 9C 1E 59 84 46 45
+ 8C 72 AD 32 68 76 53 23 91 10 4F B9 54 56 65 53
+ 1B 10 D9 D8 D8 DB 28 FC 59 46 34 B8 68 8A 30 AB
+ 4A F7 23 CA E4 6A 5A 81 2D 9F 45 7D 69 74 4F 13
+ C4 EB 6D F9 AB 6B 59 70 B8 7F 6F 15 65 E9 82 E2
+ 26 DA 8D 7E 36 95 87 33 F1 9C 30 A0 82 FB 4C 4A
+ 8B 9D EA D9 FA 90 AC D2 56 1F 09 9D 70 71 1C 07
+ 81 52 50 A8 CF 9F 82 45 26 64 66 DE FC 50 3D 65
+ BF 60 F4 01 22 4F 46 61 54 FA B3 51 BC F8 DE C8
+ 03 BC D5 C6 37 FE AC 06 8D 66 CF C7 4A 57 B2 B4
+ 43 45 CC 5A 6E 89 94 B5 66 34 1A EA 7D C6 C5 29
+ 22 58 F2 7D AA A5 48 2F 85 1A 63 30 06 3E 8A 01
+ 74 2D 27 E4 73 06 89 A5 C8 75 30 D9 4C 50 0E 8F
+ 12 3C 0B A5 4E 54 56 3B 65 B9 29 A4 FD 1F 61 E4
+ 30 32 C7 42 24 7A A2 D1 A9 EA 3E 23 7E 57 87 B8
+ A8 21 1B F5 25 BC 1E 97 71 F1 9B 33 D7 DF D5 A4
+
+
+and more blocks, last 2 block: one full (512 bytes of firmware) and one with the remaining data
+
+ B5 62 09 0C 08 02 48 34 12 00 00 02 00 00 D3 D1  payload=520 address=0x00123448 size=0x00000200 (512)
+             ^^^^^ ^^^^^^^^^^^ ^^^^^^^^^^^ -----
+ 0E 8A 79 D4 B8 0C 85 E3 36 81 44 3C 70 91 59 75
+ 01 F6 00 CF 55 F1 F5 10 41 E7 B1 B3 59 8E FB C8
+ 60 4C 4F A6 F3 72 37 BD A7 5F 9A EF E5 14 C1 0B
+ CD CA 42 38 2F B0 3A D4 1E B0 85 0D 9D 3C D2 E7
+ 22 E5 98 BA 5E 6C F0 5E F0 EB 0E 88 57 33 47 04
+ 10 15 12 65 11 01 F3 C0 9D BF 30 51 3D 9F F8 60
+ 37 D7 6E 32 97 AB 01 BD 59 FA 71 F0 88 F7 A0 A1
+ F4 9F B4 FC CA 00 E8 C8 5E 4D 4C 1D F0 3A 26 B3
+ B5 BA F0 99 ED 60 AC 07 6F C6 D6 72 43 83 9A E0
+ 88 E0 12 BB A4 D4 FD E9 49 D5 8E 8E D5 DE 71 53
+ AB 07 79 49 F8 9D C3 86 88 1F 23 4B E1 92 40 2A
+ F5 1D DD 2E 35 41 99 51 54 83 93 94 2F E8 7B 90
+ 4B 7D 56 76 FA 55 87 C5 EF 8D 39 81 DF B3 59 0C
+ A9 D9 E5 91 8B B7 F7 54 CB CE E1 8D C5 F2 0D AE
+ 2C 33 B9 E6 7E 78 9C 47 93 AF C2 29 59 96 AE 29
+ 31 9B E2 D7 FD 00 D7 93 98 F1 26 A1 33 B4 F2 34
+ CA 92 9C 95 3D B0 1E 86 84 F5 B3 BE 03 FE E7 65
+ 17 14 94 DD 85 5C A6 61 9F CF 54 83 0E D1 7F B6
+ 8E 32 90 40 D8 70 BC F3 5E A4 F2 71 36 DB FA 7C
+ E9 B2 60 FD C9 AC E6 13 91 DE 51 03 9E A8 8F 86
+ E5 4D 5F 93 C7 C7 3F 3F 25 59 A7 A8 9E 73 49 F9
+ AA F0 2B 96 9C 54 96 C8 C1 75 B8 68 80 81 93 B2
+ 5C 49 6E DF 03 B7 9B 24 08 AD 6E 9B 79 27 07 6F
+ 34 15 60 12 B1 BC 50 3F 96 40 78 F5 C0 9C F0 65
+ 8F 48 58 38 B5 7D B5 29 95 CA 03 CB 7C 65 37 F0
+ 85 42 18 E5 51 9B AB 1B 08 D5 89 42 62 DD 15 1B
+ 6B 59 7D 04 38 85 7E 1E 65 05 E5 C3 59 87 09 B8
+ 26 E2 9D 16 CA E2 B2 96 28 43 AB AB 7D 65 E9 91
+ 42 FB 5A 8A 25 44 4E 23 CB 17 52 82 E5 9D 56 8C
+ 41 83 16 59 2B BE D4 94 28 9A 62 97 64 0B 94 05
+ C7 08 4E 57 DE FE 72 B8 2D E1 05 5C 89 74 5A F6
+ A4 46 F6 86 72 EA 58 9B 02 90 4C 6F C9 E3 93 72
+
+ B5 62 09 0C AC 00 48 36 12 00 A4 00 00 00 B3 F4 payload=172 address=0x00123648 size=0x000000a4 (164)
+             ^^^^^ ^^^^^^^^^^^ ^^^^^^^^^^^ ----- i.e. total firmware size = 0x123648 - 0x48 + 0xa4 = 1193544 - 72 + 164 = 1193636
+ 48 A2 C3 E5 A2 BD DA F1 67 E8 3A 73 C9 B6 33 FB
+ 73 85 4F A2 D2 64 8E A3 76 3B 3E BD BD 2E 8D 85
+ EE F4 E3 43 88 51 DA 84 92 47 29 BC 62 69 20 18
+ 3A 07 21 FF B1 DB 5C 52 CF DB 62 C4 E6 91 E9 D6
+ CB C6 3F 10 21 D8 7D A2 55 26 04 08 E9 0E 73 3A
+ F2 2E 17 9E 91 FF FA 4F 45 9C ED 9E 83 D4 E3 F8
+ 37 91 4E A1 6A FD 07 DF E0 2E 0D C3 86 02 5B C1
+ 47 8F 4F 21 62 80 00 A0 6A 5B 57 0F 06 12 A5 F2
+ 04 A0 00 00 00 00 92 6F 60 C5 54 4F 0A 00 2C E7
+ 07 00 02 00 00 00 00 00 00 00 00 00 00 00 55 42
+ 46 4C EE 6D
+
+
+It seems each of these transfers is
+- immediately acknowledged by a UBX-ACK-ACK
+- a bit later acknowledged by a UBX-UPF-0C
+
+< B5 62 05 01 02 00 09 0C 1D 49             UBX-ACK-ACK (UBX-UPD-09)
+< B5 62 05 01 02 00 09 0C 1D 49             UBX-ACK-ACK (UBX-UPD-09)
+< B5 62 09 16 01 00 01 21 89                UBX-UPD-16  response to the earlier B5 62 09 16 00 00 1F 66, again 0x01 = success?
+
+< B5 62 09 0C 05 00 48 00 00 00 01 63 3D address 0x00000048 0x01 = success?
+< B5 62 09 0C 05 00 48 02 00 00 01 65 45 address 0x00000248 0x01 = success?
+< B5 62 09 0C 05 00 48 04 00 00 01 67 4D address 0x00000448 0x01 = success?
+< B5 62 09 0C 05 00 48 06 00 00 01 69 55 address 0x00000648 0x01 = success?
+< B5 62 09 0C 05 00 48 08 00 00 01 6B 5D address 0x00000848 0x01 = success?
+etc.
+
+
+00000787	2021-11-06 17:27:53.0799629	+0.0014553	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 0c 08 02 48 00 00 00 00 02 00 00 f3 10 67 df ca 7d …	.b....H.........g..}…
+                                                                                                                                  ^^^^^^^^^^^^...firmware file data
+00000789	2021-11-06 17:27:53.0807135	+0.0001229	IRP_MJ_WRITE	DOWN	0x00000000	ef 7f 03 68 04 f1 c6 1e 37 8f 16 ad d9 1f 63 52 5a da fc 0a …	..h....7.....cRZ...…
+00000791	2021-11-06 17:27:53.0812919	+0.0001308	IRP_MJ_WRITE	DOWN	0x00000000	85 b8 38 1f d1 43 d2 f0 b0 95 b4 3f bd d7 cf 9c c0 c1 2f b7 …	..8..C.....?....../.…
+00000793	2021-11-06 17:27:53.0818624	+0.0001424	IRP_MJ_WRITE	DOWN	0x00000000	81 3b bb 5e 29 0a bd e6 53 e8 de 1c 45 90 72 83 bc 55 3f 49 …	.;.^)...S...E.r..U?I…
+00000795	2021-11-06 17:27:53.0823894	+0.0001363	IRP_MJ_WRITE	DOWN	0x00000000	b4 f4 89 1c 24 f5 ee d7 e5 a8 4e dd d8 71 cc 59 09 86 7c 34 …	....$.....N..q.Y..|4…
+00000797	2021-11-06 17:27:53.0829365	+0.0000519	IRP_MJ_WRITE	DOWN	0x00000000	f3 49 1e 7a 08 d4 44 de ed 3c f2 07 3b ed 61 e1 f6 26 8d 98 …	.I.z..D..<..;.a..&..…
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+00000803	2021-11-06 17:27:53.1454343	+0.0002621	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 0c 08 02 48 02 00 00 00 02 00 00 0f a4 6c 93 14 e0 …	.b....H.........l...…
+00000805	2021-11-06 17:27:53.1460341	+0.0000385	IRP_MJ_WRITE	DOWN	0x00000000	ee ea bf 9f c6 49 66 db a7 8e 7c e0 6b a1 0c 6e 6a f0 6c 60 …	.....If...|.k..nj.l`…
+00000807	2021-11-06 17:27:53.1467180	+0.0000365	IRP_MJ_WRITE	DOWN	0x00000000	99 3a 87 49 23 29 1e e4 3c 9f bc 81 7d e0 d5 43 c7 a9 6e b7 …	.:.I#)..<...}..C..n.…
+00000809	2021-11-06 17:27:53.1472057	+0.0000603	IRP_MJ_WRITE	DOWN	0x00000000	48 77 df 56 4d 93 23 df 34 38 95 3e 0f 46 cf 78 3c 60 d0 fa …	Hw.VM.#.48.>.F.x<`..…
+00000811	2021-11-06 17:27:53.1476344	+0.0000418	IRP_MJ_WRITE	DOWN	0x00000000	98 b9 0e 57 cd 2c a6 96 42 fc 36 f3 1a cb e7 30 7f ff 02 07 …	...W.,..B.6....0...…
+00000813	2021-11-06 17:27:53.1480764	+0.0000380	IRP_MJ_WRITE	DOWN	0x00000000	5a 7b c8 bf 25 68 d5 7d a0 50 4f be 07 57 05 b4 51 b8 54 d4 …	Z{..%h.}.PO..W..Q.T.…
+00000815	2021-11-06 17:27:53.1745564	+0.0262354	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 0c 08 02 48 04 00 00 00 02 00 00 e7 95 5a 0f 54 02 …	.b....H.........Z.T.…
+00000817	2021-11-06 17:27:53.1755778	+0.0000806	IRP_MJ_WRITE	DOWN	0x00000000	27 2c fe e1 db 51 d1 8d 5a fe 85 eb e1 7b 95 88 be ac 7a 90 …	',...Q..Z....{....z.…
+00000819	2021-11-06 17:27:53.1764474	+0.0000769	IRP_MJ_WRITE	DOWN	0x00000000	0d 47 5c d9 bc 2a 0f 8b 1f 42 28 17 3c 51 14 1f e9 fe a7 fe …	.G\..*...B(.<Q......…
+00000821	2021-11-06 17:27:53.1773634	+0.0000757	IRP_MJ_WRITE	DOWN	0x00000000	54 56 65 53 1b 10 d9 d8 d8 db 28 fc 59 46 34 b8 68 8a 30 ab …	TVeS......(.YF4.h.0.…
+00000823	2021-11-06 17:27:53.1781280	+0.0000824	IRP_MJ_WRITE	DOWN	0x00000000	bf 60 f4 01 22 4f 46 61 54 fa b3 51 bc f8 de c8 03 bc d5 c6 …	.`.."OFaT..Q........…
+00000825	2021-11-06 17:27:53.1791079	+0.0000764	IRP_MJ_WRITE	DOWN	0x00000000	24 7a a2 d1 a9 ea 3e 23 7e 57 87 b8 a8 21 1b f5 25 bc 1e 97 …	$z....>#~W...!..%...…
+
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  R -> UBX ACK-ACK,  Size  10,  'Acknowledged'
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-OC)
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size   9,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 16 01 00 01 21 89                       µb.....!..        < UBX-UPD-16
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 00 00 00 01 63 3D           µb....H....c=.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 02 00 00 01 65 45           µb....H....eE.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 04 00 00 01 67 4D           µb....H....gM.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 06 00 00 01 69 55           µb....H....iU.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 08 00 00 01 6B 5D           µb....H....k].    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 0A 00 00 01 6D 65           µb....H....me.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 0C 00 00 01 6F 6D           µb....H....om.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 0E 00 00 01 71 75           µb....H....qu.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 10 00 00 01 73 7D           µb....H....s}.    < UBX-UPD-0C
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 12 00 00 01 75 85           µb....H....u..    < UBX-UPD-0C
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.       < UBX-ACK-ACK (UBX-UPD-0C)
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 14 00 00 01 77 8D           µb....H....w..    < UBX-UPD-0C
+
+ucenter log:    [...]
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 2E 12 00 01 A3 2B           µb....H....£+.
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 30 12 00 01 A5 33           µb....H0...¥3.
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 32 12 00 01 A7 3B           µb....H2...§;.
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 34 12 00 01 A9 43           µb....H4...©C.
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 48 36 12 00 01 AB 4B           µb....H6...«K.
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0C 1D 49                    µb.......I.
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0C 05 00 00 40 12 00 01 6D 0B           µb.....@...m..    < UBX-UPD-0C
+
+
+
+00030373	2021-11-06 17:28:57.2851398	+0.0324640	IRP_MJ_WRITE	DOWN	0x00000000	b5 62 09 0d 12 00 01 01 48 00 00 00 a4 36 12 00 59 22 70 1a …	.b......H....6..Y"p.…
+ B5 62 09 0D 12 00 01 01 48 00 00 00 A4 36 12 00
+ 59 22 70 1A 29 26 07 FC B5 90
+
+
+ucenter log:    15:44:47  R -> UBX UPD,  Size  13,  'Firmware Update Messages'
+ucenter log:    15:44:47  0000  B5 62 09 0D 05 00 48 00 00 00 01 64 45           µb....H....dE.    < UBX-UPD-0D
+
+ucenter log:    15:44:47  0000  B5 62 05 01 02 00 09 0D 1E 4A                    µb.......J.       < UBX-ACK-ACK (UBX-UPD-0D)
+
+ B5 62 09 0E 00 00 17 4E                           µb.....N
+
+
+ucenter log:    boot screen follows...
+
+

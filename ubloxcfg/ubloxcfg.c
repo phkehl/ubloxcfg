@@ -1,10 +1,10 @@
-/* ************************************************************************************************/ // clang-format off
+// clang-format off
+/* ****************************************************************************************************************** */
 /*!
     \file
-    \brief u-blox 9 positioning receivers configuration library
+    \brief ubloxcfg -- u-blox positioning receivers configuration library
 
-    - Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-      https://oinkzwurgl.org/hacking/ubloxcfg
+    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
 
     This program is free software: you can redistribute it and/or modify it under the terms of the
     GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -24,11 +24,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <ctype.h>
-
-// Passed in by cmake or loaded from file
-#if !defined(CONFIG_VERSION_MAJOR) || !defined(CONFIG_VERSION_MINOR)
-#  include "config.h"
-#endif
 
 #include "ubloxcfg.h"
 
@@ -1176,9 +1171,9 @@ bool ubloxcfg_layerFromName(const char *name, UBLOXCFG_LAYER_t *layer)
     return true;
 }
 
-uint16_t ubloxcfg_getVersion(void)
+const char* ubloxcfg_getVersionStr(void)
 {
-    return ((uint16_t)CONFIG_VERSION_MAJOR << 8 | ((uint16_t)CONFIG_VERSION_MINOR & 0xff));
+    return FF_VERSION_STRING;
 }
 
 const char **ubloxcfg_getSources(int *numSources)

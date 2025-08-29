@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's u-blox positioning receiver control library
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -164,7 +165,7 @@ static bool _rxDetect(RX_t *rx)
             }
             break; }
         case RX_DET_PASSIVE: {
-            const uint32_t t0 = TIME();
+            const uint64_t t0 = TIME();
             while (!detected && ((TIME() - t0) < 1000))
             {
                 PARSER_MSG_t *msg = rxGetNextMessageTimeout(rx, 100);
@@ -324,8 +325,8 @@ PARSER_MSG_t *rxGetNextMessageTimeout(RX_t *rx, const uint32_t timeout)
     PARSER_MSG_t *msg = NULL;
     if (rx != NULL)
     {
-        const uint32_t t0 = TIME();
-        const uint32_t t1 = t0 + timeout;
+        const uint64_t t0 = TIME();
+        const uint64_t t1 = t0 + timeout;
         while (TIME() < t1)
         {
             if (rx->abort)
@@ -379,8 +380,8 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param, bool *pollNak)
         }
 
         // Get response
-        const uint32_t t0 = TIME();
-        const uint32_t t1 = t0 + timeout;
+        const uint64_t t0 = TIME();
+        const uint64_t t1 = t0 + timeout;
         while ( (res == NULL) && (TIME() < t1) )
         {
             if (rx->abort)
@@ -398,7 +399,7 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param, bool *pollNak)
                  (UBX_CLSID(msg->data) == param->clsId) &&
                  (UBX_MSGID(msg->data) == param->msgId) )
             {
-                RX_DEBUG("poll answer %s, size=%d, dt=%u", msg->name, msg->size, TIME() - t0);
+                RX_DEBUG("poll answer %s, size=%d, dt=%lu", msg->name, msg->size, TIME() - t0);
                 res = msg;
                 break;
             }
@@ -461,8 +462,8 @@ bool rxSendUbxCfg(RX_t *rx, const uint8_t *msg, const int size, const uint32_t t
         return false;
     }
 
-    const uint32_t t0 = TIME();
-    const uint32_t t1 = t0 + (timeout > 0 ? timeout : 1000);
+    const uint64_t t0 = TIME();
+    const uint64_t t1 = t0 + (timeout > 0 ? timeout : 1000);
     bool res = true;
     bool resp = false;
     while ( !resp && (TIME() < t1) )
@@ -767,10 +768,10 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
         // Wait for device to show up (mainly for USB re-enumeration)
         if (rx->port.type == PORT_TYPE_SER)
         {
-            const uint32_t timeout = 5000;
-            const uint32_t t0 = TIME();
-            const uint32_t t1 = t0 + timeout;
-            RX_DEBUG("Wait for %s, timeout %u", rx->port.file, timeout);
+            const uint64_t timeout = 5000;
+            const uint64_t t0 = TIME();
+            const uint64_t t1 = t0 + timeout;
+            RX_DEBUG("Wait for %s, timeout %lu", rx->port.file, timeout);
             while (TIME() < t1)
             {
                 if (rx->abort)
@@ -779,7 +780,7 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
                 }
                 if (access(rx->port.file, F_OK) == 0)
                 {
-                    RX_DEBUG("%s available (dt=%u).", rx->port.file, TIME() - t0);
+                    RX_DEBUG("%s available (dt=%lu).", rx->port.file, TIME() - t0);
                     break;
                 }
                 SLEEP(101);
@@ -870,7 +871,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
             break;
     }
 
-    uint32_t t0 = TIME();
+    uint64_t t0 = TIME();
     bool done = false;
     bool res = true;
     int totNumKv = 0;
@@ -1009,7 +1010,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
 
     }
     // while 64 left, not complete, ...
-    RX_DEBUG("Total %d items for layer %s (poll duration %ums), res=%d", totNumKv, layerName, TIME() - t0, res);
+    RX_DEBUG("Total %d items for layer %s (poll duration %lums), res=%d", totNumKv, layerName, TIME() - t0, res);
 
     return res ? totNumKv : -1;
 }
