@@ -641,6 +641,7 @@ static int _strUbxRxmRawx(char *info, const int size, const uint8_t *msg, const 
 static int _strUbxRxmSfrbx(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonVer(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const int msgSize);
+static int _strUbxMonRf(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxCfgValget(char *info, const int size, const uint8_t *msg, const int msgSize);
 static int _strUbxAckAck(char *info, const int size, const uint8_t *msg, const int msgSize, const bool ack);
@@ -752,6 +753,9 @@ bool ubxMessageInfo(char *info, const int size, const uint8_t *msg, const int ms
                     break;
                 case UBX_MON_TEMP_MSGID:
                     len = _strUbxMonTemp(info, size, msg, msgSize);
+                    break;
+                case UBX_MON_RF_MSGID:
+                    len = _strUbxMonRf(info, size, msg, msgSize);
                     break;
             }
             break;
@@ -1177,6 +1181,31 @@ static int _strUbxMonTemp(char *info, const int size, const uint8_t *msg, const 
     UBX_MON_TEMP_V0_GROUP0_t temp;
     memcpy(&temp, &msg[UBX_HEAD_SIZE], sizeof(temp));
     return snprintf(info, size, "%d C, %d", temp.temperature, temp.unknown);
+}
+
+static int _strUbxMonRf(char *info, const int size, const uint8_t *msg, const int msgSize)
+{
+    if ( (UBX_MON_RF_VERSION_GET(msg) != UBX_MON_RF_V0_VERSION) || (msgSize < UBX_MON_RF_V0_MIN_SIZE) )
+    {
+        return 0;
+    }
+    UBX_MON_RF_V0_GROUP0_t head;
+    memcpy(&head, &msg[UBX_HEAD_SIZE], sizeof(head));
+    const char* antStatusStrs[] = { "INIT", "DONTKNOW", "OK", "SHORT", "OPEN" };
+    const char* antPowerStrs[] = { "OFF", "ON", "DONTKNOW" };
+    int len = 0;
+    int rem = size;
+    for (int ix = 0; (ix < head.nBlocks) && (rem > 20); ix++) {
+        UBX_MON_RF_V0_GROUP1_t rf;
+        memcpy(&rf, &msg[UBX_HEAD_SIZE + sizeof(head) + (ix * sizeof(rf))], sizeof(rf));
+        len += snprintf(&info[len], rem, "%sRF%d (%s %s)", ix == 0 ? "" : ", ", ix,
+            rf.antStatus < NUMOF(antStatusStrs) ? antStatusStrs[rf.antStatus] : "?",
+            rf.antPower < NUMOF(antPowerStrs)   ? antPowerStrs[rf.antPower]   : "?");
+        rem = size - len;
+    }
+
+
+    return len;
 }
 
 static int _strUbxCfgValset(char *info, const int size, const uint8_t *msg, const int msgSize)
