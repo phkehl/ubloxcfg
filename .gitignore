@@ -17,6 +17,9 @@ core.[0-9]*
 
 /output
 /build
+/*/build
+/*/html
+/install
 
 /*.cfg
 imgui.ini
@@ -32,3 +35,6 @@ imgui.ini
 /.history
 
 *.pyc
+
+/config.mk
+

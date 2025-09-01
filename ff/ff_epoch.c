@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's navigation epoch abstraction
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
 //

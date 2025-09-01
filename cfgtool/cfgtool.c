@@ -1,7 +1,7 @@
-// u-blox 9 positioning receivers configuration tool
+// clang-format off
+// u-blox positioning receivers configuration tool
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 #include "ff_debug.h"
 #include "ff_stuff.h"
@@ -38,7 +39,7 @@
 #include "cfgtool_reset.h"
 #include "cfgtool_status.h"
 #include "cfgtool_bin2hex.h"
-#include "config.h"
+
 
 /* ****************************************************************************************************************** */
 
@@ -157,18 +158,17 @@ const CMD_t kCmds[] =
 
 const char * const kTitleStr =
     // -----------------------------------------------------------------------------
-    "cfgtool " CONFIG_VERSION " -- u-blox 9 configuration interface tool\n"
+    "cfgtool -- u-blox positioning receivers configuration tool\n"
     "\n";
 
 const char * const kCopyrightStr =
     // -----------------------------------------------------------------------------
-    "    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org)\n"
-    "    https://oinkzwurgl.org/hacking/ubloxcfg/\n"
+    "    Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors\n"
     "\n";
 
 const char * const kVersionStr =
     // -----------------------------------------------------------------------------
-    "    version: " CONFIG_VERSION ", git hash: " CONFIG_GITHASH ", build date and time: " CONFIG_DATE " " CONFIG_TIME "\n"
+    "    version: " FF_VERSION_STRING "\n"
     "\n";
 
 const char * const kHelpStr =
@@ -371,7 +371,7 @@ void printVersion(void)
 
 int main(int argc, char **argv)
 {
-    const uint32_t t0 = TIME();
+    const uint64_t t0 = TIME();
     memset(&gArgs, 0, sizeof(gArgs));
 
     DEBUG_CFG_t debugCfg =

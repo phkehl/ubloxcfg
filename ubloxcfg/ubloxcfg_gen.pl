@@ -3,7 +3,7 @@
 # u-blox 9 positioning receivers configuration library
 #
 # Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-# https://oinkzwurgl.org/hacking/ubloxcfg
+# https://oinkzwurgl.org/projaeggd/ubloxcfg/
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the
 # GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -185,10 +185,11 @@ sub genCodeC
     my $cc = '';
     my $hh = '';
 
-    my $top = "// u-blox 9 positioning receivers configuration library\n" .
+    my $top = "// clang-format off\n" .
+              "// ubloxcfg -- u-blox positioning receivers configuration library\n" .
               "//\n" .
-              "// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),\n" .
-              "// https://oinkzwurgl.org/hacking/ubloxcfg\n" .
+              "// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors\n" .
+              "// https://oinkzwurgl.org/projaeggd/ubloxcfg/\n" .
               "//\n" .
               "//    This program is free software: you can redistribute it and/or modify it under the terms of the\n" .
               "//    GNU Lesser General Public License as published by the Free Software Foundation, either version 3\n" .

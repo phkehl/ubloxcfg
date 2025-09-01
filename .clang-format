@@ -1,1 +1,28 @@
-DisableFormat: true
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignAfterOpenBracket: DontAlign
+AllowShortFunctionsOnASingleLine: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterClass: true
+    AfterStruct: true
+    AfterFunction: true
+    AfterEnum: true
+    AfterUnion: true
+IndentPPDirectives: AfterHash
+PPIndentWidth: 2
+IncludeCategories:
+  - Regex:           '^<.*'
+    Priority:        -1
+    SortPriority:    -2
+    CaseSensitive:   false
+  - Regex:           '^".*'
+    Priority:        -1
+    SortPriority:    -1
+    CaseSensitive:   false
+SortIncludes: CaseInsensitive
+InsertBraces: true
+Cpp11BracedListStyle: false

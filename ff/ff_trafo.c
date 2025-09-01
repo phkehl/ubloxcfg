@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's (WGS84) transformation functions
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the

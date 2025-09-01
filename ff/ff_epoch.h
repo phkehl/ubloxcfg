@@ -1,9 +1,10 @@
+// clang-format off
 /*!
     \file
     \brief Navigation epoch abstraction
 
     - Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-      https://oinkzwurgl.org/hacking/ubloxcfg
+      https://oinkzwurgl.org/projaeggd/ubloxcfg/
     - Copyright (c) 2021 Charles Parent (charles.parent@orolia2s.com)
 
     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -325,7 +326,7 @@ typedef struct EPOCH_s
     // Public
     bool                valid;
     uint32_t            seq;
-    uint32_t            ts;
+    uint64_t            ts;
     char                str[256];
 
     bool                haveFix;

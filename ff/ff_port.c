@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's serial port library
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -61,7 +62,7 @@
 #define PORT_TRACE(fmt, ...)   TRACE(  "port(%s) " fmt, portSpecStr(port), ##__VA_ARGS__)
 
 #define PORT_WARNING_THROTTLE(fmt, ...) do { \
-    const uint32_t now = TIME(); if ((now - port->lastWarn) > 1000) { \
+    const uint64_t now = TIME(); if ((now - port->lastWarn) > 1000) { \
     WARNING("port(%s) " fmt, portSpecStr(port), __VA_ARGS__); \
     port->lastWarn = now; } } while (false);
 
@@ -1387,8 +1388,8 @@ static bool _portOpenTelnet(PORT_t *port)
     // Negotiate, process their answer
     bool happy = false;
     bool timeout = false;
-    const uint32_t t0 = TIME();
-    const uint32_t t1 = t0 + 1500;
+    const uint64_t t0 = TIME();
+    const uint64_t t1 = t0 + 1500;
     while (!happy && !timeout)
     {
         if (TIME() > t1)

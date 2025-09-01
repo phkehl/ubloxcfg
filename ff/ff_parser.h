@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's UBX/NMEA/RTCM3 message parser
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -95,7 +96,7 @@ typedef struct PARSER_MSG_s
     const uint8_t   *data;
     int              size;
     uint32_t         seq;
-    uint32_t         ts;
+    uint64_t         ts;
     PARSER_MSGSRC_t  src;
     const char      *name;
     const char      *info; // may be NULL
