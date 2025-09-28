@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's UBX/NMEA/RTCM3 message parser
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -205,7 +206,7 @@ bool parserFlush(PARSER_t *parser, PARSER_MSG_t *msg)
 
 static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
 {
-    uint32_t now = TIME();
+    uint64_t now = TIME();
     // Copy garbage to msg buf and move data in parser buf
     //     buf: GGGGGGGGGGGGG???????????????........ (p->offs > 0, p->size >= 0)
     //          ---p->offs--><-- p->size -->
@@ -237,7 +238,7 @@ static void _emitGarbage(PARSER_t *parser, PARSER_MSG_t *msg)
 
 static void _emitMessage(PARSER_t *parser, PARSER_MSG_t *msg, const int msgSize, const PARSER_MSGTYPE_t msgType, const bool info)
 {
-    uint32_t now = TIME();
+    uint64_t now = TIME();
 
     // Copy message to tmp, move remaining data to beginning of buf
     //     buf: MMMMMMMMMMMMMMM????????............. (p->offs = 0)

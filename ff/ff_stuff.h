@@ -1,7 +1,8 @@
+// clang-format off
 // flipflip's Allencheibs
 //
-// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-// https://oinkzwurgl.org/hacking/ubloxcfg
+// Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
+// https://oinkzwurgl.org/projaeggd/ubloxcfg/
 //
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
@@ -26,16 +27,18 @@ extern "C" {
 
 /* ****************************************************************************************************************** */
 
-uint32_t TIME(void);
+uint64_t TIME(void);
 void SLEEP(uint32_t dur);
 
-uint32_t timeOfDay(void);
+uint64_t timeOfDay(void);
 
 //! Number of elements in array \hideinitializer
 #define NUMOF(x) (int)(sizeof(x)/sizeof(*(x)))
 
 //! Mark variable as unused to silence compiler warnings \hideinitializer
-#define UNUSED(thing) (void)thing
+#ifndef UNUSED
+#  define UNUSED(thing) (void)thing
+#endif
 
 #ifdef _WIN32
 #  define IF_WIN(x) x
@@ -51,13 +54,19 @@ uint32_t timeOfDay(void);
 #  define FF_DEBUG 0
 #endif
 
-#define STRINGIFY(x) _STRINGIFY(x) //!< preprocessor stringification  \hideinitializer
-#define CONCAT(a, b)   _CONCAT(a, b) //!< preprocessor concatenation  \hideinitializer
-
-#ifndef __DOXYGEN__
-#  define _STRINGIFY(x) #x
-#  define _CONCAT(a, b)  a ## b
+#ifndef STRINGIFY
+#  define STRINGIFY(x) _STRINGIFY(x) //!< preprocessor stringification  \hideinitializer
+#  ifndef __DOXYGEN__
+#    define _STRINGIFY(x) #x
+#  endif
 #endif
+#ifndef CONCAT
+#  define CONCAT(a, b)   _CONCAT(a, b) //!< preprocessor concatenation  \hideinitializer
+#  ifndef __DOXYGEN__
+#    define _CONCAT(a, b)  a ## b
+#  endif
+#endif
+
 
 #define MIN(a, b)  ((b) < (a) ? (b) : (a)) //!< smaller value of a and b \hideinitializer
 #define MAX(a, b)  ((b) > (a) ? (b) : (a)) //!< bigger value of a and b \hideinitializer
@@ -81,7 +90,9 @@ uint32_t timeOfDay(void);
 //! Toggles the bits \hideinitializer
 #define TOGBITS(mask, bits)    ( (mask) ^= (bits) )
 
-#define PRINTF_ATTR(n) __attribute__ ((format (printf, n, n + 1)))
+#ifndef PRINTF_ATTR
+#  define PRINTF_ATTR(n) __attribute__ ((format (printf, n, n + 1)))
+#endif
 
 #define CLIP(x, a, b) ((x) <= (a) ? (a) : ((x) >= (b) ? (b) : (x))) //!< Clip value in range [a:b] \hideinitializer
 

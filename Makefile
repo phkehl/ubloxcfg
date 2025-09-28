@@ -1,294 +1,255 @@
 ########################################################################################################################
-#
-# u-blox 9 positioning receivers configuration library and tool
-#
-# Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
-# https://oinkzwurgl.org/hacking/ubloxcfg
-#
-# This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
-# License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along with this program.
-# If not, see <https://www.gnu.org/licenses/>.
-#
-########################################################################################################################
 
 .PHONY: default
 default:
 	@echo "Make what? Try 'make help'!"
+	@exit 1
 
-########################################################################################################################
+# Defaults (keep in sync with help screen below)
+BUILD_TYPE     = Debug
+INSTALL_PREFIX = install
+BUILD_TESTING  =
+VERBOSE        = 0
 
-# Directory for intermediate build files (e.g. object files)
-BUILDDIR              := build
+# User vars
+-include config.mk
 
-# Directory for build output (e.g. executables)
-OUTPUTDIR             := output
+# A unique ID for this exact config we're using
+configuid=$(shell echo "$(BUILD_TYPE) $(INSTALL_PREFIX) $(BUILD_TESTING) ${FF_VERSION_STRING} $$(uname -a)" | md5sum | cut -d " " -f1)
 
-# Cross-compile for Windows using mingw-w64 (https://mingw-w64.org)
-ifeq ($(WIN),64)
-CC              = x86_64-w64-mingw32-gcc-posix
-CXX             = x86_64-w64-mingw32-gcc-posix
-LD              = x86_64-w64-mingw32-gcc-posix
-NM              = x86_64-w64-mingw32-nm-posix
-OBJCOPY         = x86_64-w64-mingw32-objcopy
-OBJDUMP         = x86_64-w64-mingw32-objdump
-RANLIB          = x86_64-w64-mingw32-ranlib-posix
-READELF         = true
-STRINGS         = x86_64-w64-mingw32-strings
-STRIP           = x86_64-w64-mingw32-strip
-EXE             = .exe
-endif
-
-# Compile in msys2 mingw
-ifneq ($(MSYSTEM),)
-  EXE = .exe
-  ifneq ($(MSYSTEM),MINGW64)
-    $(error Expecting MSYSTEM=MINGW64. You have $(MSYSTEM))
-  endif
-endif
-
-include build.mk
-
-# Current program version
-VERSION               := $(shell $(SED) -rn '/define CONFIG_VERSION/s/.*"(.+)"/\1/p' config.h.in)
-
-# ubloxcfg library
-CFILES_ubloxcfg       := $(wildcard ubloxcfg/*.c)
-CFLAGS_library        := -fPIC
-LDFLAGS_library       := -shared -lm
-$(CFILES_ubloxcfg): $(BUILDDIR)/config.h
-
-# ff library souces
-CFILES_ff             := $(wildcard ff/*.c)
-CXXFILES_ff           := $(wildcard ff/*.cpp)
-$(CFILES_ff): $(BUILDDIR)/config.h
-
-# Toolchain flags
-CFLAGS_all            := -Wall -Wextra -Wshadow # -Werror
-CXXFLAGS_all          := -Wall -Wextra -Wshadow -Wunused-parameter -Wformat -Wpointer-arith -Woverloaded-virtual # -Werror
-LDFLAGS_all           :=
-
-CFLAGS_release        := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
-CXXFLAGS_release      := -DFF_BUILD_RELEASE -DNDEBUG -O3 -g
-LDFLAGS_release       := -g
-
-CFLAGS_debug          := -DFF_BUILD_DEBUG -Og -ggdb
-CXXFLAGS_debug        := -DFF_BUILD_DEBUG -Og -ggdb
-LDFLAGS_debug         := -ggdb
-ifeq ($(WIN),)
-CFLAGS_debug          += -rdynamic
-CXXFLAGS_debug        += -rdynamic
-LDFLAGS_debug         += -rdynamic
-endif
-
-
-# test (ubloxcfg)
-CFILES_test_m32       := test/test_ubloxcfg.c
-CFLAGS_test_m32       := -std=c99 -pedantic -Wno-pedantic-ms-format -m32
-LDFLAGS_test_m32      := -m32
-CFILES_test_m64       := test/test_ubloxcfg.c
-CFLAGS_test_m64       := -std=c99 -pedantic -Wno-pedantic-ms-format -m64
-LDFLAGS_test_m64      := -m64
-$(CFILES_test_m32): $(BUILDDIR)/config.h
-$(CFILES_test_m64): $(BUILDDIR)/config.h
-
-# cfgtool
-CFILES_cfgtool        := $(wildcard cfgtool/*.c)
-CFLAGS_cfgtool        := -std=gnu99 -Wformat -Wpointer-arith -Wundef
-LDFLAGS_cfgtool       := -lm
-ifeq ($(WIN),64)
-LDFLAGS_cfgtool       += -lws2_32 -static
-endif
-$(CFILES_cfgtool): $(BUILDDIR)/config.h
-$(CFILES_cfgtool): $(BUILDDIR)/config.h
-
-# cfggui
-CXXFILES_cfggui       := $(wildcard cfggui/*.cpp) $(wildcard cfggui/*/*.cpp) $(wildcard ff/*.cpp)
-CXXFILES_cfggui       += $(wildcard 3rdparty/imgui/*.cpp) $(wildcard 3rdparty/implot/*.cpp) $(wildcard 3rdparty/stuff/*.cpp)
-CFILES_cfggui         := $(wildcard 3rdparty/stb/*.c) 3rdparty/stuff/tetris.c  3rdparty/stuff/gl3w.c $(wildcard 3rdparty/nanovg/*.c)
-CFLAGS_cfggui         := -std=gnu99 -Wformat -Wpointer-arith -Wundef
-CXXFLAGS_cfggui       := -std=gnu++17 -Wformat -Wpointer-arith -Wundef -I3rdparty/fonts
-LDFLAGS_cfggui        := -lm -lpthread -lstdc++fs -lstdc++ -ldl
-CXXFLAGS_cfggui       += $(shell pkg-config --cflags glfw3 freetype2 zlib glm 2>/dev/null)
-LDFLAGS_cfggui        += $(shell pkg-config --libs   glfw3 freetype2 zlib glm 2>/dev/null)
-CXXFLAGS_cfggui       += $(shell curl-config --cflags 2>/dev/null)
-LDFLAGS_cfggui        += $(shell curl-config --libs 2>/dev/null)
-LDFLAGS_cfggui        += -lGL
-#-lGLU -ldl
-$(CFILES_cfggui): $(BUILDDIR)/config.h
-$(CXXFILES_cfggui): $(BUILDDIR)/config.h
-
-# Binaries, makeTarget: name, .c/.cpp files, CFLAGS, CXXFLAGS, LDFLAGS -- The final CFLAGS, CXXFLAGS and LDFLAGS will be $(CFLAGS) etc. from the environment, + those given here
-$(eval $(call makeTarget, test_m32-release$(EXE), $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m32)))
-$(eval $(call makeTarget, test_m32-debug$(EXE),   $(CFILES_test_m32) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_test_m32),                                                       , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_test_m32)))
-$(eval $(call makeTarget, test_m64-release$(EXE), $(CFILES_test_m64) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_test_m64),                                                       , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_test_m64)))
-$(eval $(call makeTarget, test_m64-debug$(EXE),   $(CFILES_test_m64) $(CFILES_ubloxcfg),                                 $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_test_m64),                                                       , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_test_m64)))
-$(eval $(call makeTarget, cfgtool-release$(EXE),  $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfgtool)))
-$(eval $(call makeTarget, cfgtool-debug$(EXE),    $(CFILES_cfgtool)  $(CFILES_ubloxcfg) $(CFILES_ff) $(CFILES_cfgtool),  $(CFLAGS_all) $(CFLAGS_debug)   $(CFLAGS_cfgtool),                                                        , $(LDLFAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfgtool)))
-ifeq ($(WIN),)
-$(eval $(call makeTarget, cfggui-release$(EXE),   $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_release) $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_release) $(LDFLAGS_cfggui)))
-$(eval $(call makeTarget, cfggui-debug$(EXE),     $(CFILES_cfggui)   $(CXXFILES_cfggui) $(CFILES_ubloxcfg) $(CFILES_ff), $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_cfggui),   $(CXXFLAGS_all) $(CXXFLAGS_debug)   $(CXXFLAGS_cfggui), $(LDFLAGS_all) $(LDFLAGS_debug)   $(LDFLAGS_cfggui)))
-endif
-$(eval $(call makeTarget, libubloxcfg.so,         $(CFILES_ubloxcfg) $(CFILES_ff),                                       $(CFLAGS_all) $(CFLAGS_release) $(CFLAGS_library),                                                        , $(LDFLAGS_ALL) $(LDFLAGS_release) $(LDFLAGS_library)))
-########################################################################################################################
-
-# Make config.h
-$(BUILDDIR)/config.h: config.h.in config.h.pl Makefile | $(BUILDDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(PERL) config.h.pl < config.h.in > $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-
-# Generate config items info
-CFG_JSONC := $(sort $(wildcard ubloxcfg/ubloxcfg-*.jsonc))
-ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h: $(CFG_JSONC) ubloxcfg/ubloxcfg_gen.pl Makefile
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLG)$@$(HLO) $(HLM)($(CFG_JSONC))$(HLO)"
-	$(V)$(PERL) ubloxcfg/ubloxcfg_gen.pl ubloxcfg/ubloxcfg_gen $(CFG_JSONC)
-
-ubloxcfg/ubloxcfg.c: ubloxcfg/ubloxcfg_gen.c ubloxcfg/ubloxcfg_gen.h
-
-# Documentation
-$(OUTPUTDIR)/ubloxcfg_html/index.html: ubloxcfg/Doxyfile $(LIBHFILES) $(LIBCFILES) Makefile | $(OUTPUTDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)doxygen$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)( $(CAT) $<; $(ECHO) "OUTPUT_DIRECTORY = $(OUTPUTDIR)"; $(ECHO) "QUIET = YES"; ) | $(DOXYGEN) -
-
-########################################################################################################################
-
-# Used in .github/workflows/main.yml
-.PHONY: ci
-ci: test_m32-release test_m64-release cfgtool-release release cfgtool.txt
-
-# Make everything
-.PHONY: all
-all: test_m32-release test_m64-release cfgtool-release cfggui-release release cfgtool.txt
-
-# Some shortcuts
-test_m32: test_m32-release
-test_m64: test_m64-release
-test: test_m32 test_m64
-	$(OUTPUTDIR)/test_m32-release
-	$(OUTPUTDIR)/test_m64-release
-.PHONY: cfgtool
-cfgtool: cfgtool-release
-.PHONY: cfggui
-cfggui: cfggui-release
-.PHONY: doc
-doc: $(OUTPUTDIR)/ubloxcfg_html/index.html
-
-########################################################################################################################
-
-# Help screen
 .PHONY: help
 help:
 	@echo "Usage:"
 	@echo
-	@echo "    make <target> ... [VERBOSE=0|1]"
+	@echo "    make <target> [INSTALL_PREFIX=...] [BUILD_TYPE=Debug|Release] [BUILD_TESTING=|ON|OFF] [FF_VERSION_STRING=x.x.x-gggggggg] [VERBOSE=1]"
 	@echo
 	@echo "Where possible <target>s are:"
 	@echo
-	@echo "    clean           Clean all ($(OUTPUTDIR) and $(BUILDDIR) directories)"
-	@echo "    all             Build (mostly) everything"
-	@echo "    <prog>-<build>  Make binary, <prog> is cfgtool, cfggui, ... and <build> is release, debug"
-	@echo "    test            Build and run tests"
-	@echo "    doc             Build HTML docu of the ubloxcfg library"
-	@echo "    debugmf         Show some Makefile variables"
-	@echo "    scan-build      Run scan-build"
-	@echo "    cfggui-valgrind Run cfggui with valgrind"
+	@echo "    clean               Clean build directory"
+	@echo "    cmake               Configure"
+	@echo "    build               Build"
+	@echo "    test                Run tests"
+	@echo "    install             Install (into INSTALL_PREFIX path)"
+	@echo "    doc                 Generate documentation (into build directory)"
+	@echo "    doc-dev             Generate documentation and start webserver to view it"
 	@echo
-	@echo "To cross-compile for windows, use 'make <prog>-<build>.exe WIN=64'."
-	@echo "Note that not all programs cross-compile for Windoze!"
-	@echo "Some stuff may compile (and even work) using native compilation in mingw-w64."
+	@echo "Typically you want to do something like this:"
 	@echo
-	@echo "See README.md for more details"
+	@echo "     make install INSTALL_PREFIX=~/ubloxcfg"
+	@echo
+	@echo "Notes:"
+	@echo
+	@echo "- All <target>s but 'clean' require that the same command-line variables are passed"
+	@echo "- Command-line variables can be stored into a config.mk file, which is automatically loaded"
+	@echo "- 'make ci' runs the CI (more or less) like on Github. INSTALL_PREFIX and BUILD_TYPE have no effect here."
 	@echo
 
 ########################################################################################################################
-# CI targets, see Jenkinsfile
 
-.PHONY: ci-build
-ci-build: all
+TOUCH      := touch
+MKDIR      := mkdir
+ECHO       := echo
+RM         := rm
+CMAKE      := cmake
+DOXYGEN    := doxygen
+NICE       := nice
+CAT        := cat
+PYTHON     := python
+SED        := sed
+LN         := ln
 
-.PHONY: ci-test
-ci-test: test
+ifeq ($(VERBOSE),1)
+V =
+V1 =
+V2 =
+V12 =
+RM += -v
+MV += -v
+CP += -v
+MKDIR += -v
+else
+ZIP += -q
+UNZIP += -q
+V = @
+V1 = > /dev/null
+V2 = 2> /dev/null
+V12 = 2>&1 > /dev/null
+endif
 
-####################################################################################################
-# Release (cfgtool only, no gui yet...)
+fancyterm := true
+ifeq ($(TERM),dumb)
+fancyterm := false
+endif
+ifeq ($(TERM),)
+fancyterm := false
+endif
+ifneq ($(MSYSTEM),)
+fancyterm := false
+endif
+ifeq ($(fancyterm),true)
+HLW="\\e[1m"
+HLO="\\e[m"
+else
+HLW=
+HLO=
+endif
 
-RELEASEFILES := $(sort $(OUTPUTDIR)/cfgtool_$(VERSION).bin  \
-    $(OUTPUTDIR)/cfgtool_$(VERSION).txt $(LICENSES_OUT))
+# Disable all built-in rules
+.SUFFIXES:
 
-RELEASEZIP := $(OUTPUTDIR)/ubloxcfg_$(VERSION).zip
+########################################################################################################################
 
-.PHONY: release
-release: $(RELEASEZIP)
+CMAKE_ARGS_BUILD :=
+CMAKE_ARGS_INSTALL :=
+CMAKE_ARGS := -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX)
+CMAKE_ARGS += -DCMAKE_BUILD_TYPE=$(BUILD_TYPE)
+ifneq ($(BUILD_TESTING),)
+  CMAKE_ARGS += -DBUILD_TESTING=$(BUILD_TESTING)
+endif
+ifneq ($(FF_VERSION_STRING),)
+  CMAKE_ARGS += -DVERSION_STRING=$(FF_VERSION_STRING)
+endif
 
-$(OUTPUTDIR)/cfgtool_$(VERSION).bin: $(OUTPUTDIR)/cfgtool-release Makefile | $(OUTPUTDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)REL$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(CP) $< $@.tmp
-	$(V)$(STRIP) $@.tmp
-	$(V)$(CP) $@.tmp $@
-	$(V)$(RM) $@.tmp
-	$(V)$(CP) ff/LICENSE                      $(OUTPUTDIR)/ff_LICENSE
-	$(V)$(CP) ubloxcfg/LICENSE                $(OUTPUTDIR)/ubloxcfg_LICENSE
+ifeq ($(BUILD_TYPE),Release)
+  CMAKE_ARGS_INSTALL += --strip
+endif
 
-cfgtool.txt: $(OUTPUTDIR)/cfgtool-release
-	@echo "$(HLY)*$(HLO) $(HLC)GEN$(HLO) $(HLGG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$^ -H > $(OUTPUTDIR)/$@.tmp
-	$(V)$(RM) -f $@
-	$(V)$(CP) $(OUTPUTDIR)/$@.tmp $@
-	$(V)$(RM) $(OUTPUTDIR)/$@.tmp
+MAKEFLAGS = --no-print-directory
 
-# TODO...
-# $(OUTPUTDIR)/cfgtool_$(VERSION).exe: $(OUTPUTDIR)/cfgtool-release.exe Makefile | $(OUTPUTDIR)
-# 	@echo "$(HLY)*$(HLO) $(HLC)REL$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-# 	$(V)$(CP) $< $@.tmp
-# 	$(V)$(STRIP) $@.tmp
-# 	$(V)$(CP) $@.tmp $@
-# 	$(V)$(RM) $@.tmp
+ifneq ($(VERBOSE),0)
+  CMAKE_ARGS_BUILD += --verbose
+endif
 
-$(OUTPUTDIR)/cfgtool_$(VERSION).txt: cfgtool.txt Makefile | $(OUTPUTDIR)
-	@echo "$(HLY)*$(HLO) $(HLC)REL$(HLO) $(HLG)$@$(HLO) $(HLM)($<)$(HLO)"
-	$(V)$(CP) $< $@
+ifeq ($(GITHUB_WORKSPACE),)
+  CMAKE_ARGS_BUILD = --parallel $(shell nproc --ignore=2)
+  NICE_BUILD=$(NICE) -19
+else
+  CMAKE_ARGS_BUILD = --parallel 4
+  NICE_BUILD=
+endif
 
-$(RELEASEZIP): $(RELEASEFILES)
-	@echo "$(HLY)*$(HLO) $(HLC)ZIP$(HLO) $(HLGG)$@$(HLO) $(HLM)($(notdir $^))$(HLO)"
-	$(V)$(RM) -f $@
-	$(V)( cd $(OUTPUTDIR) && $(ZIP) $(notdir $@) $(notdir $^) *LICENSE* )
+BUILD_DIR = build/$(BUILD_TYPE)
 
-####################################################################################################
-# Analysers
+# "All-in-one" targets
+.PHONY: clean
+clean:
+	$(V)$(RM) -rf $(BUILD_DIR)
 
-scanbuildtargets := cfgtool-release test_m32-release test_m64-release cfggui-release
+.PHONY: distclean
+distclean:
+	$(V)$(RM) -rf install build core.[123456789]*
 
-.PHONY: scan-build
-scan-build: $(OUTPUTDIR)/scan-build/.done
+$(BUILD_DIR):
+	$(V)$(MKDIR) -p $@
 
-$(OUTPUTDIR)/scan-build/.done: Makefile | $(OUTPUTDIR)
-	@echo "$(HLC)scan-build$(HLO) $(HLG)$(OUTPUTDIR)/scan-build$(HLO) $(HLM)($(scanbuildtargets))$(HLO)"
-	$(V)$(SCANBUILD) -o $(OUTPUTDIR)/scan-build -plist-html --exclude 3rdparty $(MAKE) --no-print-directory $(scanbuildtargets) BUILDDIR=$(BUILDDIR)/scan-build
+# Detect changed build config
+ifneq ($(MAKECMDGOALS),)
+ifneq ($(MAKECMDGOALS),help)
+ifneq ($(MAKECMDGOALS),pre-commit)
+ifneq ($(MAKECMDGOALS),ci)
+ifneq ($(MAKECMDGOALS),distclean)
+ifneq ($(MAKECMDGOALS),doc)
+builddiruid=$(shell $(CAT) $(BUILD_DIR)/.make-uid 2>/dev/null || echo "none")
+ifneq ($(builddiruid),$(configuid))
+    dummy=$(shell $(RM) -vf $(BUILD_DIR)/.make-uid))
+endif
+endif
+endif
+endif
+endif
+endif
+endif
+
+$(BUILD_DIR)/.make-uid: | $(BUILD_DIR)
+	$(V)$(ECHO) $(configuid) > $@
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+.PHONY: cmake
+cmake: $(BUILD_DIR)/.make-cmake
+
+deps_cmake := Makefile $(wildcard config.mk) $(sort $(wildcard CMakeLists.txt */CMakeLists.txt cmake/*))
+
+$(BUILD_DIR)/.make-cmake: $(deps_cmake) $(BUILD_DIR)/.make-uid
+	@echo "$(HLW)***** Configure ($(BUILD_TYPE)) *****$(HLO)"
+	$(V)$(CMAKE) -B $(BUILD_DIR) $(CMAKE_ARGS)
 	$(V)$(TOUCH) $@
 
-.PHONY: cfggui-valgrind
-cfggui-valgrind: $(OUTPUTDIR)/cfggui-debug
-	$(VALGRIND) --leak-check=full --show-leak-kinds=all --suppressions=cfggui/cfggui.supp $(OUTPUTDIR)/cfggui-debug
+# ----------------------------------------------------------------------------------------------------------------------
+
+.PHONY: build
+build: $(BUILD_DIR)/.make-build
+
+deps_build = $(sort $(wildcard ubloxcfg/* ffxx/* ffapps/* ffapps/*/* cfgtool/*))
+
+$(BUILD_DIR)/.make-build: $(deps_build) $(BUILD_DIR)/.make-cmake $(BUILD_DIR)/.make-uid
+	@echo "$(HLW)***** Build ($(BUILD_TYPE)) *****$(HLO)"
+	$(V)$(NICE_BUILD) $(CMAKE) --build $(BUILD_DIR) $(CMAKE_ARGS_BUILD) -- -k
+	$(V)$(TOUCH) $@
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+.PHONY: install
+install: $(BUILD_DIR)/.make-install
+
+$(BUILD_DIR)/.make-install: $(BUILD_DIR)/.make-build
+	@echo "$(HLW)***** Install ($(BUILD_TYPE)) *****$(HLO)"
+	$(V)$(CMAKE) --install $(BUILD_DIR) $(CMAKE_ARGS_INSTALL)
+	$(V)$(TOUCH) $@
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+.PHONY: test
+test: $(BUILD_DIR)/.make-build
+	@echo "$(HLW)***** Test ($(BUILD_TYPE)) *****$(HLO)"
+ifeq ($(VERBOSE),1)
+	$(V)$(BUILD_DIR)/ubloxcfg/ubloxcfg-test -v
+else
+	$(V)$(BUILD_DIR)/ubloxcfg/ubloxcfg-test
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+.PHONY: doc
+doc: $(BUILD_DIR)/.make-doc
+	@echo "now run: xdg-open $(BUILD_DIR)/ubloxcfg/doc/index.html"
+
+$(BUILD_DIR)/.make-doc: $(BUILD_DIR)/.make-build ubloxcfg/Doxyfile
+	@echo "$(HLW)***** Doc ($(BUILD_TYPE)) *****$(HLO)"
+	$(V)( \
+            cat ubloxcfg/Doxyfile; \
+            echo "PROJECT_NUMBER = $$(cat $(BUILD_DIR)/FF_VERSION_STRING || echo 'unknown revision')"; \
+            echo "OUTPUT_DIRECTORY = $(BUILD_DIR)/ubloxcfg"; \
+			echo "INPUT = ubloxcfg"; \
+        ) | $(DOXYGEN) -
+	$(V)$(TOUCH) $@
+
+.PHONY: doc-dev
+doc-dev: $(BUILD_DIR)/.make-doc
+	$(V)(cd $(BUILD_DIR)/ubloxcfg/doc && $(PYTHON) -m http.server 8000)
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# .PHONY: ci
+# ci: $(BUILD_DIR)/.ci-bookworm $(BUILD_DIR)/.ci-noetic $(BUILD_DIR)/.ci-humble $(BUILD_DIR)/.ci-jazzy
+
+# $(BUILD_DIR)/.ci-bookworm: $(deps)
+# 	@echo "$(HLW)***** CI (bookworm) *****$(HLO)"
+# ifeq ($(FPSDK_IMAGE),)
+# 	$(V)docker/docker.sh run bookworm-ci ./docker/ci.sh
+# 	$(V)$(TOUCH) $@
+# else
+# 	@echo "This ($@) should not run inside Docker!"
+# 	@false
+# endif
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# .PHONY: pre-commit
+# pre-commit: | $(BUILD_DIR)
+# 	@echo "$(HLW)***** pre-commit checks *****$(HLO)"
+# 	$(V)$(MKDIR) -p $(BUILD_DIR)/.bin
+# 	$(V)$(LN) -sf /usr/bin/clang-format-17 $(BUILD_DIR)/.bin/clang-format
+# 	$(V)export PATH=$(BUILD_DIR)/.bin:$$PATH; pre-commit run --all-files --hook-stage manual || return 1
 
 ########################################################################################################################
-
-LIBPREFIX := /usr/local
-
-.PHONY: install-library
-install-library:
-	$(V)$(MKDIR) -p $(LIBPREFIX)/include/ubloxcfg
-	$(V)$(MKDIR) -p $(LIBPREFIX)/lib/pkgconfig
-	$(V)$(CP) ubloxcfg/*.h $(LIBPREFIX)/include/ubloxcfg
-	$(V)$(CP) ff/*.h $(LIBPREFIX)/include/ubloxcfg
-	$(V)$(SED) "s@/usr/local@$(LIBPREFIX)@" ubloxcfg/libubloxcfg.pc > $(LIBPREFIX)/lib/pkgconfig/libubloxcfg.pc
-	$(V)$(CP) output/libubloxcfg.so $(LIBPREFIX)/lib
-
-########################################################################################################################
-# eof
