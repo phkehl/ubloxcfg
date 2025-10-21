@@ -61,7 +61,7 @@ if(NOT NO_CODEGEN)
 
     add_custom_command(
         OUTPUT ${GEN_FILES}
-        COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/ubloxcfg_genx.pl ${PROJECT_SOURCE_DIR}/ubloxcfg_gen ${JSONC_FILES}
+        COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl ${PROJECT_SOURCE_DIR}/ubloxcfg_gen ${JSONC_FILES}
         DEPENDS ${JSONC_FILES} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl
     )
 
