@@ -52,19 +52,21 @@ find_package(Perl REQUIRED)
 
 # GENERATED CODE =======================================================================================================
 
-file(GLOB JSONC_FILES *.jsonc)
-set(GEN_FILES "${PROJECT_SOURCE_DIR}/ubloxcfg_gen.h;${PROJECT_SOURCE_DIR}/ubloxcfg_gen.c")
-message(STATUS "ff: JSONC_FILES=${JSONC_FILES}")
-message(STATUS "ff: GEN_FILES=${GEN_FILES}")
 
-add_custom_command(
-    OUTPUT ${GEN_FILES}
-    COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl ${PROJECT_SOURCE_DIR}/ubloxcfg_gen ${JSONC_FILES}
-    DEPENDS ${JSONC_FILES} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl
-)
+if(NOT NO_CODEGEN)
+    file(GLOB JSONC_FILES *.jsonc)
+    set(GEN_FILES "${PROJECT_SOURCE_DIR}/ubloxcfg_gen.h;${PROJECT_SOURCE_DIR}/ubloxcfg_gen.c")
+    message(STATUS "ff: JSONC_FILES=${JSONC_FILES}")
+    message(STATUS "ff: GEN_FILES=${GEN_FILES}")
 
-add_custom_target(ubloxcfg-generated ALL DEPENDS ${GEN_FILES})
+    add_custom_command(
+        OUTPUT ${GEN_FILES}
+        COMMAND ${PERL_EXECUTABLE} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl ${PROJECT_SOURCE_DIR}/ubloxcfg_gen ${JSONC_FILES}
+        DEPENDS ${JSONC_FILES} ${PROJECT_SOURCE_DIR}/ubloxcfg_gen.pl
+    )
 
+    add_custom_target(ubloxcfg-generated ALL DEPENDS ${GEN_FILES})
+endif()
 
 # SHARED LIBRARY =======================================================================================================
 
@@ -78,7 +80,9 @@ list(APPEND CMAKE_INSTALL_RPATH $ORIGIN/../lib)
 
 add_library(${PROJECT_NAME} SHARED ${C_FILES} ${GEN_FILES})
 
-add_dependencies(${PROJECT_NAME} ubloxcfg-generated)
+if(NOT NO_CODEGEN)
+   add_dependencies(${PROJECT_NAME} ubloxcfg-generated)
+endif()
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
