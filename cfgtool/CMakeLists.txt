@@ -75,13 +75,15 @@ target_link_libraries(${PROJECT_NAME}
 
 # GENERATED HELP =======================================================================================================
 
-add_custom_command(
-    OUTPUT ${PROJECT_SOURCE_DIR}/cfgtool.txt
-    COMMAND ${PROJECT_NAME} -H > ${PROJECT_SOURCE_DIR}/cfgtool.txt
-    DEPENDS ${PROJECT_NAME} ${C_FILES} ${H_FILES}
-)
+if(NOT NO_CODEGEN)
+    add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/cfgtool.txt
+        COMMAND ${PROJECT_NAME} -H > ${PROJECT_SOURCE_DIR}/cfgtool.txt
+        DEPENDS ${PROJECT_NAME} ${C_FILES} ${H_FILES}
+    )
 
-add_custom_target(${PROJECT_NAME}-help ALL DEPENDS ${PROJECT_SOURCE_DIR}/cfgtool.txt)
+    add_custom_target(${PROJECT_NAME}-help ALL DEPENDS ${PROJECT_SOURCE_DIR}/cfgtool.txt)
+endif()
 
 # INSTALL ==============================================================================================================
 
@@ -99,10 +101,17 @@ install(TARGETS ${PROJECT_NAME}
 
 install(
     FILES
-        ${PROJECT_SOURCE_DIR}/cfgtool.txt
         ${PROJECT_SOURCE_DIR}/README.md
         ${PROJECT_SOURCE_DIR}/LICENSE
     DESTINATION ${PROJECT_DOC_DIR}
 )
+
+if(NOT NO_CODEGEN)
+    install(
+        FILES
+            ${PROJECT_SOURCE_DIR}/cfgtool.txt
+        DESTINATION ${PROJECT_DOC_DIR}
+    )
+endif()
 
 ########################################################################################################################
