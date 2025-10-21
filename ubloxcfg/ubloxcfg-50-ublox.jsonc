@@ -1258,6 +1258,10 @@
     { "id" : "0x1031001a", "name" : "CFG-SIGNAL-GLO_L2_ENA",                "size" : 0, "type" : "L",                                          "title" : "GLONASS L2 enable" },
     { "id" : "0x10310026", "name" : "CFG-SIGNAL-NAVIC_ENA",                 "size" : 0, "type" : "L",                                          "title" : "NavIC enable" },
     { "id" : "0x1031001d", "name" : "CFG-SIGNAL-NAVIC_L5_ENA",              "size" : 0, "type" : "L",                                          "title" : "NavIC L5 enable" },
+    { "id" : "0x2031003a", "name" : "CFG-SIGNAL-PLAN",                      "size" : 1, "type" : "E1",                                         "title" : "Active signal plan",
+            "consts" : [ { "name" : "SP1",                                  "value" : "1",                                                     "title" : "Signal plan 1" },
+                         { "name" : "SP2",                                  "value" : "2",                                                     "title" : "Signal plan 2" },
+                         { "name" : "SP6",                                  "value" : "6",                                                     "title" : "Signal plan 6" } ] },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20a70001", "name" : "CFG-SPARTN-USE_SOURCE",                "size" : 1, "type" : "E1",                                         "title" : "Selector for source SPARTN stream",
             "consts" : [ { "name" : "IP",                                   "value" : "0",                                                     "title" : "IP source" },

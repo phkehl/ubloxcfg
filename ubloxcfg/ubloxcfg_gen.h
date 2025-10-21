@@ -8303,6 +8303,22 @@ typedef enum UBLOXCFG_CFG_RTCM_DF003_IN_FILTER_e
 #define UBLOXCFG_CFG_SIGNAL_NAVIC_L5_ENA_TYPE              L                                        //!< Type of CFG-SIGNAL-NAVIC_L5_ENA
 ///@}
 
+/*!
+    \defgroup UBLOXCFG_CFG_SIGNAL_PLAN CFG-SIGNAL-PLAN (Active signal plan)
+    @{
+*/
+#define UBLOXCFG_CFG_SIGNAL_PLAN_ID                        0x2031003a                               //!< ID of CFG-SIGNAL-PLAN
+#define UBLOXCFG_CFG_SIGNAL_PLAN_STR                       "CFG-SIGNAL-PLAN"                        //!< Name of CFG-SIGNAL-PLAN
+#define UBLOXCFG_CFG_SIGNAL_PLAN_TYPE                      E1                                       //!< Type of CFG-SIGNAL-PLAN
+//! constants for CFG-SIGNAL-PLAN
+typedef enum UBLOXCFG_CFG_SIGNAL_PLAN_e
+{
+    UBLOXCFG_CFG_SIGNAL_PLAN_SP1                         = 1,                                       //!< Signal plan 1
+    UBLOXCFG_CFG_SIGNAL_PLAN_SP2                         = 2,                                       //!< Signal plan 2
+    UBLOXCFG_CFG_SIGNAL_PLAN_SP6                         = 6                                        //!< Signal plan 6
+} UBLOXCFG_CFG_SIGNAL_PLAN_t;
+///@}
+
 ///@}
 
 /*!
@@ -12539,7 +12555,7 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 991
+#define _UBLOXCFG_NUM_ITEMS 992
 const void **_ubloxcfg_allItems(void);
 #define _UBLOXCFG_NUM_RATES 122
 const void **_ubloxcfg_allRates(void);
