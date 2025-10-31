@@ -1,0 +1,21 @@
+# udev rules for USB-to-UART device (FTDI chip) used in u-blox eval kits
+#
+# This configures the ftdi_sio Linux driver to recognise it as ttyUSB serial ports
+#
+# To install:
+#
+#     sudo cp 99-ftdi-ublox.rules /etc/udev/rules.d/
+#     sudo udevadm control --reload-rules
+#
+
+# EVK-F9P
+# Bus 001 Device 046: ID 1546:0507 U-Blox AG F9P; ZED_UART1
+# Bus 001 Device 047: ID 1546:0508 U-Blox AG F9P; ZED_UART2
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="0507", RUN+="/bin/sh -c '/sbin/modprobe ftdi_sio && echo 1546 0507 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="0508", RUN+="/bin/sh -c '/sbin/modprobe ftdi_sio && echo 1546 0508 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+
+# EVK-X20P
+# Bus 001 Device 050: ID 1546:050c U-Blox AG X20P UART1
+# Bus 001 Device 051: ID 1546:050d U-Blox AG X20P UART2
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="050c", RUN+="/bin/sh -c '/sbin/modprobe ftdi_sio && echo 1546 050c > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="050d", RUN+="/bin/sh -c '/sbin/modprobe ftdi_sio && echo 1546 050d > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
