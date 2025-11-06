@@ -25,7 +25,7 @@
 #include <fcntl.h>
 #include <limits.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #include "cfgtool_util.h"
 

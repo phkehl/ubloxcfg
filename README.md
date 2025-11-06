@@ -27,7 +27,7 @@ apt install gcc libpath-tiny-perl libdata-float-perl
 Either build and install the individual components (ubloxcfg, ff, cfgtool) or use the top-level CMake:
 
 ```sh
-cmake -B build -S .
+cmake -B build -S .                # add -DNO_CODEGEN=ON to skip (re-)generating ubloxcfg_gen.[ch]
 cmake --build build --parallel 8
 ./build/ubloxcfg/ubloxcfg-test
 ./build/cfgtool/cfgtool -h

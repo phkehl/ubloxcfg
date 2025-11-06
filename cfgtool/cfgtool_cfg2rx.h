@@ -20,7 +20,7 @@
 
 #include "ff_ubx.h"
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #ifndef __CFGTOOL_CFG2RX_H__
 #define __CFGTOOL_CFG2RX_H__

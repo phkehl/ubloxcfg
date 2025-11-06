@@ -19,7 +19,7 @@
 #include <stddef.h>
 #include <signal.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #include "cfgtool_util.h"
 

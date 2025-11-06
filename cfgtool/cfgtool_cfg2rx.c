@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #include "cfgtool_util.h"
 

@@ -229,8 +229,8 @@ sub genCodeC
     $c .= "// - $_\n" for (@{$sources});
     $c .= "\n";
     $c .= "#include <stddef.h>\n";
-    $c .= "#include \"ubloxcfg.h\"\n";
-    $c .= "#include \"ubloxcfg_gen.h\"\n";
+    $c .= "#include \"ubloxcfg/ubloxcfg.h\"\n";
+    $c .= "#include \"ubloxcfg/ubloxcfg_gen.h\"\n";
     $c .= "\n";
 
     my %sizeNames = ( 0 => 'UBLOXCFG_SIZE_BIT', 1 => 'UBLOXCFG_SIZE_ONE', 2 => 'UBLOXCFG_SIZE_TWO',
