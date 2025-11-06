@@ -520,14 +520,14 @@ sub genCodeC
     $c .= "\n";
 
     # write output
-    eval { path("$OUT.h")->spew_raw($h); };
+    eval { path("$OUT.h")->touch(); path("$OUT.h")->spew_raw($h); };
     if ($! || $@)
     {
         my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{};
         print(STDERR "Failed writing '$OUT.h': $err\n");
         $errors++;
     }
-    eval { path("$OUT.c")->spew_raw($c); };
+    eval { path("$OUT.c")->touch(); path("$OUT.c")->spew_raw($c); };
     if ($! || $@)
     {
         my $err = ("$!" || "$@"); $err =~ s{\s*\r?\n$}{};
