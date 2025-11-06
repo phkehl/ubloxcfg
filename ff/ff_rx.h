@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 #include "ff_parser.h"
 
 #ifdef __cplusplus

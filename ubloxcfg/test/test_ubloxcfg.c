@@ -22,7 +22,7 @@
 #include <ctype.h>
 #include <float.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #define NUMOF(array)    (sizeof(array)/sizeof(*(array)))
 #define STRINGIFY(x) _STRINGIFY(x)

@@ -25,7 +25,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 /* ****************************************************************************************************************** */
 

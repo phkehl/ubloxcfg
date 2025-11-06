@@ -27,8 +27,8 @@
 // - u-center 20.01, copyright (c) 2020 u-blox AG
 
 #include <stddef.h>
-#include "ubloxcfg.h"
-#include "ubloxcfg_gen.h"
+#include "ubloxcfg/ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg_gen.h"
 
 
 static const UBLOXCFG_ITEM_t ubloxcfg_cfgBdsUseGeoPrn =

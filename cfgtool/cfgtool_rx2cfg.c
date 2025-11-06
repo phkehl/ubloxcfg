@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 
 #include "cfgtool_util.h"
 

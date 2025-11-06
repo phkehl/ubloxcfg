@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "ubloxcfg.h"
+#include "ubloxcfg/ubloxcfg.h"
 #include "ff_debug.h"
 #include "ff_stuff.h"
 
