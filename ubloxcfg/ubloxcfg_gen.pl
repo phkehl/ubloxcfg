@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 ####################################################################################################
-# u-blox 9 positioning receivers configuration library
+# ubloxcfg -- u-blox positioning receivers configuration library
 #
-# Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org),
+# Copyright (c) Philippe Kehl (flipflip at oinkzwurgl dot org) and contributors
 # https://oinkzwurgl.org/projaeggd/ubloxcfg/
 #
 # This program is free software: you can redistribute it and/or modify it under the terms of the
@@ -164,6 +164,9 @@ sub verifyItems
             print(STDERR "Size and type mismatch (size $item->{size}, type $item->{type}) at index $ix ($item->{name})!\n");
             $errors++;
         }
+
+        # Add group name
+        $item->{group} = substr($item->{name}, 0, index($item->{name}, '-', 4));
     }
 
     return $errors ? 0 : 1;
@@ -335,7 +338,7 @@ sub genCodeC
         $cItem .= "{\n";
         $cItem .= sprintf("    .id = $item->{id}, .name = %-50s .type = %-17s .size = %s\n",
             "\"$item->{name}\",", "UBLOXCFG_TYPE_$item->{type},", "$sizeNames{$item->{size}},");
-        $cItem .= sprintf("    .order = %4d, .title =\"%s\",\n", $itemIx + 1, $item->{title});
+        $cItem .= sprintf("    .order = %4d,   .group = %-25s.title =\"%s\",\n", $itemIx + 1, "\"$item->{group}\",", $item->{title});
         my $unitStr = '';
         if ($item->{unit})
         {
@@ -368,7 +371,7 @@ sub genCodeC
         {
             my $nConsts = $#{$item->{consts}} + 1;
             my $constsStruct = $itemStruct . '_consts';
-            $cItem .= sprintf("    .nConsts = %3d, .consts = %s\n", $nConsts, $constsStruct);
+            $cItem .= sprintf("    .nConsts = %2d, .consts = %s\n", $nConsts, $constsStruct);
 
             my $cConsts = '';
             $cConsts .= "static const UBLOXCFG_CONST_t ${constsStruct}[$nConsts] =\n";
@@ -484,7 +487,6 @@ sub genCodeC
     $cc .= "const void **_ubloxcfg_allRates(void) { return (const void **)ubloxcfg_allRates; }\n";
     $hh .= "#define _UBLOXCFG_MAX_ITEM_LEN $maxItemNameLen\n";
     $hh .= "#define _UBLOXCFG_MAX_CONSTS_LEN $maxConstNamesLen\n";
-
 
     my $numSources = $#{$sources} + 1;
     $c .= "static const char * const ubloxcfg_allSources[$numSources] =\n";

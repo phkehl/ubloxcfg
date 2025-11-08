@@ -6,8 +6,8 @@
     "u-blox ZED-F9P Interface Description (HPG 1.50) (https://www.u-blox.com/en/docs/UBXDOC-963802114-12815), copyright (c) 2024 u-blox AG",
     "u-blox ZED-F9T Interface Description (R02) (https://www.u-blox.com/en/docs/UBX-19003606), copyright (c) 2020 u-blox AG",
     "u-blox NEO-M9N Interface description (SPG 4.04) (https://www.u-blox.com/en/docs/UBX-19035940), copyright (c) 2020 u-blox AG",
-    "u-blox ZED-F9R Interface description (HPS 1.20) (https://www.u-blox.com/en/docs/UBX-19056845), copyright (c) 2020 u-blox AG",
-    "u-blox F9 HPS 1.21 Interface Description (ZEF-F9R) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG",
+    "u-blox ZED-F9R Interface Description (HPS 1.21) (https://www.u-blox.com/en/docs/UBX-21019746), copyright (c) 2021 u-blox AG",
+    "u-blox X20 Interface description (HPG 2.02) (https://www.u-blox.com/en/docs/UBXDOC-304424225-19967), copyright (c) 2025 u-blox AG",
     "u-blox GPS L5 configuration Application Note (https://www.u-blox.com/en/docs/UBX-21038688), copyright (c) 2023 u-blox AG",
     "u-center 20.01, copyright (c) 2020 u-blox AG"
     // (Which may or may not have worked fully and may or may not be fully correct... YMMV)

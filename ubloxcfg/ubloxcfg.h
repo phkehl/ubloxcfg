@@ -115,6 +115,7 @@ typedef struct UBLOXCFG_ITEM_s
     UBLOXCFG_TYPE_t         type;      //!< Storage type
     UBLOXCFG_SIZE_t         size;      //!< Item size
     const char             *name;      //!< Item name
+    const char             *group;     //!< Group name
     const char             *title;     //!< Title
     const char             *unit;      //!< Unit (or NULL)
     const char             *scale;     //!< Scale factor as string (or NULL)
