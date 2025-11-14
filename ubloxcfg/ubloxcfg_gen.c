@@ -6724,7 +6724,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpPolTp1 =
     .order =  902,   .group = "CFG-TP",                .title ="Set time pulse polarity (TP1)"
 };
 
-static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp1_consts[5] =
+static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp1_consts[6] =
 {
     {
         .name = "UTC",               .value = "0",                 .val = { .E = 0 },
@@ -6745,6 +6745,10 @@ static const UBLOXCFG_CONST_t ubloxcfg_cfgTpTimegridTp1_consts[5] =
     {
         .name = "GAL",               .value = "4",                 .val = { .E = 4 },
         .title = "Galileo time reference"
+    },
+    {
+        .name = "NAVIC",             .value = "5",                 .val = { .E = 5 },
+        .title = "NavIC time reference"
     }
 };
 
@@ -6752,7 +6756,7 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgTpTimegridTp1 =
 {
     .id = 0x2005000c, .name = "CFG-TP-TIMEGRID_TP1",                             .type = UBLOXCFG_TYPE_E1, .size = UBLOXCFG_SIZE_ONE,
     .order =  903,   .group = "CFG-TP",                .title ="Time grid to use (TP1)",
-    .nConsts =  5, .consts = ubloxcfg_cfgTpTimegridTp1_consts
+    .nConsts =  6, .consts = ubloxcfg_cfgTpTimegridTp1_consts
 };
 
 static const UBLOXCFG_CONST_t ubloxcfg_cfgTpDrstrTp1_consts[4] =
