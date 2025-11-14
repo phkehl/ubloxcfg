@@ -8841,7 +8841,8 @@ typedef enum UBLOXCFG_CFG_TP_TIMEGRID_TP1_e
     UBLOXCFG_CFG_TP_TIMEGRID_TP1_GPS                     = 1,                                       //!< GPS time reference
     UBLOXCFG_CFG_TP_TIMEGRID_TP1_GLO                     = 2,                                       //!< GLONASS time reference
     UBLOXCFG_CFG_TP_TIMEGRID_TP1_BDS                     = 3,                                       //!< BeiDou time reference
-    UBLOXCFG_CFG_TP_TIMEGRID_TP1_GAL                     = 4                                        //!< Galileo time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP1_GAL                     = 4,                                       //!< Galileo time reference
+    UBLOXCFG_CFG_TP_TIMEGRID_TP1_NAVIC                   = 5                                        //!< NavIC time reference
 } UBLOXCFG_CFG_TP_TIMEGRID_TP1_t;
 ///@}
 

@@ -465,8 +465,38 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
                     const uint64_t unusedBits = valX & (~usedBits);
                     if (unusedBits == valX)
                     {
-                        strncat(&str[len], "|n/a", size - len);
-                        len += 4;
+                        // Some X8 values are actually strings...
+                        char x8str[9] = { 0 };
+                        if ((type == UBLOXCFG_TYPE_X8) && (valX != 0))
+                        {
+                            const uint8_t *c = (const uint8_t*)&valX;
+                            bool nulSeen = false;
+                            for (int ix = 0; ix < 8; ix++)
+                            {
+                                if (!nulSeen && isprint(c[ix]))
+                                {
+                                    x8str[ix] = c[ix];
+                                }
+                                else if ((!isprint(c[ix]) || nulSeen) && (c[ix] != '\0'))
+                                {
+                                    x8str[0] = '\0';
+                                    break;
+                                }
+                                if (c[ix] == '\0')
+                                {
+                                    nulSeen = true;
+                                }
+                            }
+                        }
+                        if (x8str[0] != '\0')
+                        {
+                            len += snprintf(&str[len], size - len, "(%s", x8str);
+                        }
+                        else
+                        {
+                            strncat(&str[len], "|n/a", size - len);
+                            len += 4;
+                        }
                     }
                     else if (unusedBits != 0)
                     {
