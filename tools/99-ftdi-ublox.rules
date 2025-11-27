@@ -7,6 +7,10 @@
 #     sudo cp 99-ftdi-ublox.rules /etc/udev/rules.d/
 #     sudo udevadm control --reload-rules
 #
+# To test new IDs one can also do:
+#
+# echo 1546 0507 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id
+#
 
 # EVK-F9P
 # Bus 001 Device 046: ID 1546:0507 U-Blox AG F9P; ZED_UART1
