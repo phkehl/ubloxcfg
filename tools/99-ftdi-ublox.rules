@@ -1,5 +1,21 @@
 # udev rules for USB-to-UART device (FTDI chip) used in u-blox eval kits
 #
+# The EVK-F9P USB looks something like this:
+#
+#                                       +-----------------------------------------------------------------------+
+#                                       |                        EVK-F9P (and many others)                      |
+#                                       |                                                  +-----------------+  |
+#  /dev/ttyUSB0 = UART1                 |          +---------+       +-------------+       |  ZED-F9P module |  |
+#  /dev/ttyUSB1 = UART2    Host <------>|USB<----->| USB hub |<----->| FTDI serial |<----->|- UART1          |  |
+#  /dev/ttyACM0 = USB                   | .        +---------+       | to USB chip |<----->|- UART2          |  |
+#                                       | .              ^           +-------------+   ,-->|- USB            |  |
+#                                       | .              |                             |   +-----------------+  |
+#                                       | .              '-----------------------------'              .         |
+#                                       | . power supply                                              .         |
+#                                       | .............................................................         |
+#                                       |                                                                       |
+#                                       +-----------------------------------------------------------------------+
+#
 # This configures the ftdi_sio Linux driver to recognise it as ttyUSB serial ports
 #
 # To install:
