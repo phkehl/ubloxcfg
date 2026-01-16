@@ -73,6 +73,7 @@ target_link_libraries(${PROJECT_NAME}
         m
 )
 
+
 # GENERATED HELP =======================================================================================================
 
 if(NOT NO_CODEGEN)
@@ -84,6 +85,7 @@ if(NOT NO_CODEGEN)
 
     add_custom_target(${PROJECT_NAME}-help ALL DEPENDS ${PROJECT_SOURCE_DIR}/cfgtool.txt)
 endif()
+
 
 # INSTALL ==============================================================================================================
 
@@ -103,6 +105,8 @@ install(
     FILES
         ${PROJECT_SOURCE_DIR}/README.md
         ${PROJECT_SOURCE_DIR}/LICENSE
+        ${PROJECT_SOURCE_DIR}/../tools/99-ftdi-ublox.rules
+        ${PROJECT_SOURCE_DIR}/../tools/evk-f9p-base.cfg
     DESTINATION ${PROJECT_DOC_DIR}
 )
 
@@ -113,5 +117,6 @@ if(NOT NO_CODEGEN)
         DESTINATION ${PROJECT_DOC_DIR}
     )
 endif()
+
 
 ########################################################################################################################
