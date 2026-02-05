@@ -334,6 +334,7 @@ static int sGetFields(const char **fields, const int maxFields, char *payload)
     }
     nTok++;
     NMEA_DEBUG("tok %d [%s]", nTok, payload);
+    UNUSED(nTok);
     if (nFields < maxFields)
     {
         fields[nFields] = payload;
