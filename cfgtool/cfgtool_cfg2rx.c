@@ -169,7 +169,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
         return EXIT_BADARGS;
     }
 
-    RX_RESET_t reset;
+    RX_RESET_t reset = RX_RESET_NONE;;
     if ((resetArg != NULL) && !resetTypeFromStr(resetArg, &reset))
     {
         return EXIT_BADARGS;
