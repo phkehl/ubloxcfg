@@ -115,7 +115,7 @@ install(
 install(EXPORT ${PROJECT_NAME}-targets
     NAMESPACE ${PROJECT_NAMESPACE_PREFIX}
     FILE ${PROJECT_NAME}-targets.cmake
-    DESTINATION lib/cmake/${PROJECT_NAME}
+    DESTINATION ${PROJECT_LIBRARY_DIR}/cmake/${PROJECT_NAME}
 )
 
 # CMake config
@@ -124,7 +124,7 @@ set(TARGET1 ${PROJECT_NAME})
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-    INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
+    INSTALL_DESTINATION ${PROJECT_LIBRARY_DIR}/cmake/${PROJECT_NAME}
     NO_SET_AND_CHECK_MACRO
     NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
@@ -137,7 +137,7 @@ install(
     FILES
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
-    DESTINATION lib/cmake/${PROJECT_NAME}
+    DESTINATION ${PROJECT_LIBRARY_DIR}/cmake/${PROJECT_NAME}
 )
 
 # pkg-config config
@@ -146,14 +146,14 @@ set(TARGET1 ${PROJECT_NAME})
 configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/config.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-    INSTALL_DESTINATION lib/cmake/${PROJECT_NAME}
+    INSTALL_DESTINATION ${PROJECT_LIBRARY_DIR}/cmake/${PROJECT_NAME}
     NO_SET_AND_CHECK_MACRO
     NO_CHECK_REQUIRED_COMPONENTS_MACRO
 )
 install(
     FILES
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
-    DESTINATION lib/pkgconfig
+    DESTINATION ${PROJECT_LIBRARY_DIR}/pkgconfig
 )
 
 ########################################################################################################################
