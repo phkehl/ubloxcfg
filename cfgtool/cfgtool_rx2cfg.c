@@ -907,7 +907,7 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     // Add default value if available and different
     char defaultValStr[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
     defaultValStr[0] = '\0';
-    if ( (defaultKv != NULL) && (defaultKv->val._raw != kv->val._raw) )
+    if ( (defaultKv != NULL) && !ubloxcfg_compareValue(defaultKv, kv) )
     {
         if (ubloxcfg_stringifyValue(defaultValStr, sizeof(defaultValStr), type, item, &defaultKv->val))
         {

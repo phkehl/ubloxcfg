@@ -180,7 +180,7 @@ $(BUILD_DIR)/.make-cmake: $(deps_cmake) $(BUILD_DIR)/.make-uid
 .PHONY: build
 build: $(BUILD_DIR)/.make-build
 
-deps_build = $(sort $(wildcard ubloxcfg/* ffxx/* ffapps/* ffapps/*/* cfgtool/*))
+deps_build = $(sort $(wildcard ubloxcfg/* ubloxcfg/*/* cfgtool/* cfgtool/*/*))
 
 $(BUILD_DIR)/.make-build: $(deps_build) $(BUILD_DIR)/.make-cmake $(BUILD_DIR)/.make-uid
 	@echo "$(HLW)***** Build ($(BUILD_TYPE)) *****$(HLO)"

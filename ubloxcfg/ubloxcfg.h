@@ -227,8 +227,8 @@ typedef union UBLOXCFG_VALUE_u
     int16_t   E2; //!< #UBLOXCFG_TYPE_E2 type value
     int32_t   E4; //!< #UBLOXCFG_TYPE_E4 type value
     bool      L;  //!< #UBLOXCFG_TYPE_L type value
-    uint8_t  _bytes[8]; //!< raw bytes, unused bytes shall be 0x00
-    uint64_t _raw;      //!< raw value, unused bytes shall be 0x00
+    uint8_t  _bytes[8]; //!< raw bytes, unused bytes have no meaning and shall be ignored
+    uint64_t _raw;      //!< raw value, unused bytes have no meaning and shall be ignored
 } UBLOXCFG_VALUE_t;
 
 //! Key-value pair
@@ -237,6 +237,16 @@ typedef struct UBLOXCFG_KEYVAL_s
     uint32_t         id;       //!< Configuration item ID
     UBLOXCFG_VALUE_t val;      //!< Configuration item value
 } UBLOXCFG_KEYVAL_t;
+
+//! Compare values of two key-value pairs
+/*!
+    \param[in]  a  First key-value pair
+    \param[in]  b  Second key-value pair
+
+    \returns true if the item sizes (but not necessarily types) match and values (at bit level) are the same, false
+             otherwise
+*/
+bool ubloxcfg_compareValue(const UBLOXCFG_KEYVAL_t* a, const UBLOXCFG_KEYVAL_t* b);
 
 //! Initialiser for a #UBLOXCFG_KEYVAL_t for any type \hideinitializer
 /*!

@@ -101,6 +101,24 @@ int main(int argc, char **argv)
         TEST("UBLOXCFG_VALUE_t size is 8", sizeof(UBLOXCFG_VALUE_t) == 8);
     }
 
+    // Value comparison. Since we cannot (don't want to) rely on value of the unused bytes in the union we cannot simply
+    // compare _raw field of two values. Starting from GCC 15.1 union initializers is not guaranteed to zero-initialize
+    // all field, but only specified. https://gcc.gnu.org/gcc-15/changes.html
+    {
+        const UBLOXCFG_KEYVAL_t a = { .id = UBLOXCFG_CFG_UBLOXCFGTEST_U2_ID, .val = { .U2 = 0xabcd } };
+        const UBLOXCFG_KEYVAL_t b = { .id = UBLOXCFG_CFG_UBLOXCFGTEST_I2_ID, .val = { ._bytes = { 0xcd, 0xab, 0x12, 0x23, 0x34, 0x45, 0x56 } } };
+        const UBLOXCFG_KEYVAL_t c = { .id = UBLOXCFG_CFG_UBLOXCFGTEST_I2_ID, .val = { .I2 = -21555 } };
+        const UBLOXCFG_KEYVAL_t d = { .id = UBLOXCFG_CFG_UBLOXCFGTEST_U2_ID, .val = { .U2 = 0xdcba } };
+        const UBLOXCFG_KEYVAL_t e = { .id = UBLOXCFG_CFG_UBLOXCFGTEST_U4_ID, .val = { .U2 = 0xabcd } };
+        TEST("compareValue", ubloxcfg_compareValue(&a, &b) == true);       // same values
+        TEST("compareValue", ubloxcfg_compareValue(&a, &c) == true);       // same values
+        TEST("compareValue", ubloxcfg_compareValue(&a, &d) == false);      // different values
+        TEST("compareValue", ubloxcfg_compareValue(&a, &e) == false);      // different siz
+        TEST("compareValue", ubloxcfg_compareValue(&a, NULL) == false);    // bad args
+        TEST("compareValue", ubloxcfg_compareValue(NULL, &a) == false);    // bad args
+        TEST("compareValue", ubloxcfg_compareValue(NULL, NULL) == false);  // bad args
+    }
+
     // We (curently) need little endian
     {
         volatile uint32_t test = 0xdeadbeef;
@@ -185,9 +203,14 @@ int main(int argc, char **argv)
         int nKeyVal = 0;
         UBLOXCFG_KEYVAL_t keyVal[NUMOF(testKeyVal)];
         const bool parseDataRes = ubloxcfg_parseData(testData, sizeof(testData), keyVal, NUMOF(keyVal), &nKeyVal);
-        TEST("decode config data", (parseDataRes) && (nKeyVal == NUMOF(testKeyVal)) && (memcmp(testKeyVal, keyVal, sizeof(testKeyVal)) == 0) );
+        TEST("decode config data", (parseDataRes) && (nKeyVal == NUMOF(testKeyVal)));
         //HEXDUMP("data", testKeyVal, sizeof(testKeyVal));
         //HEXDUMP("test", keyVal, sizeof(keyVal));
+        // TEST("expect fail with gcc >= 15.1", memcmp(testKeyVal, keyVal, sizeof(testKeyVal)) == 0); // see the compareValue test above
+        for (size_t ix = 0; ix < NUMOF(testKeyVal); ix++)
+        {
+            TEST("decode config data", (testKeyVal[ix].id == keyVal[ix].id) && (ubloxcfg_compareValue(&testKeyVal[ix], &keyVal[ix]) == true));
+        }
     }
 
     // Stringify values

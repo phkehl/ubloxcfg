@@ -8,7 +8,8 @@ on:
     workflow_dispatch:
 
 jobs:
-    ci-build:
+
+    ci-default:
         runs-on: ubuntu-latest
         steps:
         - name: Checks-out
@@ -17,6 +18,8 @@ jobs:
           run: |
             sudo apt-get -y update
             sudo apt-get -y install gcc libpath-tiny-perl libdata-float-perl
+            gcc --version
+            git config --global --add safe.directory '*'
         - name: Build (Debug)
           run: |
             make clean build BUILD_TYPE=Debug BUILD_TESTING=OFF
@@ -35,5 +38,41 @@ jobs:
             rm -vf ubloxcfg_gen.[ch]
             cmake -B build -S .
             cmake --build build
-            git diff --exit-code ubloxcfg_gen.[ch]
+            git diff --exit-code
+
+    ci-gcclatest:
+        runs-on: ubuntu-latest
+        container:
+            image: gcc:latest
+        defaults:
+            run:
+                shell: bash
+        steps:
+        - name: Checks-out
+          uses: actions/checkout@v4
+        - name: Install dependencies
+          run: |
+            apt-get -y update
+            apt-get -y install gcc libpath-tiny-perl libdata-float-perl cmake make build-essential git
+            gcc --version
+            git config --global --add safe.directory '*'
+        - name: Build (Debug)
+          run: |
+            make clean build BUILD_TYPE=Debug BUILD_TESTING=OFF
+        - name: Build (Release)
+          run: |
+            make clean build BUILD_TYPE=Release BUILD_TESTING=OFF
+        - name: Test (Debug)
+          run: |
+            make clean test VERBOSE=1 BUILD_TYPE=Debug BUILD_TESTING=ON
+        - name: Test (Release)
+          run: |
+            make clean test VERBOSE=1 BUILD_TYPE=Release BUILD_TESTING=ON
+        - name: Generate code
+          run: |
+            cd ubloxcfg
+            rm -vf ubloxcfg_gen.[ch]
+            cmake -B build -S .
+            cmake --build build
+            git diff --exit-code
 
