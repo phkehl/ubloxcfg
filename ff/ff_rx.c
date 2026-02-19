@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <unistd.h>
 
 #include "ff_debug.h"
@@ -399,7 +400,7 @@ PARSER_MSG_t *rxPollUbx(RX_t *rx, const RX_POLL_UBX_t *param, bool *pollNak)
                  (UBX_CLSID(msg->data) == param->clsId) &&
                  (UBX_MSGID(msg->data) == param->msgId) )
             {
-                RX_DEBUG("poll answer %s, size=%d, dt=%lu", msg->name, msg->size, TIME() - t0);
+                RX_DEBUG("poll answer %s, size=%d, dt=%"PRIu64, msg->name, msg->size, TIME() - t0);
                 res = msg;
                 break;
             }
@@ -771,7 +772,7 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
             const uint64_t timeout = 5000;
             const uint64_t t0 = TIME();
             const uint64_t t1 = t0 + timeout;
-            RX_DEBUG("Wait for %s, timeout %lu", rx->port.file, timeout);
+            RX_DEBUG("Wait for %s, timeout %"PRIu64, rx->port.file, timeout);
             while (TIME() < t1)
             {
                 if (rx->abort)
@@ -780,7 +781,7 @@ bool rxReset(RX_t *rx, const RX_RESET_t reset)
                 }
                 if (access(rx->port.file, F_OK) == 0)
                 {
-                    RX_DEBUG("%s available (dt=%lu).", rx->port.file, TIME() - t0);
+                    RX_DEBUG("%s available (dt=%"PRIu64").", rx->port.file, TIME() - t0);
                     break;
                 }
                 SLEEP(101);
@@ -1010,7 +1011,7 @@ int rxGetConfig(RX_t *rx, const UBLOXCFG_LAYER_t layer, const uint32_t *keys, co
 
     }
     // while 64 left, not complete, ...
-    RX_DEBUG("Total %d items for layer %s (poll duration %lums), res=%d", totNumKv, layerName, TIME() - t0, res);
+    RX_DEBUG("Total %d items for layer %s (poll duration %"PRIu64"ms), res=%d", totNumKv, layerName, TIME() - t0, res);
 
     return res ? totNumKv : -1;
 }
