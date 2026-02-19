@@ -218,7 +218,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
                 if (kvRam->id == kvCfg->id)
                 {
                     itemIsInCfg = true;
-                    if (kvRam->val._raw != kvCfg->val._raw)
+                    if (!ubloxcfg_compareValue(kvRam, kvCfg))
                     {
                         configNeedsUpdate = true;
                         char strCfg[UBLOXCFG_MAX_KEYVAL_STR_SIZE];
@@ -240,7 +240,7 @@ int cfg2rxRun(const char *portArg, const char *layerArg, const char *resetArg, c
                     const UBLOXCFG_KEYVAL_t *kvDef = &allKvDef[ixKvDef];
                     if (kvRam->id == kvDef->id)
                     {
-                        if (kvRam->val._raw != kvDef->val._raw)
+                        if (!ubloxcfg_compareValue(kvRam, kvDef))
                         {
                             configNeedsUpdate = true;
                             char strDef[UBLOXCFG_MAX_KEYVAL_STR_SIZE];

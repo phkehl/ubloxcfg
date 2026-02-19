@@ -33,6 +33,25 @@
 #  error This needs C99 or later!
 #endif
 
+bool ubloxcfg_compareValue(const UBLOXCFG_KEYVAL_t* a, const UBLOXCFG_KEYVAL_t* b)
+{
+    if ((a == NULL) || (b == NULL) || (UBLOXCFG_ID2SIZE(a->id) != UBLOXCFG_ID2SIZE(b->id)))
+    {
+        return false;
+    }
+
+    switch (UBLOXCFG_ID2SIZE(a->id))
+    {
+        case UBLOXCFG_SIZE_BIT:   return a->val.L  == b->val.L;
+        case UBLOXCFG_SIZE_ONE:   return a->val.U1 == b->val.U1;
+        case UBLOXCFG_SIZE_TWO:   return a->val.U2 == b->val.U2;
+        case UBLOXCFG_SIZE_FOUR:  return a->val.U4 == b->val.U4;
+        case UBLOXCFG_SIZE_EIGHT: return a->val.U8 == b->val.U8;
+    }
+
+    return false;
+}
+
 const UBLOXCFG_ITEM_t *ubloxcfg_getItemByName(const char *name)
 {
     if ( (name == NULL) || (strlen(name) < 2) )
