@@ -742,11 +742,13 @@ static bool _itemCfgStr(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_ITEM_t *item
     }
 
     // Prefer pretty value
-    char *valueStr;
-    char *prettyStr;
+    char *valueStr = NULL;
+    char *prettyStr = NULL;
     if (ubloxcfg_splitValueStr(str, &valueStr, &prettyStr) && (prettyStr != NULL))
     {
-        strcpy(str, prettyStr);
+        const int len = strlen(prettyStr);
+        memmove(str, prettyStr, len);
+        str[len] = '\0';
     }
 
     return true;
@@ -817,7 +819,7 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     if (ubloxcfg_stringifyValue(valStr, sizeof(valStr), type, item, &kv->val))
     {
         // Prefer pretty value
-        char *dummy;
+        char *dummy = NULL;
         ubloxcfg_splitValueStr(valStr, &dummy, &valConstStr);
         // We should now either have NULL or "FOO|BAR" style constant names
     }
@@ -911,7 +913,6 @@ static void _addOutputKeyValuePair(const UBLOXCFG_KEYVAL_t *kv, const UBLOXCFG_I
     {
         if (ubloxcfg_stringifyValue(defaultValStr, sizeof(defaultValStr), type, item, &defaultKv->val))
         {
-
             ioOutputStr(", default: %s", defaultValStr);
         }
     }
