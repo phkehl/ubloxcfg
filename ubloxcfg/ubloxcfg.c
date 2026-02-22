@@ -484,6 +484,7 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
                     const uint64_t unusedBits = valX & (~usedBits);
                     if (unusedBits == valX)
                     {
+#if 0  // TODO: implement the reverse of this in ubloxcfg_valueFromString()
                         // Some X8 values are actually strings...
                         char x8str[9] = { 0 };
                         if ((type == UBLOXCFG_TYPE_X8) && (valX != 0))
@@ -512,6 +513,7 @@ bool ubloxcfg_stringifyValue(char *str, const int size, const UBLOXCFG_TYPE_t ty
                             len += snprintf(&str[len], size - len, "(%s", x8str);
                         }
                         else
+#endif
                         {
                             strncat(&str[len], "|n/a", size - len);
                             len += 4;
