@@ -49,6 +49,15 @@ endif()
 
 find_package(Perl REQUIRED)
 
+execute_process(COMMAND ${PERL_EXECUTABLE} -e "use Path::Tiny" RESULT_VARIABLE HAVE_PERL_PATH_TINY ERROR_QUIET)
+if(NOT HAVE_PERL_PATH_TINY EQUAL 0)
+    message(FATAL_ERROR "Perl module Path::Tiny is required but not found")
+endif()
+execute_process(COMMAND ${PERL_EXECUTABLE} -e "use Data::Float" RESULT_VARIABLE HAVE_PERL_DATA_FLOAT ERROR_QUIET)
+if(NOT HAVE_PERL_DATA_FLOAT EQUAL 0)
+    message(FATAL_ERROR "Perl module Data::Float is required but not found")
+endif()
+
 
 # GENERATED CODE =======================================================================================================
 
