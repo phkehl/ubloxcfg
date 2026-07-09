@@ -61,7 +61,6 @@ endif()
 
 # GENERATED CODE =======================================================================================================
 
-
 if(NOT NO_CODEGEN)
     file(GLOB JSONC_FILES *.jsonc)
     set(GEN_FILES "${PROJECT_SOURCE_DIR}/ubloxcfg_gen.h;${PROJECT_SOURCE_DIR}/ubloxcfg_gen.c")
@@ -76,6 +75,7 @@ if(NOT NO_CODEGEN)
 
     add_custom_target(ubloxcfg-generated ALL DEPENDS ${GEN_FILES})
 endif()
+
 
 # SHARED LIBRARY =======================================================================================================
 
