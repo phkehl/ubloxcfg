@@ -897,7 +897,7 @@
     { "id" : "0x2091068c", "name" : "CFG-MSGOUT-UBX_SEC_SIGLOG_USB",        "size" : 1, "type" : "U1",                                         "title" : "Output rate of the UBX-SEC-SIGLOG message on port USB" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x100d0001", "name" : "CFG-NAVCOR-ENABLE_HOST",               "size" : 0, "type" : "L",                                          "title" : "Enable/disable HOST corrections" },
-    { "id" : "0x100d0002", "name" : "CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS", "size" : 0, "type" : "L",                                          "title" : "Enable/disable Galileo HAS corrections" },
+    { "id" : "0x100d0002", "name" : "CFG-NAVCOR-ENABLE_GAL_HAS",            "size" : 0, "type" : "L",                                          "title" : "Enable/disable Galileo HAS corrections" },
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     { "id" : "0x20140011", "name" : "CFG-NAVHPG-DGNSSMODE",                 "size" : 1, "type" : "E1",                                         "title" : "Differential corrections mode",
             "consts" : [ { "name" : "RTK_FLOAT",                            "value" : "2",                                                     "title" : "No attempts made to fix ambiguities" },
