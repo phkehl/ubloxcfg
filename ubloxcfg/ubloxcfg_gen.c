@@ -4470,9 +4470,9 @@ static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavcorEnableHost =
     .order =  683,   .group = "CFG-NAVCOR",            .title ="Enable/disable HOST corrections"
 };
 
-static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavcorCfgNavcorEnableGalHas =
+static const UBLOXCFG_ITEM_t ubloxcfg_cfgNavcorEnableGalHas =
 {
-    .id = 0x100d0002, .name = "CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS",            .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
+    .id = 0x100d0002, .name = "CFG-NAVCOR-ENABLE_GAL_HAS",                       .type = UBLOXCFG_TYPE_L,  .size = UBLOXCFG_SIZE_BIT,
     .order =  684,   .group = "CFG-NAVCOR",            .title ="Enable/disable Galileo HAS corrections"
 };
 
@@ -8304,7 +8304,7 @@ static const UBLOXCFG_ITEM_t * const ubloxcfg_allItems[994] =
     &ubloxcfg_cfgMsgoutUbxSecSiglogI2c,
     &ubloxcfg_cfgMsgoutUbxSecSiglogUsb,
     &ubloxcfg_cfgNavcorEnableHost,
-    &ubloxcfg_cfgNavcorCfgNavcorEnableGalHas,
+    &ubloxcfg_cfgNavcorEnableGalHas,
     &ubloxcfg_cfgNavhpgDgnssmode,
     &ubloxcfg_cfgNavspgFixmode,
     &ubloxcfg_cfgNavspgInifix3d,

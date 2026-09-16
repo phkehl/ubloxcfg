@@ -6393,12 +6393,12 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 ///@}
 
 /*!
-    \defgroup UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS (Enable/disable Galileo HAS corrections)
+    \defgroup UBLOXCFG_CFG_NAVCOR_ENABLE_GAL_HAS CFG-NAVCOR-ENABLE_GAL_HAS (Enable/disable Galileo HAS corrections)
     @{
 */
-#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_ID   0x100d0002                               //!< ID of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
-#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_STR  "CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS"   //!< Name of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
-#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_TYPE L                                        //!< Type of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_GAL_HAS_ID              0x100d0002                               //!< ID of CFG-NAVCOR-ENABLE_GAL_HAS
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_GAL_HAS_STR             "CFG-NAVCOR-ENABLE_GAL_HAS"              //!< Name of CFG-NAVCOR-ENABLE_GAL_HAS
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_GAL_HAS_TYPE            L                                        //!< Type of CFG-NAVCOR-ENABLE_GAL_HAS
 ///@}
 
 ///@}
