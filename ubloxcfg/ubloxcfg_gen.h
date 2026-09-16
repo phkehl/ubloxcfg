@@ -6377,6 +6377,33 @@ typedef enum UBLOXCFG_CFG_ITFM_ANTSETTING_e
 ///@}
 
 /*!
+    \defgroup UBLOXCFG_CFG_NAVCOR CFG-NAVCOR
+    @{
+*/
+
+#define UBLOXCFG_CFG_NAVCOR_ID  0x000d0000 //!< Group ID of the CFG-NAVCOR-* items
+
+/*!
+    \defgroup UBLOXCFG_CFG_NAVCOR_ENABLE_HOST CFG-NAVCOR-ENABLE_HOST (Enable/disable HOST corrections)
+    @{
+*/
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_HOST_ID                 0x100d0001                               //!< ID of CFG-NAVCOR-ENABLE_HOST
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_HOST_STR                "CFG-NAVCOR-ENABLE_HOST"                 //!< Name of CFG-NAVCOR-ENABLE_HOST
+#define UBLOXCFG_CFG_NAVCOR_ENABLE_HOST_TYPE               L                                        //!< Type of CFG-NAVCOR-ENABLE_HOST
+///@}
+
+/*!
+    \defgroup UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS (Enable/disable Galileo HAS corrections)
+    @{
+*/
+#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_ID   0x100d0002                               //!< ID of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
+#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_STR  "CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS"   //!< Name of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
+#define UBLOXCFG_CFG_NAVCOR_CFG_NAVCOR_ENABLE_GAL_HAS_TYPE L                                        //!< Type of CFG-NAVCOR-CFG-NAVCOR-ENABLE_GAL_HAS
+///@}
+
+///@}
+
+/*!
     \defgroup UBLOXCFG_CFG_NAVHPG CFG-NAVHPG
     @{
 */
@@ -12556,7 +12583,7 @@ typedef enum UBLOXCFG_CFG_UBLOXCFGTEST_E4_e
 ///@}
 
 #ifndef _DOXYGEN_
-#define _UBLOXCFG_NUM_ITEMS 992
+#define _UBLOXCFG_NUM_ITEMS 994
 const void **_ubloxcfg_allItems(void);
 #define _UBLOXCFG_NUM_RATES 122
 const void **_ubloxcfg_allRates(void);
